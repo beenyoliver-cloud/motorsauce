@@ -14,6 +14,16 @@ export type Offer = {
   status: OfferStatus;
   createdAt: number;
 };
+// src/lib/offersStore.ts (add this near other exports)
+export function resetAllOffers(): void {
+  if (typeof window === "undefined") return;
+  try {
+    Object.keys(localStorage).forEach((k) => {
+      if (k.startsWith("ms:offers")) localStorage.removeItem(k);
+    });
+    window.dispatchEvent(new CustomEvent("ms:offers", { detail: { reset: true } }));
+  } catch {}
+}
 
 const LS_OFFERS = "ms_offers_v1";
 const LS_OFFER_TOAST_DISMISS = "ms_offer_toast_dismiss_v1";

@@ -3,42 +3,39 @@
 
 import { useRouter } from "next/navigation";
 import { resetAllChatData } from "@/lib/chatStore";
-import { resetAllOffers } from "@/lib/offersStore";
 
 export default function ResetMessagesPage() {
   const router = useRouter();
 
-  function doReset() {
-    // Wipe all chat & offers data in this browser (all accounts)
+  function reset() {
+    // 1) Clear local chat threads
     resetAllChatData();
-    resetAllOffers();
-    router.replace("/messages");
+
+    // 2) Best-effort: clear any local offers cache and notify listeners
+    try {
+      if (typeof window !== "undefined") {
+        for (const k of Object.keys(localStorage)) {
+          if (k.startsWith("ms:offers")) localStorage.removeItem(k);
+        }
+        window.dispatchEvent(new CustomEvent("ms:offers", { detail: { reset: true } }));
+      }
+    } catch {}
+
+    router.push("/messages");
   }
 
   return (
-    <section className="mx-auto max-w-md px-4 py-12">
-      <div className="rounded-xl border border-gray-200 bg-white p-6">
-        <h1 className="text-lg font-semibold text-black">Reset all messages</h1>
-        <p className="mt-2 text-sm text-gray-700">
-          This clears every conversation, message, read flag, and offer stored in this browser — for all
-          accounts on this device. You’ll start fresh with an empty inbox.
-        </p>
-
-        <div className="mt-5 flex items-center gap-2">
-          <button
-            onClick={doReset}
-            className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
-          >
-            Reset now
-          </button>
-          <button
-            onClick={() => router.back()}
-            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
+    <section className="mx-auto max-w-md px-4 py-8">
+      <h1 className="text-2xl font-bold mb-2">Reset Messages & Offers</h1>
+      <p className="text-gray-600 mb-4">
+        Clears local message threads and any cached offers on this device.
+      </p>
+      <button
+        onClick={reset}
+        className="inline-flex items-center gap-2 rounded-md bg-yellow-500 text-black font-semibold px-4 py-2 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+      >
+        Reset now
+      </button>
     </section>
   );
 }
