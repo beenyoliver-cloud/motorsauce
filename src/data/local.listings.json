@@ -1,0 +1,28 @@
+[
+  {
+    "id": "LOC-mflm4oyu-8w8qw",
+    "title": "BMW 2 Series Brake Discs",
+    "price": "£120",
+    "image": "/uploads/LOC-mflm4oyu-8w8qw-00.jpg",
+    "images": [
+      "/uploads/LOC-mflm4oyu-8w8qw-00.jpg"
+    ],
+    "category": "OEM",
+    "condition": "New",
+    "make": "BMW",
+    "model": "2 Series",
+    "genCode": "F22",
+    "engine": "3.0",
+    "year": 2016,
+    "description": "Brake discs, brand new from EBC.",
+    "createdAt": "2025-09-15T21:05:05.385Z",
+    "seller": {
+      "name": "OliverB",
+      "avatar": "/images/seller1.jpg",
+      "rating": 5
+    },
+    "yearFrom": 2016,
+    "yearTo": 2016,
+    "ownerId": "user_c2cf6e97-9c33-4c49-b6c7-8d94cec8c96a"
+  }
+]
