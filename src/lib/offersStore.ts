@@ -1,127 +1,90 @@
 // src/lib/offersStore.ts
-export type OfferStatus = "pending" | "accepted" | "declined" | "countered" | "withdrawn";
+"use client";
 
-export type Offer = {
+type Offer = {
   id: string;
   threadId: string;
-  from: string; // "You" or other user display name
-  peerName: string; // other party's display name
   amountCents: number;
-  currency?: "GBP";
-  listingId: string | number;
-  listingTitle: string;
+  currency?: string;
+  status: "pending" | "accepted" | "declined" | "countered";
+  starterId?: string;
+  recipientId?: string;
+  listingId?: string;
+  listingTitle?: string;
   listingImage?: string;
-  status: OfferStatus;
-  createdAt: number;
+  peerName?: string;
 };
-// src/lib/offersStore.ts (add this near other exports)
-export function resetAllOffers(): void {
-  if (typeof window === "undefined") return;
+
+const KEY = (t: string) => `ms:offers:${t}`;
+
+function read(threadId: string): Offer[] {
+  if (typeof window === "undefined") return [];
   try {
-    Object.keys(localStorage).forEach((k) => {
-      if (k.startsWith("ms:offers")) localStorage.removeItem(k);
-    });
-    window.dispatchEvent(new CustomEvent("ms:offers", { detail: { reset: true } }));
-  } catch {}
-}
-
-const LS_OFFERS = "ms_offers_v1";
-const LS_OFFER_TOAST_DISMISS = "ms_offer_toast_dismiss_v1";
-
-function nsKey(k: string) {
-  return `ms:${k}`;
-}
-
-function readJSON<T>(k: string, fb: T): T {
-  if (typeof window === "undefined") return fb;
-  try {
-    const v = localStorage.getItem(nsKey(k));
-    return v ? (JSON.parse(v) as T) : fb;
+    const raw = localStorage.getItem(KEY(threadId));
+    return raw ? (JSON.parse(raw) as Offer[]) : [];
   } catch {
-    return fb;
+    return [];
   }
 }
-function writeJSON<T>(k: string, v: T) {
+function write(threadId: string, offers: Offer[]) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(nsKey(k), JSON.stringify(v));
-  window.dispatchEvent(new CustomEvent("ms:offers", { detail: {} }));
-}
-
-function cuid() {
-  return `o_${Math.random().toString(36).slice(2)}_${Date.now().toString(36)}`;
+  localStorage.setItem(KEY(threadId), JSON.stringify(offers));
+  window.dispatchEvent(new CustomEvent("ms:offers", { detail: { threadId } }));
 }
 
 export function formatGBP(cents: number) {
-  return (cents / 100).toLocaleString(undefined, { style: "currency", currency: "GBP" });
+  return `£${(cents / 100).toFixed(2)}`;
 }
 
-export function listOffers(threadId?: string): Offer[] {
-  const all = readJSON<Offer[]>(LS_OFFERS, []);
-  return threadId ? all.filter((o) => o.threadId === threadId) : all;
+export function listOffers(threadId: string): Offer[] {
+  return read(threadId);
 }
 
 export function latestOffer(threadId: string): Offer | undefined {
-  const list = listOffers(threadId).sort((a, b) => b.createdAt - a.createdAt);
-  return list[0];
+  const arr = read(threadId);
+  return arr.length ? arr[arr.length - 1] : undefined;
 }
 
-/** Create a brand-new pending offer */
-export function createOffer(input: {
-  threadId: string;
-  from: string;       // "You" if created by current viewer
-  peerName: string;   // other side's name
-  amountCents: number;
-  currency?: "GBP";
-  listingId: string | number;
-  listingTitle: string;
-  listingImage?: string;
-}): Offer {
-  const all = readJSON<Offer[]>(LS_OFFERS, []);
+export function updateOfferStatus(
+  threadId: string,
+  offerId: string,
+  status: Offer["status"]
+): Offer | null {
+  const arr = read(threadId);
+  const idx = arr.findIndex((o) => o.id === offerId);
+  if (idx === -1) return null;
+  arr[idx] = { ...arr[idx], status };
+  write(threadId, arr);
+  return arr[idx];
+}
+
+export function createOffer(input: Omit<Offer, "id" | "status"> & { amountCents: number }): Offer {
+  const id = `offer_${Date.now()}`;
   const offer: Offer = {
-    id: cuid(),
+    id,
     threadId: input.threadId,
-    from: input.from,
-    peerName: input.peerName,
     amountCents: input.amountCents,
     currency: input.currency ?? "GBP",
+    status: "pending",
+    starterId: input.starterId,
+    recipientId: input.recipientId,
     listingId: input.listingId,
     listingTitle: input.listingTitle,
     listingImage: input.listingImage,
-    status: "pending",
-    createdAt: Date.now(),
+    peerName: input.peerName,
   };
-  all.push(offer);
-  writeJSON(LS_OFFERS, all);
+  const arr = read(input.threadId);
+  arr.push(offer);
+  write(input.threadId, arr);
   return offer;
 }
 
-/** Update status EXACTLY ONCE for a given offer id */
-export function updateOfferStatus(threadId: string, offerId: string, status: OfferStatus): Offer | null {
-  const all = readJSON<Offer[]>(LS_OFFERS, []);
-  const idx = all.findIndex((o) => o.id === offerId && o.threadId === threadId);
-  if (idx === -1) return null;
-
-  const current = all[idx];
-  if (current.status !== "pending") {
-    // Already responded — do nothing
-    return current;
-  }
-  const next = { ...current, status };
-  all[idx] = next;
-  writeJSON(LS_OFFERS, all);
-  return next;
-}
-
-/** Toast helpers */
-type ToastKey = { [threadId: string]: string[] }; // threadId -> dismissed offerIds
-export function wasToastDismissed(threadId: string, offerId: string): boolean {
-  const map = readJSON<ToastKey>(LS_OFFER_TOAST_DISMISS, {});
-  return !!(map[threadId] && map[threadId].includes(offerId));
-}
-export function dismissToast(threadId: string, offerId: string) {
-  const map = readJSON<ToastKey>(LS_OFFER_TOAST_DISMISS, {});
-  const arr = map[threadId] || [];
-  if (!arr.includes(offerId)) arr.push(offerId);
-  map[threadId] = arr;
-  writeJSON(LS_OFFER_TOAST_DISMISS, map);
+export function resetAllOffers(): void {
+  if (typeof window === "undefined") return;
+  try {
+    for (const k of Object.keys(localStorage)) {
+      if (k.startsWith("ms:offers")) localStorage.removeItem(k);
+    }
+    window.dispatchEvent(new CustomEvent("ms:offers", { detail: { reset: true } }));
+  } catch {}
 }
