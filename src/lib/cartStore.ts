@@ -1,13 +1,16 @@
 // src/lib/cartStore.ts
 "use client";
 
-type CartItem = {
+export type CartItem = {
   id: string;
   title: string;
   price: string; // "£12.34"
   image: string;
   qty: number;
 };
+
+// Back-compat for components that import `Cart`
+export type Cart = CartItem[];
 
 const KEY = "ms:cart:v1";
 
@@ -53,7 +56,7 @@ export function addToCart(item: CartItem) {
   const items = read();
   const existing = items.find((x) => x.id === item.id);
   if (existing) {
-    existing.qty += item.qty;
+    existing.qty += Math.max(1, item.qty || 1);
   } else {
     items.push({ ...item, qty: Math.max(1, item.qty || 1) });
   }
@@ -72,12 +75,26 @@ export function setQty(id: string, qty: number) {
   write(items);
 }
 
+// Back-compat alias for older code importing `updateQty`
+export const updateQty = setQty;
+
+function priceToCents(p: string): number {
+  const n = Number(String(p).replace(/[£,]/g, ""));
+  return Math.round((isNaN(n) ? 0 : n) * 100);
+}
+
 export function totalFormatted(): string {
-  const pence = read().reduce((sum, x) => {
-    const n = Number(String(x.price).replace(/[£,]/g, ""));
-    return sum + Math.round((isNaN(n) ? 0 : n) * 100) * x.qty;
-  }, 0);
-  return "£" + (pence / 100).toFixed(2);
+  const cents = read().reduce((sum, x) => sum + priceToCents(x.price) * x.qty, 0);
+  return "£" + (cents / 100).toFixed(2);
+}
+
+// Helper some UIs import: returns totals for current (or given) items
+export function calcTotals(items: CartItem[] = read()) {
+  const count = items.reduce((s, x) => s + x.qty, 0);
+  const subtotalCents = items.reduce((s, x) => s + priceToCents(x.price) * x.qty, 0);
+  const subtotal = "£" + (subtotalCents / 100).toFixed(2);
+  const total = subtotal; // shipping/tax not yet applied
+  return { count, subtotalCents, subtotalFormatted: subtotal, totalFormatted: total };
 }
 
 export function subscribe(handler: (items: CartItem[]) => void) {

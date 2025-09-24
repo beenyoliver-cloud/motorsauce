@@ -2,9 +2,7 @@
 export async function primaryImageForListing(id: string): Promise<string> {
   try {
     const base = process.env.NEXT_PUBLIC_SITE_URL || "";
-    const res = await fetch(`${base}/api/listings?id=${encodeURIComponent(id)}`, {
-      cache: "no-store",
-    });
+    const res = await fetch(`${base}/api/listings?id=${encodeURIComponent(id)}`, { cache: "no-store" });
     if (!res.ok) return "/images/placeholder.png";
     const l = await res.json();
     return l?.image || "/images/placeholder.png";
@@ -12,3 +10,6 @@ export async function primaryImageForListing(id: string): Promise<string> {
     return "/images/placeholder.png";
   }
 }
+
+// Back-compat alias for old imports
+export const resolveListingImage = primaryImageForListing;
