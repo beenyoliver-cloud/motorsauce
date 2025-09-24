@@ -1,11 +1,11 @@
 "use client";
 export type Thread = { id: string; peerName?: string };
 export type ChatMessage = { id: string; from: string; ts: string; type?: string; text?: string };
-export function slugify(s:string){return (s||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)+/g,"");}
-export function nowClock(){ return new Date().toISOString(); }
-export function loadThreads():Thread[]{ return []; }
-export function upsertThreadForPeer(peerName:string){ return { id:`thr_${slugify(peerName)}`, peerName }; }
-export function appendMessage(..._args:any[]){ /* no-op */ }
-export function appendOfferMessage(..._args:any[]){ /* no-op */ }
-export function updateOfferInThread(..._args:any[]){ /* no-op */ }
-export function resetAllChatData(){ /* no-op */ }
+export const slugify = (s:string)=> (s||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)+/g,"");
+export const nowClock = ()=> new Date().toISOString();
+export const loadThreads = ():Thread[] => [];
+export const upsertThreadForPeer = (name:string)=>({ id:"thr_"+slugify(name), peerName:name });
+export const appendMessage = (..._a:any[])=>{};
+export const appendOfferMessage = (..._a:any[])=>{};
+export const updateOfferInThread = (..._a:any[])=>{};
+export const resetAllChatData = ()=>{};
