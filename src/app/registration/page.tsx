@@ -1,4 +1,4 @@
-// app/registration/page.tsx (or src/app/registration/page.tsx)
+// src/app/registration/page.tsx
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
@@ -25,7 +25,7 @@ type Vehicle = {
 type Listing = {
   id: string | number;
   title: string;
-  price?: number;
+  price?: number | string; // DB returns "£12.34" string; handle both
   currency?: string;
   images?: string[];
   thumbnail?: string;
@@ -111,69 +111,39 @@ function regKey(reg: string) {
   return reg.toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
 
-/* ---- Simple brand/model presets for manual fallback (extend any time) ---- */
+/* ---- Simple brand/model presets for manual fallback ---- */
 const MAKES = [
-  "Audi",
-  "BMW",
-  "Volkswagen",
-  "Mercedes-Benz",
-  "Ford",
-  "Vauxhall",
-  "Toyota",
-  "Nissan",
-  "Honda",
-  "Kia",
-  "Hyundai",
-  "Peugeot",
+  "Audi","BMW","Volkswagen","Mercedes-Benz","Ford","Vauxhall","Toyota","Nissan","Honda","Kia","Hyundai","Peugeot",
 ];
 
 const MODELS: Record<string, string[]> = {
-  Audi: ["A3", "A4", "A6", "Q3", "Q5"],
-  BMW: ["1 Series", "2 Series", "3 Series", "4 Series", "5 Series"],
-  Volkswagen: ["Golf", "Polo", "Passat", "Tiguan"],
-  "Mercedes-Benz": ["A-Class", "C-Class", "E-Class", "GLA"],
-  Ford: ["Fiesta", "Focus", "Mondeo", "Kuga"],
-  Vauxhall: ["Corsa", "Astra", "Insignia", "Mokka"],
-  Toyota: ["Yaris", "Corolla", "Auris", "CHR"],
-  Nissan: ["Micra", "Qashqai", "Juke", "Leaf"],
-  Honda: ["Civic", "Jazz", "CR-V"],
-  Kia: ["Rio", "Ceed", "Sportage"],
-  Hyundai: ["i10", "i20", "i30", "Tucson"],
-  Peugeot: ["208", "308", "3008"],
+  Audi: ["A3","A4","A6","Q3","Q5"],
+  BMW: ["1 Series","2 Series","3 Series","4 Series","5 Series"],
+  Volkswagen: ["Golf","Polo","Passat","Tiguan"],
+  "Mercedes-Benz": ["A-Class","C-Class","E-Class","GLA"],
+  Ford: ["Fiesta","Focus","Mondeo","Kuga"],
+  Vauxhall: ["Corsa","Astra","Insignia","Mokka"],
+  Toyota: ["Yaris","Corolla","Auris","CHR"],
+  Nissan: ["Micra","Qashqai","Juke","Leaf"],
+  Honda: ["Civic","Jazz","CR-V"],
+  Kia: ["Rio","Ceed","Sportage"],
+  Hyundai: ["i10","i20","i30","Tucson"],
+  Peugeot: ["208","308","3008"],
 };
 
-/* ========================= Data loading ========================= */
+/* ========================= Data loading (DB only) ========================= */
 async function loadListings(): Promise<Listing[]> {
-  try {
-    // @ts-ignore optional dev helper
-    const mod = await import("@/listings");
-    const data =
-      (typeof mod.getAllListings === "function" && (await mod.getAllListings())) ||
-      mod.default ||
-      mod.listings ||
-      [];
-    if (Array.isArray(data) && data.length) return data as Listing[];
-  } catch {
-    /* ignore */
-  }
   try {
     const res = await fetch("/api/listings", { cache: "no-store" });
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data)) return data as Listing[];
+      return Array.isArray(data) ? (data as Listing[]) : [];
     }
-  } catch {
-    /* ignore */
-  }
+  } catch {}
   return [];
 }
 
-/* ========================= Registration "decoder" =========================
-   Tries:
-   1) localStorage cache ("motorsauce:regmap")
-   2) optional /api/registration?reg=AB12CDE (return { make, model, year, gen?, engine? })
-   3) falls back to manual picker in the UI
-========================================================================== */
+/* ========================= Registration lookup ========================= */
 async function lookupByReg(reg: string): Promise<Vehicle | null> {
   if (typeof window !== "undefined") {
     try {
@@ -183,6 +153,7 @@ async function lookupByReg(reg: string): Promise<Vehicle | null> {
     } catch {}
   }
   try {
+    // Optional API; if you haven't built it yet, this will fall back to manual
     const res = await fetch(`/api/registration?reg=${encodeURIComponent(reg)}`, { cache: "no-store" });
     if (res.ok) {
       const data = (await res.json()) as Vehicle;
@@ -280,7 +251,6 @@ export default function RegistrationPage() {
     if (v) {
       setVehicle(v);
     } else {
-      // No API result ⇒ manual select
       setVehicle(null);
       setShowManual(true);
     }
@@ -296,6 +266,9 @@ export default function RegistrationPage() {
     setShowManual(false);
     if (reg.trim()) saveRegMapping(reg, v);
   }
+
+  const formatPrice = (p?: number | string) =>
+    typeof p === "string" ? p : money(p, "GBP");
 
   return (
     <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16">
@@ -464,7 +437,7 @@ export default function RegistrationPage() {
               const img =
                 item.thumbnail ||
                 (Array.isArray(item.images) && item.images[0]) ||
-                "/placeholder.svg";
+                "/images/placeholder.png";
               const href = item.url || item.href || `/listing/${item.id}`;
               return (
                 <li
@@ -486,9 +459,9 @@ export default function RegistrationPage() {
                         {item.condition ? `${item.condition} • ` : ""}
                         {item.category || "Part"}
                       </div>
-                      {typeof item.price === "number" && (
+                      {item.price !== undefined && item.price !== null && (
                         <div className="mt-1 font-semibold text-black">
-                          {money(item.price, item.currency || "GBP")}
+                          {typeof item.price === "string" ? item.price : money(item.price, item.currency || "GBP")}
                         </div>
                       )}
                     </div>
