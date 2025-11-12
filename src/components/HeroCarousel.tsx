@@ -49,7 +49,7 @@ export default function HeroCarousel() {
   const slide = SLIDES[index];
 
   return (
-    <section className="relative aspect-[16/6] w-full overflow-hidden rounded-2xl border border-gray-200 bg-gray-100">
+    <section className="relative aspect-[4/3] sm:aspect-[16/7] md:aspect-[16/6] w-full overflow-hidden rounded-2xl border border-gray-200 bg-gray-100">
       {/* Image */}
       <div className="absolute inset-0">
         <SafeImage

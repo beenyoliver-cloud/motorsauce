@@ -328,22 +328,24 @@ export default function Header() {
       </button>
 
       {mobileMenuOpen && (
-        <div className="md:hidden absolute top[55px] left-0 w-full bg-white border-b border-gray-200 shadow-md z-40">
+        <div className="md:hidden absolute top-[55px] left-0 w-full bg-white border-b border-gray-200 shadow-md z-40">
           {categories.map(([name, href]) => (
             <Link
               key={href}
               href={href}
               className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+              onClick={() => setMobileMenuOpen(false)}
             >
               {name}
             </Link>
           ))}
           <div className="border-t border-gray-100" />
-          {user ? (
+          {isUserLoaded && user ? (
             <>
               <Link
                 href="/sell"
                 className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                onClick={() => setMobileMenuOpen(false)}
               >
                 <span className="inline-flex items-center gap-1">
                   <PlusCircle size={16} /> Sell
@@ -353,66 +355,92 @@ export default function Header() {
                 <Link
                   href="/admin/dashboard"
                   className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                  onClick={() => setMobileMenuOpen(false)}
                 >
                   <span className="inline-flex items-center gap-1">
                     <User size={16} /> Admin
                   </span>
                 </Link>
               )}
-              <Link
-                href="/basket"
-                className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setCartOpen(true);
+                }}
+                className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
               >
-                Basket {cartCount > 0 ? `(${cartCount})` : ""}
-              </Link>
+                <span className="inline-flex items-center gap-1">
+                  <ShoppingCart size={16} /> Basket {cartCount > 0 ? `(${cartCount})` : ""}
+                </span>
+              </button>
               <Link
                 href={profileHref}
                 className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                onClick={() => setMobileMenuOpen(false)}
               >
                 My Profile
               </Link>
               <Link
                 href="/messages"
                 className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                onClick={() => setMobileMenuOpen(false)}
               >
                 My Messages {unread > 0 ? `(${unread})` : ""}
               </Link>
               <Link
                 href="/sales"
                 className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                onClick={() => setMobileMenuOpen(false)}
               >
                 Previous Sales
               </Link>
               <Link
                 href="/reviews"
                 className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                onClick={() => setMobileMenuOpen(false)}
               >
                 My Reviews
               </Link>
               <Link
                 href="/settings"
                 className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                onClick={() => setMobileMenuOpen(false)}
               >
                 Account Settings
               </Link>
               <Link
                 href="/auth/logout"
                 className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                onClick={() => setMobileMenuOpen(false)}
               >
                 Log out
               </Link>
             </>
           ) : (
             <>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setCartOpen(true);
+                }}
+                className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+              >
+                <span className="inline-flex items-center gap-1">
+                  <ShoppingCart size={16} /> Basket {cartCount > 0 ? `(${cartCount})` : ""}
+                </span>
+              </button>
+              <div className="border-t border-gray-100" />
               <Link
                 href="/auth/login"
-                className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                className="block px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-50 hover:text-yellow-600"
+                onClick={() => setMobileMenuOpen(false)}
               >
                 Sign in
               </Link>
               <Link
                 href="/auth/register"
-                className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                className="block px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-50 hover:text-yellow-600"
+                onClick={() => setMobileMenuOpen(false)}
               >
                 Register
               </Link>
