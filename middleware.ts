@@ -68,7 +68,17 @@ export async function middleware(request: NextRequest) {
 }
 
 // Optionally restrict middleware to application paths only (skips assets by default here)
-// Temporarily disable middleware by matching no routes; use a never-matching pattern
+// Middleware is disabled because SITE_ACCESS_PASSWORD is not set
+// If you want to re-enable the password gate, set SITE_ACCESS_PASSWORD env var and update the matcher
 export const config = {
-  matcher: ["/__never_match__"],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder files
+     */
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|json)$).*)",
+  ],
 };
