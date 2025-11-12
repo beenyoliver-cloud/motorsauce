@@ -68,8 +68,7 @@ export async function middleware(request: NextRequest) {
 }
 
 // Optionally restrict middleware to application paths only (skips assets by default here)
+// Temporarily disable middleware by matching no routes; use a never-matching pattern
 export const config = {
-  matcher: [
-    "/((?!_next/|favicon.ico|robots.txt|sitemap.xml|images/).*)",
-  ],
+  matcher: ["/__never_match__"],
 };
