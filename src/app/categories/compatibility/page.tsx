@@ -21,7 +21,7 @@ import {
 } from "@/lib/garage";
 
 // ✅ Same auth helper your Header uses
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, type LocalUser } from "@/lib/auth";
 
 /** ---------------------- Listing type (flexible) ---------------------- */
 type Listing = {
@@ -147,8 +147,12 @@ function matchesListing(listing: Listing, car: CarType) {
   if (listing.model && car.model && slug(listing.model) !== slug(car.model)) return false;
 
   // Enforce gen/engine only when present on BOTH sides
-  if (listing.gen && car.gen && slug(listing.gen) !== slug(car.gen)) return false;
-  if (listing.engine && car.engine && slug(listing.engine) !== slug(car.engine)) return false;
+    const carGen = (car && typeof car === "object" ? (car as Record<string, unknown>).gen : undefined);
+    const carGenStr = typeof carGen === "string" ? carGen : undefined;
+    const carEngine = (car && typeof car === "object" ? (car as Record<string, unknown>).engine : undefined);
+    const carEngineStr = typeof carEngine === "string" ? carEngine : undefined;
+    if (listing.gen && carGenStr && slug(listing.gen) !== slug(carGenStr)) return false;
+    if (listing.engine && carEngineStr && slug(listing.engine) !== slug(carEngineStr)) return false;
 
   // Years
   const userYears = toUserYears(car);
@@ -160,13 +164,13 @@ function matchesListing(listing: Listing, car: CarType) {
       const yf = toNum(c.yearFrom);
       const yt = toNum(c.yearTo);
       return (
-        sameOrUnknown(c.make, car.make) &&
-        sameOrUnknown(c.model, car.model) &&
-        sameOrUnknown(c.gen, car.gen) &&
-        sameOrUnknown(c.engine, car.engine) &&
+  sameOrUnknown(c.make, car.make) &&
+  sameOrUnknown(c.model, car.model) &&
+  sameOrUnknown(c.gen, carGenStr) &&
+  sameOrUnknown(c.engine, carEngineStr) &&
         (c.years && c.years.length
           ? c.years.some((y) => (userYears || []).includes(y))
-          : yearsOverlap({ yearFrom: yf, yearTo: yt } as any, userYears))
+          : yearsOverlap({ yearFrom: yf, yearTo: yt }, userYears))
       );
     });
     if (!ok) return false;
@@ -182,8 +186,20 @@ export default function CompatibilityPage() {
   const [loading, setLoading] = useState(true);
 
   // 🔗 Compute My Profile link exactly like Header
-  const me = getCurrentUser();
-  const profileHref = me ? `/profile/${encodeURIComponent(me.name)}` : "/auth/login";
+  const [me, setMe] = useState<LocalUser | null>(null);
+  const [profileHref, setProfileHref] = useState<string>("/auth/login");
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const u = await getCurrentUser();
+      if (!alive) return;
+      setMe(u);
+      setProfileHref(u ? `/profile/${encodeURIComponent(u.name)}` : "/auth/login");
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   // Read default car (same as Garage)
   useEffect(() => {

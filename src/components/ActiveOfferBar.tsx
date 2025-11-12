@@ -15,7 +15,7 @@ import {
   updateOfferInThread,
   appendOfferMessage,
 } from "@/lib/chatStore";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUserSync } from "@/lib/auth";
 import { displayName } from "@/lib/names";
 
 /**
@@ -34,7 +34,7 @@ export default function ActiveOfferBar({
   threadId: string;
   showImage?: boolean;
 }) {
-  const me = getCurrentUser();
+  const me = getCurrentUserSync();
   const selfName = me?.name?.trim() || "You";
   const selfId = String(me?.id || me?.email || me?.name || "");
 
@@ -84,9 +84,17 @@ export default function ActiveOfferBar({
   function accept() {
     // Only recipient can accept
     if (!iAmRecipient) return;
+    if (!active) return;
     const upd = updateOfferStatus(threadId, active.id, "accepted");
     if (upd) {
-      updateOfferInThread(threadId, { id: active.id, amountCents: active.amountCents, status: "accepted" } as any);
+      updateOfferInThread(threadId, {
+        id: active.id,
+        amountCents: active.amountCents,
+        currency: active.currency,
+        status: "accepted",
+        starterId: active.starterId,
+        recipientId: active.recipientId,
+      });
       sys(`${displayName(selfName)} accepted the offer of ${formatGBP(active.amountCents)}.`);
       // optional: navigate to checkout
       // router.push(`/checkout?offer=${active.id}`)
@@ -95,21 +103,37 @@ export default function ActiveOfferBar({
 
   function decline() {
     if (!iAmRecipient) return;
+    if (!active) return;
     const upd = updateOfferStatus(threadId, active.id, "declined");
     if (upd) {
-      updateOfferInThread(threadId, { id: active.id, amountCents: active.amountCents, status: "declined" } as any);
+      updateOfferInThread(threadId, {
+        id: active.id,
+        amountCents: active.amountCents,
+        currency: active.currency,
+        status: "declined",
+        starterId: active.starterId,
+        recipientId: active.recipientId,
+      });
       sys(`${displayName(selfName)} declined the offer of ${formatGBP(active.amountCents)}.`);
     }
   }
 
   function quickCounter(mult: number) {
     if (!iAmRecipient) return;
+    if (!active) return;
 
     const next = Math.max(1, Math.round(active.amountCents * mult));
 
     // 1) Supersede current
     updateOfferStatus(threadId, active.id, "countered");
-    updateOfferInThread(threadId, { id: active.id, amountCents: active.amountCents, status: "countered" } as any);
+    updateOfferInThread(threadId, {
+      id: active.id,
+      amountCents: active.amountCents,
+      currency: active.currency,
+      status: "countered",
+      starterId: active.starterId,
+      recipientId: active.recipientId,
+    });
 
     // 2) Create a NEW pending from me → back to the other party
     const newOffer = createOffer({
@@ -134,7 +158,7 @@ export default function ActiveOfferBar({
       listingId: active.listingId,
       listingTitle: active.listingTitle,
       listingImage: active.listingImage,
-    } as any);
+    });
 
     sys(`${displayName(selfName)} countered with ${formatGBP(newOffer.amountCents)}.`);
     setOffers(listOffers(threadId));

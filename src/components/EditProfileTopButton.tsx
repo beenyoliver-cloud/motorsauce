@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { isMe } from "@/lib/auth";
+import { useEffect, useState } from "react";
 
 export default function EditProfileTopButton({
   displayName,
@@ -10,8 +11,13 @@ export default function EditProfileTopButton({
   displayName: string;
   baseHref: string;
 }) {
-  // client-only check
-  if (typeof window === "undefined" || !isMe(displayName)) return null;
+  const [showButton, setShowButton] = useState(false);
+
+  useEffect(() => {
+    isMe(displayName).then(result => setShowButton(result));
+  }, [displayName]);
+
+  if (!showButton) return null;
 
   return (
     <Link

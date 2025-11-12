@@ -29,8 +29,9 @@ const META: Record<string, { title: string; blurb: string; cta: { href: string; 
   },
 };
 
-export default function CategoryPage({ params }: { params: { slug: string } }) {
-  const key = params.slug.toLowerCase();
+export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const key = slug.toLowerCase();
   const data = META[key];
   if (!data) return notFound();
 

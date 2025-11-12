@@ -2,11 +2,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import SafeImage from "@/components/SafeImage";
+import Link from "next/link";
 import FavoriteButton from "@/components/FavoriteButton";
 import MakeOfferButton from "@/components/MakeOfferButton";
+import ContactSellerButton from "@/components/ContactSellerButton";
 import ReportListingButton from "@/components/ReportListingButton";
 import ListingSEO from "@/components/ListingSEO";
 import SellerLink from "@/components/SellerLink";
+import SellerExposureTracker from "@/components/SellerExposureTracker";
 
 /* ========== Types ========== */
 type Listing = {
@@ -25,6 +28,7 @@ type Listing = {
   oem?: string;
   description?: string;
   createdAt: string;
+  sellerId?: string;
   seller: { name: string; avatar: string; rating: number };
   vin?: string;
   yearFrom?: number;
@@ -51,9 +55,10 @@ async function fetchListing(id: string): Promise<Listing | null> {
 export async function generateMetadata({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }): Promise<Metadata> {
-  const listing = await fetchListing(params.id);
+  const { id } = await params;
+  const listing = await fetchListing(id);
   if (!listing) {
     return {
       title: "Listing not found | Motorsauce",
@@ -91,14 +96,18 @@ export async function generateMetadata({
 }
 
 /* ========== Page ========== */
-export default async function ListingPage({ params }: { params: { id: string } }) {
-  const listing = await fetchListing(params.id);
+export default async function ListingPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const listing = await fetchListing(id);
   if (!listing) notFound();
 
   const gallery = listing.images?.length ? listing.images : [listing.image];
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-8">
+      {/* Track exposure to seller (client side) */}
+      {/* @ts-ignore Server -> Client component mount */}
+      <SellerExposureTracker sellerName={listing.seller?.name} avatar={listing.seller?.avatar} />
       {/* SEO JSON-LD */}
       <ListingSEO
         id={listing.id}
@@ -113,9 +122,9 @@ export default async function ListingPage({ params }: { params: { id: string } }
 
       {/* Breadcrumbs */}
       <nav className="mb-4 text-sm text-gray-600">
-        <a href="/" className="hover:text-yellow-600">Home</a>
+        <Link href="/" className="hover:text-yellow-600">Home</Link>
         <span className="mx-2">/</span>
-        <a href="/search" className="hover:text-yellow-600">Search</a>
+        <Link href="/search" className="hover:text-yellow-600">Search</Link>
         <span className="mx-2">/</span>
         <span className="line-clamp-1 text-gray-800">{listing.title}</span>
       </nav>
@@ -173,18 +182,18 @@ export default async function ListingPage({ params }: { params: { id: string } }
 
           {/* CTAs */}
           <div className="flex flex-wrap gap-3 pt-1">
-            <a
+            <Link
               href={`/checkout?listing=${encodeURIComponent(String(listing.id))}`}
               className="inline-flex items-center justify-center rounded-md bg-yellow-500 px-5 py-2.5 font-semibold text-black hover:bg-yellow-600"
             >
               Buy now
-            </a>
-            <a
+            </Link>
+            <Link
               href={`/basket/add?listing=${encodeURIComponent(String(listing.id))}`}
               className="inline-flex items-center justify-center rounded-md border border-gray-500 bg-white px-5 py-2.5 text-gray-900 hover:bg-gray-100"
             >
               Add to basket
-            </a>
+            </Link>
 
             {/* Make Offer (auto-disables on own listing via component logic) */}
             <MakeOfferButton
@@ -192,6 +201,13 @@ export default async function ListingPage({ params }: { params: { id: string } }
               listingId={listing.id}
               listingTitle={listing.title}
               listingImage={gallery[0] || listing.image}
+            />
+
+            {/* Contact Seller (auto-disables on own listing) */}
+            <ContactSellerButton
+              sellerName={listing.seller?.name || "Seller"}
+              listingId={listing.id}
+              listingTitle={listing.title}
             />
 
             {/* Report listing (Trust & Safety MVP) */}
@@ -236,9 +252,10 @@ export default async function ListingPage({ params }: { params: { id: string } }
           {/* Seller card */}
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <div className="flex items-center justify-between gap-3">
-              {/* Avatar + name clickable to /profile/[username] */}
+              {/* Avatar + name clickable; prefers /profile/{id} if sellerId present */}
               <SellerLink
                 sellerName={listing.seller.name}
+                sellerId={listing.sellerId}
                 className="flex items-center gap-3 group"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -255,14 +272,14 @@ export default async function ListingPage({ params }: { params: { id: string } }
                 </div>
               </SellerLink>
 
-              <a
+              <Link
                 href={`/messages/new?to=${encodeURIComponent(listing.seller.name)}&ref=${encodeURIComponent(
                   String(listing.id)
                 )}`}
                 className="rounded-md bg-gray-900 px-3 py-2 text-sm text-white hover:bg-black"
               >
                 Message seller
-              </a>
+              </Link>
             </div>
           </div>
 

@@ -3,16 +3,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Upload, X, HelpCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { uploadImage } from '@/lib/storage';
+import { createListing } from '@/lib/listingsService';
+import { VEHICLES as VEHICLES_FALLBACK } from '@/data/vehicles';
 
 type Category = "OEM" | "Aftermarket" | "Tool" | "";
 type Condition = "New" | "Used - Like New" | "Used - Good" | "Used - Fair";
+type PartType = "" | "Engine" | "Transmission" | "Brakes" | "Suspension" | "Exhaust" | "Body" | "Interior" | "Electrical" | "Wheels" | "Lighting" | "Cooling" | "Fuel System" | "Other";
+type ShippingOption = "collection" | "delivery" | "both";
 
 type Img = { id: string; file: File; url: string };
 
-const MAKES = [
-  "Vauxhall","Volkswagen","Audi","BMW","Ford","Mercedes-Benz","Toyota","Honda",
-  "Nissan","Peugeot","Renault","Škoda","SEAT","Mazda","MINI","Volvo","Kia","Hyundai"
-];
+type VehiclesMap = Record<string, string[]>;
 
 export default function SellPage() {
   const router = useRouter();
@@ -20,6 +22,7 @@ export default function SellPage() {
   // ---- Form state ----
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<Category>("");
+  const [partType, setPartType] = useState<PartType>("");
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
   const [genCode, setGenCode] = useState("");
@@ -27,30 +30,22 @@ export default function SellPage() {
   const [yearFrom, setYearFrom] = useState<number | undefined>();
   const [yearTo, setYearTo] = useState<number | undefined>();
   const [oem, setOem] = useState("");
-  const [vin, setVin] = useState("");
   const [condition, setCondition] = useState<Condition>("Used - Good");
   const [price, setPrice] = useState<string>("");
+  const [quantity, setQuantity] = useState<number>(1);
+  const [postcode, setPostcode] = useState("");
+  const [shippingOption, setShippingOption] = useState<ShippingOption>("both");
+  const [acceptsReturns, setAcceptsReturns] = useState(false);
+  const [returnDays, setReturnDays] = useState<number>(14);
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<Img[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [vehicles, setVehicles] = useState<VehiclesMap>(VEHICLES_FALLBACK);
+  const [detailed, setDetailed] = useState<DetailedVehicles | null>(null);
 
   const dropRef = useRef<HTMLLabelElement>(null);
-
-  // ---- Step 3: ensure a local identity (owner) ----
-  useEffect(() => {
-    let uid = localStorage.getItem("ms_user_id");
-    let uname = localStorage.getItem("ms_user_name");
-    if (!uid) {
-      uid = `user_${crypto.randomUUID()}`;
-      localStorage.setItem("ms_user_id", uid);
-    }
-    if (!uname) {
-      uname = "You";
-      localStorage.setItem("ms_user_name", uname);
-    }
-  }, []);
 
   // ---- Derived ----
   const isVehicleSpecific = category !== "Tool" && category !== "";
@@ -60,8 +55,28 @@ export default function SellPage() {
     if (!price || Number.isNaN(Number(price))) return false;
     if (images.length === 0) return false; // require at least one image
     if (isVehicleSpecific && !make.trim() && !model.trim() && !oem.trim()) return false;
+    // If model provided, ensure it exists for selected make
+    if (model && (!make || !(vehicles[make] || []).includes(model))) return false;
     return true;
   }, [title, category, price, images.length, isVehicleSpecific, make, model, oem]);
+
+  // Load makes/models dataset (runtime override)
+  useEffect(() => {
+    let active = true;
+    fetch('/vehicles.json')
+      .then(r => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!active || !data) return;
+        setVehicles(data as VehiclesMap);
+      })
+      .catch(() => {/* ignore - fallback stays */});
+    // Try load detailed dataset (optional)
+    fetch('/vehicles-detailed.json')
+      .then(r => (r.ok ? r.json() : null))
+      .then((data) => { if (active && data) setDetailed(data); })
+      .catch(() => {/* optional */});
+    return () => { active = false; };
+  }, []);
 
   // ---- Image handling ----
   function onPickFiles(list: FileList | null) {
@@ -117,42 +132,48 @@ export default function SellPage() {
     setErrorMsg(null);
 
     if (!canSubmit) {
-      setErrorMsg("Please fill in required fields and add at least one photo.");
+      if (model && (!make || !(vehicles[make] || []).includes(model))) {
+        setErrorMsg("Selected model is not valid for the chosen make.");
+      } else {
+        setErrorMsg("Please fill in required fields and add at least one photo.");
+      }
       return;
     }
 
     setSubmitting(true);
     try {
-      const fd = new FormData();
-      fd.append("title", title.trim());
-      fd.append("category", category);
-      fd.append("make", make.trim());
-      fd.append("model", model.trim());
-      fd.append("genCode", genCode.trim());
-      fd.append("engine", engine.trim());
-      if (yearFrom) fd.append("yearFrom", String(yearFrom));
-      if (yearTo) fd.append("yearTo", String(yearTo));
-      fd.append("oem", oem.trim());
-      fd.append("vin", vin.trim());
-      fd.append("condition", condition);
-      fd.append("price", price.trim());
-      fd.append("description", description.trim());
-      images.forEach((img) => fd.append("images", img.file, img.file.name));
+      // First upload all images to Supabase storage
+      const uploadedUrls = await Promise.all(
+        images.map((img: Img) => uploadImage(img.file))
+      );
 
-      // ---- Step 3: include ownerId + sellerName in POST ----
-      const ownerId = localStorage.getItem("ms_user_id") || "";
-      const sellerName = localStorage.getItem("ms_user_name") || "You";
-      fd.append("ownerId", ownerId);
-      fd.append("sellerName", sellerName);
-
-      const res = await fetch("/api/listings", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Failed to create listing");
+      // Create the listing with uploaded image URLs
+      const listing = await createListing({
+        title: title.trim(),
+        category,
+        part_type: partType || undefined,
+        make: make.trim(),
+        model: model.trim(),
+        year: yearFrom,
+        price: parseFloat(price),
+        quantity,
+        postcode: postcode.trim() || undefined,
+        shipping_option: shippingOption,
+        accepts_returns: acceptsReturns,
+        return_days: acceptsReturns ? returnDays : undefined,
+        condition,
+        description: description.trim(),
+        images: uploadedUrls
+      });
 
       setSubmitted(true);
-      router.push(`/listing/${data.id}`);
-    } catch (err: any) {
-      setErrorMsg(err?.message || "Something went wrong. Please try again.");
+      
+      // Show success message briefly before redirecting
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      router.push(`/listing/${listing.id}`);
+    } catch (err) {
+      console.error('Error creating listing:', err);
+      setErrorMsg(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -181,21 +202,48 @@ export default function SellPage() {
             <p className="mt-1 text-xs text-gray-600">Clear & specific titles sell faster.</p>
           </div>
 
-          {/* Category */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
-            <select
-              name="category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value as Category)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              required
-            >
-              <option value="">Select a category</option>
-              <option value="OEM">OEM</option>
-              <option value="Aftermarket">Aftermarket</option>
-              <option value="Tool">Tool / Accessory</option>
-            </select>
+          {/* Category & Part Type */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+              <select
+                name="category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value as Category)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                required
+              >
+                <option value="">Select a category</option>
+                <option value="OEM">OEM</option>
+                <option value="Aftermarket">Aftermarket</option>
+                <option value="Tool">Tool / Accessory</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Part Type</label>
+              <select
+                name="partType"
+                value={partType}
+                onChange={(e) => setPartType(e.target.value as PartType)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              >
+                <option value="">Select type (optional)</option>
+                <option value="Engine">Engine</option>
+                <option value="Transmission">Transmission</option>
+                <option value="Brakes">Brakes</option>
+                <option value="Suspension">Suspension</option>
+                <option value="Exhaust">Exhaust</option>
+                <option value="Body">Body Panels</option>
+                <option value="Interior">Interior</option>
+                <option value="Electrical">Electrical</option>
+                <option value="Wheels">Wheels & Tyres</option>
+                <option value="Lighting">Lighting</option>
+                <option value="Cooling">Cooling System</option>
+                <option value="Fuel System">Fuel System</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
           </div>
 
           {/* Fitment */}
@@ -204,47 +252,52 @@ export default function SellPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Make {isVehicleSpecific ? "(recommended)" : "(optional)"}
               </label>
-              <input
-                type="text"
+              <select
                 name="make"
-                list="makes"
                 value={make}
-                onChange={(e) => setMake(e.target.value)}
-                placeholder="e.g., Vauxhall"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                onChange={(e) => { setMake(e.target.value); setModel(""); }}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
                 disabled={!isVehicleSpecific}
-              />
-              <datalist id="makes">
-                {MAKES.map((m) => <option key={m} value={m} />)}
-              </datalist>
+              >
+                <option value="">Select a make</option>
+                {Object.keys(vehicles).sort().map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Model {isVehicleSpecific ? "(recommended)" : "(optional)"}
               </label>
-              <input
-                type="text"
+              <select
                 name="model"
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                placeholder="e.g., Astra"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                disabled={!isVehicleSpecific}
-              />
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                disabled={!isVehicleSpecific || !make}
+              >
+                <option value="">{make ? "Select a model" : "Select a make first"}</option>
+                {(vehicles[make] || []).map((mdl) => (
+                  <option key={mdl} value={mdl}>{mdl}</option>
+                ))}
+              </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Generation</label>
-              <input
-                type="text"
+              <select
                 name="genCode"
                 value={genCode}
                 onChange={(e) => setGenCode(e.target.value)}
-                placeholder="e.g., J / Mk7 / 8V"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                disabled={!isVehicleSpecific}
-              />
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                disabled={!isVehicleSpecific || !make || !model || !getGenOptions(detailed, make, model).length}
+              >
+                <option value="">{!make || !model ? "Select make & model first" : (getGenOptions(detailed, make, model).length ? "Select a generation (optional)" : "No generations available")}</option>
+                {getGenOptions(detailed, make, model).map((g: string) => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -289,8 +342,8 @@ export default function SellPage() {
             </div>
           </div>
 
-          {/* OEM / VIN */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          {/* OEM / Quantity */}
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_140px] gap-4 mt-4">
             <div>
               <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-1">
                 OEM / Part Number <HelpCircle className="h-4 w-4 text-gray-400" />
@@ -305,16 +358,15 @@ export default function SellPage() {
               />
             </div>
             <div>
-              <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-1">
-                VIN (optional) <HelpCircle className="h-4 w-4 text-gray-400" />
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
               <input
-                type="text"
-                name="vin"
-                value={vin}
-                onChange={(e) => setVin(e.target.value)}
-                placeholder="e.g., W0Lxxxxxx..."
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                type="number"
+                name="quantity"
+                inputMode="numeric"
+                min={1}
+                value={quantity}
+                onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
               />
             </div>
           </div>
@@ -354,6 +406,75 @@ export default function SellPage() {
                 />
               </div>
             </div>
+          </div>
+
+          {/* Location & Shipping */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Location (Postcode)
+              </label>
+              <input
+                type="text"
+                name="postcode"
+                value={postcode}
+                onChange={(e) => setPostcode(e.target.value.toUpperCase())}
+                placeholder="e.g., SW1A 1AA"
+                maxLength={8}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              />
+              <p className="mt-1 text-xs text-gray-600">Helps buyers estimate shipping costs</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Options *</label>
+              <select
+                name="shippingOption"
+                value={shippingOption}
+                onChange={(e) => setShippingOption(e.target.value as ShippingOption)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                required
+              >
+                <option value="both">Collection or Delivery</option>
+                <option value="collection">Collection Only</option>
+                <option value="delivery">Delivery Only</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Returns Policy */}
+          <div className="mt-4 border border-gray-200 rounded-lg p-4 bg-gray-50">
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                id="acceptsReturns"
+                checked={acceptsReturns}
+                onChange={(e) => setAcceptsReturns(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-gray-300 text-yellow-500 focus:ring-yellow-400"
+              />
+              <div className="flex-1">
+                <label htmlFor="acceptsReturns" className="block text-sm font-medium text-gray-700 cursor-pointer">
+                  Accept returns
+                </label>
+                <p className="text-xs text-gray-600 mt-0.5">Buyers can return within a set number of days</p>
+              </div>
+            </div>
+
+            {acceptsReturns && (
+              <div className="mt-3 ml-7">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Return window (days)</label>
+                <select
+                  name="returnDays"
+                  value={returnDays}
+                  onChange={(e) => setReturnDays(Number(e.target.value))}
+                  className="w-40 border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                >
+                  <option value={7}>7 days</option>
+                  <option value={14}>14 days</option>
+                  <option value={30}>30 days</option>
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Description */}
@@ -432,21 +553,7 @@ export default function SellPage() {
           >
             {submitting ? "Listing…" : "List Item"}
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              localStorage.setItem(
-                "sell-draft",
-                JSON.stringify({
-                  title, category, make, model, genCode, engine, yearFrom, yearTo,
-                  oem, vin, condition, price, description
-                })
-              );
-            }}
-            className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-900 hover:bg-gray-100"
-          >
-            Save Draft (local)
-          </button>
+          {/* Draft feature will be implemented with Supabase */}
         </div>
 
         {/* Success message */}
@@ -458,4 +565,25 @@ export default function SellPage() {
       </form>
     </section>
   );
+}
+
+type DetailedModel = {
+  name: string;
+  production?: Array<{ code?: string | null }>;
+  oem_part_prefixes?: Array<string | null>;
+};
+
+type DetailedMake = { models?: DetailedModel[] };
+type DetailedVehicles = Record<string, DetailedMake | undefined>;
+
+function getGenOptions(detailed: DetailedVehicles | null, make: string, model: string): string[] {
+  try {
+    if (!detailed || !make || !model) return [];
+    const m = detailed[make]?.models?.find((x) => x.name === model);
+    if (!m) return [];
+    const codes = new Set<string>();
+    (m.production || []).forEach((p) => { if (p?.code) codes.add(String(p.code)); });
+    (m.oem_part_prefixes || []).forEach((c) => { if (c) codes.add(String(c)); });
+    return Array.from(codes).sort();
+  } catch { return []; }
 }

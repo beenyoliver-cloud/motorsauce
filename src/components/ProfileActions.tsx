@@ -3,14 +3,14 @@
 
 import { useRouter } from "next/navigation";
 import { MessageSquare, Share2 } from "lucide-react";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUserSync } from "@/lib/auth";
 import { slugify, upsertThreadForPeer } from "@/lib/chatStore";
 
 type ProfileActionsProps = {
   shareText: string;
   shareUrl: string;
   toUsername: string;        // e.g. "OliverB"
-  toUserEmail: string;       // STABLE peerId (required) e.g. "beenyoliver@gmail.com"
+  toUserEmail?: string;      // STABLE peerId (optional) e.g. "beenyoliver@gmail.com"
 };
 
 export default function ProfileActions({
@@ -32,18 +32,18 @@ export default function ProfileActions({
   }
 
   function handleMessage() {
-    const me = getCurrentUser();
+    const me = getCurrentUserSync();
     const selfName = (me?.name || "You").trim();
 
     // direct profile chat (no listingRef)
     const threadId = `t_${slugify(selfName)}_${slugify(toUsername)}`;
 
     // Ensure the thread exists with *email* peerId
-    upsertThreadForPeer(selfName, toUsername, {
-      preferThreadId: threadId,
-      initialLast: "New conversation",
-      peerId: toUserEmail, // ← stable peer id (email)
-    });
+      upsertThreadForPeer(selfName, toUsername, {
+        preferThreadId: threadId,
+        initialLast: "New conversation",
+        peerId: toUserEmail || toUsername,
+      });
 
     router.push(`/messages/${encodeURIComponent(threadId)}`);
   }

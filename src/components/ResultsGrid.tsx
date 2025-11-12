@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import SafeImage from "@/components/SafeImage";
 import FavoriteButton from "@/components/FavoriteButton";
-import { useSearchParams } from "next/navigation";
 import { getSelectedCarId, loadMyCars, vehicleLabel } from "@/lib/garage";
 import { isListingHidden } from "@/lib/moderationStore";
 
@@ -21,9 +20,15 @@ type Listing = {
 };
 
 export default function ResultsGrid() {
-  const sp = useSearchParams();
+  const [sp, setSp] = useState(() => new URLSearchParams(typeof window !== 'undefined' ? window.location.search : ""));
   const [all, setAll] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const onPop = () => setSp(new URLSearchParams(window.location.search));
+    window.addEventListener("popstate", onPop as EventListener);
+    return () => window.removeEventListener("popstate", onPop as EventListener);
+  }, []);
 
   const q = (sp.get("q") || "").trim();
   const category = sp.get("category") || "";

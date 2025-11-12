@@ -2,8 +2,11 @@
 import { NextResponse } from "next/server";
 import { store, upsertPeer, addMessage, Message } from "../../_lib/mem"; // ← relative
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
-  const peerId = decodeURIComponent(params.id);
+type RouteContext = { params: Promise<{ id: string }> };
+
+export async function GET(req: Request, ctx: RouteContext) {
+  const params = await ctx.params;
+  const peerId = decodeURIComponent(params.id || "");
   const url = new URL(req.url);
   const wantMessages = url.searchParams.has("messages");
 
@@ -17,8 +20,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   return NextResponse.json({ messages: items });
 }
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
-  const peerId = decodeURIComponent(params.id);
+export async function POST(req: Request, ctx: RouteContext) {
+  const params = await ctx.params;
+  const peerId = decodeURIComponent(params.id || "");
   const body = await req.json();
 
   // TODO: replace with real auth

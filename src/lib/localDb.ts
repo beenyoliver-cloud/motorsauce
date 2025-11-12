@@ -1,70 +1,29 @@
 // src/lib/localDb.ts
-import fs from "fs/promises";
-import path from "path";
+// Previously this file wrote/read `src/data/local.listings.json` on disk.
+// The app now uses Supabase for listings storage. Keep this module as
+// a small compatibility shim that forwards calls to the Supabase-backed
+// listings service.
 
-export type Listing = {
-  id: string;
-  title: string;
-  price: string; // e.g., "£120" or "£49.99"
-  image: string; // main image url (e.g., /uploads/xxxx.jpg)
-  images?: string[];
-  category: "OEM" | "Aftermarket" | "Tool";
-  condition: "New" | "Used - Like New" | "Used - Good" | "Used - Fair";
-  make?: string;
-  model?: string;
-  genCode?: string;
-  engine?: string;
-  year?: number;
-  oem?: string;
-  description?: string;
-  createdAt: string;
-  seller: {
-    name: string;
-    avatar: string;
-    rating: number;
-  };
-  vin?: string;
-  yearFrom?: number;
-  yearTo?: number;
+import * as listingsService from './listingsService';
 
-  // NEW: who owns this listing locally
-  ownerId?: string;
-};
-
-const DB_PATH = path.join(process.cwd(), "src", "data", "local.listings.json");
-const UPLOADS_DIR = path.join(process.cwd(), "public", "uploads");
-
-export async function ensureUploadsDir() {
-  await fs.mkdir(UPLOADS_DIR, { recursive: true });
-}
-
-async function ensureDbFile() {
-  try {
-    await fs.access(DB_PATH);
-  } catch {
-    await fs.mkdir(path.dirname(DB_PATH), { recursive: true });
-    await fs.writeFile(DB_PATH, "[]", "utf8");
-  }
-}
+export type Listing = listingsService.Listing;
 
 export async function readLocalListings(): Promise<Listing[]> {
-  await ensureDbFile();
-  const raw = await fs.readFile(DB_PATH, "utf8");
-  try {
-    return JSON.parse(raw) as Listing[];
-  } catch {
-    return [];
-  }
+  return listingsService.getListings();
 }
 
-export async function writeLocalListings(all: Listing[]) {
-  await ensureDbFile();
-  await fs.writeFile(DB_PATH, JSON.stringify(all, null, 2), "utf8");
+export async function writeLocalListings(_: Listing[]) {
+  // no-op: persisted in Supabase. If you need to bulk-write, use
+  // listingsService.createListing / updateListing per-item.
+  return;
 }
 
 export async function addLocalListing(item: Listing): Promise<Listing> {
-  const all = await readLocalListings();
-  all.unshift(item); // newest first
-  await writeLocalListings(all);
-  return item;
+  // create in Supabase and return created row
+  return listingsService.createListing(item);
+}
+
+export async function ensureUploadsDir() {
+  // not applicable on serverless; storage is handled via Supabase Storage
+  return;
 }

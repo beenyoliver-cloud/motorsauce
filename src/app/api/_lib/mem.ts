@@ -34,11 +34,16 @@ type Store = {
   peers: Record<string, Peer>;
 };
 
-const g = globalThis as any;
-if (!g.__msStore) {
-  g.__msStore = { messagesByPeer: {}, peers: {} } as Store;
+// Augment global to avoid any
+declare global {
+  // eslint-disable-next-line no-var
+  var __msStore: Store | undefined;
 }
-export const store: Store = g.__msStore as Store;
+
+if (!globalThis.__msStore) {
+  globalThis.__msStore = { messagesByPeer: {}, peers: {} };
+}
+export const store: Store = globalThis.__msStore;
 
 export function upsertPeer(id: string, name?: string) {
   if (!store.peers[id]) {

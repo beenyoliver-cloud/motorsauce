@@ -1,13 +1,18 @@
 // src/app/auth/login/page.tsx
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { loginWithEmail } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
-  const sp = useSearchParams();
+  const [sp, setSp] = useState(() => new URLSearchParams(typeof window !== 'undefined' ? window.location.search : ""));
+  useEffect(() => {
+    const onPop = () => setSp(new URLSearchParams(window.location.search));
+    window.addEventListener("popstate", onPop as EventListener);
+    return () => window.removeEventListener("popstate", onPop as EventListener);
+  }, []);
   const next = sp.get("next") || "";
 
   const [email, setEmail] = useState("");
@@ -24,10 +29,38 @@ export default function LoginPage() {
 
     try {
       setBusy(true);
-      const user = await loginWithEmail(email, pw);
-      router.replace(next || `/profile/${encodeURIComponent(user.name)}`);
-    } catch (e: any) {
-      setErr(e?.message || "Sign in failed.");
+      
+      // First, use server-side login to set cookies for middleware
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password: pw }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        setErr(data.error || 'Login failed. Please try again.');
+        return;
+      }
+
+      if (!data.user) {
+        setErr("Login failed. Please try again.");
+        return;
+      }
+
+      // Also do client-side login to update cache immediately
+      const { user: clientUser } = await loginWithEmail(email, pw);
+      
+      // Dispatch auth event to update UI
+      window.dispatchEvent(new Event("ms:auth"));
+      
+      // Use router.replace for smooth navigation without full reload
+      router.replace(next || `/profile/${encodeURIComponent(data.user.name)}`);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Sign in failed.");
     } finally {
       setBusy(false);
     }

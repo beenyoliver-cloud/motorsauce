@@ -4,7 +4,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUserSync } from "@/lib/auth";
 import { formatGBP } from "@/lib/currency";
 
 type OrderItem = {
@@ -29,7 +29,7 @@ type Order = {
 const KEY = "ms:orders:v1";
 
 export default function OrdersPage() {
-  const me = getCurrentUser();
+  const me = getCurrentUserSync();
   const myName = (me?.name || "You").trim();
   const [orders, setOrders] = useState<Order[]>([]);
 

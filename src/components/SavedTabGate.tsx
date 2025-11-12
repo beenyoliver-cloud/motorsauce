@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
-import { getCurrentUser, isMe } from "@/lib/auth";
+import { getCurrentUserSync, isMe } from "@/lib/auth";
 import MySavedTab from "@/components/MySavedTab";
 
 /** Simple tab link */
@@ -33,8 +33,8 @@ export default function SavedTabGate({
   const [me, setMe] = useState(false);
 
   useEffect(() => {
-    setMe(isMe(sellerName));
-    getCurrentUser() ?? null;
+    isMe(sellerName).then(setMe);
+    getCurrentUserSync() ?? null;
   }, [sellerName]);
 
   const listingsLabel = useMemo(

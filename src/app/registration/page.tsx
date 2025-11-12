@@ -229,7 +229,7 @@ function matchesListing(listing: Listing, vehicle: Vehicle) {
         sameOrUnknown(c.engine, vehicle.engine) &&
         (c.years && c.years.length
           ? c.years.some((y) => (userYears || []).includes(y))
-          : yearsOverlap({ yearFrom: yf, yearTo: yt } as any, userYears))
+          : yearsOverlap({ yearFrom: yf, yearTo: yt }, userYears))
       );
     });
     if (!ok) return false;

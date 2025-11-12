@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import SafeImage from "@/components/SafeImage";
@@ -81,7 +81,7 @@ function readFavouriteGarage():
 }
 
 /* ---------- Page ---------- */
-export default function SearchPage() {
+function SearchPageInner() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [all, setAll] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -344,5 +344,13 @@ export default function SearchPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-sm text-gray-600">Loading search interface…</div>}>
+      <SearchPageInner />
+    </Suspense>
   );
 }

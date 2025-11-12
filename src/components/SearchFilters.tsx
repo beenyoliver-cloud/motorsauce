@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getSelectedCarId, loadMyCars, vehicleLabel } from "@/lib/garage";
 
@@ -13,7 +13,13 @@ export default function SearchFilters({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const sp = useSearchParams();
+  const [sp, setSp] = useState(() => new URLSearchParams(typeof window !== 'undefined' ? window.location.search : ""));
+
+  useEffect(() => {
+    const onPop = () => setSp(new URLSearchParams(window.location.search));
+    window.addEventListener("popstate", onPop as EventListener);
+    return () => window.removeEventListener("popstate", onPop as EventListener);
+  }, []);
 
   const [q, setQ] = useState(initialQ);
   const category = sp.get("category") || "";

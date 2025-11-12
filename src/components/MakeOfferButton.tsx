@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUserSync } from "@/lib/auth";
 import { createOffer } from "@/lib/offersStore";
 import {
   slugify,
@@ -16,7 +16,7 @@ import { displayName } from "@/lib/names";
 
 type MakeOfferButtonProps = {
   sellerName: string;          // e.g. "OliverB"
-  sellerEmail: string;         // STABLE peerId (required) e.g. "beenyoliver@gmail.com"
+  sellerEmail?: string;        // STABLE peerId (optional) e.g. "beenyoliver@gmail.com"
   listingId: string | number;
   listingTitle: string;
   listingImage?: string;
@@ -33,7 +33,7 @@ export default function MakeOfferButton({
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState<string>("");
 
-  const me = getCurrentUser();
+  const me = getCurrentUserSync();
   const buyerName = me?.name?.trim() || "You";
   const buyerId = String(me?.email || me?.id || me?.name || ""); // use my email first for stability
 
@@ -52,11 +52,11 @@ export default function MakeOfferButton({
     if (!Number.isFinite(pounds) || pounds <= 0) return;
 
     // 1) Ensure the thread exists and bind the seller's *email* as peerId
-    upsertThreadForPeer(buyerName, sellerName, {
-      preferThreadId: threadId,
-      initialLast: `Offer: £${pounds.toFixed(2)}`,
-      peerId: sellerEmail, // ← stable peer id (email)
-    });
+      upsertThreadForPeer(buyerName, sellerName, {
+        preferThreadId: threadId,
+        initialLast: `Offer: £${pounds.toFixed(2)}`,
+        peerId: sellerEmail || sellerName, // fallback to name if no stable id available
+      });
 
     // 2) System line
     appendMessage(threadId, {
@@ -88,9 +88,9 @@ export default function MakeOfferButton({
       starter: buyerName,
       starterId: buyerId,
       recipient: sellerName,
-      recipientId: sellerEmail, // ← make the recipient the seller's email
+  recipientId: sellerEmail || sellerName, // ← make the recipient the seller's email (fallback to name)
       buyerId,
-      sellerId: sellerEmail,
+  sellerId: sellerEmail || sellerName,
       listingId,
       listingTitle,
       listingImage,

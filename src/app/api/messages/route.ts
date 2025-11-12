@@ -16,8 +16,8 @@ export async function GET() {
     // You can refine which name to show here if needed
     return {
       id: t.id,
-      name: t.b,
-      avatar: undefined,
+      name: t.peer || t.self || "Unknown",
+      avatar: t.peerAvatar,
       lastSnippet,
       lastMessageAt: new Date(t.lastTs).toISOString(),
     };

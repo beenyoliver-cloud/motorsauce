@@ -112,7 +112,7 @@ function Row({ item }: { item: CartItem }) {
   const [qty, setQty] = useState(item.qty);
   useEffect(() => setQty(item.qty), [item.qty]);
 
-  const img = resolveListingImage(item as any);
+  const img = resolveListingImage({ image: item.image, images: undefined, listingImage: undefined });
 
   return (
     <li className="p-3 flex gap-3 items-center">

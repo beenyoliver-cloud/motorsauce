@@ -1,12 +1,18 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function FiltersPanel() {
   const router = useRouter();
-  const sp = useSearchParams();
   const pathname = usePathname();
+  const [sp, setSp] = useState(() => new URLSearchParams(typeof window !== 'undefined' ? window.location.search : ""));
+
+  useEffect(() => {
+    const onPop = () => setSp(new URLSearchParams(window.location.search));
+    window.addEventListener("popstate", onPop as EventListener);
+    return () => window.removeEventListener("popstate", onPop as EventListener);
+  }, []);
 
   const [open, setOpen] = useState(false);
 

@@ -14,8 +14,8 @@ import { Star, MapPin, Store } from "lucide-react";
 
 /** Route types */
 type PageProps = {
-  params: { username: string };
-  searchParams?: { tab?: string; edit?: string };
+  params: Promise<{ username: string }>;
+  searchParams?: Promise<{ tab?: string; edit?: string }>;
 };
 
 function StarRow({ value }: { value: number }) {
@@ -34,18 +34,21 @@ function StarRow({ value }: { value: number }) {
   );
 }
 
-export function generateMetadata({ params }: PageProps): Metadata {
-  const displayName = decodeURIComponent(params.username);
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { username } = await params;
+  const displayName = decodeURIComponent(username);
   return {
     title: `${displayName} • Seller • Motorsauce`,
     description: `View ${displayName}'s listings on Motorsauce.`,
   };
 }
 
-export default function ProfilePage({ params, searchParams }: PageProps) {
-  const displayName = decodeURIComponent(params.username);
-  const activeTab = (searchParams?.tab ?? "my") as "saved" | "my" | "about" | "reviews";
-  const autoEdit = searchParams?.edit === "1";
+export default async function ProfilePage({ params, searchParams }: PageProps) {
+  const { username } = await params;
+  const sp = await searchParams;
+  const displayName = decodeURIComponent(username);
+  const activeTab = (sp?.tab ?? "my") as "saved" | "my" | "about" | "reviews";
+  const autoEdit = sp?.edit === "1";
   const baseHref = `/profile/${encodeURIComponent(displayName)}`;
 
   return (

@@ -1,6 +1,7 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const SORTS = [
   ["relevance", "Relevance"],
@@ -11,8 +12,14 @@ const SORTS = [
 
 export default function SortControl() {
   const router = useRouter();
-  const sp = useSearchParams();
   const pathname = usePathname();
+  const [sp, setSp] = useState(() => new URLSearchParams(typeof window !== 'undefined' ? window.location.search : ""));
+
+  useEffect(() => {
+    const onPop = () => setSp(new URLSearchParams(window.location.search));
+    window.addEventListener("popstate", onPop as EventListener);
+    return () => window.removeEventListener("popstate", onPop as EventListener);
+  }, []);
 
   const current = sp.get("sort") || "relevance";
 

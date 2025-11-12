@@ -155,7 +155,7 @@ export default function CheckoutPage() {
 
           <ul className="mb-3 divide-y divide-gray-100">
             {cart.items.map((it) => {
-              const img = resolveListingImage(it as any);
+              const img = resolveListingImage({ image: it.image, images: undefined, listingImage: undefined });
               return (
                 <li key={it.id} className="py-2 flex items-center gap-3">
                   <div className="h-14 w-16 rounded-md overflow-hidden border border-gray-200 bg-gray-50">

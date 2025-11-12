@@ -3,12 +3,12 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useMemo, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { clearCart } from "@/lib/cartStore";
 import { addSoldIds } from "@/lib/soldStore";
 import { formatGBP } from "@/lib/currency";
-import { listings } from "@/data/listings";
+// listings moved to Supabase; avoid synchronous local imports here
 
 type Snapshot = {
   orderRef: string;
@@ -40,22 +40,24 @@ const ORDERS_KEY = "ms:orders:v1";
 function resolveImage(it: { id: string; image?: string; images?: string[] }): string {
   if (it.image) return it.image;
   if (it.images && it.images.length) return it.images[0];
-  const match = listings.find((l) => l.id === it.id);
-  if (!match) return "/images/placeholder.png";
-  return (match.image as string) || (Array.isArray(match.images) ? match.images[0] : "") || "/images/placeholder.png";
+  // synchronous DB lookups are not available here; fall back to placeholder
+  return "/images/placeholder.png";
 }
 
 export default function CheckoutSuccessPage() {
   const router = useRouter();
-  const sp = useSearchParams();
-  const snapshot: Snapshot | null = useMemo(() => {
+  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+
+  // Parse the serialized snapshot from the query string on the client.
+  useEffect(() => {
     try {
-      const payload = sp.get("o");
-      return payload ? (JSON.parse(decodeURIComponent(payload)) as Snapshot) : null;
+      const params = new URLSearchParams(window.location.search);
+      const payload = params.get("o");
+      setSnapshot(payload ? (JSON.parse(decodeURIComponent(payload)) as Snapshot) : null);
     } catch {
-      return null;
+      setSnapshot(null);
     }
-  }, [sp]);
+  }, []);
 
   const orderRef = snapshot?.orderRef || "MS-ORDER";
   const committed = useRef(false);
@@ -68,7 +70,10 @@ export default function CheckoutSuccessPage() {
       if (snapshot) {
         const raw = localStorage.getItem(ORDERS_KEY);
         const orders = raw ? JSON.parse(raw) : [];
-        const exists = Array.isArray(orders) && orders.some((o: any) => o?.orderRef === snapshot.orderRef);
+        const exists = Array.isArray(orders) && orders.some((o: unknown) => {
+          const obj = (o && typeof o === "object" ? (o as Record<string, unknown>) : {});
+          return obj.orderRef === snapshot.orderRef;
+        });
         if (!exists) {
           orders.unshift({ id: snapshot.orderRef, ...snapshot });
           localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));

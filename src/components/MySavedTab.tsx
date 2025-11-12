@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import SafeImage from "@/components/SafeImage";
-import { getCurrentUser, nsKey } from "@/lib/auth";
+import { getCurrentUserSync, nsKey } from "@/lib/auth";
 
 type Listing = {
   id: string; title: string; price: string; image: string; images?: string[];
@@ -16,7 +16,7 @@ export default function MySavedTab() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const u = getCurrentUser();
+    const u = getCurrentUserSync();
     if (!u) {
       setIds([]);
       setLoading(false);
@@ -72,7 +72,7 @@ export default function MySavedTab() {
     );
   }
 
-  if (!getCurrentUser()) {
+  if (!getCurrentUserSync()) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-700">
         Saved items are private to your account.{" "}

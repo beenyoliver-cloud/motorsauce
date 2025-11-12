@@ -1,11 +1,12 @@
 // src/data/vehicles.ts
+// Extended makes & models loaded statically; alternative: fetch('/vehicles.json') if size grows.
 export const VEHICLES: Record<string, string[]> = {
-  Audi: ["A1", "A3", "A4", "A6", "Q3", "Q5"],
-  BMW: ["1 Series", "3 Series", "5 Series", "X1", "X3"],
-  Ford: ["Fiesta", "Focus", "Mondeo", "Kuga"],
-  Mercedes: ["A-Class", "C-Class", "E-Class", "GLA"],
-  Toyota: ["Yaris", "Corolla", "RAV4"],
-  Volkswagen: ["Polo", "Golf", "Passat", "Tiguan"],
+  "Audi": ["A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "Q2", "Q3", "Q5", "Q7", "Q8", "TT", "R8"],
+  "BMW": ["1 Series", "2 Series", "3 Series", "4 Series", "5 Series", "7 Series", "X1", "X2", "X3", "X4", "X5", "X6", "X7", "Z4"],
+  "Ford": ["Ka", "Fiesta", "Focus", "Mondeo", "Puma", "Kuga", "Galaxy", "S-MAX", "Ranger", "Transit"],
+  "Mercedes-Benz": ["A-Class", "B-Class", "C-Class", "E-Class", "S-Class", "CLA", "GLA", "GLC", "GLE", "GLS"],
+  "Toyota": ["Aygo", "Yaris", "Corolla", "Camry", "C-HR", "RAV4", "Highlander", "Land Cruiser", "Prius"],
+  "Volkswagen": ["up!", "Polo", "Golf", "Passat", "Arteon", "T-Roc", "Tiguan", "Touareg", "Touran", "Sharan"],
 };
 
 // Optional: year range helper (1990 → current)

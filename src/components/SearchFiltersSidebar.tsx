@@ -1,7 +1,8 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { VEHICLES as VEHICLES_FALLBACK } from "@/data/vehicles";
 
 type Props = {
   q: string;
@@ -23,6 +24,7 @@ type Props = {
 };
 
 const CATEGORIES: Array<"OEM" | "Aftermarket" | "Tool"> = ["OEM", "Aftermarket", "Tool"];
+const PART_TYPES = ["Engine", "Transmission", "Brakes", "Suspension", "Exhaust", "Body", "Interior", "Electrical", "Wheels", "Lighting", "Cooling", "Fuel System", "Other"];
 const GARAGE_KEYS = ["ms:garage:favourite", "garage:favourite", "ms_garage_favourite", "garage_favourite"] as const;
 
 function readFavouriteGarage():
@@ -50,20 +52,40 @@ function readFavouriteGarage():
 }
 
 export default function SearchFiltersSidebar(props: Props) {
-  const { makes, models, genCodes, engines, mobileOpen, onMobileClose } = props;
+  const { genCodes, engines, mobileOpen, onMobileClose } = props;
   const router = useRouter();
-  const sp = useSearchParams();
   const pathname = usePathname();
+  const sp = useSearchParams();
+  const [vehicles, setVehicles] = useState<Record<string, string[]>>(VEHICLES_FALLBACK);
+
+  // Load makes/models dataset (runtime override)
+  useEffect(() => {
+    let active = true;
+    fetch('/vehicles.json')
+      .then(r => (r.ok ? r.json() : null))
+      .then((data) => { if (active && data) setVehicles(data as Record<string, string[]>); })
+      .catch(() => {/* ignore */});
+    return () => { active = false; };
+  }, []);
 
   function setParam(key: string, value?: string) {
-    const params = new URLSearchParams(sp?.toString() || "");
+    const params = new URLSearchParams(sp.toString());
     if (value && value.trim() !== "") params.set(key, value.trim());
     else params.delete(key);
     router.push(`${pathname}?${params.toString()}`);
   }
 
+  function setMakeAndResetModel(make?: string) {
+    const params = new URLSearchParams(sp.toString());
+    if (make && make.trim() !== "") params.set("make", make.trim());
+    else params.delete("make");
+    // Reset model when make changes
+    params.delete("model");
+    router.push(`${pathname}?${params.toString()}`);
+  }
+
   function setGenBoth(val?: string) {
-    const params = new URLSearchParams(sp?.toString() || "");
+    const params = new URLSearchParams(sp.toString());
     if (val && val.trim() !== "") {
       params.set("gen", val.trim());
       params.set("genCode", val.trim());
@@ -94,13 +116,11 @@ export default function SearchFiltersSidebar(props: Props) {
     router.push(pathname);
     onMobileClose?.();
   }
-
-  // Close mobile drawer on route change
+  // Close mobile drawer when search params change (route change)
   useEffect(() => {
-    const unsub = () => onMobileClose?.();
-    return () => unsub();
+    onMobileClose?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sp.toString()]);
+  }, [sp]);
 
   const inputBase =
     "w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900";
@@ -152,35 +172,49 @@ export default function SearchFiltersSidebar(props: Props) {
           </div>
         </div>
 
+        {/* Part Type */}
+        <div>
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700">Part Type</div>
+          <select
+            value={sp.get("partType") || ""}
+            onChange={(e) => setParam("partType", e.target.value)}
+            className={inputBase}
+          >
+            <option value="">All types</option>
+            {PART_TYPES.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Vehicle */}
         <div>
           <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700">Vehicle</div>
           <div className="space-y-2">
-            <input
-              list="make-list"
-              defaultValue={sp.get("make") || ""}
-              onBlur={(e) => setParam("make", e.target.value)}
-              placeholder="Make (e.g. BMW)"
+            <select
+              value={sp.get("make") || ""}
+              onChange={(e) => setMakeAndResetModel(e.target.value)}
               className={inputBase}
-            />
-            <datalist id="make-list">
-              {makes.map((m) => (
-                <option key={m} value={m} />
+            >
+              <option value="">All makes</option>
+              {Object.keys(vehicles).sort().map((m) => (
+                <option key={m} value={m}>{m}</option>
               ))}
-            </datalist>
+            </select>
 
-            <input
-              list="model-list"
-              defaultValue={sp.get("model") || ""}
-              onBlur={(e) => setParam("model", e.target.value)}
-              placeholder="Model (e.g. 3 Series)"
+            <select
+              value={sp.get("model") || ""}
+              onChange={(e) => setParam("model", e.target.value)}
               className={inputBase}
-            />
-            <datalist id="model-list">
-              {models.map((m) => (
-                <option key={m} value={m} />
+              disabled={!sp.get("make")}
+            >
+              <option value="">{sp.get("make") ? "All models" : "Select a make first"}</option>
+              {(vehicles[sp.get("make") || ""] || []).map((m) => (
+                <option key={m} value={m}>{m}</option>
               ))}
-            </datalist>
+            </select>
 
             <input
               list="gen-list"
@@ -256,6 +290,56 @@ export default function SearchFiltersSidebar(props: Props) {
               className={`${numberBase} w-28`}
             />
           </div>
+        </div>
+
+        {/* Location */}
+        <div>
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700">Location</div>
+          <input
+            defaultValue={sp.get("postcode") || ""}
+            onBlur={(e) => setParam("postcode", e.target.value)}
+            placeholder="Postcode (e.g., SW1A 1AA)"
+            className={inputBase}
+          />
+        </div>
+
+        {/* Shipping Options */}
+        <div>
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700">Shipping</div>
+          <div className="grid gap-2">
+            <label className="flex items-center gap-2 text-sm text-gray-900">
+              <input
+                type="checkbox"
+                checked={sp.get("delivery") === "true"}
+                onChange={(e) => setParam("delivery", e.target.checked ? "true" : "")}
+                className="h-4 w-4 rounded"
+              />
+              Delivery available
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-900">
+              <input
+                type="checkbox"
+                checked={sp.get("collection") === "true"}
+                onChange={(e) => setParam("collection", e.target.checked ? "true" : "")}
+                className="h-4 w-4 rounded"
+              />
+              Collection available
+            </label>
+          </div>
+        </div>
+
+        {/* Returns */}
+        <div>
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700">Returns</div>
+          <label className="flex items-center gap-2 text-sm text-gray-900">
+            <input
+              type="checkbox"
+              checked={sp.get("acceptsReturns") === "true"}
+              onChange={(e) => setParam("acceptsReturns", e.target.checked ? "true" : "")}
+              className="h-4 w-4 rounded"
+            />
+            Accepts returns
+          </label>
         </div>
 
         {/* Actions */}

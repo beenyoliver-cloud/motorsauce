@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Heart } from "lucide-react";
-import { getCurrentUser, nsKey } from "@/lib/auth";
+import { getCurrentUserSync, nsKey } from "@/lib/auth";
 
 function readFavs(): string[] {
-  const u = getCurrentUser();
+  const u = getCurrentUserSync();
   if (!u) return []; // not signed in => nothing saved
   try {
     const raw = localStorage.getItem(nsKey("favs_v1"));
@@ -16,7 +16,7 @@ function readFavs(): string[] {
   }
 }
 function writeFavs(ids: string[]) {
-  const u = getCurrentUser();
+  const u = getCurrentUserSync();
   if (!u) return; // require sign-in to save
   const unique = Array.from(new Set(ids.map(String)));
   localStorage.setItem(nsKey("favs_v1"), JSON.stringify(unique));
@@ -49,7 +49,7 @@ export default function FavoriteButton({
   }, [id]);
 
   function requireAuth() {
-    const u = getCurrentUser();
+    const u = getCurrentUserSync();
     if (!u) {
       const next = encodeURIComponent(window.location.href);
       window.location.assign(`/auth/login?next=${next}`);

@@ -26,10 +26,10 @@ export default function ListingActions({
   const share = useCallback(async () => {
     try {
       const url = new URL(shareUrl, window.location.origin).toString();
-      // @ts-ignore - older TS libdom may not type navigator.share
-      if (navigator.share) {
-        // @ts-ignore
-        await navigator.share({ title: "Motorsauce listing", url });
+      type NavigatorShare = Navigator & { share?: (data: { title?: string; text?: string; url?: string }) => Promise<void> };
+      const nav = navigator as NavigatorShare;
+      if (typeof nav.share === "function") {
+        await nav.share({ title: "Motorsauce listing", url });
       } else {
         await navigator.clipboard.writeText(url);
         alert("Link copied to clipboard");

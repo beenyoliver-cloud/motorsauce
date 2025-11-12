@@ -1,8 +1,7 @@
 // src/lib/cartStore.ts
 "use client";
-
-import { listings } from "@/data/listings";
 import { parseGBP } from "./currency";
+import { getListingById, Listing } from "@/lib/listingsService";
 
 export type CartItem = {
   id: string;          // listing id
@@ -43,11 +42,12 @@ export function setShipping(method: Cart["shipping"]) {
   writeRaw(cart);
 }
 
-export function addToCartById(listingId: string, qty = 1) {
+export async function addToCartById(listingId: string, qty = 1) {
   const cart = getCart();
-  const l = listings.find((x) => x.id === listingId);
+  const l: Listing | null = await getListingById(listingId);
   if (!l) throw new Error("Listing not found");
-  const price = parseGBP(l.price);
+  // price in DB may be stored as number or string; attempt to parse
+  const price = typeof l.price === 'number' ? l.price : parseGBP(String(l.price || "0"));
   const idx = cart.items.findIndex((i) => i.id === l.id);
   if (idx >= 0) {
     cart.items[idx].qty += qty;
@@ -55,7 +55,7 @@ export function addToCartById(listingId: string, qty = 1) {
     cart.items.push({
       id: l.id,
       title: l.title,
-      image: l.image,
+      image: l.image || "/images/placeholder.png",
       price,
       seller: { name: l.seller?.name || "Seller" },
       qty,

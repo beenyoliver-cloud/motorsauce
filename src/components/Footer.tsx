@@ -1,8 +1,25 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { isAdmin } from "@/lib/admin";
 
 export default function Footer() {
+  const [isAdminUser, setIsAdminUser] = useState(false);
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const admin = await isAdmin();
+      setIsAdminUser(admin);
+    };
+    checkAdmin();
+    
+    // Re-check when auth changes
+    const onAuth = () => checkAdmin();
+    window.addEventListener("ms:auth", onAuth as EventListener);
+    return () => window.removeEventListener("ms:auth", onAuth as EventListener);
+  }, []);
+
   return (
     <footer className="bg-white border-t border-gray-200 mt-12">
       <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -37,6 +54,16 @@ export default function Footer() {
             <li><Link href="/contact" className="hover:text-yellow-500">Contact</Link></li>
             <li><Link href="/privacy" className="hover:text-yellow-500">Privacy Policy</Link></li>
             <li><Link href="/terms" className="hover:text-yellow-500">Terms of Service</Link></li>
+            {isAdminUser && (
+              <li>
+                <Link 
+                  href="/admin/dashboard" 
+                  className="hover:text-yellow-500 font-semibold text-yellow-600"
+                >
+                  🛠️ Admin Tools
+                </Link>
+              </li>
+            )}
           </ul>
         </div>
       </div>

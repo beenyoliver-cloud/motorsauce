@@ -1,12 +1,17 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { registerUser } from "@/lib/auth";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const sp = useSearchParams();
+  const [sp, setSp] = useState(() => new URLSearchParams(typeof window !== 'undefined' ? window.location.search : ""));
+  useEffect(() => {
+    const onPop = () => setSp(new URLSearchParams(window.location.search));
+    window.addEventListener("popstate", onPop as EventListener);
+    return () => window.removeEventListener("popstate", onPop as EventListener);
+  }, []);
   const next = sp.get("next") || "";
 
   const [name, setName] = useState("");
@@ -29,8 +34,8 @@ export default function RegisterPage() {
       setBusy(true);
       const user = await registerUser(name, email, pw);
       router.replace(next || `/profile/${encodeURIComponent(user.name)}`);
-    } catch (e: any) {
-      setErr(e?.message || "Could not register.");
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Could not register.");
     } finally {
       setBusy(false);
     }

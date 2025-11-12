@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   appendMessage,
   getReadThreads,
@@ -12,7 +12,7 @@ import {
   upsertThreadForPeer,
   loadThreads,
 } from "@/lib/chatStore";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUserSync } from "@/lib/auth";
 
 function slugify(x: string) {
   return x.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -20,10 +20,16 @@ function slugify(x: string) {
 
 export default function NewMessageRouter() {
   const router = useRouter();
-  const sp = useSearchParams();
+  const [sp, setSp] = useState(() => new URLSearchParams(typeof window !== 'undefined' ? window.location.search : ""));
 
   useEffect(() => {
-    const me = getCurrentUser();
+    const onPop = () => setSp(new URLSearchParams(window.location.search));
+    window.addEventListener("popstate", onPop as EventListener);
+    return () => window.removeEventListener("popstate", onPop as EventListener);
+  }, []);
+
+  useEffect(() => {
+    const me = getCurrentUserSync();
     const selfName = me?.name?.trim() || "You";
     const to = (sp.get("to") || "").trim();
     const body = (sp.get("body") || "").trim();

@@ -1,7 +1,7 @@
 // src/lib/garage.ts
 "use client";
 
-import { nsKey, isMe } from "@/lib/auth";
+import { nsKey } from "@/lib/auth";
 
 export type Car = {
   id: string;
@@ -31,13 +31,16 @@ export function loadMyCars(): Car[] {
     const raw = localStorage.getItem(K_CARS());
     const arr = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(arr)) return [];
-    return arr.map((c: any) => ({
-      id: String(c.id),
-      make: String(c.make || ""),
-      model: String(c.model || ""),
-      year: String(c.year || ""),
-      image: typeof c.image === "string" && c.image ? c.image : undefined,
-    }));
+    return arr.map((c) => {
+      const obj = (c && typeof c === "object" ? c : {}) as Record<string, unknown>;
+      return {
+        id: String(obj.id ?? ""),
+        make: String(obj.make ?? ""),
+        model: String(obj.model ?? ""),
+        year: String(obj.year ?? ""),
+        image: typeof obj.image === "string" && obj.image ? obj.image : undefined,
+      } satisfies Car;
+    });
   } catch {
     return [];
   }
@@ -72,17 +75,17 @@ export function setSelectedCarId(id: string | null) {
 export function isPublic(): boolean {
   return localStorage.getItem(K_VIS()) === "1";
 }
-export function setPublic(pub: boolean, username?: string) {
+export async function setPublic(pub: boolean, username?: string) {
   localStorage.setItem(K_VIS(), pub ? "1" : "0");
-  if (pub) publishPublicCopy(username);
-  else removePublicCopy(username);
+  if (pub) await publishPublicCopy(username);
+  else await removePublicCopy(username);
   window.dispatchEvent(new Event("ms:garage"));
 }
 
 /* --------- Public copy (for others to view) --------- */
-export function publishPublicCopy(username?: string) {
+export async function publishPublicCopy(username?: string) {
   try {
-    const u = username ?? currentUsername();
+    const u = username ?? await currentUsername();
     if (!u) return;
     const cars = loadMyCars();
     const selected = getSelectedCarId();
@@ -90,9 +93,9 @@ export function publishPublicCopy(username?: string) {
     localStorage.setItem(K_PUBLIC(u), JSON.stringify(payload));
   } catch {}
 }
-export function removePublicCopy(username?: string) {
+export async function removePublicCopy(username?: string) {
   try {
-    const u = username ?? currentUsername();
+    const u = username ?? await currentUsername();
     if (!u) return;
     localStorage.removeItem(K_PUBLIC(u));
   } catch {}
@@ -103,32 +106,39 @@ export function readPublicGarage(
   try {
     const raw = localStorage.getItem(K_PUBLIC(username));
     if (!raw) return null;
-    const obj = JSON.parse(raw);
+    const obj = JSON.parse(raw) as { cars?: unknown; selected?: unknown };
     if (!obj || typeof obj !== "object") return null;
-    const cars: Car[] = Array.isArray(obj.cars)
-      ? obj.cars.map((c: any) => ({
-          id: String(c.id),
-          make: String(c.make || ""),
-          model: String(c.model || ""),
-          year: String(c.year || ""),
-          image: typeof c.image === "string" && c.image ? c.image : undefined,
-        }))
+    const list = (obj as Record<string, unknown>).cars;
+    const cars: Car[] = Array.isArray(list)
+      ? (list as unknown[]).map((c) => {
+          const rec = (c && typeof c === "object" ? c : {}) as Record<string, unknown>;
+          return {
+            id: String(rec.id ?? ""),
+            make: String(rec.make ?? ""),
+            model: String(rec.model ?? ""),
+            year: String(rec.year ?? ""),
+            image: typeof rec.image === "string" && rec.image ? rec.image : undefined,
+          } satisfies Car;
+        })
       : [];
-    return { cars, selected: obj.selected ?? null };
+    const sel = (obj as Record<string, unknown>).selected;
+    return { cars, selected: (typeof sel === "string" || sel === null || typeof sel === "undefined") ? (sel as string | null | undefined) : null };
   } catch {
     return null;
   }
 }
 
 /* --------- Utils --------- */
-function currentUsername(): string | null {
+async function currentUsername(): Promise<string | null> {
   try {
-    const name = localStorage.getItem("ms_user_name");
-    return name || null;
+    const { getCurrentUser } = await import("./auth");
+    const user = await getCurrentUser();
+    return user?.name || null;
   } catch {
     return null;
   }
 }
+
 export function vehicleLabel(car?: Car | null) {
   if (!car) return "";
   const y = car.year?.trim();

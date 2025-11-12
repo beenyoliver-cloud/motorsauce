@@ -111,7 +111,11 @@ function Toggle({
 
 /* ----------------------------- Main component ---------------------------- */
 export default function MyGarageCard({ displayName }: { displayName: string }) {
-  const mine = isMe(displayName);
+  const [mine, setMine] = useState(false);
+
+  useEffect(() => {
+    isMe(displayName).then(setMine);
+  }, [displayName]);
 
   // owner state
   const [cars, setCars] = useState<CarType[]>([]);
@@ -218,8 +222,8 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
       const next = cars.map((c) => (c.id === id ? { ...c, image: dataUrl } : c));
       saveMyCars(next);
       setCars(next);
-    } catch (err: any) {
-      alert(err?.message || "Unable to use that image.");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Unable to use that image.");
     }
   }
 
@@ -254,8 +258,8 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
       const dataUrl = await readImageFile(file);
       setNewImage(dataUrl);
       setFormErr(null);
-    } catch (err: any) {
-      setFormErr(err?.message || "Unable to use that image.");
+    } catch (err) {
+      setFormErr(err instanceof Error ? err.message : "Unable to use that image.");
     }
   }
 

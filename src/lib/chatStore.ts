@@ -1,7 +1,7 @@
 // src/lib/chatStore.ts
 /* eslint-disable no-console */
 
-import { nsKey, getCurrentUser } from "@/lib/auth";
+import { nsKey, getCurrentUserSync } from "@/lib/auth";
 
 /* ======================= Types ======================= */
 export type OfferStatus =
@@ -63,11 +63,11 @@ const sanitize = (x: string) =>
 export const slugify = (x: string) => sanitize(x);
 
 function currentIdLike(): string {
-  const me = getCurrentUser();
+  const me = getCurrentUserSync();
   return String(me?.id || me?.email || me?.name || "anon");
 }
 function currentNameLike(): string {
-  const me = getCurrentUser();
+  const me = getCurrentUserSync();
   return String(me?.name || "You");
 }
 function suffixFor(idLike?: string | null) {
@@ -222,7 +222,7 @@ export function upsertThreadForPeer(
     peerId?: string; // stable peer id (e.g., email)
   }
 ): Thread {
-  const me = getCurrentUser();
+  const me = getCurrentUserSync();
   const selfId = String(me?.id || me?.email || me?.name || "anon");
   const peerId = opts?.peerId;
 
@@ -230,7 +230,7 @@ export function upsertThreadForPeer(
   const [p1, p2] = participantsKey(selfName, peerName);
   const idKey = opts?.preferThreadId || makeThreadId(selfName, peerName, opts?.listingRef);
 
-  let found =
+  const found =
     threads.find((t) => t.id === idKey) ||
     threads.find((t) => t.participants[0] === p1 && t.participants[1] === p2);
 
@@ -398,7 +398,7 @@ function mirrorUpdateToPeer(t: Thread, updatedMsg: ChatMessage) {
     if (updatedMsg.type === "offer" && updatedMsg.offer) {
       pt.last = `Offer: £${(updatedMsg.offer.amountCents / 100).toFixed(2)} (${updatedMsg.offer.status})`;
     } else if (updatedMsg.text) {
-      pt.last = msg.text!;
+      pt.last = updatedMsg.text!;
     }
     pt.lastTs = Math.max(pt.lastTs, updatedMsg.ts);
 
@@ -420,7 +420,7 @@ export function appendMessageOnce(threadId: string, msg: ChatMessage) {
   if (!t) { console.warn("appendMessageOnce: thread not found:", threadId); return; }
 
   if (!msg.fromId) {
-    const me = getCurrentUser();
+    const me = getCurrentUserSync();
     msg.fromId = String(me?.id || me?.email || me?.name || "");
   }
   if (!msg.from && msg.fromId && t.selfId === msg.fromId) msg.from = t.self || "You";
@@ -461,7 +461,7 @@ export function appendOfferMessage(
   offer: OfferContent,
   actorLabel?: string
 ) {
-  const me = getCurrentUser();
+  const me = getCurrentUserSync();
   const threads = loadThreads();
   const t = threads.find((x) => x.id === threadId);
 

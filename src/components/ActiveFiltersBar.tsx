@@ -1,12 +1,19 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { getSelectedCarId, loadMyCars, vehicleLabel } from "@/lib/garage";
+import { useState, useEffect } from "react";
 
 export default function ActiveFiltersBar() {
   const router = useRouter();
-  const sp = useSearchParams();
   const pathname = usePathname();
+  const [sp, setSp] = useState(() => new URLSearchParams(typeof window !== 'undefined' ? window.location.search : ""));
+
+  useEffect(() => {
+    const onPop = () => setSp(new URLSearchParams(window.location.search));
+    window.addEventListener("popstate", onPop as EventListener);
+    return () => window.removeEventListener("popstate", onPop as EventListener);
+  }, []);
 
   const category = sp.get("category") || "";
   const min = sp.get("min") || "";

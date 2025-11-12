@@ -13,6 +13,7 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import { getCurrentUser, LocalUser, nsKey } from "@/lib/auth";
+import { isAdmin } from "@/lib/admin";
 import CartDrawer from "@/components/CartDrawer";
 
 /* ===== Helpers ===== */
@@ -65,6 +66,8 @@ export default function Header() {
   const [avatar, setAvatar] = useState<string | null>(null);
   const [cartCount, setCartCount] = useState(0);
   const [cartOpen, setCartOpen] = useState(false);
+  const [isUserLoaded, setIsUserLoaded] = useState(false);
+  const [isAdminUser, setIsAdminUser] = useState(false);
 
   const categories = [
     ["OEM Parts", "/categories/oem"],
@@ -76,7 +79,18 @@ export default function Header() {
 
   // Auth
   useEffect(() => {
-    const refreshUser = () => setUser(getCurrentUser());
+    const refreshUser = async () => {
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
+      setIsUserLoaded(true);
+      if (currentUser) {
+        // Check admin status
+        const admin = await isAdmin();
+        setIsAdminUser(admin);
+      } else {
+        setIsAdminUser(false);
+      }
+    };
     refreshUser();
     window.addEventListener("ms:auth", refreshUser as EventListener);
     return () => window.removeEventListener("ms:auth", refreshUser as EventListener);
@@ -129,11 +143,12 @@ export default function Header() {
     ["My Messages", "/messages"],
     ["Previous Sales", "/sales"],
     ["My Reviews", "/reviews"],
+    ["Account Settings", "/settings"],
   ] as const;
 
   return (
     <nav className="w-full h-[55px] bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm fixed top-0 z-50">
-      <Link href="/" className="text-2xl font-extrabold text-yellow-500 tracking-tight">
+  <Link href="/" className="text-2xl font-extrabold text-yellow-500 tracking-tight">
         Motorsauce
       </Link>
 
@@ -142,8 +157,24 @@ export default function Header() {
         method="get"
         className="flex-1 flex justify-center px-4"
         role="search"
+        onSubmit={(e) => {
+          try {
+            const form = e.currentTarget as HTMLFormElement;
+            const fd = new FormData(form);
+            const q = String(fd.get("query") || "").trim();
+            if (!q) return;
+            const key = "ms:recent-searches";
+            const raw = localStorage.getItem(key);
+            const arr = raw ? JSON.parse(raw) : [];
+            // keep unique, most recent first, max 10
+            const next = [q, ...arr.filter((s: string) => s !== q)].slice(0, 10);
+            localStorage.setItem(key, JSON.stringify(next));
+          } catch (err) {
+            /* ignore */
+          }
+        }}
       >
-        <div className="flex items-center w-full max-w-xl border border-gray-300 rounded-full px-4 py-1 focus-within:ring-2 focus-within:ring-yellow-400 bg-white shadow-sm">
+  <div className="flex items-center w-full max-w-xl border border-gray-300 rounded-full px-4 py-1 focus-within:ring-2 focus-within:ring-yellow-400 bg-white shadow-sm">
           <SearchIcon className="text-gray-400 mr-2" size={18} aria-hidden="true" />
           <input
             type="text"
@@ -184,7 +215,7 @@ export default function Header() {
           </div>
         </div>
 
-        {user && (
+          {isUserLoaded && user && (
           <Link
             href="/sell"
             className="flex items-center gap-1 text-sm font-medium text-black hover:text-yellow-500 transition-colors"
@@ -192,7 +223,14 @@ export default function Header() {
             <PlusCircle size={16} /> Sell
           </Link>
         )}
-
+        {isUserLoaded && isAdminUser && (
+          <Link
+            href="/admin/dashboard"
+            className="flex items-center gap-1 text-sm font-medium text-black hover:text-yellow-500 transition-colors"
+          >
+            <User size={16} /> Admin
+          </Link>
+        )}
         <button
   onClick={() => setCartOpen(true)}
   className="relative flex items-center text-black hover:text-yellow-500 transition-colors"
@@ -200,7 +238,7 @@ export default function Header() {
 >
   <ShoppingCart size={20} />
   {cartCount > 0 && (
-    <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[11px] font-bold min-w-[18px] h-[18px] px-1">
+  <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[11px] font-bold min-w-[18px] h-[18px] px-1">
       {cartCount}
     </span>
   )}
@@ -208,19 +246,19 @@ export default function Header() {
 
         {/* Profile with dropdown */}
         <div className="relative group">
-          <Link href={profileHref} className="flex items-center gap-2 focus:outline-none">
+            <Link href={profileHref} className="flex items-center gap-2 focus:outline-none">
             <div className="h-9 w-9 rounded-full ring-2 ring-yellow-500 ring-offset-2 ring-offset-white overflow-hidden shrink-0">
-              {user && avatar ? (
+              {isUserLoaded && user && avatar ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={avatar} alt="" className="h-full w-full object-cover" />
               ) : (
                 <div className="h-full w-full bg-yellow-500 text-black flex items-center justify-center text-xs font-semibold">
-                  {user ? initials : <User size={18} />}
+                  {isUserLoaded && user ? initials : <User size={18} />}
                 </div>
               )}
             </div>
             <span className="text-sm font-medium text-black">
-              {user ? displayName : "Sign in"}
+              {isUserLoaded && user ? displayName : "Sign in"}
             </span>
             <ChevronDown size={14} className="text-gray-500" aria-hidden="true" />
           </Link>
@@ -232,7 +270,7 @@ export default function Header() {
                        transition-all duration-200 ease-out z-50"
             role="menu"
           >
-            {user ? (
+            {isUserLoaded && user ? (
               <>
                 {profileLinks.map(([name, href], i) => (
                   <Link
@@ -311,6 +349,16 @@ export default function Header() {
                   <PlusCircle size={16} /> Sell
                 </span>
               </Link>
+              {isAdminUser && (
+                <Link
+                  href="/admin/dashboard"
+                  className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                >
+                  <span className="inline-flex items-center gap-1">
+                    <User size={16} /> Admin
+                  </span>
+                </Link>
+              )}
               <Link
                 href="/basket"
                 className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
@@ -340,6 +388,12 @@ export default function Header() {
                 className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
               >
                 My Reviews
+              </Link>
+              <Link
+                href="/settings"
+                className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+              >
+                Account Settings
               </Link>
               <Link
                 href="/auth/logout"

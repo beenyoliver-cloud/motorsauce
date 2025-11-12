@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseServer";
+import { supabaseServer } from "@/lib/supabase";
 
-/** Don’t cache; keep it simple for now */
+// Don’t cache; keep it simple for now
 export const dynamic = "force-dynamic";
 
+const supabase = supabaseServer();
+
+// Public shape returned to the client
 type Listing = {
   id: string | number;
   title: string;
@@ -20,45 +23,89 @@ type Listing = {
   oem?: string;
   description?: string;
   createdAt: string;
+  sellerId?: string;
   seller: { name: string; avatar: string; rating: number };
   vin?: string;
   yearFrom?: number;
   yearTo?: number;
 };
 
-/** Helper: format £ from cents or accept preformatted */
-function toGBP(row: any): string {
-  if (typeof row?.price_cents === "number") {
+// Raw row as returned from Supabase including JOIN alias fields
+type RawListingRow = {
+  id: string | number;
+  title: string;
+  price_cents?: number | null;
+  price?: number | string | null;
+  image_url?: string | null;
+  image?: string | null;
+  images?: string[] | null;
+  category?: string | null;
+  condition?: string | null;
+  make?: string | null;
+  model?: string | null;
+  gen_code?: string | null;
+  genCode?: string | null; // sometimes seed uses camelCase
+  engine?: string | null;
+  year?: number | string | null;
+  oem?: string | null;
+  description?: string | null;
+  created_at?: string | null;
+  seller_id?: string | null;
+  seller_name?: string | null;
+  seller_avatar?: string | null;
+  seller_rating?: number | string | null;
+  vin?: string | null;
+  year_from?: number | string | null;
+  year_to?: number | string | null;
+  seller?: unknown; // joined profile result
+};
+
+// Format £ from cents or accept preformatted string
+function toGBP(row: RawListingRow): string {
+  if (typeof row.price_cents === "number") {
     return "£" + (row.price_cents / 100).toFixed(2);
   }
-  if (typeof row?.price === "number") {
+  if (typeof row.price === "number") {
     return "£" + Number(row.price).toFixed(2);
   }
-  if (typeof row?.price === "string") {
+  if (typeof row.price === "string") {
     return row.price.startsWith("£") ? row.price : `£${row.price}`;
   }
   return "£0.00";
 }
 
-/** Map a DB row into the Listing shape your UI expects */
-function mapDbRow(row: any): Listing {
+// Map raw DB row to public Listing shape
+function mapDbRow(row: RawListingRow): Listing {
   const images: string[] =
-    Array.isArray(row?.images) && row.images.length
+    Array.isArray(row.images) && row.images.length
       ? row.images
-      : row?.image_url
+      : row.image_url
       ? [row.image_url]
-      : row?.image
+      : row.image
       ? [row.image]
       : [];
 
-  const seller =
-    row?.seller && typeof row.seller === "object"
-      ? row.seller
-      : {
-          name: row?.seller_name || "Seller",
-          avatar: row?.seller_avatar || "/images/seller1.jpg",
-          rating: Number(row?.seller_rating ?? 5),
-        };
+  // Supabase join may return array or object; normalise
+  const sellerData = Array.isArray(row.seller) ? row.seller[0] : row.seller;
+  let seller: Listing["seller"] = {
+    name: "Seller",
+    avatar: "/images/seller1.jpg",
+    rating: 5,
+  };
+  if (sellerData && typeof sellerData === "object") {
+    const s = sellerData as Record<string, unknown>;
+    seller = {
+      name: typeof s.name === "string" && s.name ? s.name : "Seller",
+      avatar: typeof s.avatar === "string" && s.avatar ? s.avatar : "/images/seller1.jpg",
+      rating: typeof s.rating === "number" ? s.rating : Number(s.rating ?? 5),
+    };
+  } else if (row.seller_name || row.seller_avatar || row.seller_rating) {
+    seller = {
+      name: row.seller_name || "Seller",
+      avatar: row.seller_avatar || "/images/seller1.jpg",
+      rating: Number(row.seller_rating ?? 5),
+    };
+  }
 
   return {
     id: row.id,
@@ -66,8 +113,8 @@ function mapDbRow(row: any): Listing {
     price: toGBP(row),
     image: images[0] || "/images/placeholder.jpg",
     images,
-    category: row.category || "OEM",
-    condition: row.condition || "Used - Good",
+    category: (row.category as Listing["category"]) || "OEM",
+    condition: (row.condition as Listing["condition"]) || "Used - Good",
     make: row.make ?? undefined,
     model: row.model ?? undefined,
     genCode: row.gen_code ?? row.genCode ?? undefined,
@@ -75,60 +122,61 @@ function mapDbRow(row: any): Listing {
     year: row.year ? Number(row.year) : undefined,
     oem: row.oem ?? undefined,
     description: row.description ?? "",
-    createdAt: row.created_at || row.createdAt || new Date().toISOString(),
+    createdAt: row.created_at || new Date().toISOString(),
+    sellerId: row.seller_id ?? undefined,
     seller,
     vin: row.vin ?? undefined,
-    yearFrom: row.year_from ?? undefined,
-    yearTo: row.year_to ?? undefined,
+    yearFrom: typeof row.year_from === "number" ? row.year_from : row.year_from ? Number(row.year_from) : undefined,
+    yearTo: typeof row.year_to === "number" ? row.year_to : row.year_to ? Number(row.year_to) : undefined,
   };
 }
 
-/** Fallback to the local sample data if nothing in DB yet */
-async function findInLocal(id?: string | null) {
-  try {
-    const { listings } = await import("@/data/listings");
-    if (id) {
-      return listings.find((l: any) => String(l.id) === String(id)) || null;
-    }
-    return listings;
-  } catch {
-    return id ? null : [];
-  }
+// Local fallback currently unused; stub retained for compatibility
+async function findInLocal(_id?: string | null) {
+  return _id ? null : [] as Listing[];
 }
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
 
-  // If an ID is provided, return a single listing
   if (id) {
-    // Try DB first
     const { data, error } = await supabase
       .from("listings")
-      .select("*")
+      .select(`
+        *,
+        seller:profiles!seller_id (
+          name,
+          avatar,
+          rating
+        )
+      `)
       .eq("id", id)
       .maybeSingle();
 
     if (error) {
-      // Log on server, but don’t leak details to client
       console.error("DB error fetching listing", id, error);
     }
 
     if (data) {
-      return NextResponse.json(mapDbRow(data), { status: 200 });
+      return NextResponse.json(mapDbRow(data as RawListingRow), { status: 200 });
     }
 
-    // Fallback to local seed data
     const local = await findInLocal(id);
     if (local) return NextResponse.json(local, { status: 200 });
-
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // Otherwise, return a (small) list for now
   const { data, error } = await supabase
     .from("listings")
-    .select("*")
+    .select(`
+      *,
+      seller:profiles!seller_id (
+        name,
+        avatar,
+        rating
+      )
+    `)
     .order("created_at", { ascending: false })
     .limit(24);
 
@@ -136,6 +184,6 @@ export async function GET(req: Request) {
     console.error("DB error listing listings", error);
   }
 
-  const rows = Array.isArray(data) && data.length ? data.map(mapDbRow) : await findInLocal(null);
+  const rows = Array.isArray(data) && data.length ? (data as RawListingRow[]).map(mapDbRow) : await findInLocal(null);
   return NextResponse.json(rows, { status: 200 });
 }

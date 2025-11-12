@@ -13,6 +13,12 @@ export type Offer = {
   listingImage?: string;
   status: OfferStatus;
   createdAt: number;
+  // Optional IDs used to map offers to chat peers / persistent ids
+  starterId?: string;
+  recipientId?: string;
+  buyerId?: string;
+  sellerId?: string;
+  peerId?: string;
 };
 // src/lib/offersStore.ts (add this near other exports)
 export function resetAllOffers(): void {

@@ -18,7 +18,7 @@ import {
   updateOfferInThread,
   appendOfferMessage,
 } from "@/lib/chatStore";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUserSync } from "@/lib/auth";
 import { displayName } from "@/lib/names";
 
 export default function OfferToast({
@@ -32,7 +32,7 @@ export default function OfferToast({
   const [counter, setCounter] = useState(false);
   const [amount, setAmount] = useState("");
 
-  const me = getCurrentUser();
+  const me = getCurrentUserSync();
   const selfName = me?.name?.trim() || "You";
 
   useEffect(() => {
@@ -65,14 +65,23 @@ export default function OfferToast({
   const title = "Offer sent (pending)";
 
   function close() {
+    if (!last) return;
     dismissToast(threadId, last.id);
     setVisible(false);
   }
 
   function withdraw() {
+    if (!last) return;
     const upd = updateOfferStatus(threadId, last.id, "withdrawn");
     if (upd) {
-      updateOfferInThread(threadId, { id: last.id, amountCents: last.amountCents, status: "withdrawn" } as any);
+      updateOfferInThread(threadId, {
+        id: last.id,
+        amountCents: last.amountCents,
+        currency: last.currency,
+        status: "withdrawn",
+        starterId: last.starterId,
+        recipientId: last.recipientId,
+      });
       appendMessage(threadId, {
         id: `offer-${last.id}-withdrawn`,
         from: "system",
@@ -85,12 +94,20 @@ export default function OfferToast({
   }
 
   function sendCounter() {
+    if (!last) return;
     const pounds = parseFloat(amount.replace(/[^\d.]/g, ""));
     if (!Number.isFinite(pounds) || pounds <= 0) return;
 
     // 1) Supersede current
     updateOfferStatus(threadId, last.id, "countered");
-    updateOfferInThread(threadId, { id: last.id, amountCents: last.amountCents, status: "countered" } as any);
+    updateOfferInThread(threadId, {
+      id: last.id,
+      amountCents: last.amountCents,
+      currency: last.currency,
+      status: "countered",
+      starterId: last.starterId,
+      recipientId: last.recipientId,
+    });
 
     // 2) New pending back to peer
     const newOffer = createOffer({
@@ -115,7 +132,7 @@ export default function OfferToast({
       listingId: last.listingId,
       listingTitle: last.listingTitle,
       listingImage: last.listingImage,
-    } as any);
+    });
 
     appendMessage(threadId, {
       id: `offer-${newOffer.id}-counter`,

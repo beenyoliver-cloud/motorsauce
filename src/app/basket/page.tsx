@@ -96,7 +96,7 @@ export default function BasketPage() {
                   <select
                     className="mt-1 text-sm border border-gray-300 rounded-md px-2 py-1 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
                     value={cart.shipping}
-                    onChange={(e) => setShipping(e.target.value as any)}
+                    onChange={(e) => setShipping(e.target.value as "standard" | "collection")}
                     aria-label="Select shipping method"
                   >
                     <option value="standard">Standard (2–4 days)</option>
@@ -144,7 +144,7 @@ function BasketRow({ item }: { item: CartItem }) {
   const [qty, setQty] = useState(item.qty);
   useEffect(() => setQty(item.qty), [item.qty]);
 
-  const img = resolveListingImage(item as any);
+  const img = resolveListingImage({ image: item.image, images: undefined, listingImage: undefined });
 
   return (
     <li className="p-4 flex gap-4 items-center">

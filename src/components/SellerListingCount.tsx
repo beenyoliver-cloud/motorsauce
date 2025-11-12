@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { getCurrentUser } from "@/lib/auth";
 
 /**
  * Counts listings for a profile by:
- *  1) Matching listing.seller.name (case/spacing-insensitive) with sellerName
- *  2) If viewing *your* profile (sellerName === local ms_user_name), also include listings where ownerId === ms_user_id
- *
- * It fetches from /api/listings (your mock API).
+ *  1) Matching listing.seller_id with the profile's user ID
+ *  2) Uses Supabase auth to get current user
  */
 export default function SellerListingCount({
   sellerName,
@@ -24,36 +23,31 @@ export default function SellerListingCount({
   useEffect(() => {
     let alive = true;
 
-    // Ensure local identity (same logic your Sell/MyListings uses)
-    let uid = localStorage.getItem("ms_user_id");
-    let uname = localStorage.getItem("ms_user_name");
-    if (!uid) {
-      uid = `user_${crypto.randomUUID()}`;
-      localStorage.setItem("ms_user_id", uid);
-    }
-    if (!uname) {
-      uname = "You";
-      localStorage.setItem("ms_user_name", uname);
-    }
-
     (async () => {
       try {
+          // Get current user from Supabase
+          const currentUser = await getCurrentUser();
+        
         // Try the API (no-store so it reflects current mock DB)
         const r = await fetch("/api/listings", { cache: "no-store" });
         if (!r.ok) throw new Error("Failed to load listings");
-        const all = (await r.json()) as any[];
+        const raw = (await r.json()) as unknown;
+        const all: unknown[] = Array.isArray(raw) ? (raw as unknown[]) : [];
 
         const ids = new Set<string>();
 
-        for (const l of all ?? []) {
-          const seller = normaliseName(l?.seller?.name);
-          if (seller && seller === key && l?.id) ids.add(String(l.id));
+        for (const rec of all ?? []) {
+          const l = (rec && typeof rec === "object" ? rec : {}) as Record<string, unknown>;
+          const sellerObj = (l.seller && typeof l.seller === "object" ? (l.seller as Record<string, unknown>) : null);
+          const seller = normaliseName(sellerObj?.name);
+          if (seller && seller === key && l?.id != null) ids.add(String(l.id as string | number));
         }
 
-        // If this is the *current* user's profile, include their ownerId items too
-        if (uname && normaliseName(uname) === key && uid) {
-          for (const l of all ?? []) {
-            if (l?.ownerId === uid && l?.id) ids.add(String(l.id));
+          // If this is the *current* user's profile, include their user ID items too
+          if (currentUser && normaliseName(currentUser.name) === key) {
+      for (const rec of all ?? []) {
+        const l = (rec && typeof rec === "object" ? rec : {}) as Record<string, unknown>;
+        if (l?.seller_id === currentUser.id && l?.id != null) ids.add(String(l.id as string | number));
           }
         }
 

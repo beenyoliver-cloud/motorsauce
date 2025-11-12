@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import SafeImage from "@/components/SafeImage";
 import FavoriteButton from "@/components/FavoriteButton";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUserSync } from "@/lib/auth";
 
 type Listing = {
   id: string | number;
@@ -14,26 +15,28 @@ type Listing = {
   images?: string[];
   seller?: { name?: string };
   ownerId?: string;
+  sellerId?: string;
 };
 
 export default function MyListingsTab({ sellerName }: { sellerName?: string }) {
   const [items, setItems] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     fetch("/api/listings", { cache: "no-store" })
       .then((r) => r.json())
       .then((all) => Array.isArray(all) ? all : [])
       .then((all) => {
-        const u = getCurrentUser();
+        const u = getCurrentUserSync();
         const currentName = u?.name || "";
         const me = sellerName ? norm(sellerName) === norm(currentName) : true;
 
-        const uid = u?.id;
+  const uid = u?.id;
 
         const result = all.filter((l: Listing) => {
           const seller = norm(l?.seller?.name || "");
-          const id = l?.ownerId;
+          const id = l?.sellerId || l?.ownerId;
           if (sellerName) {
             // Viewing a specific profile
             if (me) {
@@ -80,24 +83,36 @@ export default function MyListingsTab({ sellerName }: { sellerName?: string }) {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-      {items.map((l) => (
-        <Link
-          key={String(l.id)}
-          href={`/listing/${l.id}`}
-          className="block border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition"
-        >
-          <div className="relative aspect-[4/3] bg-gray-50">
-            <SafeImage src={l.image} alt={l.title} className="absolute inset-0 w-full h-full object-cover" />
+      {items.map((l) => {
+        const u = getCurrentUserSync();
+        const uid = u?.id;
+        const isMine = Boolean(uid && (l.sellerId === uid || l.ownerId === uid || norm(l?.seller?.name || "") === norm(u?.name || "")));
+        return (
+          <div key={String(l.id)} className="group border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition">
+            <Link href={`/listing/${l.id}`} className="block">
+              <div className="relative aspect-[4/3] bg-gray-50">
+                <SafeImage src={l.image} alt={l.title} className="absolute inset-0 w-full h-full object-cover" />
+                {isMine && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/listing/${l.id}/edit`); }}
+                    className="absolute top-2 right-2 rounded-md bg-black/70 px-2 py-1 text-xs font-medium text-white opacity-0 group-hover:opacity-100 transition"
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
+              <div className="p-3">
+                <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">{l.title}</h3>
+                <div className="mt-1 flex items-center justify-between">
+                  <div className="text-base font-bold text-gray-900">{l.price}</div>
+                  <FavoriteButton listingId={String(l.id)} showLabel={false} />
+                </div>
+              </div>
+            </Link>
           </div>
-          <div className="p-3">
-            <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">{l.title}</h3>
-            <div className="mt-1 flex items-center justify-between">
-              <div className="text-base font-bold text-gray-900">{l.price}</div>
-              <FavoriteButton listingId={String(l.id)} showLabel={false} />
-            </div>
-          </div>
-        </Link>
-      ))}
+        );
+      })}
     </div>
   );
 }

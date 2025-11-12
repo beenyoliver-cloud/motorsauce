@@ -17,20 +17,21 @@ export default function ProfileAboutCard({
 
   // Load ownership + about text (only for *your* profile)
   useEffect(() => {
-    const mine = isMe(displayName);
-    setMe(mine);
-    if (mine) {
-      try {
-        const v = localStorage.getItem(nsKey("about_v1")) || "";
-        setAbout(v);
-        if (autoEdit) setDraft(v);
-      } catch {
+    isMe(displayName).then(isMine => {
+      setMe(isMine);
+      if (isMine) {
+        try {
+          const v = localStorage.getItem(nsKey("about_v1")) || "";
+          setAbout(v);
+          if (autoEdit) setDraft(v);
+        } catch {
+          setAbout("");
+        }
+      } else {
         setAbout("");
+        setEditing(false);
       }
-    } else {
-      setAbout("");
-      setEditing(false);
-    }
+    });
   }, [displayName, autoEdit]);
 
   function startEdit() {

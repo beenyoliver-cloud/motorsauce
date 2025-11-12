@@ -2,10 +2,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { CheckCircle, XCircle, Clock, Ban, TrendingUp, Package } from "lucide-react";
 import { createOffer, updateOfferStatus, formatGBP } from "@/lib/offersStore";
 import { appendMessage, nowClock, updateOfferInThread, appendOfferMessage } from "@/lib/chatStore";
 import { displayName } from "@/lib/names";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUserSync } from "@/lib/auth";
 
 type Props = {
   msg: {
@@ -33,16 +34,14 @@ type Props = {
 };
 
 function meId() {
-  const me = getCurrentUser();
+  const me = getCurrentUserSync();
   return {
     id: String(me?.id || me?.email || me?.name || ""),
     name: (me?.name || "You").trim(),
   };
 }
 
-export default function OfferMessage({ msg }: Props) {
-  if (msg.type !== "offer" || !msg.offer) return null;
-  const o = msg.offer;
+function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props["msg"]["offer"]> }) {
   const { id: selfId, name: selfName } = meId();
 
   // Try to determine fixed buyer/seller for the thread using the fields we set in MakeOfferButton
@@ -72,21 +71,42 @@ export default function OfferMessage({ msg }: Props) {
   function withdraw() {
     if (!(o.status === "pending" && isMeBuyer && iAmStarter)) return; // only buyer withdrawing their own pending
     updateOfferStatus(msg.threadId, o.id, "withdrawn");
-    updateOfferInThread(msg.threadId, { id: o.id, amountCents: o.amountCents, status: "withdrawn" } as any);
+    updateOfferInThread(msg.threadId, {
+      id: o.id,
+      amountCents: o.amountCents,
+      currency: o.currency,
+      status: "withdrawn",
+      starterId: o.starterId,
+      recipientId: o.recipientId,
+    });
     sysLine(`${displayName(selfName)} withdrew the offer of ${formatGBP(o.amountCents)}.`);
   }
 
   function accept() {
     if (!(o.status === "pending" && isMeSeller && iAmRecipient)) return; // only seller, as recipient
     updateOfferStatus(msg.threadId, o.id, "accepted");
-    updateOfferInThread(msg.threadId, { id: o.id, amountCents: o.amountCents, status: "accepted" } as any);
+    updateOfferInThread(msg.threadId, {
+      id: o.id,
+      amountCents: o.amountCents,
+      currency: o.currency,
+      status: "accepted",
+      starterId: o.starterId,
+      recipientId: o.recipientId,
+    });
     sysLine(`${displayName(selfName)} accepted the offer of ${formatGBP(o.amountCents)}.`);
   }
 
   function decline() {
     if (!(o.status === "pending" && isMeSeller && iAmRecipient)) return; // only seller, as recipient
     updateOfferStatus(msg.threadId, o.id, "declined");
-    updateOfferInThread(msg.threadId, { id: o.id, amountCents: o.amountCents, status: "declined" } as any);
+    updateOfferInThread(msg.threadId, {
+      id: o.id,
+      amountCents: o.amountCents,
+      currency: o.currency,
+      status: "declined",
+      starterId: o.starterId,
+      recipientId: o.recipientId,
+    });
     sysLine(`${displayName(selfName)} declined the offer of ${formatGBP(o.amountCents)}.`);
   }
 
@@ -103,7 +123,14 @@ export default function OfferMessage({ msg }: Props) {
 
     // 1) Supersede current
     updateOfferStatus(msg.threadId, o.id, "countered");
-    updateOfferInThread(msg.threadId, { id: o.id, amountCents: o.amountCents, status: "countered" } as any);
+    updateOfferInThread(msg.threadId, {
+      id: o.id,
+      amountCents: o.amountCents,
+      currency: o.currency,
+      status: "countered",
+      starterId: o.starterId,
+      recipientId: o.recipientId,
+    });
 
     // 2) New pending from me → back to the other party, keep the listing photo/title
     const newOffer = createOffer({
@@ -112,9 +139,9 @@ export default function OfferMessage({ msg }: Props) {
       amountCents: Math.round(pounds * 100),
       currency: "GBP",
       listingId: o.listingId,
-      listingTitle: o.listingTitle,
+      listingTitle: o.listingTitle || "",
       listingImage: o.listingImage,
-      peerName: o.peerName,
+      peerName: o.peerName || "",
     });
 
     // 3) Append the counter card (propagate buyer/seller ids so the next step knows roles)
@@ -134,25 +161,45 @@ export default function OfferMessage({ msg }: Props) {
       listingImage: o.listingImage,
       peerName: o.peerName,
       peerId: iAmRecipient ? o.starterId : o.recipientId,
-    } as any);
+    });
 
     sysLine(`${displayName(selfName)} countered with ${formatGBP(newOffer.amountCents)}.`);
     setCounter("");
   }
 
-  // UI state
+  // UI state with icons
   const statusBadge = (() => {
     switch (o.status) {
-      case "accepted":  return { label: "accepted",   classes: "bg-green-100 text-green-900 border-green-300" };
-      case "declined":  return { label: "declined",   classes: "bg-red-100 text-red-900 border-red-300" };
-      case "countered": return { label: "superseded", classes: "bg-orange-100 text-orange-900 border-orange-300" };
-      case "withdrawn": return { label: "withdrawn",  classes: "bg-gray-200 text-gray-800 border-gray-300" };
-      default:          return { label: "pending",    classes: "bg-blue-100 text-blue-900 border-blue-300" };
+      case "accepted":  return { 
+        label: "Accepted",   
+        classes: "bg-green-50 text-green-800 border-green-300",
+        icon: <CheckCircle size={14} className="inline" />
+      };
+      case "declined":  return { 
+        label: "Declined",   
+        classes: "bg-red-50 text-red-800 border-red-300",
+        icon: <XCircle size={14} className="inline" />
+      };
+      case "countered": return { 
+        label: "Countered", 
+        classes: "bg-orange-50 text-orange-800 border-orange-300",
+        icon: <TrendingUp size={14} className="inline" />
+      };
+      case "withdrawn": return { 
+        label: "Withdrawn",  
+        classes: "bg-gray-100 text-gray-700 border-gray-300",
+        icon: <Ban size={14} className="inline" />
+      };
+      default:          return { 
+        label: "Pending",    
+        classes: "bg-blue-50 text-blue-800 border-blue-300",
+        icon: <Clock size={14} className="inline" />
+      };
     }
   })();
 
-  const headerLabel = iAmStarter ? "Your offer" : `${displayName(o.starter || "Unknown")}’s offer`;
-  const resolvedClasses = o.status === "pending" ? "" : "opacity-60 saturate-0 pointer-events-none";
+  const headerLabel = iAmStarter ? "Your offer" : `Offer from ${displayName(o.starter || "Unknown")}`;
+  const resolvedClasses = o.status === "pending" ? "" : "opacity-70";
   const img = (o.listingImage || "").trim();
 
   // Action gates (exactly as requested)
@@ -161,69 +208,147 @@ export default function OfferMessage({ msg }: Props) {
   const showBuyerCounter = o.status === "pending" && isMeBuyer  && iAmRecipient; // only after seller counter
 
   return (
-    <div className={`my-2 rounded-lg border border-gray-200 bg-white p-3 shadow-sm ${resolvedClasses}`}>
-      <div className="flex items-start gap-3">
-        {img ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={img} alt="" className="h-16 w-24 rounded-md object-cover bg-gray-100" />
-        ) : (
-          <div className="h-16 w-24 rounded-md bg-gray-100" />
-        )}
-
-        <div className="flex-1">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm font-semibold text-black">{headerLabel}</div>
-              {!!o.listingTitle && <div className="text-xs text-gray-700 line-clamp-1">{o.listingTitle}</div>}
-            </div>
-            <div className={`ml-2 rounded-full border px-2 py-1 text-xs font-semibold ${statusBadge.classes}`}>{statusBadge.label}</div>
-          </div>
-
-          <div className="mt-2 text-lg font-bold text-gray-900">{formatGBP(o.amountCents)}</div>
-
-          {o.status === "pending" ? (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              {showSellerActions && (
-                <>
-                  <button onClick={accept} className="rounded-md bg-black px-3 py-1.5 text-sm font-semibold text-white hover:bg-gray-900">Accept</button>
-                  <button onClick={decline} className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700">Decline</button>
-                  <input
-                    value={counter}
-                    onChange={(e) => setCounter(e.target.value)}
-                    inputMode="decimal"
-                    placeholder="Counter £"
-                    className="w-28 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-900"
-                  />
-                  <button onClick={counterSubmit} disabled={!counter} className="rounded-md bg-white px-3 py-1.5 text-sm border border-gray-300 hover:bg-gray-50 disabled:opacity-50">Counter</button>
-                </>
-              )}
-
-              {showWithdraw && (
-                <button onClick={withdraw} className="rounded-md bg-white px-3 py-1.5 text-sm border border-gray-300 hover:bg-gray-50">Withdraw</button>
-              )}
-
-              {showBuyerCounter && (
-                <>
-                  <input
-                    value={counter}
-                    onChange={(e) => setCounter(e.target.value)}
-                    inputMode="decimal"
-                    placeholder="Counter £"
-                    className="w-28 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-900"
-                  />
-                  <button onClick={counterSubmit} disabled={!counter} className="rounded-md bg-white px-3 py-1.5 text-sm border border-gray-300 hover:bg-gray-50 disabled:opacity-50">Counter</button>
-                </>
-              )}
-
-              {!showSellerActions && !showWithdraw && !showBuyerCounter && (
-                <span className="text-xs text-gray-700">Waiting for the other party…</span>
-              )}
-            </div>
-          ) : (
-            <div className="mt-3 text-sm text-gray-700">This offer is <span className="font-semibold">{statusBadge.label}</span>.</div>
-          )}
+    <div className={`my-3 rounded-xl border-2 ${
+      o.status === "pending" ? "border-yellow-500 bg-yellow-50" : "border-gray-200 bg-white"
+    } shadow-md overflow-hidden ${resolvedClasses}`}>
+      {/* Status Banner */}
+      <div className={`px-4 py-2 flex items-center justify-between ${statusBadge.classes} border-b-2`}>
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          {statusBadge.icon}
+          <span>{statusBadge.label}</span>
         </div>
+        <Package size={16} />
+      </div>
+
+      <div className="p-4">
+        <div className="flex gap-4">
+          {/* Listing Image */}
+          {img ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img 
+              src={img} 
+              alt="" 
+              className="h-20 w-28 rounded-lg object-cover bg-gray-100 border border-gray-200" 
+            />
+          ) : (
+            <div className="h-20 w-28 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center">
+              <Package size={24} className="text-gray-400" />
+            </div>
+          )}
+
+          {/* Offer Details */}
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+              {headerLabel}
+            </div>
+            {!!o.listingTitle && (
+              <div className="text-sm font-semibold text-black line-clamp-2 mt-0.5">
+                {o.listingTitle}
+              </div>
+            )}
+            <div className="mt-2 text-2xl font-bold text-black">
+              {formatGBP(o.amountCents)}
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        {o.status === "pending" ? (
+          <div className="mt-4 space-y-3">
+            {showSellerActions && (
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <button 
+                    onClick={accept} 
+                    className="flex-1 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 transition flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle size={16} />
+                    Accept Offer
+                  </button>
+                  <button 
+                    onClick={decline} 
+                    className="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 transition flex items-center justify-center gap-2"
+                  >
+                    <XCircle size={16} />
+                    Decline
+                  </button>
+                </div>
+                <div className="flex gap-2 items-center">
+                  <div className="flex-1 relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">£</span>
+                    <input
+                      value={counter}
+                      onChange={(e) => setCounter(e.target.value)}
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      className="w-full pl-7 pr-3 py-2.5 rounded-lg border-2 border-gray-300 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                    />
+                  </div>
+                  <button 
+                    onClick={counterSubmit} 
+                    disabled={!counter} 
+                    className="px-4 py-2.5 rounded-lg border-2 border-yellow-500 bg-white text-yellow-700 font-semibold text-sm hover:bg-yellow-50 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-1.5"
+                  >
+                    <TrendingUp size={16} />
+                    Send Counter
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {showWithdraw && (
+              <button 
+                onClick={withdraw} 
+                className="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-2"
+              >
+                <Ban size={16} />
+                Withdraw Offer
+              </button>
+            )}
+
+            {showBuyerCounter && (
+              <div className="flex gap-2 items-center">
+                <div className="flex-1 relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">£</span>
+                  <input
+                    value={counter}
+                    onChange={(e) => setCounter(e.target.value)}
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    className="w-full pl-7 pr-3 py-2.5 rounded-lg border-2 border-gray-300 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                  />
+                </div>
+                <button 
+                  onClick={counterSubmit} 
+                  disabled={!counter} 
+                  className="px-4 py-2.5 rounded-lg border-2 border-yellow-500 bg-white text-yellow-700 font-semibold text-sm hover:bg-yellow-50 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-1.5"
+                >
+                  <TrendingUp size={16} />
+                  Send Counter
+                </button>
+              </div>
+            )}
+
+            {!showSellerActions && !showWithdraw && !showBuyerCounter && (
+              <div className="text-center py-2 text-sm text-gray-600 flex items-center justify-center gap-2">
+                <Clock size={16} />
+                <span>Waiting for response...</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="mt-4 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+            <p className="text-sm text-gray-700 text-center">
+              This offer has been <span className="font-semibold">{statusBadge.label.toLowerCase()}</span>.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
+}
+
+export default function OfferMessage({ msg }: Props) {
+  if (msg.type !== "offer" || !msg.offer) return null;
+  return <OfferMessageInner msg={msg} o={msg.offer} />;
 }
