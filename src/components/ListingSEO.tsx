@@ -34,12 +34,13 @@ export default function ListingSEO({
   oem,
   url,
 }: Props) {
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://example.com").replace(/\/$/, "");
   const safePrice = Number.isFinite(priceGBP) ? priceGBP : 0;
 
   const data = {
     "@context": "https://schema.org",
     "@type": "Product",
-    "@id": url || `https://example.com/listing/${encodeURIComponent(String(id))}`,
+    "@id": url || `${siteUrl}/listing/${encodeURIComponent(String(id))}`,
     name: title,
     description,
     image,
@@ -50,7 +51,7 @@ export default function ListingSEO({
       priceCurrency: "GBP",
       price: safePrice.toFixed(2),
       availability: "https://schema.org/InStock",
-      url: url || `https://example.com/listing/${encodeURIComponent(String(id))}`,
+      url: url || `${siteUrl}/listing/${encodeURIComponent(String(id))}`,
     },
     itemCondition: conditionToSchema(condition),
   };
