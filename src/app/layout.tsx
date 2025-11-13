@@ -9,8 +9,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body className="min-h-screen bg-white text-gray-900">
         <Header />
-        {/* Add top padding equal to header height (h-14 => 56px) */}
-        <div className="pt-14">
+        {/* Offset for fixed header: larger on mobile (custom ~120px), default 56px on md+ */}
+        <div className="pt-[120px] md:pt-14">
           {children}
           <Footer />
         </div>
