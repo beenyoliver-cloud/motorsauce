@@ -1,17 +1,13 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import ThreadClient from "@/components/ThreadClient";
 
-export default function MessagesThreadPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params); // Next 15+ unwrap
-  const threadId = decodeURIComponent(id);
+export default function MessagesThreadPage({ params }: { params: { id: string } }) {
+  // Params are already resolved for client components; avoid React experimental use() which breaks on client.
+  const threadId = decodeURIComponent(params.id);
   const [forceOfferToast, setForceOfferToast] = useState(false);
 
   useEffect(() => {
