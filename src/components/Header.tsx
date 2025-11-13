@@ -214,8 +214,18 @@ export default function Header() {
             try {
               const form = e.currentTarget as HTMLFormElement;
               const fd = new FormData(form);
-              const q = String(fd.get("query") || "").trim();
+              const qRaw = String(fd.get("query") || "");
+              const q = qRaw.trim();
               if (!q) return;
+
+              // @username shortcut -> users search
+              if (q.startsWith("@") && q.length > 1) {
+                e.preventDefault();
+                const handle = q.slice(1);
+                window.location.href = `/search?type=users&q=${encodeURIComponent(handle)}`;
+                return;
+              }
+
               const key = "ms:recent-searches";
               const raw = localStorage.getItem(key);
               const arr = raw ? JSON.parse(raw) : [];
@@ -377,8 +387,15 @@ export default function Header() {
           try {
             const form = e.currentTarget as HTMLFormElement;
             const fd = new FormData(form);
-            const q = String(fd.get("query") || "").trim();
+            const qRaw = String(fd.get("query") || "");
+            const q = qRaw.trim();
             if (!q) return;
+            if (q.startsWith("@") && q.length > 1) {
+              e.preventDefault();
+              const handle = q.slice(1);
+              window.location.href = `/search?type=users&q=${encodeURIComponent(handle)}`;
+              return;
+            }
             const key = "ms:recent-searches";
             const raw = localStorage.getItem(key);
             const arr = raw ? JSON.parse(raw) : [];

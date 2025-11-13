@@ -150,6 +150,7 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
   // parallax
   const coverRef = useRef<HTMLDivElement | null>(null);
   const [parallaxY, setParallaxY] = useState(0);
+  const [compact, setCompact] = useState(false);
 
   useEffect(() => {
     if (mine) {
@@ -295,6 +296,9 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
 
   /* ----------------------------- Parallax ----------------------------- */
   useEffect(() => {
+    // disable parallax on very small screens or when compact view enabled
+    if (compact) return;
+    if (typeof window !== 'undefined' && window.innerWidth < 640) return;
     function onScroll() {
       const el = coverRef.current;
       if (!el) return;
@@ -302,8 +306,8 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
       const vh = window.innerHeight || 1;
       if (rect.bottom < 0 || rect.top > vh) return;
       const centerOffset = (rect.top + rect.height / 2) - vh / 2;
-      const ratio = centerOffset / vh; // -0.5..0.5-ish
-      const offset = Math.max(-20, Math.min(20, -ratio * 24)); // clamp to ~±20-24px
+      const ratio = centerOffset / vh;
+      const offset = Math.max(-20, Math.min(20, -ratio * 24));
       setParallaxY(offset);
     }
     onScroll();
@@ -313,7 +317,7 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };
-  }, []);
+  }, [compact]);
 
   /* -------------------------------- Render -------------------------------- */
 
@@ -332,7 +336,7 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
     <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-6 pt-5">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <h2 className="text-2xl font-extrabold text-black tracking-tight">
             {mine ? "My Garage" : `${displayName}'s Garage`}
           </h2>
@@ -340,6 +344,15 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
             <span className="inline-flex items-center text-[11px] font-bold px-2 py-1 rounded-full bg-yellow-500 text-black">
               Default: {vehicleLabel(defaultCar)}
             </span>
+          )}
+          {mine && (
+            <button
+              type="button"
+              onClick={() => setCompact(v => !v)}
+              className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white text-gray-900 text-xs px-2 py-1 hover:bg-gray-50"
+            >
+              {compact ? 'Expanded view' : 'Compact view'}
+            </button>
           )}
         </div>
 
@@ -647,8 +660,8 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
         </div>
       )}
 
-      {/* Other cars grid */}
-      <div className="px-6 py-6">
+  {/* Other cars grid */}
+  <div className="px-6 py-6">
         {list.length === 0 && !mine && (
           <div className="rounded-xl border border-dashed border-gray-300 p-10 text-center">
             <div className="mx-auto h-16 w-24 rounded-md bg-gray-100 flex items-center justify-center mb-3">
@@ -680,7 +693,7 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
           </div>
         )}
 
-        {others.length > 0 && (
+        {others.length > 0 && !compact && (
           <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {others.map((c) => {
               const label = vehicleLabel(c);
@@ -838,6 +851,67 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
               );
             })}
           </ul>
+        )}
+        {others.length > 0 && compact && (
+          <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+            <thead className="bg-gray-50 text-gray-700">
+              <tr className="text-left">
+                <th className="py-2 px-3 font-medium">Vehicle</th>
+                <th className="py-2 px-3 font-medium">Year</th>
+                <th className="py-2 px-3 font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {others.map(c => {
+                const label = vehicleLabel(c);
+                return (
+                  <tr key={c.id} className="border-t border-gray-200">
+                    <td className="py-2 px-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="h-10 w-16 rounded-md bg-gray-100 overflow-hidden shrink-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={c.image || fallbackCarImage()} alt={label} className="h-full w-full object-cover" loading="lazy" />
+                        </div>
+                        <span className="font-semibold text-gray-900 truncate">{label}</span>
+                      </div>
+                    </td>
+                    <td className="py-2 px-3 text-gray-700">{c.year}</td>
+                    <td className="py-2 px-3">
+                      <div className="flex flex-wrap gap-1">
+                        {mine && (
+                          <button
+                            type="button"
+                            onClick={() => makeDefault(c.id)}
+                            className="text-[11px] px-2 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50"
+                          >Default</button>
+                        )}
+                        <a href={buildSearchUrl(c)} className="text-[11px] px-2 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50">Parts</a>
+                        <button
+                          type="button"
+                          onClick={() => copyLabel(c.id, label)}
+                          className={`text-[11px] px-2 py-1 rounded border ${copiedId === c.id ? 'border-green-300 bg-white text-green-700' : 'border-gray-300 bg-white hover:bg-gray-50'}`}
+                        >{copiedId === c.id ? 'Copied' : 'Copy'}</button>
+                        {mine && (
+                          <button
+                            type="button"
+                            onClick={() => startEdit(c)}
+                            className="text-[11px] px-2 py-1 rounded border border-yellow-500 bg-yellow-500 text-black hover:bg-yellow-600"
+                          >Edit</button>
+                        )}
+                        {mine && (
+                          <button
+                            type="button"
+                            onClick={() => { const ok = window.confirm('Delete this vehicle?'); if (ok) removeCar(c.id); }}
+                            className="text-[11px] px-2 py-1 rounded border border-red-300 bg-white text-red-700 hover:bg-red-50"
+                          >Del</button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
       </div>
 

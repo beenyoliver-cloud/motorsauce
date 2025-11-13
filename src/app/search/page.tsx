@@ -87,6 +87,7 @@ function SearchPageInner() {
   const [users, setUsers] = useState<Array<{ id: string; name: string; avatar: string; rating?: number; url: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [recent, setRecent] = useState<string[]>([]);
 
   const sp = useSearchParams();
   const router = useRouter();
@@ -144,6 +145,17 @@ function SearchPageInner() {
     return () => {
       alive = false;
     };
+  }, []);
+
+  // recent searches (client only)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("ms:recent-searches");
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) setRecent(arr);
+      }
+    } catch {}
   }, []);
 
   /* Read live filters from URL */
@@ -288,6 +300,31 @@ function SearchPageInner() {
               Sellers
             </Link>
           </div>
+
+          {/* Recent searches (mobile only) */}
+          {recent.length > 0 && (
+            <div className="md:hidden -mt-2 flex items-center gap-2 overflow-x-auto pb-1" aria-label="Recent searches">
+              {recent.map(r => (
+                <button
+                  key={r}
+                  onClick={() => {
+                    const params = new URLSearchParams(sp.toString());
+                    params.set('q', r);
+                    window.location.href = `/search?${params.toString()}`;
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setRecent(prev => prev.filter(s => s !== r));
+                    try { localStorage.setItem('ms:recent-searches', JSON.stringify(recent.filter(s => s !== r))); } catch {}
+                  }}
+                  className="px-3 py-1.5 rounded-full bg-gray-100 text-gray-800 text-xs border border-gray-200 whitespace-nowrap hover:bg-gray-200"
+                  title="Tap to search • long press to remove"
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Summary */}
           <div className="rounded-xl border border-gray-200 bg-white p-5">

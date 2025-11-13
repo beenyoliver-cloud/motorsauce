@@ -125,37 +125,33 @@ export default function ListingActions({
       {/* ---- Offer Modal ---- */}
       {offerOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/40 flex items-end md:items-center justify-center p-0 md:p-4"
-          onClick={closeOffer}
+          className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4"
           aria-modal="true"
           role="dialog"
           aria-labelledby="offer-title"
         >
+          <div className="absolute inset-0 bg-black/40" onClick={closeOffer} />
           <div
-            className="w-full md:max-w-md bg-white rounded-t-2xl md:rounded-2xl shadow-xl"
+            className="w-full md:max-w-md bg-white rounded-t-3xl md:rounded-2xl shadow-xl animate-[offerSheet_320ms_cubic-bezier(.25,.8,.25,1)]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-4 py-3 border-b">
+            <div className="flex items-center justify-between px-5 py-4 border-b">
               <h2 id="offer-title" className="text-base font-semibold text-black">
                 Make an offer
               </h2>
               <button
                 type="button"
-                className="p-1 rounded hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
+                className="px-2 py-1 rounded-md hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
                 onClick={closeOffer}
-                aria-label="Close"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
-
-            <form className="px-4 pt-3 pb-4 grid gap-3" onSubmit={submitOffer}>
-              <label className="grid gap-1">
-                <span className="text-sm text-gray-800">Your offer (GBP)</span>
-                <div className="flex items-center gap-0">
-                  <span className="inline-flex items-center px-3 py-2 border border-gray-500 rounded-l-md bg-gray-50 text-gray-900">
-                    £
-                  </span>
+            <form className="px-5 pt-4 pb-5 grid gap-4" onSubmit={submitOffer}>
+              <label className="grid gap-2">
+                <span className="text-sm font-medium text-gray-800">Your offer (GBP)</span>
+                <div className="flex items-center gap-0 rounded-md overflow-hidden border border-gray-500 bg-white">
+                  <span className="inline-flex items-center px-3 py-2 text-gray-900 font-semibold bg-gray-50">£</span>
                   <input
                     ref={inputRef}
                     value={amount}
@@ -165,7 +161,7 @@ export default function ListingActions({
                     }}
                     inputMode="decimal"
                     placeholder="0.00"
-                    className="flex-1 border border-gray-500 rounded-r-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    className="flex-1 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
                     aria-invalid={!!error}
                     aria-describedby={error ? "offer-error" : undefined}
                   />
@@ -177,7 +173,31 @@ export default function ListingActions({
                 )}
               </label>
 
-              <div className="mt-1 flex items-center justify-end gap-2">
+              {/* Quick adjust buttons */}
+              <div className="flex flex-wrap gap-2">
+                {[
+                  ["-10%", -0.1],
+                  ["-5%", -0.05],
+                  ["+5%", 0.05],
+                  ["+10%", 0.1],
+                ].map(([label, pct]) => (
+                  <button
+                    type="button"
+                    key={label}
+                    disabled={!parsedAmount || !Number.isFinite(parsedAmount)}
+                    onClick={() => {
+                      if (!parsedAmount || !Number.isFinite(parsedAmount)) return;
+                      const adjusted = parsedAmount * (1 + (pct as number));
+                      setAmount(adjusted.toFixed(2));
+                    }}
+                    className="px-3 py-1.5 rounded-md border border-gray-300 text-xs font-medium bg-white text-gray-900 hover:bg-gray-50 disabled:opacity-40"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center justify-end gap-3 mt-1">
                 <button
                   type="button"
                   onClick={closeOffer}
@@ -194,6 +214,9 @@ export default function ListingActions({
               </div>
             </form>
           </div>
+          <style jsx>{`
+            @keyframes offerSheet { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+          `}</style>
         </div>
       )}
     </>

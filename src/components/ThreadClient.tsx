@@ -1,7 +1,7 @@
 // src/components/ThreadClient.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { User, Calendar, Trash2 } from "lucide-react";
@@ -162,6 +162,29 @@ export default function ThreadClient({
     ? new Date(peerProfile.created_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
     : null;
 
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  // auto-scroll on new messages if near bottom
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !thread) return;
+    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 120;
+    if (atBottom) {
+      requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+    }
+  }, [thread?.messages.length]);
+
+  // Group messages by day
+  const grouped = useMemo((): Array<{ day: string; msgs: Thread["messages"] }> => {
+    if (!thread) return [];
+    const map = new Map<string, Thread["messages"]>();
+    thread.messages.forEach((m) => {
+      const day = new Date(m.ts || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      if (!map.has(day)) map.set(day, []);
+      map.get(day)!.push(m);
+    });
+    return Array.from(map.entries()).map(([day, msgs]) => ({ day, msgs }));
+  }, [thread]);
+
   return (
     <div className="flex h-full flex-col">
       {/* User Profile Bar */}
@@ -218,48 +241,54 @@ export default function ThreadClient({
       <ActiveOfferBar threadId={thread.id} />
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-3">
-        {thread.messages.map((m) => {
-          if (m.type === "offer") {
-            return (
-              <OfferMessage
-                key={m._k || m.id}
-                msg={{
-                  id: m.id || "",
-                  threadId: thread.id,
-                  type: "offer",
-                  offer: m.offer
-                    ? {
-                        ...m.offer,
-                        currency: m.offer.currency ?? "GBP",
-                        status: (m.offer.status === "started"
-                          ? "pending"
-                          : m.offer.status === "expired"
-                          ? "withdrawn"
-                          : m.offer.status) as "pending" | "accepted" | "declined" | "countered" | "withdrawn",
-                        listingId: (m.offer.listingId ?? "") as string | number,
-                      }
-                    : undefined,
-                }}
-                currentUser={selfName}
-              />
-            );
-          }
-          return (
-            <div key={m._k || m.id} className="my-1">
-              <div className="text-[11px] text-gray-500">
-                {displayName(m.from || "Unknown")}
-              </div>
-              <div className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900">
-                {m.text}
-              </div>
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-6">
+        {grouped.map(group => (
+          <div key={group.day}>
+            <div className="sticky top-0 z-10 mb-2 flex justify-center">
+              <span className="text-[10px] tracking-wide uppercase bg-gray-100 text-gray-600 px-2 py-1 rounded-full border border-gray-200">{group.day}</span>
             </div>
-          );
-        })}
+            <div className="space-y-2">
+              {group.msgs.map(m => {
+                if (m.type === 'offer') {
+                  return (
+                    <OfferMessage
+                      key={m._k || m.id}
+                      msg={{
+                        id: m.id || '',
+                        threadId: thread.id,
+                        type: 'offer',
+                        offer: m.offer ? {
+                          ...m.offer,
+                          currency: m.offer.currency ?? 'GBP',
+                          status: (m.offer.status === 'started'
+                            ? 'pending'
+                            : m.offer.status === 'expired'
+                            ? 'withdrawn'
+                            : m.offer.status) as 'pending' | 'accepted' | 'declined' | 'countered' | 'withdrawn',
+                          listingId: (m.offer.listingId ?? '') as string | number,
+                        } : undefined,
+                      }}
+                      currentUser={selfName}
+                    />
+                  );
+                }
+                const mineMsg = (m.from || '').trim() === selfName.trim();
+                return (
+                  <div key={m._k || m.id} className={`flex ${mineMsg ? 'justify-end' : 'justify-start'}`}>
+                    <div className="max-w-[80%]">
+                      <div className={`text-[11px] mb-0.5 ${mineMsg ? 'text-right text-gray-500' : 'text-left text-gray-500'}`}>{displayName(m.from || 'Unknown')}</div>
+                      <div className={`px-3 py-2 rounded-md border text-sm whitespace-pre-wrap break-words shadow-sm ${mineMsg ? 'bg-yellow-500 text-black border-yellow-400' : 'bg-white text-gray-900 border-gray-200'}`}>{m.text}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Composer */}
-      <div className="border-t border-gray-200 p-3">
+      <div className="border-t border-gray-200 p-3 sticky bottom-0 bg-white">
         <form
           onSubmit={(e) => {
             e.preventDefault();
