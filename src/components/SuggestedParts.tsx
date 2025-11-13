@@ -60,20 +60,20 @@ export default function SuggestedParts() {
     );
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
       {listings.map((p) => (
         <Link
           key={p.id}
           href={`/listing/${p.id}`}
-          className="block border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-md transition"
+          className="block border border-gray-200 rounded-lg sm:rounded-xl overflow-hidden bg-white hover:shadow-md transition"
         >
-          <div className="relative aspect-[4/3] bg-gray-50">
+          <div className="relative aspect-square sm:aspect-[4/3] bg-gray-50">
             <SafeImage src={p.image} alt={p.title} className="absolute inset-0 w-full h-full object-cover" />
           </div>
-          <div className="p-3">
-            <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">{p.title}</h3>
+          <div className="p-2 sm:p-3">
+            <h3 className="text-[13px] sm:text-sm font-semibold text-gray-900 line-clamp-2">{p.title}</h3>
             <div className="mt-1 flex items-center justify-between">
-              <div className="text-base font-bold text-gray-900">{p.price}</div>
+              <div className="text-[13px] sm:text-base font-bold text-gray-900">{p.price}</div>
             </div>
           </div>
         </Link>

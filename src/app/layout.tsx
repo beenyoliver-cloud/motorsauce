@@ -10,7 +10,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-screen bg-white text-gray-900">
         <Header />
         {/* Offset for fixed header: larger on mobile (custom ~120px), default 56px on md+ */}
-        <div className="pt-[120px] md:pt-14">
+        <div className="pt-[128px] md:pt-14">
           {children}
           <Footer />
         </div>

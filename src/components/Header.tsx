@@ -240,7 +240,7 @@ export default function Header() {
 
         {/* Mobile menu panel */}
         {mobileMenuOpen && (
-          <div className="md:hidden fixed left-0 right-0 top-[120px] bg-white border-b border-gray-200 shadow-md z-40">
+          <div className="md:hidden fixed left-0 right-0 top-[128px] bg-white border-b border-gray-200 shadow-md z-40">
             {categories.map(([name, href]) => (
               <Link
                 key={href}
