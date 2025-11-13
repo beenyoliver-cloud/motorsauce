@@ -18,7 +18,7 @@ export default function MessagesThreadPage({
   }, []);
 
   return (
-    <section className="h-full">
+    <section className="h-[calc(100vh-60px)] max-w-5xl mx-auto">
       <ThreadClient threadId={threadId} forceOfferToast={forceOfferToast} />
     </section>
   );

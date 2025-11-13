@@ -52,71 +52,69 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
   const baseHref = `/profile/${encodeURIComponent(displayName)}`;
 
   return (
-    <section className="max-w-7xl mx-auto px-4 py-8">
+    <section className="max-w-6xl mx-auto px-4 py-6">
       {/* ---------- Header ---------- */}
-      <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-yellow-50 via-white to-white">
-        <div className="p-5 md:p-8">
-          <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6">
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="p-4 md:p-6">
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
             {/* Avatar */}
-            <div className="self-center md:self-start">
+            <div className="shrink-0">
               <EditableAvatar displayName={displayName} />
             </div>
 
             {/* Main info */}
-            <div className="flex-1 w-full">
-              <div className="flex items-start justify-between w-full">
-                <h1 className="text-2xl md:text-3xl font-bold text-black text-center md:text-left w-full md:w-auto">{displayName}</h1>
-                {/* Only for the signed-in user on their own profile */}
+            <div className="flex-1 text-center md:text-left">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                <h1 className="text-2xl font-bold text-black">{displayName}</h1>
                 <div className="hidden md:block">
                   <EditProfileTopButton displayName={displayName} baseHref={baseHref} />
                 </div>
               </div>
 
-              <div className="mt-2 flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-gray-700">
-                <div className="flex items-center gap-2">
+              <div className="mt-2 flex flex-wrap items-center justify-center md:justify-start gap-3 text-sm text-gray-600">
+                <div className="flex items-center gap-1.5">
                   <StarRow value={5} />
                   <span className="font-medium text-black">5.0</span>
                   <span className="text-gray-500">(0)</span>
                 </div>
+                <span className="text-gray-300">•</span>
                 <div className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4 text-gray-400" />
-                  <span>United Kingdom</span>
+                  <MapPin className="h-3.5 w-3.5 text-gray-400" />
+                  <span>UK</span>
                 </div>
+                <span className="text-gray-300">•</span>
                 <div className="flex items-center gap-1">
-                  <Store className="h-4 w-4 text-gray-400" />
-                  <span>Member since 2025</span>
+                  <Store className="h-3.5 w-3.5 text-gray-400" />
+                  <span>Joined 2025</span>
                 </div>
               </div>
 
               {/* Stats */}
-              <div className="mt-4 grid grid-cols-3 gap-3 max-w-md mx-auto md:mx-0">
-                <div className="rounded-lg border border-gray-200 bg-white p-3 text-center">
-                  <div className="text-xs text-gray-500">Listings</div>
-                  <SellerListingCount sellerName={displayName} />
+              <div className="mt-4 inline-flex gap-6 text-center">
+                <div>
+                  <SellerListingCount sellerName={displayName} className="block text-xl font-bold text-black" />
+                  <div className="text-xs text-gray-500 mt-0.5">Listings</div>
                 </div>
-                <div className="rounded-lg border border-gray-200 bg-white p-3 text-center">
-                  <div className="text-xs text-gray-500">Rating</div>
-                  <div className="text-lg font-semibold text-yellow-600">5.0</div>
+                <div>
+                  <div className="text-xl font-bold text-black">5.0</div>
+                  <div className="text-xs text-gray-500 mt-0.5">Rating</div>
                 </div>
-                <div className="rounded-lg border border-gray-200 bg-white p-3 text-center">
-                  <div className="text-xs text-gray-500">Reviews</div>
-                  <div className="text-lg font-semibold text-yellow-600">0</div>
+                <div>
+                  <div className="text-xl font-bold text-black">0</div>
+                  <div className="text-xs text-gray-500 mt-0.5">Reviews</div>
                 </div>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="order-3 md:order-none w-full md:w-auto md:min-w-[160px] mt-4 md:mt-0">
-              <div className="grid grid-cols-2 md:grid-cols-1 gap-2">
-                <ProfileActions
-                  shareText={`Check out ${displayName} on Motorsource`}
-                  shareUrl={baseHref}
-                  toUsername={displayName}
-                />
-                <ReportUserButton sellerName={displayName} />
-              </div>
-              {/* Mobile edit button */}
-              <div className="mt-2 md:hidden">
+            <div className="w-full md:w-auto flex md:flex-col gap-2">
+              <ProfileActions
+                shareText={`Check out ${displayName} on Motorsource`}
+                shareUrl={baseHref}
+                toUsername={displayName}
+              />
+              <ReportUserButton sellerName={displayName} />
+              <div className="md:hidden flex-1">
                 <EditProfileTopButton displayName={displayName} baseHref={baseHref} />
               </div>
             </div>
