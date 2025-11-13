@@ -186,7 +186,7 @@ export default function ThreadClient({
   }, [thread]);
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col w-full max-w-screen-sm mx-auto overflow-x-hidden">
       {/* User Profile Bar */}
       <div className="border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between p-4">
@@ -241,7 +241,7 @@ export default function ThreadClient({
       <ActiveOfferBar threadId={thread.id} />
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-6">
+  <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-6 overscroll-contain">
         {grouped.map(group => (
           <div key={group.day}>
             <div className="sticky top-0 z-10 mb-2 flex justify-center">
@@ -273,11 +273,15 @@ export default function ThreadClient({
                   );
                 }
                 const mineMsg = (m.from || '').trim() === selfName.trim();
+                const ts = new Date(m.ts || Date.now()).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
                 return (
-                  <div key={m._k || m.id} className={`flex ${mineMsg ? 'justify-end' : 'justify-start'}`}>
-                    <div className="max-w-[80%]">
-                      <div className={`text-[11px] mb-0.5 ${mineMsg ? 'text-right text-gray-500' : 'text-left text-gray-500'}`}>{displayName(m.from || 'Unknown')}</div>
-                      <div className={`px-3 py-2 rounded-md border text-sm whitespace-pre-wrap break-words shadow-sm ${mineMsg ? 'bg-yellow-500 text-black border-yellow-400' : 'bg-white text-gray-900 border-gray-200'}`}>{m.text}</div>
+                  <div key={m._k || m.id} className={`flex ${mineMsg ? 'justify-end' : 'justify-start'} px-0`}>
+                    <div className="max-w-[78%]">
+                      <div className={`flex items-center gap-2 mb-0.5 ${mineMsg ? 'flex-row-reverse' : ''}`}>
+                        <span className={`text-[10px] font-medium ${mineMsg ? 'text-right text-gray-500' : 'text-left text-gray-500'} truncate`}>{displayName(m.from || 'Unknown')}</span>
+                        <span className="text-[10px] text-gray-400 whitespace-nowrap">{ts}</span>
+                      </div>
+                      <div className={`px-3 py-2 rounded-2xl border text-sm whitespace-pre-wrap break-words shadow-sm leading-relaxed ${mineMsg ? 'bg-yellow-500 text-black border-yellow-400 rounded-br-sm' : 'bg-white text-gray-900 border-gray-200 rounded-bl-sm'}`}>{m.text}</div>
                     </div>
                   </div>
                 );
