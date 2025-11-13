@@ -276,12 +276,12 @@ export default function ThreadClient({
                 const ts = new Date(m.ts || Date.now()).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
                 return (
                   <div key={m._k || m.id} className={`flex ${mineMsg ? 'justify-end' : 'justify-start'} px-0`}>
-                    <div className="max-w-[78%]">
+                    <div className="max-w-[90vw] sm:max-w-[78%]">
                       <div className={`flex items-center gap-2 mb-0.5 ${mineMsg ? 'flex-row-reverse' : ''}`}>
                         <span className={`text-[10px] font-medium ${mineMsg ? 'text-right text-gray-500' : 'text-left text-gray-500'} truncate`}>{displayName(m.from || 'Unknown')}</span>
                         <span className="text-[10px] text-gray-400 whitespace-nowrap">{ts}</span>
                       </div>
-                      <div className={`px-3 py-2 rounded-2xl border text-sm whitespace-pre-wrap break-words shadow-sm leading-relaxed ${mineMsg ? 'bg-yellow-500 text-black border-yellow-400 rounded-br-sm' : 'bg-white text-gray-900 border-gray-200 rounded-bl-sm'}`}>{m.text}</div>
+                      <div className={`px-3 py-2 rounded-2xl border text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere] shadow-sm leading-relaxed ${mineMsg ? 'bg-yellow-500 text-black border-yellow-400 rounded-br-sm' : 'bg-white text-gray-900 border-gray-200 rounded-bl-sm'}`}>{m.text}</div>
                     </div>
                   </div>
                 );
