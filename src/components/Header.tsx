@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   PlusCircle,
   User,
@@ -68,6 +68,8 @@ export default function Header() {
   const [cartOpen, setCartOpen] = useState(false);
   const [isUserLoaded, setIsUserLoaded] = useState(false);
   const [isAdminUser, setIsAdminUser] = useState(false);
+  const [hideTopBar, setHideTopBar] = useState(false);
+  const lastScrollY = useRef(0);
 
   const categories = [
     ["OEM Parts", "/categories/oem"],
@@ -146,11 +148,225 @@ export default function Header() {
     ["Account Settings", "/settings"],
   ] as const;
 
+  // Hide/show the mobile top bar (icons row) on scroll
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY || 0;
+      const goingDown = y > lastScrollY.current;
+      // Only hide when scrolled beyond small threshold
+      setHideTopBar(goingDown && y > 20);
+      lastScrollY.current = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <nav className="w-full h-[55px] bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm fixed top-0 z-50">
-  <Link href="/" className="text-2xl font-extrabold text-yellow-500 tracking-tight">
-        Motorsauce
-      </Link>
+    <>
+      {/* Mobile header (md:hidden) */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        {/* Top icons row: hides on scroll down */}
+        <div
+          className={`overflow-hidden transition-all duration-300 ${hideTopBar ? "max-h-0 opacity-0" : "max-h-12 opacity-100"}`}
+        >
+          <div className="h-12 flex items-center justify-between px-4">
+            <button
+              className="flex items-center text-black hover:text-yellow-500"
+              aria-label="Toggle menu"
+              onClick={() => setMobileMenuOpen((v) => !v)}
+            >
+              {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+            <div className="flex items-center gap-3">
+              <Link href={profileHref} aria-label="Profile" className="text-black hover:text-yellow-500">
+                <User size={22} />
+              </Link>
+              <button
+                onClick={() => setCartOpen(true)}
+                aria-label="Open basket"
+                className="relative text-black hover:text-yellow-500"
+              >
+                <ShoppingCart size={22} />
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[10px] font-bold min-w-[16px] h-[16px] px-1">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Logo */}
+        <div className="px-4 pt-2 pb-1 flex justify-center">
+          <Link href="/" className="text-2xl font-extrabold text-yellow-500 tracking-tight" aria-label="Motorsource home">
+            Motorsource
+          </Link>
+        </div>
+
+        {/* Search bar across the top */}
+        <form
+          action="/search"
+          method="get"
+          className="px-4 pb-3"
+          role="search"
+          onSubmit={(e) => {
+            try {
+              const form = e.currentTarget as HTMLFormElement;
+              const fd = new FormData(form);
+              const q = String(fd.get("query") || "").trim();
+              if (!q) return;
+              const key = "ms:recent-searches";
+              const raw = localStorage.getItem(key);
+              const arr = raw ? JSON.parse(raw) : [];
+              const next = [q, ...arr.filter((s: string) => s !== q)].slice(0, 10);
+              localStorage.setItem(key, JSON.stringify(next));
+            } catch {
+              /* ignore */
+            }
+          }}
+        >
+          <div className="flex items-center w-full border border-gray-300 rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-yellow-400 bg-white shadow-sm">
+            <SearchIcon className="text-gray-400 mr-2" size={18} aria-hidden="true" />
+            <input
+              type="text"
+              name="query"
+              placeholder="Search parts or enter registration…"
+              className="flex-1 border-none focus:ring-0 text-[15px] text-[#333] placeholder-gray-800 bg-transparent"
+              aria-label="Search"
+            />
+          </div>
+        </form>
+
+        {/* Mobile menu panel */}
+        {mobileMenuOpen && (
+          <div className="md:hidden fixed left-0 right-0 top-[140px] bg-white border-b border-gray-200 shadow-md z-40">
+            {categories.map(([name, href]) => (
+              <Link
+                key={href}
+                href={href}
+                className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {name}
+              </Link>
+            ))}
+            <div className="border-t border-gray-100" />
+            {isUserLoaded && user ? (
+              <>
+                <Link
+                  href="/sell"
+                  className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    <PlusCircle size={16} /> Sell
+                  </span>
+                </Link>
+                {isAdminUser && (
+                  <Link
+                    href="/admin/dashboard"
+                    className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      <User size={16} /> Admin
+                    </span>
+                  </Link>
+                )}
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setCartOpen(true);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                >
+                  <span className="inline-flex items-center gap-1">
+                    <ShoppingCart size={16} /> Basket {cartCount > 0 ? `(${cartCount})` : ""}
+                  </span>
+                </button>
+                <Link
+                  href={profileHref}
+                  className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  My Profile
+                </Link>
+                <Link
+                  href="/messages"
+                  className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  My Messages {unread > 0 ? `(${unread})` : ""}
+                </Link>
+                <Link
+                  href="/sales"
+                  className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Previous Sales
+                </Link>
+                <Link
+                  href="/reviews"
+                  className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  My Reviews
+                </Link>
+                <Link
+                  href="/settings"
+                  className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Account Settings
+                </Link>
+                <Link
+                  href="/auth/logout"
+                  className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Log out
+                </Link>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setCartOpen(true);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                >
+                  <span className="inline-flex items-center gap-1">
+                    <ShoppingCart size={16} /> Basket {cartCount > 0 ? `(${cartCount})` : ""}
+                  </span>
+                </button>
+                <div className="border-t border-gray-100" />
+                <Link
+                  href="/auth/login"
+                  className="block px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-50 hover:text-yellow-600"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/auth/register"
+                  className="block px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-50 hover:text-yellow-600"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Register
+                </Link>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop header (>= md) */}
+      <nav className="hidden md:flex w-full h-[55px] bg-white border-b border-gray-200 items-center justify-between px-6 shadow-sm fixed top-0 z-40">
+        <Link href="/" className="text-2xl font-extrabold text-yellow-500 tracking-tight">
+          Motorsource
+        </Link>
 
       <form
         action="/search"
@@ -186,7 +402,7 @@ export default function Header() {
         </div>
       </form>
 
-      <div className="hidden md:flex items-center gap-4">
+  <div className="hidden md:flex items-center gap-4">
         {/* Categories dropdown */}
         <div className="relative group">
           <button
@@ -318,137 +534,8 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile menu toggle */}
-      <button
-        className="md:hidden flex items-center"
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        aria-label="Toggle menu"
-      >
-        {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-      </button>
-
-      {mobileMenuOpen && (
-        <div className="md:hidden absolute top-[55px] left-0 w-full bg-white border-b border-gray-200 shadow-md z-40">
-          {categories.map(([name, href]) => (
-            <Link
-              key={href}
-              href={href}
-              className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {name}
-            </Link>
-          ))}
-          <div className="border-t border-gray-100" />
-          {isUserLoaded && user ? (
-            <>
-              <Link
-                href="/sell"
-                className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <span className="inline-flex items-center gap-1">
-                  <PlusCircle size={16} /> Sell
-                </span>
-              </Link>
-              {isAdminUser && (
-                <Link
-                  href="/admin/dashboard"
-                  className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <span className="inline-flex items-center gap-1">
-                    <User size={16} /> Admin
-                  </span>
-                </Link>
-              )}
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  setCartOpen(true);
-                }}
-                className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-              >
-                <span className="inline-flex items-center gap-1">
-                  <ShoppingCart size={16} /> Basket {cartCount > 0 ? `(${cartCount})` : ""}
-                </span>
-              </button>
-              <Link
-                href={profileHref}
-                className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                My Profile
-              </Link>
-              <Link
-                href="/messages"
-                className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                My Messages {unread > 0 ? `(${unread})` : ""}
-              </Link>
-              <Link
-                href="/sales"
-                className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Previous Sales
-              </Link>
-              <Link
-                href="/reviews"
-                className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                My Reviews
-              </Link>
-              <Link
-                href="/settings"
-                className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Account Settings
-              </Link>
-              <Link
-                href="/auth/logout"
-                className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Log out
-              </Link>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  setCartOpen(true);
-                }}
-                className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-              >
-                <span className="inline-flex items-center gap-1">
-                  <ShoppingCart size={16} /> Basket {cartCount > 0 ? `(${cartCount})` : ""}
-                </span>
-              </button>
-              <div className="border-t border-gray-100" />
-              <Link
-                href="/auth/login"
-                className="block px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-50 hover:text-yellow-600"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/auth/register"
-                className="block px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-50 hover:text-yellow-600"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Register
-              </Link>
-            </>
-          )}
-        </div>
-      )}
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
     </nav>
+    </>
   );
 }
