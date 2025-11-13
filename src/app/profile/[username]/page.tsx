@@ -38,8 +38,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { username } = await params;
   const displayName = decodeURIComponent(username);
   return {
-    title: `${displayName} • Seller • Motorsauce`,
-    description: `View ${displayName}'s listings on Motorsauce.`,
+    title: `${displayName} • Seller • Motorsource`,
+    description: `View ${displayName}'s listings on Motorsource.`,
   };
 }
 
@@ -55,20 +55,24 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
     <section className="max-w-7xl mx-auto px-4 py-8">
       {/* ---------- Header ---------- */}
       <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-yellow-50 via-white to-white">
-        <div className="p-6 md:p-8">
-          <div className="flex items-start gap-4 md:gap-6">
+        <div className="p-5 md:p-8">
+          <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6">
             {/* Avatar */}
-            <EditableAvatar displayName={displayName} />
+            <div className="self-center md:self-start">
+              <EditableAvatar displayName={displayName} />
+            </div>
 
             {/* Main info */}
-            <div className="flex-1">
-              <div className="flex items-start justify-between">
-                <h1 className="text-2xl md:text-3xl font-bold text-black">{displayName}</h1>
+            <div className="flex-1 w-full">
+              <div className="flex items-start justify-between w-full">
+                <h1 className="text-2xl md:text-3xl font-bold text-black text-center md:text-left w-full md:w-auto">{displayName}</h1>
                 {/* Only for the signed-in user on their own profile */}
-                <EditProfileTopButton displayName={displayName} baseHref={baseHref} />
+                <div className="hidden md:block">
+                  <EditProfileTopButton displayName={displayName} baseHref={baseHref} />
+                </div>
               </div>
 
-              <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-gray-700">
+              <div className="mt-2 flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-gray-700">
                 <div className="flex items-center gap-2">
                   <StarRow value={5} />
                   <span className="font-medium text-black">5.0</span>
@@ -85,7 +89,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
               </div>
 
               {/* Stats */}
-              <div className="mt-4 grid grid-cols-3 gap-3 max-w-md">
+              <div className="mt-4 grid grid-cols-3 gap-3 max-w-md mx-auto md:mx-0">
                 <div className="rounded-lg border border-gray-200 bg-white p-3 text-center">
                   <div className="text-xs text-gray-500">Listings</div>
                   <SellerListingCount sellerName={displayName} />
@@ -102,13 +106,19 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col gap-2 min-w-[140px]">
-              <ProfileActions
-                shareText={`Check out ${displayName} on Motorsauce`}
-                shareUrl={baseHref}
-                toUsername={displayName}
-              />
-              <ReportUserButton sellerName={displayName} />
+            <div className="order-3 md:order-none w-full md:w-auto md:min-w-[160px] mt-4 md:mt-0">
+              <div className="grid grid-cols-2 md:grid-cols-1 gap-2">
+                <ProfileActions
+                  shareText={`Check out ${displayName} on Motorsource`}
+                  shareUrl={baseHref}
+                  toUsername={displayName}
+                />
+                <ReportUserButton sellerName={displayName} />
+              </div>
+              {/* Mobile edit button */}
+              <div className="mt-2 md:hidden">
+                <EditProfileTopButton displayName={displayName} baseHref={baseHref} />
+              </div>
             </div>
           </div>
         </div>

@@ -164,12 +164,12 @@ export default function Header() {
   return (
     <>
       {/* Mobile header (md:hidden) */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+  <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         {/* Top icons row: hides on scroll down */}
         <div
           className={`overflow-hidden transition-all duration-300 ${hideTopBar ? "max-h-0 opacity-0" : "max-h-12 opacity-100"}`}
         >
-          <div className="h-12 flex items-center justify-between px-4">
+          <div className="h-10 flex items-center justify-between px-4">
             <button
               className="flex items-center text-black hover:text-yellow-500"
               aria-label="Toggle menu"
@@ -198,7 +198,7 @@ export default function Header() {
         </div>
 
         {/* Logo */}
-        <div className="px-4 pt-2 pb-1 flex justify-center">
+        <div className="px-4 py-1 flex justify-center">
           <Link href="/" className="text-2xl font-extrabold text-yellow-500 tracking-tight" aria-label="Motorsource home">
             Motorsource
           </Link>
@@ -208,7 +208,7 @@ export default function Header() {
         <form
           action="/search"
           method="get"
-          className="px-4 pb-3"
+          className="px-4 pb-2"
           role="search"
           onSubmit={(e) => {
             try {
@@ -240,7 +240,7 @@ export default function Header() {
 
         {/* Mobile menu panel */}
         {mobileMenuOpen && (
-          <div className="md:hidden fixed left-0 right-0 top-[140px] bg-white border-b border-gray-200 shadow-md z-40">
+          <div className="md:hidden fixed left-0 right-0 top-[120px] bg-white border-b border-gray-200 shadow-md z-40">
             {categories.map(([name, href]) => (
               <Link
                 key={href}
