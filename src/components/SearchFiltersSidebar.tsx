@@ -211,7 +211,7 @@ export default function SearchFiltersSidebar(props: Props) {
               disabled={!sp.get("make")}
             >
               <option value="">{sp.get("make") ? "All models" : "Select a make first"}</option>
-              {(vehicles[sp.get("make") || ""] || []).map((m) => (
+              {sp.get("make") && (vehicles[sp.get("make") || ""] || []).map((m) => (
                 <option key={m} value={m}>{m}</option>
               ))}
             </select>

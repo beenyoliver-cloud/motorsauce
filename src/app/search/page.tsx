@@ -216,6 +216,7 @@ function SearchPageInner() {
         if (typeof priceMax === "number" && p > priceMax) return false;
 
         if (q) {
+          const needle = q.toLowerCase().trim();
           const hay = [
             l.title,
             l.description ?? "",
@@ -232,7 +233,7 @@ function SearchPageInner() {
           ]
             .join(" ")
             .toLowerCase();
-          if (!hay.includes(q.toLowerCase())) return false;
+          if (!hay.includes(needle)) return false;
         }
         return true;
       }),
