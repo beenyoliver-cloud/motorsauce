@@ -84,6 +84,7 @@ function readFavouriteGarage():
 function SearchPageInner() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [all, setAll] = useState<Listing[]>([]);
+  const [users, setUsers] = useState<Array<{ id: string; name: string; avatar: string; rating?: number; url: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
@@ -150,6 +151,29 @@ function SearchPageInner() {
     (sp.get("q") && String(sp.get("q"))) ||
     (sp.get("query") && String(sp.get("query"))) ||
     "";
+  const type = (sp.get("type") === "users" ? "users" : "parts") as "parts" | "users";
+
+  // Fetch users when on users tab and q present
+  useEffect(() => {
+    let alive = true;
+    if (type !== "users") return;
+    if (!q || !q.trim()) {
+      setUsers([]);
+      return;
+    }
+    setLoading(true);
+    fetch(`/api/users?q=${encodeURIComponent(q)}&limit=30`, { cache: "no-store" })
+      .then(async (r) => {
+        if (!r.ok) throw new Error((await r.json())?.error || "Failed to search users");
+        return r.json();
+      })
+      .then((data) => alive && setUsers(Array.isArray(data) ? data : []))
+      .catch((e) => alive && setErr(e.message || "Failed to load"))
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [type, q]);
 
   const categories = arrify(sp.getAll("category"));
   const makes = arrify(sp.getAll("make"));
@@ -210,8 +234,9 @@ function SearchPageInner() {
 
   return (
     <div className="mx-auto max-w-7xl md:grid md:grid-cols-[300px_1fr]">
-      {/* Desktop sidebar column (sticky inside component) + mobile drawer controller */}
-      <SearchFiltersSidebar
+      {/* Desktop sidebar column for parts search only */}
+      {type === "parts" && (
+        <SearchFiltersSidebar
         q={q}
         category={categories[0] || ""}
         make={makes[0] || ""}
@@ -229,29 +254,55 @@ function SearchPageInner() {
         mobileOpen={mobileFiltersOpen}
         onMobileClose={() => setMobileFiltersOpen(false)}
       />
+      )}
 
       {/* Results column (no more ml-[320px]) */}
       <section className="pt-4">
         {/* Mobile toolbar */}
         <div className="md:hidden mb-3 flex items-center justify-between px-4">
           <h1 className="text-xl font-bold text-black">Search</h1>
-          <button
-            type="button"
-            onClick={() => setMobileFiltersOpen(true)}
-            className="px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-900 hover:bg-gray-100"
-          >
-            Filters
-          </button>
+          {type === "parts" && (
+            <button
+              type="button"
+              onClick={() => setMobileFiltersOpen(true)}
+              className="px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-900 hover:bg-gray-100"
+            >
+              Filters
+            </button>
+          )}
         </div>
 
         <div className="space-y-6 px-4 md:px-6">
+          {/* Type tabs */}
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/search?${new URLSearchParams({ ...Object.fromEntries(sp.entries()), type: "parts" }).toString()}`}
+              className={`text-sm px-3 py-1.5 rounded-md border ${type === "parts" ? "bg-yellow-500 text-black border-yellow-500" : "bg-white text-gray-900 border-gray-300"}`}
+            >
+              Parts
+            </Link>
+            <Link
+              href={`/search?${new URLSearchParams({ ...Object.fromEntries(sp.entries()), type: "users" }).toString()}`}
+              className={`text-sm px-3 py-1.5 rounded-md border ${type === "users" ? "bg-yellow-500 text-black border-yellow-500" : "bg-white text-gray-900 border-gray-300"}`}
+            >
+              Sellers
+            </Link>
+          </div>
+
           {/* Summary */}
           <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <h2 className="text-lg font-semibold text-black">Search results</h2>
-            <p className="mt-1 text-sm text-gray-700">
-              {results.length.toLocaleString()} result{results.length === 1 ? "" : "s"}
-              {q ? <> • Query: <strong>{q}</strong></> : null}
-            </p>
+            <h2 className="text-lg font-semibold text-black">{type === "users" ? "Seller results" : "Search results"}</h2>
+            {type === "parts" ? (
+              <p className="mt-1 text-sm text-gray-700">
+                {results.length.toLocaleString()} result{results.length === 1 ? "" : "s"}
+                {q ? <> • Query: <strong>{q}</strong></> : null}
+              </p>
+            ) : (
+              <p className="mt-1 text-sm text-gray-700">
+                {users.length.toLocaleString()} match{users.length === 1 ? "" : "es"}
+                {q ? <> • Query: <strong>{q}</strong></> : null}
+              </p>
+            )}
           </div>
 
           {/* Errors */}
@@ -275,6 +326,24 @@ function SearchPageInner() {
                 </div>
               ))}
             </div>
+          ) : type === "users" ? (
+            users.length === 0 ? (
+              <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
+                <p className="text-gray-800">No sellers found.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {users.map((u) => (
+                  <Link key={u.id} href={u.url} className="flex items-center gap-3 border border-gray-200 rounded-xl bg-white p-3 hover:shadow transition">
+                    <SafeImage src={u.avatar} alt={u.name} className="h-10 w-10 rounded-full object-cover" />
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-black truncate">{u.name}</div>
+                      <div className="text-xs text-gray-600">View profile</div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )
           ) : results.length === 0 ? (
             <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
               <p className="text-gray-800">No results found. Try removing a filter or searching a different term.</p>

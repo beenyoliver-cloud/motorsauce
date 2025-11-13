@@ -354,6 +354,29 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
                 <Plus className="h-4 w-4" /> Add vehicle
               </button>
               <Toggle checked={pub} onChange={togglePublic} />
+              {pub && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const url = `${window.location.origin}/profile/${encodeURIComponent(displayName)}#garage`;
+                      await navigator.clipboard.writeText(url);
+                      setCopiedId("__public__");
+                      setTimeout(() => setCopiedId((prev) => (prev === "__public__" ? null : prev)), 1200);
+                    } catch {}
+                  }}
+                  className={cx(
+                    "inline-flex items-center gap-1 rounded-md border text-sm px-3 py-1.5",
+                    copiedId === "__public__"
+                      ? "bg-white border-green-300 text-green-700"
+                      : "bg-white border-gray-200 text-gray-900 hover:bg-gray-50"
+                  )}
+                  title="Copy public garage link"
+                >
+                  <LinkIcon className="h-4 w-4" />
+                  {copiedId === "__public__" ? "Link copied" : "Copy public link"}
+                </button>
+              )}
             </>
           )}
         </div>
