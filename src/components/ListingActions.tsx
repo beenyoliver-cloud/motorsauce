@@ -29,7 +29,7 @@ export default function ListingActions({
       type NavigatorShare = Navigator & { share?: (data: { title?: string; text?: string; url?: string }) => Promise<void> };
       const nav = navigator as NavigatorShare;
       if (typeof nav.share === "function") {
-        await nav.share({ title: "Motorsauce listing", url });
+        await nav.share({ title: "Motorsource listing", url });
       } else {
         await navigator.clipboard.writeText(url);
         alert("Link copied to clipboard");

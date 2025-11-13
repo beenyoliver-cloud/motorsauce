@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "Terms of Service • Motorsauce",
-  description: "The rules for using Motorsauce",
+  title: "Terms of Service • Motorsource",
+  description: "The rules for using Motorsource",
 };
 
 export default function TermsPage() {
@@ -8,7 +8,7 @@ export default function TermsPage() {
     <section className="max-w-3xl mx-auto space-y-6">
       <h1 className="text-3xl font-bold">Terms of Service</h1>
       <p className="text-gray-700">
-        Welcome to Motorsauce. By using the site you agree to these MVP terms.
+        Welcome to Motorsource. By using the site you agree to these MVP terms.
         We’ll refine these as we launch more features.
       </p>
 
@@ -29,8 +29,8 @@ export default function TermsPage() {
         <h2 className="text-xl font-semibold">Contact</h2>
         <p>
           Questions about these terms?{" "}
-          <a href="mailto:legal@motorsauce.example" className="text-yellow-600 hover:underline">
-            legal@motorsauce.example
+          <a href="mailto:legal@motorsource.example" className="text-yellow-600 hover:underline">
+            legal@motorsource.example
           </a>
         </p>
       </div>

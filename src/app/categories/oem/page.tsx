@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "OEM Parts | Motorsauce",
+  title: "OEM Parts | Motorsource",
   description:
     "Shop OEM (Original Equipment Manufacturer) car parts by type, brand, and quick filters. Verified listings with OEM codes where available.",
 };

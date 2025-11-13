@@ -43,12 +43,20 @@ function baseUrl() {
 }
 
 async function fetchListing(id: string): Promise<Listing | null> {
-  const res = await fetch(`${baseUrl()}/api/listings?id=${encodeURIComponent(id)}`, {
-    cache: "no-store",
-  });
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`Failed to fetch listing ${id}`);
-  return (await res.json()) as Listing;
+  try {
+    const res = await fetch(`${baseUrl()}/api/listings?id=${encodeURIComponent(id)}`, {
+      cache: "no-store",
+    });
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      // Gracefully handle API errors to avoid application error
+      return null;
+    }
+    return (await res.json()) as Listing;
+  } catch {
+    // Network or other unexpected error — treat as not found to keep UX stable
+    return null;
+  }
 }
 
 /* ========== Metadata ========== */
@@ -61,13 +69,13 @@ export async function generateMetadata({
   const listing = await fetchListing(id);
   if (!listing) {
     return {
-      title: "Listing not found | Motorsauce",
+      title: "Listing not found | Motorsource",
       description: "This listing could not be found.",
-      openGraph: { type: "website", title: "Listing not found | Motorsauce" },
+      openGraph: { type: "website", title: "Listing not found | Motorsource" },
     };
   }
 
-  const title = `${listing.title} – ${listing.price} | Motorsauce`;
+  const title = `${listing.title} – ${listing.price} | Motorsource`;
   const desc =
     listing.description?.slice(0, 160) ||
     [listing.category, listing.make, listing.model, listing.genCode, listing.engine, listing.oem]

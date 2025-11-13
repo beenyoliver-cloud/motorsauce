@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "Aftermarket Parts | Motorsauce",
+  title: "Aftermarket Parts | Motorsource",
   description:
     "Shop aftermarket car parts by type, brand, and quick filters. Upgrade, replace, or personalize with trusted aftermarket components.",
 };

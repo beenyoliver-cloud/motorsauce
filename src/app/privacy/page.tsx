@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "Privacy Policy • Motorsauce",
-  description: "How Motorsauce handles your data",
+  title: "Privacy Policy • Motorsource",
+  description: "How Motorsource handles your data",
 };
 
 export default function PrivacyPage() {
@@ -29,8 +29,8 @@ export default function PrivacyPage() {
 
         <p>
           For questions, email{" "}
-          <a href="mailto:privacy@motorsauce.example" className="text-yellow-600 hover:underline">
-            privacy@motorsauce.example
+          <a href="mailto:privacy@motorsource.example" className="text-yellow-600 hover:underline">
+            privacy@motorsource.example
           </a>.
         </p>
       </div>

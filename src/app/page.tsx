@@ -20,7 +20,7 @@ export default function Home() {
           </Link>
         </div>
 
-        <SuggestedParts />
+        <SuggestedParts limit={4} />
       </section>
 
       {/* popular sellers (dynamic) */}

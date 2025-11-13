@@ -12,7 +12,9 @@ type Listing = {
   image: string;
 };
 
-export default function SuggestedParts() {
+type Props = { limit?: number };
+
+export default function SuggestedParts({ limit = 12 }: Props) {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,7 +39,8 @@ export default function SuggestedParts() {
         if (!mounted) return;
         if (res.ok) {
           const data = await res.json();
-          if (Array.isArray(data)) setListings(data.slice(0, 12));
+          const lim = Number.isFinite(limit as number) ? (limit as number) : 12;
+          if (Array.isArray(data)) setListings(data.slice(0, lim));
         }
       } catch (err) {
         // ignore
@@ -49,7 +52,7 @@ export default function SuggestedParts() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [limit]);
 
   if (loading) return <div className="py-8">Loading suggestions…</div>;
   if (!listings.length)

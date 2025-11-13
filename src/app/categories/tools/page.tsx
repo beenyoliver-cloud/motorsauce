@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "Tools & Accessories | Motorsauce",
+  title: "Tools & Accessories | Motorsource",
   description:
     "Shop garage tools, diagnostics, detailing, and accessories by type, brand, or quick filters.",
 };

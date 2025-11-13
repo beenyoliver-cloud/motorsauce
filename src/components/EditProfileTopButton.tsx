@@ -21,7 +21,7 @@ export default function EditProfileTopButton({
 
   return (
     <Link
-      href={`${baseHref}?tab=about&edit=1`}
+      href={`/settings`}
       className="text-xs px-3 py-1.5 rounded-md border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 text-center"
     >
       Edit profile

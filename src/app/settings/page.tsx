@@ -47,16 +47,16 @@ export default function SettingsPage() {
     }
 
     try {
-      // Update name in profiles table
+      // Update name and email in profiles table to keep in sync with auth
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ name: name.trim() })
-  .eq('id', user.id);
+        .update({ name: name.trim(), email: email.trim() })
+        .eq('id', user.id);
 
       if (profileError) throw profileError;
 
-      // Update email if changed
-  if (email !== user.email) {
+      // Update auth email if changed (may require verification)
+      if (email !== user.email) {
         const { error: emailError } = await supabase.auth.updateUser({
           email: email.trim()
         });

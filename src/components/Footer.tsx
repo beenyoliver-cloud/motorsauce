@@ -27,7 +27,7 @@ export default function Footer() {
         {/* Brand */}
         <div>
           <Link href="/" className="text-2xl font-extrabold text-yellow-500 tracking-tight">
-            Motorsauce
+            Motorsource
           </Link>
           <p className="mt-2 text-sm text-gray-600">
             Buy and sell automotive parts with confidence.
@@ -70,7 +70,7 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div className="border-t border-gray-200 py-4 text-center text-sm text-gray-500">
-        © {new Date().getFullYear()} Motorsauce. All rights reserved.
+        © {new Date().getFullYear()} Motorsource. All rights reserved.
       </div>
     </footer>
   );
