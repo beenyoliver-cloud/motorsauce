@@ -173,7 +173,12 @@ export async function GET(req: Request) {
 
     if (listingError) {
       console.error("DB error fetching listing", id, listingError);
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+      return NextResponse.json({ 
+        error: "Database error", 
+        message: listingError.message,
+        details: listingError.details,
+        hint: listingError.hint 
+      }, { status: 500 });
     }
 
     if (!listingData) {
