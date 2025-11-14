@@ -15,6 +15,8 @@ import { createClient } from "@supabase/supabase-js";
 
 // Ensure this page always renders dynamically at runtime on Vercel
 export const dynamic = "force-dynamic";
+// Ensure Node.js runtime (not Edge) for compatibility with internal fetch + Supabase client
+export const runtime = "nodejs";
 
 /* ========== Types ========== */
 type Listing = {
