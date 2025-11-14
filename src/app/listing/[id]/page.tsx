@@ -10,6 +10,7 @@ import ReportListingButton from "@/components/ReportListingButton";
 import ListingSEO from "@/components/ListingSEO";
 import SellerLink from "@/components/SellerLink";
 import SellerExposureTracker from "@/components/SellerExposureTracker";
+import TrackRecentlyViewed from "@/components/TrackRecentlyViewed";
 
 /* ========== Types ========== */
 type Listing = {
@@ -113,6 +114,9 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-8">
+      {/* Track recently viewed (client side) */}
+      {/* @ts-ignore Server -> Client component mount */}
+      <TrackRecentlyViewed id={listing.id} />
       {/* Track exposure to seller (client side) */}
       {/* @ts-ignore Server -> Client component mount */}
       <SellerExposureTracker sellerName={listing.seller?.name} avatar={listing.seller?.avatar} />
