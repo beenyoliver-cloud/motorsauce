@@ -93,17 +93,46 @@ export default function ThreadClient({
       return;
     }
     
-    // We have a peer slug but need the actual display name
-    // For now, we'll use the slug as fallback and let it get enriched when messages arrive
-    const peerName = peerSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+    // Fetch the actual peer profile to get their real name and email (for peerId)
+    const fetchAndCreateThread = async () => {
+      const supabase = supabaseBrowser();
+      
+      // Try to find a profile that matches this slug pattern
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('name, email')
+        .ilike('name', `%${peerSlug.replace(/-/g, '%')}%`)
+        .limit(10);
+      
+      if (!profiles || profiles.length === 0) {
+        // Fallback: create with capitalized slug
+        const peerName = peerSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+        upsertThreadForPeer(selfName, peerName, {
+          preferThreadId: threadId,
+          initialLast: "New conversation",
+          listingRef: listingRef || undefined,
+        });
+        setThreads(loadThreads());
+        return;
+      }
+      
+      // Find the profile whose slug matches exactly
+      const peerProfile = profiles.find(p => {
+        const profileSlug = p.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
+        return profileSlug === peerSlug;
+      }) || profiles[0];
+      
+      // Create thread with proper peerId (email)
+      upsertThreadForPeer(selfName, peerProfile.name, {
+        preferThreadId: threadId,
+        initialLast: "New conversation",
+        listingRef: listingRef || undefined,
+        peerId: peerProfile.email,
+      });
+      setThreads(loadThreads());
+    };
     
-    // Create thread locally so the UI isn't blank
-    upsertThreadForPeer(selfName, peerName, {
-      preferThreadId: threadId,
-      initialLast: "New conversation",
-      listingRef: listingRef || undefined,
-    });
-    setThreads(loadThreads());
+    fetchAndCreateThread();
   }, [mounted, thread, threadId, selfName]);
 
   // Fetch peer profile when thread changes
@@ -342,7 +371,7 @@ export default function ThreadClient({
           <input
             name="text"
             placeholder="Type a message"
-            className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
             autoComplete="off"
           />
           <button className="rounded-md bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black">

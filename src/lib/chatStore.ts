@@ -198,7 +198,9 @@ export function publishUnread(threads: Thread[], readIds?: string[]) {
 
   if (!hasWindow()) return;
   try {
+    // Write to both the versioned key and the simple key for backwards compatibility
     window.localStorage.setItem(KEYS(undefined, "v2").unreadCount, String(unread));
+    window.localStorage.setItem(nsKey("unread_count"), String(unread));
 
     if (_publishingUnread) return;
     _publishingUnread = true;
