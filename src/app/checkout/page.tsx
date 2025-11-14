@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Cart, calcTotals, getCart, setShipping } from "@/lib/cartStore";
 import { formatGBP } from "@/lib/currency";
 import { resolveListingImage } from "@/lib/image";
+import { getCurrentUser } from "@/lib/auth";
 
 type Address = {
   fullName: string;
@@ -19,6 +20,15 @@ type Address = {
 
 export default function CheckoutPage() {
   const router = useRouter();
+  // Require login to buy
+  useEffect(() => {
+    (async () => {
+      const u = await getCurrentUser();
+      if (!u) {
+        router.replace(`/auth/login?next=${encodeURIComponent('/checkout')}`);
+      }
+    })();
+  }, [router]);
   const [cart, setCart] = useState<Cart>(getCart());
   const [addr, setAddr] = useState<Address>(() => readAddress());
   const [agree, setAgree] = useState(false);
