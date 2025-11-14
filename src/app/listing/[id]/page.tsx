@@ -45,7 +45,8 @@ function baseUrl() {
 
 async function fetchListing(id: string): Promise<Listing | null> {
   try {
-    const res = await fetch(`${baseUrl()}/api/listings?id=${encodeURIComponent(id)}`, {
+    // Use relative URL to avoid env/baseUrl pitfalls in production
+    const res = await fetch(`/api/listings?id=${encodeURIComponent(id)}`, {
       cache: "no-store",
     });
     if (res.status === 404) {
@@ -70,7 +71,8 @@ async function fetchListing(id: string): Promise<Listing | null> {
 // Fallback: fetch all listings and find by id
 async function fetchListingFallback(id: string): Promise<Listing | null> {
   try {
-    const res = await fetch(`${baseUrl()}/api/listings?limit=200`, { cache: "no-store" });
+    // Use relative URL to ensure same-host fetch in server components
+    const res = await fetch(`/api/listings?limit=200`, { cache: "no-store" });
     if (!res.ok) return null;
     const list = (await res.json()) as unknown;
     if (!Array.isArray(list)) return null;
