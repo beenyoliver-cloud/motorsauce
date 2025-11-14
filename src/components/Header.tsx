@@ -226,8 +226,10 @@ export default function Header() {
                 return;
               }
 
-              const key = "ms:recent-searches";
-              const raw = localStorage.getItem(key);
+              // Per-user recent searches (namespaced); fallback to legacy key for read
+              const key = nsKey("recent_searches");
+              const legacyKey = "ms:recent-searches";
+              const raw = localStorage.getItem(key) || localStorage.getItem(legacyKey);
               const arr = raw ? JSON.parse(raw) : [];
               const next = [q, ...arr.filter((s: string) => s !== q)].slice(0, 10);
               localStorage.setItem(key, JSON.stringify(next));
@@ -396,8 +398,10 @@ export default function Header() {
               window.location.href = `/search?type=users&q=${encodeURIComponent(handle)}`;
               return;
             }
-            const key = "ms:recent-searches";
-            const raw = localStorage.getItem(key);
+            // Per-user recent searches (namespaced); fallback to legacy key for read
+            const key = nsKey("recent_searches");
+            const legacyKey = "ms:recent-searches";
+            const raw = localStorage.getItem(key) || localStorage.getItem(legacyKey);
             const arr = raw ? JSON.parse(raw) : [];
             // keep unique, most recent first, max 10
             const next = [q, ...arr.filter((s: string) => s !== q)].slice(0, 10);

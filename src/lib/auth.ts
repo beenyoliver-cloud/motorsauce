@@ -10,7 +10,10 @@ export type LocalUser = {
 
 // Helper function to namespace localStorage keys by user
 export function nsKey(suffix: string): string {
-  return `ms_u:${suffix}`;
+  // Namespace by current user id when available; otherwise scope to anon.
+  // Uses cached user (set by getCurrentUser/login flows) to avoid async.
+  const uid = _cachedUser?.id || "anon";
+  return `ms_u:${uid}:${suffix}`;
 }
 
 // Check if a profile belongs to the current user

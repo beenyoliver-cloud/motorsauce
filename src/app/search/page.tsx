@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import SafeImage from "@/components/SafeImage";
 import SearchFiltersSidebar from "@/components/SearchFiltersSidebar";
+import { nsKey } from "@/lib/auth";
 
 /* ---------- Types ---------- */
 type Listing = {
@@ -150,7 +151,9 @@ function SearchPageInner() {
   // recent searches (client only)
   useEffect(() => {
     try {
-      const raw = localStorage.getItem("ms:recent-searches");
+      // Read per-user namespaced key first; fallback to legacy global key
+      const key = nsKey("recent_searches");
+      const raw = localStorage.getItem(key) || localStorage.getItem("ms:recent-searches");
       if (raw) {
         const arr = JSON.parse(raw);
         if (Array.isArray(arr)) setRecent(arr);
@@ -281,7 +284,10 @@ function SearchPageInner() {
                   onContextMenu={(e) => {
                     e.preventDefault();
                     setRecent(prev => prev.filter(s => s !== r));
-                    try { localStorage.setItem('ms:recent-searches', JSON.stringify(recent.filter(s => s !== r))); } catch {}
+                    try {
+                      const key = nsKey('recent_searches');
+                      localStorage.setItem(key, JSON.stringify(recent.filter(s => s !== r)));
+                    } catch {}
                   }}
                   className="px-3 py-1.5 rounded-full bg-gray-100 text-gray-800 text-xs border border-gray-200 whitespace-nowrap hover:bg-gray-200"
                   title="Tap to search • long press to remove"
