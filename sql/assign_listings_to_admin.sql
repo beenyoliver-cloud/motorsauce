@@ -6,20 +6,16 @@
 
 -- Step 2: Ensure Admin has a profile entry
 -- Replace 'ADMIN_USER_ID_HERE' with the actual UUID from Step 1
-INSERT INTO public.profiles (id, name, email, avatar, rating, created_at, updated_at)
+INSERT INTO public.profiles (id, name, email, created_at, updated_at)
 VALUES (
   'ADMIN_USER_ID_HERE',
   'Admin',
   'admin@motorsource.com',
-  '/images/seller1.jpg',
-  5.0,
   NOW(),
   NOW()
 )
 ON CONFLICT (id) DO UPDATE SET
-  name = EXCLUDED.name,
-  avatar = EXCLUDED.avatar,
-  rating = EXCLUDED.rating;
+  name = EXCLUDED.name;
 
 -- Step 3: Update all listings to use the Admin as seller
 UPDATE public.listings

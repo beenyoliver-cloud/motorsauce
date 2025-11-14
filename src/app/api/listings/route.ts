@@ -183,17 +183,21 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    // Fetch seller profile separately
-    let sellerProfile = { name: "Unknown Seller", avatar: "/images/seller1.jpg", rating: 0 };
+    // Fetch seller profile separately (only name exists in profiles table)
+    let sellerProfile = { name: "Unknown Seller", avatar: "/images/seller1.jpg", rating: 5 };
     if (listingData.seller_id) {
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("name, avatar, rating")
+        .select("name")
         .eq("id", listingData.seller_id)
         .maybeSingle();
       
       if (profileData) {
-        sellerProfile = profileData;
+        sellerProfile = {
+          name: profileData.name,
+          avatar: "/images/seller1.jpg",
+          rating: 5
+        };
       }
     }
 
@@ -229,16 +233,23 @@ export async function GET(req: Request) {
     errorDetails: error
   });
 
-  // If we got listings, enrich with seller info separately
+  // If we got listings, enrich with seller info separately (only name exists in profiles)
   if (data && Array.isArray(data) && data.length > 0) {
     const sellerIds = [...new Set(data.map((l: any) => l.seller_id).filter(Boolean))];
     if (sellerIds.length > 0) {
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, name, avatar, rating")
+        .select("id, name")
         .in("id", sellerIds);
       
-      const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+      const profileMap = new Map((profiles || []).map((p: any) => [
+        p.id, 
+        { 
+          name: p.name, 
+          avatar: "/images/seller1.jpg", 
+          rating: 5 
+        }
+      ]));
       
       // Attach seller info to each listing
       data.forEach((listing: any) => {
