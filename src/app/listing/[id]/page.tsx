@@ -51,8 +51,9 @@ function baseUrl() {
 
 async function fetchListing(id: string): Promise<Listing | null> {
   try {
-    // Use relative URL to avoid env/baseUrl pitfalls in production
-    const res = await fetch(`/api/listings?id=${encodeURIComponent(id)}`, {
+    // Use absolute URL with baseUrl() to ensure proper resolution in server component
+    const url = `${baseUrl()}/api/listings?id=${encodeURIComponent(id)}`;
+    const res = await fetch(url, {
       cache: "no-store",
     });
     if (res.status === 404) {
@@ -67,9 +68,9 @@ async function fetchListing(id: string): Promise<Listing | null> {
     const data = (await res.json()) as Listing;
     console.log(`[listing page] single API success for id=${id}`);
     return data;
-  } catch {
+  } catch (e) {
     // Network or other unexpected error — treat as not found to keep UX stable
-    console.error(`[listing page] single API threw for id=${id}`);
+    console.error(`[listing page] single API threw for id=${id}:`, e);
     return null;
   }
 }
@@ -77,20 +78,27 @@ async function fetchListing(id: string): Promise<Listing | null> {
 // Fallback: fetch all listings and find by id
 async function fetchListingFallback(id: string): Promise<Listing | null> {
   try {
-    // Use relative URL to ensure same-host fetch in server components
-    const res = await fetch(`/api/listings?limit=200`, { cache: "no-store" });
-    if (!res.ok) return null;
+    // Use absolute URL with baseUrl() for server component fetch
+    const url = `${baseUrl()}/api/listings?limit=200`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) {
+      console.warn(`[listing page] fallback API returned status=${res.status}`);
+      return null;
+    }
     const list = (await res.json()) as unknown;
-    if (!Array.isArray(list)) return null;
+    if (!Array.isArray(list)) {
+      console.warn(`[listing page] fallback API returned non-array`);
+      return null;
+    }
     const found = (list as any[]).find((l: any) => String(l?.id) === String(id));
     if (found) {
       console.log(`[listing page] using fallback list-and-find for id=${id}`);
     } else {
-      console.warn(`[listing page] fallback could not find id=${id} in list response`);
+      console.warn(`[listing page] fallback could not find id=${id} in list of ${list.length} items`);
     }
     return found || null;
-  } catch {
-    console.error(`[listing page] fallback list-and-find threw for id=${id}`);
+  } catch (e) {
+    console.error(`[listing page] fallback list-and-find threw for id=${id}:`, e);
     return null;
   }
 }
