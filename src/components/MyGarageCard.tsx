@@ -89,21 +89,21 @@ function Toggle({
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={cx(
-        "inline-flex items-center rounded-full px-2 h-9 border transition focus:outline-none focus:ring-2 focus:ring-yellow-400",
+        "inline-flex items-center rounded-full px-2 h-9 border transition focus:outline-none focus:ring-2 focus:ring-yellow-400 relative",
         checked ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"
       )}
       title={checked ? onLabel : offLabel}
     >
+      <span className={cx("text-sm font-semibold text-gray-900 select-none transition-all", checked ? "ml-2 mr-8" : "ml-8 mr-2")}>
+        {checked ? onLabel : offLabel}
+      </span>
       <span
         className={cx(
-          "inline-flex items-center justify-center h-6 w-6 rounded-full shadow-sm transition",
-          checked ? "translate-x-7 bg-green-600 text-white" : "translate-x-0 bg-gray-400 text-white"
+          "absolute inline-flex items-center justify-center h-6 w-6 rounded-full shadow-sm transition",
+          checked ? "right-1 bg-green-600 text-white" : "left-1 bg-gray-400 text-white"
         )}
       >
         {checked ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-      </span>
-      <span className="ml-3 mr-2 text-sm font-semibold text-gray-900 select-none">
-        {checked ? onLabel : offLabel}
       </span>
     </button>
   );

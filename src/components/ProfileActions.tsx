@@ -20,6 +20,11 @@ export default function ProfileActions({
   toUserEmail,               // ← required: we pass this as peerId
 }: ProfileActionsProps) {
   const router = useRouter();
+  const me = getCurrentUserSync();
+  const selfName = (me?.name || "You").trim();
+  
+  // Prevent self-messaging
+  const isSelf = me?.name === toUsername;
 
   async function handleShare() {
     try {
@@ -32,8 +37,10 @@ export default function ProfileActions({
   }
 
   function handleMessage() {
-    const me = getCurrentUserSync();
-    const selfName = (me?.name || "You").trim();
+    if (!me) {
+      router.push(`/auth/login?next=/profile/${encodeURIComponent(toUsername)}`);
+      return;
+    }
 
     // direct profile chat (no listingRef)
     const threadId = `t_${slugify(selfName)}_${slugify(toUsername)}`;
@@ -53,8 +60,9 @@ export default function ProfileActions({
       <button
         type="button"
         onClick={handleMessage}
-        className="inline-flex items-center justify-center rounded-md px-3 py-2 bg-gray-900 text-white font-medium hover:bg-gray-800 text-sm transition"
-        title={`Message ${toUsername}`}
+        disabled={isSelf}
+        className="inline-flex items-center justify-center rounded-md px-3 py-2 bg-gray-900 text-white font-medium hover:bg-gray-800 text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+        title={isSelf ? "You can't message yourself" : `Message ${toUsername}`}
       >
         <MessageSquare className="h-4 w-4 mr-2" /> Message
       </button>
