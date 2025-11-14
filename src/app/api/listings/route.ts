@@ -192,6 +192,12 @@ export async function GET(req: Request) {
 
   if (error) {
     console.error("DB error listing listings", error);
+    return NextResponse.json({ error: "Database query failed", details: error.message, hint: error.hint }, { status: 500 });
+  }
+
+  if (!data || !Array.isArray(data)) {
+    console.warn("No data returned from listings query");
+    return NextResponse.json({ error: "No data", received: data, type: typeof data }, { status: 200 });
   }
 
   let rows: Listing[] = Array.isArray(data) && data.length ? (data as RawListingRow[]).map(mapDbRow) : ([] as Listing[]);
