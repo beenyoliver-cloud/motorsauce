@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 
-// Don’t cache; keep it simple for now
+// Don't cache; keep it simple for now
 export const dynamic = "force-dynamic";
 
-const supabase = supabaseServer();
+// Create Supabase client with service role to bypass RLS
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  { auth: { persistSession: false } }
+);
 
 // Public shape returned to the client
 type Listing = {
@@ -179,16 +184,30 @@ export async function GET(req: Request) {
   // Fetch a reasonable pool then filter in-process for now (simpler than complex OR queries)
   const { data, error } = await supabase
     .from("listings")
-    .select(`
-      *,
-      seller:profiles!seller_id (
-        name,
-        avatar,
-        rating
-      )
-    `)
+    .select("*")
     .order("created_at", { ascending: false })
     .limit(200);
+
+  // If we got listings, enrich with seller info separately
+  if (data && Array.isArray(data) && data.length > 0) {
+    const sellerIds = [...new Set(data.map((l: any) => l.seller_id).filter(Boolean))];
+    if (sellerIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, name, avatar, rating")
+        .in("id", sellerIds);
+      
+      const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+      
+      // Attach seller info to each listing
+      data.forEach((listing: any) => {
+        const profile = profileMap.get(listing.seller_id);
+        if (profile) {
+          listing.seller = profile;
+        }
+      });
+    }
+  }
 
   if (error) {
     console.error("DB error listing listings", error);
