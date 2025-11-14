@@ -11,6 +11,7 @@ import ListingSEO from "@/components/ListingSEO";
 import SellerLink from "@/components/SellerLink";
 import SellerExposureTracker from "@/components/SellerExposureTracker";
 import TrackRecentlyViewed from "@/components/TrackRecentlyViewed";
+import { createClient } from "@supabase/supabase-js";
 
 // Ensure this page always renders dynamically at runtime on Vercel
 export const dynamic = "force-dynamic";
@@ -92,6 +93,87 @@ async function fetchListingFallback(id: string): Promise<Listing | null> {
   }
 }
 
+// Final-resort: query Supabase directly from the page (server) if API calls fail
+async function fetchListingFromSupabase(id: string): Promise<Listing | null> {
+  try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !key) return null;
+    const supabase = createClient(url, key, { auth: { persistSession: false } });
+
+    // Try direct .eq() first
+    let { data: listing, error } = await supabase
+      .from("listings")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error || !listing) {
+      // Fallback: fetch a batch and filter client-side
+      const { data: all } = await supabase.from("listings").select("*").limit(200);
+      listing = (all || []).find((l: any) => String(l.id) === String(id));
+    }
+
+    if (!listing) return null;
+
+    // Attach seller profile name if available
+    let seller = { name: "Seller", avatar: "/images/seller1.jpg", rating: 5 };
+    if (listing.seller_id) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("id", listing.seller_id)
+        .maybeSingle();
+      if (profile?.name) {
+        seller.name = profile.name;
+      }
+    }
+
+    const images: string[] = Array.isArray(listing.images) && listing.images.length
+      ? listing.images
+      : listing.image_url
+      ? [listing.image_url]
+      : listing.image
+      ? [listing.image]
+      : [];
+
+    const mapped: Listing = {
+      id: listing.id,
+      title: listing.title,
+      price: typeof listing.price_cents === "number"
+        ? "£" + (listing.price_cents / 100).toFixed(2)
+        : typeof listing.price === "number"
+        ? "£" + Number(listing.price).toFixed(2)
+        : typeof listing.price === "string"
+        ? (listing.price.startsWith("£") ? listing.price : `£${listing.price}`)
+        : "£0.00",
+      image: images[0] || "/images/placeholder.jpg",
+      images,
+      category: (listing.category as Listing["category"]) || "OEM",
+      condition: (listing.condition as Listing["condition"]) || "Used - Good",
+      make: listing.make ?? undefined,
+      model: listing.model ?? undefined,
+      genCode: listing.gen_code ?? listing.genCode ?? undefined,
+      engine: listing.engine ?? undefined,
+      year: listing.year ? Number(listing.year) : undefined,
+      oem: listing.oem ?? undefined,
+      description: listing.description ?? "",
+      createdAt: listing.created_at || new Date().toISOString(),
+      sellerId: listing.seller_id ?? undefined,
+      seller,
+      vin: listing.vin ?? undefined,
+      yearFrom: typeof listing.year_from === "number" ? listing.year_from : listing.year_from ? Number(listing.year_from) : undefined,
+      yearTo: typeof listing.year_to === "number" ? listing.year_to : listing.year_to ? Number(listing.year_to) : undefined,
+    };
+
+    console.log(`[listing page] direct Supabase fetch success for id=${id}`);
+    return mapped;
+  } catch (e) {
+    console.error(`[listing page] direct Supabase fetch threw for id=${id}`);
+    return null;
+  }
+}
+
 /* ========== Metadata ========== */
 export async function generateMetadata({
   params,
@@ -103,6 +185,10 @@ export async function generateMetadata({
   if (!listing) {
     // Fallback to list-and-find to handle prod single-item API quirks
     listing = await fetchListingFallback(id);
+  }
+  if (!listing) {
+    // Final resort: query Supabase directly from this page
+    listing = await fetchListingFromSupabase(id);
   }
   if (!listing) {
     return {
@@ -146,6 +232,9 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
   let listing = await fetchListing(id);
   if (!listing) {
     listing = await fetchListingFallback(id);
+  }
+  if (!listing) {
+    listing = await fetchListingFromSupabase(id);
   }
   if (!listing) notFound();
 
