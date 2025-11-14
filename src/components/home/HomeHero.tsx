@@ -58,6 +58,13 @@ export default function HomeHero() {
             </a>
           )}
           <span className="text-xs text-gray-500">Tip: type @username to search sellers</span>
+          {/* Trending chips */}
+          {/* @ts-ignore */}
+          <div className="w-full">
+            {/* @ts-ignore */}
+            {/* Deliberately keep client-only */}
+            <>{require("./TrendingChips").default()}</>
+          </div>
         </div>
       </div>
     </div>

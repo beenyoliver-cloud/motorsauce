@@ -54,7 +54,19 @@ export default function SuggestedParts({ limit = 12 }: Props) {
     };
   }, [limit]);
 
-  if (loading) return <div className="py-8">Loading suggestions…</div>;
+  if (loading) return (
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+      {Array.from({ length: limit }).map((_, i) => (
+        <div key={i} className="border border-gray-200 rounded-lg sm:rounded-xl overflow-hidden bg-white">
+          <div className="relative aspect-square sm:aspect-[4/3] bg-gray-100 animate-pulse" />
+          <div className="p-2 sm:p-3 space-y-2">
+            <div className="h-3 bg-gray-100 rounded animate-pulse" />
+            <div className="h-3 bg-gray-100 rounded w-1/2 animate-pulse" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
   if (!listings.length)
     return (
       <div className="py-8 text-gray-600">

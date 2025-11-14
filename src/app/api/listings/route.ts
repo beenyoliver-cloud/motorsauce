@@ -140,6 +140,15 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
 
+  // Optional filters
+  const maxPrice = searchParams.get("maxPrice"); // number in GBP
+  const make = searchParams.get("make");
+  const model = searchParams.get("model");
+  const year = searchParams.get("year");
+  const sort = searchParams.get("sort"); // "new" | "random"
+  const limitParam = searchParams.get("limit");
+  const limit = Math.min( Number(limitParam ?? 24) || 24, 100 );
+
   if (id) {
     const { data, error } = await supabase
       .from("listings")
@@ -167,6 +176,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  // Fetch a reasonable pool then filter in-process for now (simpler than complex OR queries)
   const { data, error } = await supabase
     .from("listings")
     .select(`
@@ -178,12 +188,53 @@ export async function GET(req: Request) {
       )
     `)
     .order("created_at", { ascending: false })
-    .limit(24);
+    .limit(200);
 
   if (error) {
     console.error("DB error listing listings", error);
   }
 
-  const rows = Array.isArray(data) && data.length ? (data as RawListingRow[]).map(mapDbRow) : await findInLocal(null);
+  let rows: Listing[] = Array.isArray(data) && data.length ? (data as RawListingRow[]).map(mapDbRow) : ([] as Listing[]);
+
+  // Apply filters
+  const priceNumber = (p: string) => Number(String(p).replace(/[^\d.]/g, ""));
+  if (maxPrice) {
+    const cap = Number(maxPrice);
+    if (Number.isFinite(cap)) rows = rows.filter((r) => priceNumber(r.price) <= cap);
+  }
+  if (make) {
+    const mk = make.trim().toLowerCase();
+    rows = rows.filter((r) => (r.make?.toLowerCase() === mk) || r.title.toLowerCase().includes(mk));
+  }
+  if (model) {
+    const md = model.trim().toLowerCase();
+    rows = rows.filter((r) => (r.model?.toLowerCase() === md) || r.title.toLowerCase().includes(md));
+  }
+  if (year) {
+    const yr = Number(year);
+    if (Number.isFinite(yr)) {
+      rows = rows.filter((r) => {
+        // If listing has year range, prefer that; otherwise try title match
+        if (typeof r.yearFrom === 'number' && typeof r.yearTo === 'number') {
+          return yr >= (r.yearFrom as number) && yr <= (r.yearTo as number);
+        }
+        if (typeof r.year === 'number') return r.year === yr;
+        return r.title.includes(String(yr));
+      });
+    }
+  }
+
+  // Sort
+  if (sort === "random") {
+    rows = rows.map((x) => ({ x, r: Math.random() }))
+      .sort((a, b) => a.r - b.r)
+      .map(({ x }) => x);
+  } else {
+    // default/new: keep createdAt desc already returned
+  }
+
+  // Cap results
+  rows = rows.slice(0, limit);
+
   return NextResponse.json(rows, { status: 200 });
 }

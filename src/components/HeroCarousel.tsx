@@ -56,6 +56,7 @@ export default function HeroCarousel() {
           src={slide.image}
           alt={slide.title}
           className="h-full w-full object-cover"
+          loading="eager"
         />
         <div className="absolute inset-0 bg-black/30" aria-hidden="true" />
       </div>

@@ -13,7 +13,7 @@ type SellerMetricRow = {
 };
 
 type ScoredMetric = SellerMetricRow & { score: number };
-type ProfileRow = { id: string; name: string };
+type ProfileRow = { id: string; name: string; sold_count?: number | null; sales_count?: number | null };
 
 export async function GET() {
   try {
@@ -47,19 +47,26 @@ export async function GET() {
       const names = top.map((r) => r.seller_name).filter(Boolean);
       let idByName: Record<string, string> = {};
       if (names.length) {
-        const { data: profiles, error: pErr } = await supabase
-          .from('profiles')
-          .select('id, name')
-          .in('name', names);
-        if (!pErr && Array.isArray(profiles)) {
-          const profs = profiles as ProfileRow[];
+        // Try to read potential sold count columns if present; ignore if missing
+        let profs: ProfileRow[] | null = null;
+        try {
+          const { data: p1, error: e1 } = await supabase.from('profiles').select('id, name, sold_count, sales_count').in('name', names);
+          if (!e1 && Array.isArray(p1)) profs = p1 as ProfileRow[];
+        } catch {}
+        if (!profs) {
+          const { data: p2 } = await supabase.from('profiles').select('id, name').in('name', names);
+          if (Array.isArray(p2)) profs = p2 as ProfileRow[];
+        }
+        if (profs) {
           idByName = Object.fromEntries(profs.map((p) => [p.name, p.id]));
+          var soldByName: Record<string, number> = Object.fromEntries(profs.map((p) => [p.name, Number(p.sold_count || p.sales_count || 0)]));
         }
       }
 
       const out = scored.slice(0, 12).map(({ score, ...rest }) => ({
         ...rest,
         seller_id: idByName[rest.seller_name] || undefined,
+        sold_count: (typeof soldByName !== 'undefined' ? soldByName[rest.seller_name] : undefined) || 0,
         // rating can be added later from profiles if present; default handled client-side
       }));
       return NextResponse.json(out);

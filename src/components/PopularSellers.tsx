@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-type Seller = { seller_name: string; avatar?: string | null; clicks?: number; rating?: number; seller_id?: string };
+import TrustBadge from "./TrustBadge";
+
+type Seller = { seller_name: string; avatar?: string | null; clicks?: number; rating?: number; seller_id?: string; sold_count?: number };
 
 export default function PopularSellers() {
   const [sellers, setSellers] = useState<Seller[]>([]);
@@ -53,9 +55,11 @@ export default function PopularSellers() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={s.avatar || "/images/seller1.jpg"} alt={s.seller_name} className="h-16 w-16 rounded-full object-cover" />
             <div className="mt-2 text-sm font-semibold text-gray-900 line-clamp-1" title={s.seller_name}>{s.seller_name}</div>
-            <div className="text-[11px] text-gray-600 flex items-center gap-1">
+            <div className="text-[11px] text-gray-600 flex items-center gap-2">
               <span>⭐ {typeof s.rating === 'number' ? s.rating.toFixed(1) : '5.0'}</span>
               <span className="text-gray-400">• {(s.clicks || 0).toLocaleString()} clicks</span>
+              {/* Trust badge if sold_count available */}
+              <TrustBadge soldCount={s.sold_count} />
             </div>
           </Link>
         );

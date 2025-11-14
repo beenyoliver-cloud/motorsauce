@@ -9,9 +9,14 @@ import RecentlyViewedRow from "@/components/home/RecentlyViewedRow";
 import TrustBand from "@/components/home/TrustBand";
 import SellCta from "@/components/home/SellCta";
 
+import SEOJsonLd from "@/components/SEOJsonLd";
+
 export default function Home() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-6 space-y-8">
+      {/* SEO structured data */}
+      {/* @ts-ignore */}
+      <SEOJsonLd />
       {/* Hero + inline search */}
       <div className="space-y-4">
         <HeroCarousel />

@@ -19,7 +19,7 @@ function buildCandidates(input: string): string[] {
   return EXT_CHAIN.map((ext) => `${base}.${ext}`);
 }
 
-export default function SafeImage({ src, alt, className, loading, draggable }: Props) {
+export default function SafeImage({ src, alt, className, loading = "lazy", draggable }: Props) {
   const candidates = useMemo(() => buildCandidates(src), [src]);
   const [i, setI] = useState(0);
 
