@@ -155,30 +155,45 @@ export async function GET(req: Request) {
   const limit = Math.min( Number(limitParam ?? 24) || 24, 100 );
 
   if (id) {
-    const { data, error } = await supabase
+    // Fetch listing without JOIN first
+    const { data: listingData, error: listingError } = await supabase
       .from("listings")
-      .select(`
-        *,
-        seller:profiles!seller_id (
-          name,
-          avatar,
-          rating
-        )
-      `)
+      .select("*")
       .eq("id", id)
       .maybeSingle();
 
-    if (error) {
-      console.error("DB error fetching listing", id, error);
+    if (listingError) {
+      console.error("DB error fetching listing", id, listingError);
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    if (data) {
-      return NextResponse.json(mapDbRow(data as RawListingRow), { status: 200 });
+    if (!listingData) {
+      const local = await findInLocal(id);
+      if (local) return NextResponse.json(local, { status: 200 });
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const local = await findInLocal(id);
-    if (local) return NextResponse.json(local, { status: 200 });
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    // Fetch seller profile separately
+    let sellerProfile = { name: "Unknown Seller", avatar: "/images/seller1.jpg", rating: 0 };
+    if (listingData.seller_id) {
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("name, avatar, rating")
+        .eq("id", listingData.seller_id)
+        .maybeSingle();
+      
+      if (profileData) {
+        sellerProfile = profileData;
+      }
+    }
+
+    // Combine listing with profile data
+    const combinedData = {
+      ...listingData,
+      seller: sellerProfile
+    };
+
+    return NextResponse.json(mapDbRow(combinedData as RawListingRow), { status: 200 });
   }
 
   // Fetch a reasonable pool then filter in-process for now (simpler than complex OR queries)
