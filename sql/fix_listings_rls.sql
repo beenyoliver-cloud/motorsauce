@@ -25,7 +25,8 @@ CREATE POLICY "Users can update their own listings"
   ON public.listings
   FOR UPDATE
   TO authenticated
-  USING (auth.uid() = seller_id);
+  USING (auth.uid() = seller_id)
+  WITH CHECK (auth.uid() = seller_id);
 
 -- Verify RLS is enabled
 ALTER TABLE public.listings ENABLE ROW LEVEL SECURITY;
