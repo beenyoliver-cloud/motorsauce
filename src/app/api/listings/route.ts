@@ -182,11 +182,20 @@ export async function GET(req: Request) {
   }
 
   // Fetch a reasonable pool then filter in-process for now (simpler than complex OR queries)
+  console.log("[listings API] Fetching from Supabase...");
   const { data, error } = await supabase
     .from("listings")
     .select("*")
     .order("created_at", { ascending: false })
     .limit(200);
+
+  console.log("[listings API] Query result:", { 
+    hasData: !!data, 
+    dataLength: data?.length || 0,
+    hasError: !!error,
+    error: error?.message,
+    usingServiceRole: !!process.env.SUPABASE_SERVICE_ROLE
+  });
 
   // If we got listings, enrich with seller info separately
   if (data && Array.isArray(data) && data.length > 0) {
