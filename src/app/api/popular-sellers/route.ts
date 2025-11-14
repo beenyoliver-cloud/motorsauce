@@ -46,6 +46,7 @@ export async function GET() {
       const top = scored.slice(0, 50); // fetch a bit more for enrichment
       const names = top.map((r) => r.seller_name).filter(Boolean);
       let idByName: Record<string, string> = {};
+      let soldByName: Record<string, number> | undefined;
       if (names.length) {
         // Try to read potential sold count columns if present; ignore if missing
         let profs: ProfileRow[] | null = null;
@@ -59,14 +60,17 @@ export async function GET() {
         }
         if (profs) {
           idByName = Object.fromEntries(profs.map((p) => [p.name, p.id]));
-          var soldByName: Record<string, number> = Object.fromEntries(profs.map((p) => [p.name, Number(p.sold_count || p.sales_count || 0)]));
+          soldByName = Object.fromEntries(profs.map((p) => [p.name, Number(p.sold_count || p.sales_count || 0)]));
         }
       }
 
-      const out = scored.slice(0, 12).map(({ score, ...rest }) => ({
-        ...rest,
-        seller_id: idByName[rest.seller_name] || undefined,
-        sold_count: (typeof soldByName !== 'undefined' ? soldByName[rest.seller_name] : undefined) || 0,
+      const out = scored.slice(0, 12).map((s) => ({
+        seller_name: s.seller_name,
+        avatar: s.avatar,
+        clicks: s.clicks,
+        last_clicked: s.last_clicked,
+        seller_id: idByName[s.seller_name] || undefined,
+        sold_count: soldByName?.[s.seller_name] ?? 0,
         // rating can be added later from profiles if present; default handled client-side
       }));
       return NextResponse.json(out);

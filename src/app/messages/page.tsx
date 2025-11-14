@@ -61,7 +61,7 @@ export default function MessagesIndex() {
         <MessageCircle size={48} className="mx-auto text-gray-300 mb-3" />
         <h2 className="text-lg font-semibold text-gray-900 mb-2">No messages yet</h2>
         <p className="text-sm text-gray-600 mb-4">
-          Start a conversation with a seller by clicking "Contact Seller" on any listing.
+          Start a conversation with a seller by clicking &quot;Contact Seller&quot; on any listing.
         </p>
         <Link
           href="/search"

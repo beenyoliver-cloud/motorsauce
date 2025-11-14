@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Search as SearchIcon, Car } from "lucide-react";
 import { loadMyCars, vehicleLabel } from "@/lib/garage";
+import dynamic from "next/dynamic";
+const TrendingChips = dynamic(() => import("./TrendingChips"), { ssr: false });
 
 export default function HomeHero() {
   const router = useRouter();
@@ -59,11 +61,8 @@ export default function HomeHero() {
           )}
           <span className="text-xs text-gray-500">Tip: type @username to search sellers</span>
           {/* Trending chips */}
-          {/* @ts-ignore */}
           <div className="w-full">
-            {/* @ts-ignore */}
-            {/* Deliberately keep client-only */}
-            <>{require("./TrendingChips").default()}</>
+            <TrendingChips />
           </div>
         </div>
       </div>
