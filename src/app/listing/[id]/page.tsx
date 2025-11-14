@@ -12,6 +12,9 @@ import SellerLink from "@/components/SellerLink";
 import SellerExposureTracker from "@/components/SellerExposureTracker";
 import TrackRecentlyViewed from "@/components/TrackRecentlyViewed";
 
+// Ensure this page always renders dynamically at runtime on Vercel
+export const dynamic = "force-dynamic";
+
 /* ========== Types ========== */
 type Listing = {
   id: string | number;
