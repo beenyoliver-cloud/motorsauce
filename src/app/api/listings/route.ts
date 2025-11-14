@@ -182,6 +182,13 @@ export async function GET(req: Request) {
   }
 
   // Fetch a reasonable pool then filter in-process for now (simpler than complex OR queries)
+  console.log("[listings API] Environment check:", {
+    hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + "...",
+    hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    anonKeyPrefix: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.substring(0, 20) + "...",
+  });
+  
   console.log("[listings API] Fetching from Supabase...");
   const { data, error } = await supabase
     .from("listings")
@@ -194,7 +201,7 @@ export async function GET(req: Request) {
     dataLength: data?.length || 0,
     hasError: !!error,
     error: error?.message,
-    usingServiceRole: !!process.env.SUPABASE_SERVICE_ROLE
+    errorDetails: error
   });
 
   // If we got listings, enrich with seller info separately
