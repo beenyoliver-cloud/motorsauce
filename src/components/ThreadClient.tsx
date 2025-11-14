@@ -15,6 +15,7 @@ import {
   publishUnread,
   loadThreads,
   deleteThread as deleteThreadStore,
+  upsertThreadForPeer,
   Thread,
 } from "@/lib/chatStore";
 import { getCurrentUserSync } from "@/lib/auth";
@@ -69,6 +70,41 @@ export default function ThreadClient({
     () => threads.find((t) => t.id === threadId),
     [threads, threadId]
   );
+
+  // If thread doesn't exist on first load, try to reconstruct it from threadId
+  useEffect(() => {
+    if (!mounted || thread || !threadId) return;
+    
+    // Parse threadId format: t_{name1}_{name2} or t_{name1}_{name2}_{listingRef}
+    const match = threadId.match(/^t_([^_]+)_([^_]+)(?:_(.+))?$/);
+    if (!match) return;
+    
+    const [, slug1, slug2, listingRef] = match;
+    // Determine which name is self and which is peer
+    const selfSlug = selfName.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
+    
+    let peerSlug: string;
+    if (slug1 === selfSlug) {
+      peerSlug = slug2;
+    } else if (slug2 === selfSlug) {
+      peerSlug = slug1;
+    } else {
+      // Can't determine peer - thread ID doesn't match current user
+      return;
+    }
+    
+    // We have a peer slug but need the actual display name
+    // For now, we'll use the slug as fallback and let it get enriched when messages arrive
+    const peerName = peerSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+    
+    // Create thread locally so the UI isn't blank
+    upsertThreadForPeer(selfName, peerName, {
+      preferThreadId: threadId,
+      initialLast: "New conversation",
+      listingRef: listingRef || undefined,
+    });
+    setThreads(loadThreads());
+  }, [mounted, thread, threadId, selfName]);
 
   // Fetch peer profile when thread changes
   useEffect(() => {
