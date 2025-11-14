@@ -155,6 +155,8 @@ export async function GET(req: Request) {
   const limit = Math.min( Number(limitParam ?? 24) || 24, 100 );
 
   if (id) {
+    console.log("[listings API] Fetching single listing:", id);
+    
     // Fetch listing without JOIN first
     const { data: listingData, error: listingError } = await supabase
       .from("listings")
@@ -162,12 +164,20 @@ export async function GET(req: Request) {
       .eq("id", id)
       .maybeSingle();
 
+    console.log("[listings API] Single listing query result:", {
+      hasData: !!listingData,
+      hasError: !!listingError,
+      errorMessage: listingError?.message,
+      errorDetails: listingError?.details
+    });
+
     if (listingError) {
       console.error("DB error fetching listing", id, listingError);
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
     if (!listingData) {
+      console.log("[listings API] No listing data found for:", id);
       const local = await findInLocal(id);
       if (local) return NextResponse.json(local, { status: 200 });
       return NextResponse.json({ error: "Not found" }, { status: 404 });
