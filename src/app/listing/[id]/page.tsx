@@ -82,7 +82,7 @@ async function fetchListingFallback(id: string): Promise<Listing | null> {
     if (!res.ok) return null;
     const list = (await res.json()) as unknown;
     if (!Array.isArray(list)) return null;
-    const found = list.find((l: any) => String(l?.id) === String(id));
+    const found = (list as any[]).find((l: any) => String(l?.id) === String(id));
     if (found) {
       console.log(`[listing page] using fallback list-and-find for id=${id}`);
     } else {
