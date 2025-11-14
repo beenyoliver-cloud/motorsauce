@@ -155,23 +155,22 @@ export async function GET(req: Request) {
   const limit = Math.min( Number(limitParam ?? 24) || 24, 100 );
 
   if (id) {
-    console.log("[listings API] Fetching single listing:", id);
+    console.log("[listings API] Fetching single listing:", { id, idType: typeof id, idLength: id.length });
     
-    // Fetch listing without JOIN - use array query instead of maybeSingle to avoid RLS issues
-    const { data: listingDataArray, error: listingError } = await supabase
+    // Fetch ALL listings and filter client-side (workaround for RLS .eq() issue)
+    const { data: allListings, error: listingError } = await supabase
       .from("listings")
       .select("*")
-      .eq("id", id)
-      .limit(1);
+      .limit(200);
 
-    const listingData = listingDataArray?.[0] || null;
+    const listingData = allListings?.find((l: any) => l.id === id) || null;
 
     console.log("[listings API] Single listing query result:", {
       hasData: !!listingData,
-      arrayLength: listingDataArray?.length,
+      totalFetched: allListings?.length,
       hasError: !!listingError,
       errorMessage: listingError?.message,
-      errorDetails: listingError?.details
+      listingId: listingData?.id
     });
 
     if (listingError) {
