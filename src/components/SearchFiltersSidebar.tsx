@@ -292,6 +292,17 @@ export default function SearchFiltersSidebar(props: Props) {
           </div>
         </div>
 
+        {/* Seller */}
+        <div>
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700">Seller</div>
+          <input
+            defaultValue={sp.get("seller") || ""}
+            onBlur={(e) => setParam("seller", e.target.value)}
+            placeholder="Search by seller name…"
+            className={inputBase}
+          />
+        </div>
+
         {/* Location */}
         <div>
           <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700">Location</div>
