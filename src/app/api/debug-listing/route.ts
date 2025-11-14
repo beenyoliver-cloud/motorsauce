@@ -19,15 +19,17 @@ export async function GET(req: Request) {
   const id = searchParams.get("id");
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-  const report: any = { id, steps: {} };
+  const report: any = { id, steps: {}, note: "This endpoint outputs JSON; if you see HTML you hit a notFound or routing fallback." };
 
   try {
-    // Step 1: call single-item API
+    // Step 1: call single-item API (absolute URL to avoid internal resolution issues)
     try {
-      const res = await fetch(`/api/listings?id=${encodeURIComponent(id)}`, { cache: "no-store" });
+      const singleUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://'+process.env.VERCEL_URL || ''}/api/listings?id=${encodeURIComponent(id)}`;
+      const res = await fetch(singleUrl, { cache: "no-store" });
       report.steps.singleApi = {
         ok: res.ok,
         status: res.status,
+        url: singleUrl,
       };
       if (!res.ok) {
         report.steps.singleApi.body = await res.text();
@@ -41,8 +43,9 @@ export async function GET(req: Request) {
 
     // Step 2: call list API and check presence
     try {
-      const res = await fetch(`/api/listings?limit=200`, { cache: "no-store" });
-      report.steps.listApi = { ok: res.ok, status: res.status };
+      const listUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://'+process.env.VERCEL_URL || ''}/api/listings?limit=200`;
+      const res = await fetch(listUrl, { cache: "no-store" });
+      report.steps.listApi = { ok: res.ok, status: res.status, url: listUrl };
       if (res.ok) {
         const arr = (await res.json()) as any[];
         const found = Array.isArray(arr) ? arr.find((x) => String(x?.id) === String(id)) : undefined;
