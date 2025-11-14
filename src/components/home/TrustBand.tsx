@@ -6,9 +6,9 @@ export default function TrustBand() {
           <span className="font-semibold text-black">Buy with confidence.</span> Message sellers, report issues, and check profiles.
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <a href="/about" className="px-3 py-1.5 rounded-full border border-gray-300 hover:bg-gray-50">How it works</a>
-          <a href="/privacy" className="px-3 py-1.5 rounded-full border border-gray-300 hover:bg-gray-50">Privacy</a>
-          <a href="/terms" className="px-3 py-1.5 rounded-full border border-gray-300 hover:bg-gray-50">Terms</a>
+          <a href="/about" className="px-3 py-1.5 rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200">How it works</a>
+          <a href="/privacy" className="px-3 py-1.5 rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200">Privacy</a>
+          <a href="/terms" className="px-3 py-1.5 rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200">Terms</a>
         </div>
       </div>
     </section>
