@@ -157,15 +157,18 @@ export async function GET(req: Request) {
   if (id) {
     console.log("[listings API] Fetching single listing:", id);
     
-    // Fetch listing without JOIN first
-    const { data: listingData, error: listingError } = await supabase
+    // Fetch listing without JOIN - use array query instead of maybeSingle to avoid RLS issues
+    const { data: listingDataArray, error: listingError } = await supabase
       .from("listings")
       .select("*")
       .eq("id", id)
-      .maybeSingle();
+      .limit(1);
+
+    const listingData = listingDataArray?.[0] || null;
 
     console.log("[listings API] Single listing query result:", {
       hasData: !!listingData,
+      arrayLength: listingDataArray?.length,
       hasError: !!listingError,
       errorMessage: listingError?.message,
       errorDetails: listingError?.details
