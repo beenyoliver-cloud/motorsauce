@@ -48,14 +48,41 @@ async function fetchListing(id: string): Promise<Listing | null> {
     const res = await fetch(`${baseUrl()}/api/listings?id=${encodeURIComponent(id)}`, {
       cache: "no-store",
     });
-    if (res.status === 404) return null;
-    if (!res.ok) {
-      // Gracefully handle API errors to avoid application error
+    if (res.status === 404) {
+      console.warn(`[listing page] single API returned 404 for id=${id}`);
       return null;
     }
-    return (await res.json()) as Listing;
+    if (!res.ok) {
+      // Gracefully handle API errors to avoid application error
+      console.error(`[listing page] single API error for id=${id} status=${res.status}`);
+      return null;
+    }
+    const data = (await res.json()) as Listing;
+    console.log(`[listing page] single API success for id=${id}`);
+    return data;
   } catch {
     // Network or other unexpected error — treat as not found to keep UX stable
+    console.error(`[listing page] single API threw for id=${id}`);
+    return null;
+  }
+}
+
+// Fallback: fetch all listings and find by id
+async function fetchListingFallback(id: string): Promise<Listing | null> {
+  try {
+    const res = await fetch(`${baseUrl()}/api/listings?limit=200`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const list = (await res.json()) as unknown;
+    if (!Array.isArray(list)) return null;
+    const found = list.find((l: any) => String(l?.id) === String(id));
+    if (found) {
+      console.log(`[listing page] using fallback list-and-find for id=${id}`);
+    } else {
+      console.warn(`[listing page] fallback could not find id=${id} in list response`);
+    }
+    return found || null;
+  } catch {
+    console.error(`[listing page] fallback list-and-find threw for id=${id}`);
     return null;
   }
 }
@@ -67,7 +94,11 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const listing = await fetchListing(id);
+  let listing = await fetchListing(id);
+  if (!listing) {
+    // Fallback to list-and-find to handle prod single-item API quirks
+    listing = await fetchListingFallback(id);
+  }
   if (!listing) {
     return {
       title: "Listing not found | Motorsource",
@@ -107,7 +138,10 @@ export async function generateMetadata({
 /* ========== Page ========== */
 export default async function ListingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const listing = await fetchListing(id);
+  let listing = await fetchListing(id);
+  if (!listing) {
+    listing = await fetchListingFallback(id);
+  }
   if (!listing) notFound();
 
   const gallery = listing.images?.length ? listing.images : [listing.image];
