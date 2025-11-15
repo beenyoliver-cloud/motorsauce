@@ -4,7 +4,7 @@
 -- ==================== THREADS TABLE ====================
 -- Stores conversation threads between two users
 CREATE TABLE IF NOT EXISTS public.threads (
-  id TEXT PRIMARY KEY,                    -- Format: t_{slug1}_{slug2}_{optional_listing_ref}
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   participant_1_id UUID NOT NULL,         -- First user (sorted by UUID for consistency)
   participant_2_id UUID NOT NULL,         -- Second user
   listing_ref TEXT,                       -- Optional reference to listing ID
@@ -21,6 +21,16 @@ CREATE TABLE IF NOT EXISTS public.threads (
   CONSTRAINT threads_participants_unique UNIQUE (participant_1_id, participant_2_id, listing_ref)
 );
 
+-- Backward compatibility: if an older threads table exists without these columns,
+-- ensure the required columns are present so policies don’t fail.
+ALTER TABLE public.threads ADD COLUMN IF NOT EXISTS participant_1_id UUID;
+ALTER TABLE public.threads ADD COLUMN IF NOT EXISTS participant_2_id UUID;
+ALTER TABLE public.threads ADD COLUMN IF NOT EXISTS listing_ref TEXT;
+ALTER TABLE public.threads ADD COLUMN IF NOT EXISTS last_message_text TEXT;
+ALTER TABLE public.threads ADD COLUMN IF NOT EXISTS last_message_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE public.threads ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE public.threads ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
 CREATE INDEX IF NOT EXISTS idx_threads_participant_1 ON public.threads(participant_1_id);
 CREATE INDEX IF NOT EXISTS idx_threads_participant_2 ON public.threads(participant_2_id);
 CREATE INDEX IF NOT EXISTS idx_threads_last_message ON public.threads(last_message_at DESC);
@@ -29,7 +39,7 @@ CREATE INDEX IF NOT EXISTS idx_threads_last_message ON public.threads(last_messa
 -- Stores individual messages within threads
 CREATE TABLE IF NOT EXISTS public.messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  thread_id TEXT NOT NULL REFERENCES public.threads(id) ON DELETE CASCADE,
+  thread_id UUID NOT NULL REFERENCES public.threads(id) ON DELETE CASCADE,
   from_user_id UUID NOT NULL,             -- Who sent the message
   message_type TEXT NOT NULL DEFAULT 'text', -- 'text', 'offer', 'system'
   text_content TEXT,                      -- Message text (for text/system messages)
@@ -52,6 +62,19 @@ CREATE TABLE IF NOT EXISTS public.messages (
   )
 );
 
+-- Backward compatibility: if an older messages table exists without these columns,
+-- ensure the required columns are present so policies and indexes don’t fail.
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS thread_id UUID;
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS from_user_id UUID;
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS message_type TEXT DEFAULT 'text';
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS text_content TEXT;
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS offer_id UUID;
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS offer_amount_cents INTEGER;
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS offer_currency TEXT DEFAULT 'GBP';
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS offer_status TEXT;
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
 CREATE INDEX IF NOT EXISTS idx_messages_thread ON public.messages(thread_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_messages_from_user ON public.messages(from_user_id);
 CREATE INDEX IF NOT EXISTS idx_messages_offer ON public.messages(offer_id) WHERE offer_id IS NOT NULL;
@@ -60,12 +83,17 @@ CREATE INDEX IF NOT EXISTS idx_messages_offer ON public.messages(offer_id) WHERE
 -- Tracks which users have "deleted" (hidden) a thread locally
 -- Thread only archives after both users delete; purges after 30 days
 CREATE TABLE IF NOT EXISTS public.thread_deletions (
-  thread_id TEXT NOT NULL REFERENCES public.threads(id) ON DELETE CASCADE,
+  thread_id UUID NOT NULL REFERENCES public.threads(id) ON DELETE CASCADE,
   user_id UUID NOT NULL,
   deleted_at TIMESTAMPTZ DEFAULT NOW(),
   
   PRIMARY KEY (thread_id, user_id)
 );
+
+-- Backward compatibility: ensure columns exist on legacy thread_deletions
+ALTER TABLE public.thread_deletions ADD COLUMN IF NOT EXISTS thread_id UUID;
+ALTER TABLE public.thread_deletions ADD COLUMN IF NOT EXISTS user_id UUID;
+ALTER TABLE public.thread_deletions ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NOW();
 
 CREATE INDEX IF NOT EXISTS idx_thread_deletions_user ON public.thread_deletions(user_id);
 CREATE INDEX IF NOT EXISTS idx_thread_deletions_date ON public.thread_deletions(deleted_at);
@@ -73,12 +101,17 @@ CREATE INDEX IF NOT EXISTS idx_thread_deletions_date ON public.thread_deletions(
 -- ==================== THREAD_READ_STATUS TABLE ====================
 -- Tracks which threads each user has read (for unread counts)
 CREATE TABLE IF NOT EXISTS public.thread_read_status (
-  thread_id TEXT NOT NULL REFERENCES public.threads(id) ON DELETE CASCADE,
+  thread_id UUID NOT NULL REFERENCES public.threads(id) ON DELETE CASCADE,
   user_id UUID NOT NULL,
   last_read_at TIMESTAMPTZ DEFAULT NOW(),
   
   PRIMARY KEY (thread_id, user_id)
 );
+
+-- Backward compatibility: ensure columns exist on legacy thread_read_status
+ALTER TABLE public.thread_read_status ADD COLUMN IF NOT EXISTS thread_id UUID;
+ALTER TABLE public.thread_read_status ADD COLUMN IF NOT EXISTS user_id UUID;
+ALTER TABLE public.thread_read_status ADD COLUMN IF NOT EXISTS last_read_at TIMESTAMPTZ DEFAULT NOW();
 
 CREATE INDEX IF NOT EXISTS idx_thread_read_status_user ON public.thread_read_status(user_id);
 
@@ -86,7 +119,7 @@ CREATE INDEX IF NOT EXISTS idx_thread_read_status_user ON public.thread_read_sta
 -- Stores offer details separately for querying and status tracking
 CREATE TABLE IF NOT EXISTS public.offers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  thread_id TEXT NOT NULL REFERENCES public.threads(id) ON DELETE CASCADE,
+  thread_id UUID NOT NULL REFERENCES public.threads(id) ON DELETE CASCADE,
   listing_id TEXT NOT NULL,               -- Reference to listing
   listing_title TEXT,
   listing_image TEXT,
@@ -105,6 +138,19 @@ CREATE TABLE IF NOT EXISTS public.offers (
   CONSTRAINT offers_amount_positive CHECK (amount_cents > 0),
   CONSTRAINT offers_participants_different CHECK (starter_id != recipient_id)
 );
+
+-- Backward compatibility: ensure columns exist on legacy offers
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS thread_id UUID;
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS listing_id TEXT;
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS listing_title TEXT;
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS listing_image TEXT;
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS starter_id UUID;
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS recipient_id UUID;
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS amount_cents INTEGER;
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'GBP';
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pending';
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
 CREATE INDEX IF NOT EXISTS idx_offers_thread ON public.offers(thread_id);
 CREATE INDEX IF NOT EXISTS idx_offers_listing ON public.offers(listing_id);

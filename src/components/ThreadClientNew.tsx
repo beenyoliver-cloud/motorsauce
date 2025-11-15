@@ -184,10 +184,10 @@ export default function ThreadClientNew({
   dayMap.forEach((msgs, day) => grouped.push({ day, msgs }));
 
   return (
-    <div className="flex h-full flex-col w-full max-w-screen-sm mx-auto overflow-x-hidden">
+    <div className="flex h-full flex-col w-full overflow-x-hidden">
       {/* User Profile Bar */}
-      <div className="border-b border-gray-200 bg-white">
-        <div className="flex items-center justify-between p-4">
+      <div className="border-b border-gray-200 bg-white shrink-0">
+        <div className="flex items-center justify-between p-3 md:p-4">
           {peerProfile && (
             <Link
               href={`/profile/${encodeURIComponent(peerProfile.name)}`}
@@ -235,7 +235,7 @@ export default function ThreadClientNew({
       {/* Messages */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-3 space-y-6 overscroll-contain"
+        className="flex-1 min-h-0 overflow-y-auto p-3 space-y-6 overscroll-contain"
       >
         {grouped.map(group => (
           <div key={group.day}>
@@ -305,7 +305,7 @@ export default function ThreadClientNew({
       </div>
 
       {/* Composer */}
-      <div className="border-t border-gray-200 p-3 sticky bottom-0 bg-white">
+      <div className="border-t border-gray-200 p-3 bg-white shrink-0">
         <form
           onSubmit={(e) => {
             e.preventDefault();

@@ -149,34 +149,18 @@ export async function POST(req: Request) {
     // Participants ordered by UUID for consistency
     const [p1, p2] = [user.id, peerId].sort();
 
-    // Generate thread ID
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("name")
-      .in("id", [user.id, peerId]);
-
-    const profileMap = new Map((profiles || []).map((p: any) => [p.id, p.name]));
-    const name1 = profileMap.get(user.id) || user.id;
-    const name2 = profileMap.get(peerId) || peerId;
-
-    const slug1 = name1.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
-    const slug2 = name2.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
-    const [s1, s2] = [slug1, slug2].sort();
-    const threadId = listingRef ? `t_${s1}_${s2}_${listingRef}` : `t_${s1}_${s2}`;
-
-    // Upsert thread
+    // Upsert thread using composite unique key (participant_1_id, participant_2_id, listing_ref)
     const { data: thread, error: upsertError } = await supabase
       .from("threads")
       .upsert(
         {
-          id: threadId,
           participant_1_id: p1,
           participant_2_id: p2,
           listing_ref: listingRef || null,
           last_message_text: "New conversation",
           last_message_at: new Date().toISOString(),
         },
-        { onConflict: "id" }
+        { onConflict: "participant_1_id,participant_2_id,listing_ref" }
       )
       .select()
       .single();
