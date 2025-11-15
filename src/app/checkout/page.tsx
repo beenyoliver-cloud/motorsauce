@@ -45,8 +45,9 @@ export default function CheckoutPage() {
   }, []);
 
   const disabled = cart.items.length === 0 || !isAddressValid(addr) || !agree;
+  const [paying, setPaying] = useState(false);
 
-  function placeOrder() {
+  async function placeOrder() {
     saveAddress(addr);
     const orderRef = "MS-" + Math.random().toString(36).slice(2, 8).toUpperCase();
     const snapshot = {
@@ -59,6 +60,38 @@ export default function CheckoutPage() {
     };
     const payload = encodeURIComponent(JSON.stringify(snapshot));
     router.push(`/checkout/success?o=${payload}`);
+  }
+
+  async function payWithStripe() {
+    if (disabled || paying) return;
+    setPaying(true);
+    try {
+      // Build minimal, server-verifiable payload
+      const body = {
+        items: cart.items.map((i) => ({ id: i.id, qty: i.qty })),
+        shipping: cart.shipping,
+      };
+      const res = await fetch("/api/checkout/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        // Fallback: use local success flow if payments not configured yet
+        await placeOrder();
+        return;
+      }
+      const json = await res.json();
+      if (json?.url) {
+        window.location.href = json.url;
+        return;
+      }
+      await placeOrder();
+    } catch {
+      await placeOrder();
+    } finally {
+      setPaying(false);
+    }
   }
 
   if (cart.items.length === 0) {
@@ -157,6 +190,17 @@ export default function CheckoutPage() {
           >
             Place order
           </button>
+          <button
+            onClick={payWithStripe}
+            disabled={disabled || paying}
+            className={`mt-3 ml-3 inline-flex px-5 py-2.5 rounded-md font-semibold ${
+              disabled || paying
+                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                : "bg-black text-white hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            }`}
+          >
+            {paying ? "Redirecting…" : "Pay with Stripe"}
+          </button>
         </div>
 
         {/* Summary (with thumbnails via resolver) */}
@@ -193,7 +237,7 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          <p className="mt-2 text-xs text-gray-700">No payment will be taken in this MVP.</p>
+          <p className="mt-2 text-xs text-gray-700">You can place an order without payment, or use Stripe if configured.</p>
         </aside>
       </div>
     </section>
