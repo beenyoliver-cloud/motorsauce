@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import SafeImage from "@/components/SafeImage";
 import Link from "next/link";
 import FavoriteButton from "@/components/FavoriteButton";
-import MakeOfferButton from "@/components/MakeOfferButton";
+import MakeOfferButtonNew from "@/components/MakeOfferButtonNew";
 import ContactSellerButton from "@/components/ContactSellerButton";
 import ReportListingButton from "@/components/ReportListingButton";
 import ListingSEO from "@/components/ListingSEO";
@@ -346,9 +346,10 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               Add to basket
             </Link>
 
-            {/* Make Offer (auto-disables on own listing via component logic) */}
-            <MakeOfferButton
+            {/* Make Offer (persistent messaging; auto-disables on own listing) */}
+            <MakeOfferButtonNew
               sellerName={listing.seller?.name || "Seller"}
+              sellerId={listing.sellerId as string}
               listingId={listing.id}
               listingTitle={listing.title}
               listingImage={gallery[0] || listing.image}

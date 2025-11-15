@@ -17,6 +17,7 @@ import {
   deleteThread as deleteThreadStore,
   upsertThreadForPeer,
   Thread,
+  slugify,
 } from "@/lib/chatStore";
 import { getCurrentUserSync } from "@/lib/auth";
 import { displayName } from "@/lib/names";
@@ -37,18 +38,31 @@ export default function ThreadClient({
   forceOfferToast?: boolean;
 }) {
   const router = useRouter();
-  const me = getCurrentUserSync();
-  const selfName = me?.name?.trim() || "You";
+  const meInitial = getCurrentUserSync();
+  const [selfName, setSelfName] = useState<string>(meInitial?.name?.trim() || "You");
 
   // --- Hydration-safe: render a stable skeleton until mounted
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // Hydrate current user so cache is set and name/id become available
+  useEffect(() => {
+    (async () => {
+      if (!mounted) return;
+      try {
+        const { getCurrentUser } = await import("@/lib/auth");
+        const u = await getCurrentUser();
+        if (u?.name) setSelfName(u.name.trim());
+      } catch {}
+    })();
+  }, [mounted]);
 
   // Peer profile data
   const [peerProfile, setPeerProfile] = useState<PeerProfile | null>(null);
 
   // Only load threads AFTER mount (so server & client initial HTML match)
   const [threads, setThreads] = useState<Thread[]>([]);
+  const [reconstructing, setReconstructing] = useState(false);
   useEffect(() => {
     if (!mounted) return;
     setThreads(loadThreads());
@@ -74,64 +88,84 @@ export default function ThreadClient({
   // If thread doesn't exist on first load, try to reconstruct it from threadId
   useEffect(() => {
     if (!mounted || thread || !threadId) return;
-    
+
+    setReconstructing(true);
+
     // Parse threadId format: t_{name1}_{name2} or t_{name1}_{name2}_{listingRef}
     const match = threadId.match(/^t_([^_]+)_([^_]+)(?:_(.+))?$/);
-    if (!match) return;
-    
+    if (!match) { setReconstructing(false); return; }
+
     const [, slug1, slug2, listingRef] = match;
+
     // Determine which name is self and which is peer
-    const selfSlug = selfName.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
-    
-    let peerSlug: string;
-    if (slug1 === selfSlug) {
-      peerSlug = slug2;
-    } else if (slug2 === selfSlug) {
-      peerSlug = slug1;
-    } else {
-      // Can't determine peer - thread ID doesn't match current user
-      return;
-    }
-    
-    // Fetch the actual peer profile to get their real name and email (for peerId)
+    const selfSlug = slugify(selfName);
+
+    let peerSlug: string | null = null;
+    if (slug1 === selfSlug) peerSlug = slug2;
+    else if (slug2 === selfSlug) peerSlug = slug1;
+
     const fetchAndCreateThread = async () => {
-      const supabase = supabaseBrowser();
-      
-      // Try to find a profile that matches this slug pattern
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('name, email')
-        .ilike('name', `%${peerSlug.replace(/-/g, '%')}%`)
-        .limit(10);
-      
-      if (!profiles || profiles.length === 0) {
-        // Fallback: create with capitalized slug
-        const peerName = peerSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
-        upsertThreadForPeer(selfName, peerName, {
+      try {
+        const supabase = supabaseBrowser();
+
+        // If we couldn't determine who "self" is yet (e.g., selfName not hydrated),
+        // try to hydrate and recompute once.
+        if (!peerSlug) {
+          try {
+            const { getCurrentUser } = await import("@/lib/auth");
+            const u = await getCurrentUser();
+            if (u?.name) {
+              const s2 = slugify(u.name);
+              if (slug1 === s2) peerSlug = slug2;
+              else if (slug2 === s2) peerSlug = slug1;
+            }
+          } catch {}
+        }
+
+        // If still unknown, default to assuming slug2 is peer.
+        if (!peerSlug) peerSlug = slug2;
+
+        // Try to find a profile that matches this slug pattern
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('name, email')
+          .ilike('name', `%${peerSlug.replace(/-/g, '%')}%`)
+          .limit(10);
+
+        if (!profiles || profiles.length === 0) {
+          // Fallback: create with nicer-spaced slug as name
+          const peerName = peerSlug
+            .split('-')
+            .map(w => w ? w.charAt(0).toUpperCase() + w.slice(1) : '')
+            .join(' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+          upsertThreadForPeer(selfName, peerName || peerSlug, {
+            preferThreadId: threadId,
+            initialLast: "New conversation",
+            listingRef: listingRef || undefined,
+          });
+          setThreads(loadThreads());
+          return;
+        }
+
+        // Find the profile whose slug matches exactly
+        const peerProfile = profiles.find(p => slugify(p.name) === peerSlug) || profiles[0];
+
+        // Create thread with proper peerId (email)
+        upsertThreadForPeer(selfName, peerProfile.name, {
           preferThreadId: threadId,
           initialLast: "New conversation",
           listingRef: listingRef || undefined,
+          peerId: peerProfile.email,
         });
         setThreads(loadThreads());
-        return;
+      } finally {
+        setReconstructing(false);
       }
-      
-      // Find the profile whose slug matches exactly
-      const peerProfile = profiles.find(p => {
-        const profileSlug = p.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
-        return profileSlug === peerSlug;
-      }) || profiles[0];
-      
-      // Create thread with proper peerId (email)
-      upsertThreadForPeer(selfName, peerProfile.name, {
-        preferThreadId: threadId,
-        initialLast: "New conversation",
-        listingRef: listingRef || undefined,
-        peerId: peerProfile.email,
-      });
-      setThreads(loadThreads());
     };
-    
+
     fetchAndCreateThread();
   }, [mounted, thread, threadId, selfName]);
 
@@ -210,15 +244,21 @@ export default function ThreadClient({
   if (!thread) {
     return (
       <div className="p-6">
-        <div className="text-sm text-gray-700">
-          This conversation was removed or doesn’t exist.
-        </div>
-        <Link
-          href="/messages"
-          className="mt-2 inline-block text-sm text-gray-900 underline"
-        >
-          Back to messages
-        </Link>
+        {reconstructing ? (
+          <div className="text-sm text-gray-700">Restoring conversation…</div>
+        ) : (
+          <>
+            <div className="text-sm text-gray-700">
+              This conversation was removed or doesn’t exist.
+            </div>
+            <Link
+              href="/messages"
+              className="mt-2 inline-block text-sm text-gray-900 underline"
+            >
+              Back to messages
+            </Link>
+          </>
+        )}
       </div>
     );
   }

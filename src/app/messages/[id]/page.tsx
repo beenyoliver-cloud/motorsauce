@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import ThreadClient from "@/components/ThreadClient";
+import ThreadClientNew from "@/components/ThreadClientNew";
 
 export default function MessagesThreadPage({ params }: { params: { id: string } }) {
   // Params are already resolved for client components; avoid React experimental use() which breaks on client.
@@ -26,7 +26,7 @@ export default function MessagesThreadPage({ params }: { params: { id: string } 
           <div className="text-sm font-semibold text-gray-900 truncate">Conversation</div>
         </div>
         <div className="h-full overflow-hidden">
-          <ThreadClient threadId={threadId} forceOfferToast={forceOfferToast} />
+          <ThreadClientNew threadId={threadId} />
         </div>
       </div>
     </section>

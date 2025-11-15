@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getCurrentUserSync } from "@/lib/auth";
+import { getCurrentUser, getCurrentUserSync } from "@/lib/auth";
 import { createOffer } from "@/lib/offersStore";
 import {
   slugify,
@@ -45,7 +45,7 @@ export default function MakeOfferButton({
     [buyerName, sellerName, listingId]
   );
 
-  function submit() {
+  async function submit() {
     if (isOwn) return;
 
     const pounds = parseFloat(amount.replace(/[^\d.]/g, ""));
@@ -53,8 +53,11 @@ export default function MakeOfferButton({
 
     // Final guard: require login to submit
     if (!me) {
-      router.push(`/auth/login?next=/listing/${encodeURIComponent(String(listingId))}`);
-      return;
+      const fetched = await getCurrentUser();
+      if (!fetched) {
+        router.push(`/auth/login?next=/listing/${encodeURIComponent(String(listingId))}`);
+        return;
+      }
     }
 
     // 1) Ensure the thread exists and bind the seller's *email* as peerId
@@ -110,12 +113,15 @@ export default function MakeOfferButton({
   return (
     <>
       <button
-        onClick={() => {
+        onClick={async () => {
           if (isOwn) return;
           // Require login to make an offer
           if (!me) {
-            router.push(`/auth/login?next=/listing/${encodeURIComponent(String(listingId))}`);
-            return;
+            const fetched = await getCurrentUser();
+            if (!fetched) {
+              router.push(`/auth/login?next=/listing/${encodeURIComponent(String(listingId))}`);
+              return;
+            }
           }
           setOpen(true);
         }}

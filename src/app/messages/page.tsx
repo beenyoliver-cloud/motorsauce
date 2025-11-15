@@ -4,14 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
-import { loadThreads, getReadThreads, Thread } from "@/lib/chatStore";
+import { fetchThreads, Thread } from "@/lib/messagesClient";
 import { displayName } from "@/lib/names";
 
 export default function MessagesIndex() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [threads, setThreads] = useState<Thread[]>([]);
-  const [readSet, setReadSet] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setMounted(true);
@@ -19,25 +19,22 @@ export default function MessagesIndex() {
 
   useEffect(() => {
     if (!mounted) return;
-    const refresh = () => {
-      const t = loadThreads().sort((a, b) => b.lastTs - a.lastTs);
+    
+    const refresh = async () => {
+      setLoading(true);
+      const t = await fetchThreads();
       setThreads(t);
-      setReadSet(new Set(getReadThreads()));
+      setLoading(false);
     };
+    
     refresh();
-    window.addEventListener("storage", refresh);
-    window.addEventListener("ms:threads", refresh as EventListener);
-    window.addEventListener("ms:offers", refresh as EventListener);
-    window.addEventListener("ms:unread", refresh as EventListener);
-    return () => {
-      window.removeEventListener("storage", refresh);
-      window.removeEventListener("ms:threads", refresh as EventListener);
-      window.removeEventListener("ms:offers", refresh as EventListener);
-      window.removeEventListener("ms:unread", refresh as EventListener);
-    };
+    
+    // Poll for updates every 10 seconds
+    const interval = setInterval(refresh, 10000);
+    return () => clearInterval(interval);
   }, [mounted]);
 
-  if (!mounted) {
+  if (!mounted || loading) {
     return (
       <div className="max-w-screen-sm mx-auto p-4 space-y-3">
         {[1, 2, 3].map(i => (
@@ -80,8 +77,8 @@ export default function MessagesIndex() {
       </div>
       <div className="divide-y divide-gray-200">
         {threads.map((t) => {
-          const unread = !readSet.has(t.id);
-          const timestamp = new Date(t.lastTs).toLocaleString('en-GB', { 
+          const unread = !t.isRead;
+          const timestamp = new Date(t.lastMessageAt).toLocaleString('en-GB', { 
             day: '2-digit', 
             month: 'short', 
             hour: '2-digit', 
@@ -93,27 +90,27 @@ export default function MessagesIndex() {
               href={`/messages/${encodeURIComponent(t.id)}`}
               className={`flex items-center gap-3 p-4 hover:bg-gray-50 transition ${unread ? 'bg-yellow-50' : 'bg-white'}`}
             >
-              {t.peerAvatar ? (
+              {t.peer.avatar ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img 
-                  src={t.peerAvatar} 
-                  alt={displayName(t.peer)}
+                  src={t.peer.avatar} 
+                  alt={displayName(t.peer.name)}
                   className="h-12 w-12 rounded-full object-cover bg-gray-100 border-2 border-gray-200"
                 />
               ) : (
                 <div className="h-12 w-12 rounded-full bg-yellow-500 flex items-center justify-center text-black font-bold text-sm border-2 border-yellow-600">
-                  {(t.peer || "?").slice(0, 2).toUpperCase()}
+                  {(t.peer.name || "?").slice(0, 2).toUpperCase()}
                 </div>
               )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
                   <h3 className={`text-sm truncate ${unread ? 'font-bold text-black' : 'font-semibold text-gray-900'}`}>
-                    {displayName(t.peer)}
+                    {displayName(t.peer.name)}
                   </h3>
                   <span className="text-xs text-gray-500 whitespace-nowrap ml-2">{timestamp}</span>
                 </div>
                 <p className={`text-sm truncate ${unread ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
-                  {t.last || "New conversation"}
+                  {t.lastMessage || "New conversation"}
                 </p>
                 {t.listingRef && (
                   <span className="text-xs text-gray-500 truncate block mt-0.5">
