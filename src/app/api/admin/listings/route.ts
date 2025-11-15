@@ -4,6 +4,15 @@ import { supabaseServer } from "@/lib/supabase";
 export const dynamic = "force-dynamic";
 const sb = supabaseServer();
 
+function assertAdmin(req: Request): NextResponse | null {
+  const key = process.env.ADMIN_API_KEY;
+  const provided = req.headers.get("x-admin-key");
+  if (!key || !provided || provided !== key) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  return null;
+}
+
 type AdminListingRow = {
   id: string | number;
   title: string;
@@ -35,7 +44,9 @@ function mapRow(row: AdminListingRow) {
   };
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  const block = assertAdmin(req);
+  if (block) return block;
   try {
     const { data, error } = await sb.from("listings").select("*").order("created_at", { ascending: false }).limit(200);
     if (error) {
@@ -50,6 +61,8 @@ export async function GET() {
 }
 
 export async function DELETE(req: Request) {
+  const block = assertAdmin(req);
+  if (block) return block;
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
@@ -67,6 +80,8 @@ export async function DELETE(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const block = assertAdmin(req);
+  if (block) return block;
   try {
     const body = await req.json().catch(() => ({}));
     if (!body || !body.title) return NextResponse.json({ error: "missing title" }, { status: 400 });

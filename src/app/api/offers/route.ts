@@ -5,6 +5,9 @@ import { store, findMessageById } from "../_lib/mem"; // ← relative
 type Action = "accept" | "decline" | "withdraw" | "counter";
 
 export async function POST(req: Request) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not available' }, { status: 404 });
+  }
   const { messageId, action, amount } = (await req.json()) as {
     messageId: string;
     action: Action;

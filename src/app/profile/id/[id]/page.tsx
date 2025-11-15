@@ -1,12 +1,12 @@
 // src/app/profile/id/[id]/page.tsx
 import { redirect } from "next/navigation";
-import { supabaseServer } from "@/lib/supabase";
+import { supabase as supabaseServerAnon } from "@/lib/supabaseServer";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProfileByIdPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supa = supabaseServer();
+  const supa = supabaseServerAnon;
 
   // Fetch profile by id
   const { data, error } = await supa

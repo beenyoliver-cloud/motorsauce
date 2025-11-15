@@ -51,6 +51,12 @@ export default function MakeOfferButton({
     const pounds = parseFloat(amount.replace(/[^\d.]/g, ""));
     if (!Number.isFinite(pounds) || pounds <= 0) return;
 
+    // Final guard: require login to submit
+    if (!me) {
+      router.push(`/auth/login?next=/listing/${encodeURIComponent(String(listingId))}`);
+      return;
+    }
+
     // 1) Ensure the thread exists and bind the seller's *email* as peerId
       upsertThreadForPeer(buyerName, sellerName, {
         preferThreadId: threadId,
@@ -104,14 +110,28 @@ export default function MakeOfferButton({
   return (
     <>
       <button
-        onClick={() => !isOwn && setOpen(true)}
+        onClick={() => {
+          if (isOwn) return;
+          // Require login to make an offer
+          if (!me) {
+            router.push(`/auth/login?next=/listing/${encodeURIComponent(String(listingId))}`);
+            return;
+          }
+          setOpen(true);
+        }}
         className={`rounded-md px-4 py-2 text-sm font-semibold ${
           isOwn
             ? "bg-gray-200 text-gray-500 cursor-not-allowed"
             : "bg-gray-900 text-white hover:bg-black"
         }`}
         aria-disabled={isOwn}
-        title={isOwn ? "You can’t make an offer on your own listing" : "Make an offer"}
+        title={
+          isOwn
+            ? "You can’t make an offer on your own listing"
+            : me
+            ? "Make an offer"
+            : "Sign in to make an offer"
+        }
       >
         Make an offer
       </button>

@@ -1,12 +1,12 @@
 // src/app/listing/[id]/edit/page.tsx
 import { notFound, redirect } from "next/navigation";
-import { supabaseServer } from "@/lib/supabase";
+import { supabase as supabaseServerAnon } from "@/lib/supabaseServer";
 import EditListingForm from "@/components/EditListingForm";
 
 export const dynamic = "force-dynamic";
 
 async function fetchListing(id: string) {
-  const supa = supabaseServer();
+  const supa = supabaseServerAnon;
   const { data, error } = await supa
     .from("listings")
     .select("*, seller:profiles!seller_id ( id, name )")
@@ -17,7 +17,7 @@ async function fetchListing(id: string) {
 }
 
 async function getUser() {
-  const supa = supabaseServer();
+  const supa = supabaseServerAnon;
   const { data: { user } } = await supa.auth.getUser();
   return user;
 }

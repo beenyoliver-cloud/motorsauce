@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase";
+import { supabase as supabaseServerAnon } from "@/lib/supabaseServer";
 
 export const dynamic = "force-dynamic";
 
-const supabase = supabaseServer();
+// Use anon key server client to respect RLS
+const supabase = supabaseServerAnon;
 
 type SellerMetricRow = {
   seller_name: string;

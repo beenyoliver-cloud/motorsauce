@@ -1,11 +1,27 @@
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase";
+import { supabase as supabaseServerAnon } from "@/lib/supabaseServer";
 
 export const dynamic = "force-dynamic";
 
-const supabase = supabaseServer();
+// Use anon key client to keep RLS in effect
+const supabase = supabaseServerAnon;
+
+function sameOriginOk(req: Request) {
+  try {
+    const origin = req.headers.get("origin") || "";
+    const referer = req.headers.get("referer") || "";
+    const base = process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+    if (!base) return false;
+    return origin.startsWith(base) || referer.startsWith(base);
+  } catch {
+    return false;
+  }
+}
 
 export async function POST(req: Request) {
+  if (!sameOriginOk(req)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   try {
     const body = await req.json().catch(() => ({}));
     const name = String(body?.name || "").trim();

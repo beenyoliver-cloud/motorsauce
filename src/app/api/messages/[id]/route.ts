@@ -21,6 +21,9 @@ export async function GET(req: Request, ctx: RouteContext) {
 }
 
 export async function POST(req: Request, ctx: RouteContext) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not available' }, { status: 404 });
+  }
   const params = await ctx.params;
   const peerId = decodeURIComponent(params.id || "");
   const body = await req.json();

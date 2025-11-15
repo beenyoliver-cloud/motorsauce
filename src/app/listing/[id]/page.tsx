@@ -11,6 +11,7 @@ import ListingSEO from "@/components/ListingSEO";
 import SellerLink from "@/components/SellerLink";
 import SellerExposureTracker from "@/components/SellerExposureTracker";
 import TrackRecentlyViewed from "@/components/TrackRecentlyViewed";
+import TrustBadge from "@/components/TrustBadge";
 import { createClient } from "@supabase/supabase-js";
 
 // Ensure this page always renders dynamically at runtime on Vercel
@@ -418,7 +419,11 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
                   <div className="text-sm font-semibold text-black group-hover:underline">
                     {listing.seller.name}
                   </div>
-                  <div className="text-xs text-gray-600">⭐ {Number(listing.seller.rating).toFixed(1)}</div>
+                  <div className="text-xs text-gray-600 flex items-center gap-2">
+                    <span>⭐ {Number(listing.seller.rating).toFixed(1)}</span>
+                    {/* Trust badge placeholder; soldCount to be wired from metrics later */}
+                    <TrustBadge soldCount={undefined} />
+                  </div>
                 </div>
               </SellerLink>
 

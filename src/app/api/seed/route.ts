@@ -1,7 +1,18 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
 
-export async function POST() {
+function assertAdmin(req: Request): NextResponse | null {
+  const key = process.env.ADMIN_API_KEY;
+  const provided = req.headers.get("x-admin-key");
+  if (!key || !provided || provided !== key) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  return null;
+}
+
+export async function POST(req: Request) {
+  const block = assertAdmin(req);
+  if (block) return block;
   const supabase = supabaseServer();
 
   try {

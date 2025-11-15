@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import SafeImage from "@/components/SafeImage";
 import SearchFiltersSidebar from "@/components/SearchFiltersSidebar";
+import SortControl from "@/components/SortControl";
+import TrustBadge from "@/components/TrustBadge";
 import { nsKey } from "@/lib/auth";
 
 /* ---------- Types ---------- */
@@ -227,6 +229,20 @@ function SearchPageInner() {
     [all, categories, makes, models, genCodes, engines, yearMin, yearMax, priceMin, priceMax, q, seller]
   );
 
+  // Sorting
+  const sortKey = sp.get("sort") || "relevance"; // relevance | price_asc | price_desc | newest
+  const sortedResults = useMemo(() => {
+    const arr = results.slice();
+    if (sortKey === "price_asc") {
+      arr.sort((a, b) => priceNumber(a.price) - priceNumber(b.price));
+    } else if (sortKey === "price_desc") {
+      arr.sort((a, b) => priceNumber(b.price) - priceNumber(a.price));
+    } else if (sortKey === "newest") {
+      arr.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } // relevance = original order
+    return arr;
+  }, [results, sortKey]);
+
   const makeOptions = uniq(all.map((l) => l.make));
   const modelOptions = uniq(all.map((l) => l.model));
   const genOptions = uniq(all.map((l) => l.genCode));
@@ -298,14 +314,25 @@ function SearchPageInner() {
             </div>
           )}
 
-          {/* Summary */}
+          {/* Summary + sort */}
           <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <h2 className="text-lg font-semibold text-black">Search results</h2>
-            <p className="mt-1 text-sm text-gray-700">
-              {results.length.toLocaleString()} result{results.length === 1 ? "" : "s"}
-              {q ? <> • Query: <strong>{q}</strong></> : null}
-              {seller ? <> • Seller: <strong>{seller}</strong></> : null}
-            </p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-black">Search results</h2>
+                <p className="mt-1 text-sm text-gray-700">
+                  {results.length.toLocaleString()} result{results.length === 1 ? "" : "s"}
+                  {q ? (
+                    <> • Query: <strong>{q}</strong></>
+                  ) : null}
+                  {seller ? (
+                    <> • Seller: <strong>{seller}</strong></>
+                  ) : null}
+                </p>
+              </div>
+              <div className="pt-1">
+                <SortControl />
+              </div>
+            </div>
           </div>
 
           {/* Errors */}
@@ -338,7 +365,7 @@ function SearchPageInner() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {results.map((l) => (
+              {sortedResults.map((l) => (
                 <Link
                   key={l.id}
                   href={`/listing/${l.id}`}
@@ -380,6 +407,8 @@ function SearchPageInner() {
                           loading="lazy"
                         />
                         <span className="text-xs text-gray-900">{l.seller.name}</span>
+                        {/* Trust badge placeholder (data to be wired) */}
+                        <TrustBadge soldCount={undefined} />
                       </div>
                       <div className="font-bold text-gray-900">{l.price}</div>
                     </div>
