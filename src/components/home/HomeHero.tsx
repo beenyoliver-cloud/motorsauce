@@ -59,7 +59,6 @@ export default function HomeHero() {
               <Car size={14} /> Add your vehicle
             </a>
           )}
-          <span className="text-xs text-gray-500">Tip: type @username to search sellers</span>
           {/* Trending chips */}
           <div className="w-full">
             <TrendingChips />

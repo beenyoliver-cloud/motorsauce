@@ -7,6 +7,8 @@ import SafeImage from "@/components/SafeImage";
 import SearchFiltersSidebar from "@/components/SearchFiltersSidebar";
 import SortControl from "@/components/SortControl";
 import TrustBadge from "@/components/TrustBadge";
+import SearchTabs from "@/components/SearchTabs";
+import SellerCard from "@/components/SellerCard";
 import { nsKey } from "@/lib/auth";
 
 /* ---------- Types ---------- */
@@ -87,10 +89,12 @@ function readFavouriteGarage():
 function SearchPageInner() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [all, setAll] = useState<Listing[]>([]);
-  const [users, setUsers] = useState<Array<{ id: string; name: string; avatar: string; rating?: number; url: string }>>([]);
+  const [sellers, setSellers] = useState<Array<{ id: string; name: string; avatar: string; rating?: number; listingsCount?: number }>>([]);
   const [loading, setLoading] = useState(true);
+  const [sellersLoading, setSellersLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [recent, setRecent] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<"all" | "parts" | "sellers">("all");
 
   const sp = useSearchParams();
   const router = useRouter();
@@ -168,6 +172,32 @@ function SearchPageInner() {
     (sp.get("q") && String(sp.get("q"))) ||
     (sp.get("query") && String(sp.get("query"))) ||
     "";
+  
+  /* Fetch sellers when query changes */
+  useEffect(() => {
+    const query = q.trim();
+    if (!query) {
+      setSellers([]);
+      return;
+    }
+
+    let alive = true;
+    setSellersLoading(true);
+    fetch(`/api/search/sellers?q=${encodeURIComponent(query)}`)
+      .then(async (r) => {
+        if (!r.ok) throw new Error("Failed to search sellers");
+        return r.json();
+      })
+      .then((data) => {
+        if (!alive) return;
+        setSellers(Array.isArray(data.sellers) ? data.sellers : []);
+      })
+      .catch(() => alive && setSellers([]))
+      .finally(() => alive && setSellersLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [q]);
   const seller = sp.get("seller") || "";
 
   const categories = arrify(sp.getAll("category"));
@@ -314,13 +344,26 @@ function SearchPageInner() {
             </div>
           )}
 
+          {/* Tabs */}
+          <SearchTabs
+            activeTab={activeTab}
+            partsCount={sortedResults.length}
+            sellersCount={sellers.length}
+            onChange={setActiveTab}
+          />
+
           {/* Summary + sort */}
           <div className="rounded-xl border border-gray-200 bg-white p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold text-black">Search results</h2>
+                <h2 className="text-lg font-semibold text-black">
+                  {activeTab === "sellers" ? "Sellers" : "Parts"}
+                </h2>
                 <p className="mt-1 text-sm text-gray-700">
-                  {results.length.toLocaleString()} result{results.length === 1 ? "" : "s"}
+                  {activeTab === "sellers" 
+                    ? `${sellers.length.toLocaleString()} seller${sellers.length === 1 ? "" : "s"}`
+                    : `${sortedResults.length.toLocaleString()} part${sortedResults.length === 1 ? "" : "s"}`
+                  }
                   {q ? (
                     <> • Query: <strong>{q}</strong></>
                   ) : null}
@@ -329,9 +372,11 @@ function SearchPageInner() {
                   ) : null}
                 </p>
               </div>
-              <div className="pt-1">
-                <SortControl />
-              </div>
+              {activeTab !== "sellers" && (
+                <div className="pt-1">
+                  <SortControl />
+                </div>
+              )}
             </div>
           </div>
 
@@ -342,8 +387,25 @@ function SearchPageInner() {
             </div>
           )}
 
-          {/* Loading / Results */}
-          {loading ? (
+          {/* Seller Results */}
+          {(activeTab === "sellers" || activeTab === "all") && sellers.length > 0 && (
+            <div className="space-y-4">
+              {activeTab === "all" && <h3 className="text-sm font-semibold text-gray-700 px-1">Sellers matching "{q}"</h3>}
+              {sellers.map((seller) => (
+                <SellerCard
+                  key={seller.id}
+                  id={seller.id}
+                  name={seller.name}
+                  avatar={seller.avatar}
+                  rating={seller.rating}
+                  listingsCount={seller.listingsCount}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Parts Results */}
+          {activeTab === "sellers" ? null : loading ? (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="animate-pulse border border-gray-200 rounded-xl overflow-hidden">
@@ -356,7 +418,7 @@ function SearchPageInner() {
                 </div>
               ))}
             </div>
-          ) : results.length === 0 ? (
+          ) : sortedResults.length === 0 ? (
             <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
               <p className="text-gray-800">No results found. Try removing a filter or searching a different term.</p>
               <div className="mt-4 text-sm text-gray-600">

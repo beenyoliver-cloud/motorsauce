@@ -15,6 +15,7 @@ import {
 import { getCurrentUser, LocalUser, nsKey } from "@/lib/auth";
 import { isAdmin } from "@/lib/admin";
 import CartDrawer from "@/components/CartDrawer";
+import SearchBar from "@/components/SearchBar";
 
 /* ===== Helpers ===== */
 function readUnreadCount(): number {
@@ -205,50 +206,9 @@ export default function Header() {
         </div>
 
         {/* Search bar across the top */}
-        <form
-          action="/search"
-          method="get"
-          className="px-4 pb-2"
-          role="search"
-          onSubmit={(e) => {
-            try {
-              const form = e.currentTarget as HTMLFormElement;
-              const fd = new FormData(form);
-              const qRaw = String(fd.get("query") || "");
-              const q = qRaw.trim();
-              if (!q) return;
-
-              // @username shortcut -> users search
-              if (q.startsWith("@") && q.length > 1) {
-                e.preventDefault();
-                const handle = q.slice(1);
-                window.location.href = `/search?type=users&q=${encodeURIComponent(handle)}`;
-                return;
-              }
-
-              // Per-user recent searches (namespaced); fallback to legacy key for read
-              const key = nsKey("recent_searches");
-              const legacyKey = "ms:recent-searches";
-              const raw = localStorage.getItem(key) || localStorage.getItem(legacyKey);
-              const arr = raw ? JSON.parse(raw) : [];
-              const next = [q, ...arr.filter((s: string) => s !== q)].slice(0, 10);
-              localStorage.setItem(key, JSON.stringify(next));
-            } catch {
-              /* ignore */
-            }
-          }}
-        >
-          <div className="flex items-center w-full border border-gray-300 rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-yellow-400 bg-white shadow-sm">
-            <SearchIcon className="text-gray-400 mr-2" size={18} aria-hidden="true" />
-            <input
-              type="text"
-              name="query"
-              placeholder="Search parts or enter registration…"
-              className="flex-1 border-none focus:ring-0 text-[15px] text-[#333] placeholder-gray-800 bg-transparent"
-              aria-label="Search"
-            />
-          </div>
-        </form>
+        <div className="px-4 pb-2">
+          <SearchBar placeholder="Search parts or sellers…" />
+        </div>
 
         {/* Mobile menu panel */}
         {mobileMenuOpen && (
