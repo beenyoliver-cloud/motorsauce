@@ -4,12 +4,17 @@ import { createClient } from "@supabase/supabase-js";
 // Don't cache; keep it simple for now
 export const dynamic = "force-dynamic";
 
-// Create Supabase client with anon key - RLS policy allows public SELECT
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  { auth: { persistSession: false } }
-);
+// Create Supabase client factory. Prefer anon (RLS) but allow service-role fallback when explicitly enabled.
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const useService = process.env.LISTINGS_USE_SERVICE_ROLE === "1";
+  const service = process.env.SUPABASE_SERVICE_ROLE;
+  if (useService && service) {
+    return createClient(url, service, { auth: { persistSession: false } });
+  }
+  return createClient(url, anon, { auth: { persistSession: false } });
+}
 
 // Public shape returned to the client
 type Listing = {
@@ -142,6 +147,7 @@ async function findInLocal(_id?: string | null) {
 }
 
 export async function GET(req: Request) {
+  const supabase = getSupabase();
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
 
