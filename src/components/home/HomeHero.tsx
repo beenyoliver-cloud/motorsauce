@@ -16,7 +16,6 @@ export default function HomeHero() {
   function submitSearch(e: React.FormEvent) {
     e.preventDefault();
     const q = query.trim();
-    if (!q && !active) return;
     const params = new URLSearchParams();
     if (q) params.set("q", q);
     if (active) {
@@ -24,7 +23,8 @@ export default function HomeHero() {
       if (active.model) params.set("model", active.model);
       if (active.year) params.set("year", String(active.year));
     }
-    router.push(`/search?${params.toString()}`);
+    // Always navigate to search page, even with empty query (shows all listings)
+    router.push(`/search${params.toString() ? '?' + params.toString() : ''}`);
   }
 
   return (
@@ -49,8 +49,8 @@ export default function HomeHero() {
         <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
           {active ? (
             <button
-              onClick={() => submitSearch(new Event("submit") as unknown as React.FormEvent)}
-              className="inline-flex items-center gap-1 rounded-full border border-yellow-500 bg-yellow-50 text-yellow-700 px-3 py-1"
+              onClick={(e) => submitSearch(e as unknown as React.FormEvent)}
+              className="inline-flex items-center gap-1 rounded-full border border-yellow-500 bg-yellow-50 text-yellow-700 px-3 py-1 hover:bg-yellow-100"
             >
               <Car size={14} /> {vehicleLabel(active)}
             </button>
