@@ -64,17 +64,18 @@ export default function HeroCarousel() {
       {/* Text overlay */}
       <div className="relative z-10 h-full w-full flex items-center">
         <div className="px-6 md:px-10">
-          <h2 className="text-2xl md:text-4xl font-extrabold text-white drop-shadow-sm">
+          <h2 className="text-2xl md:text-4xl font-extrabold text-white drop-shadow-sm animate-fadeIn">
             {slide.title}
           </h2>
-          <p className="mt-2 max-w-xl text-sm md:text-base text-white/90">
+          <p className="mt-2 max-w-xl text-sm md:text-base text-white/90 animate-fadeIn" style={{ animationDelay: '100ms' }}>
             {slide.blurb}
           </p>
 
           {slide.href && (
             <a
               href={slide.href}
-              className="mt-4 inline-flex items-center rounded-md bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-600"
+              className="mt-4 inline-flex items-center rounded-md bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-400 hover:shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 animate-fadeIn"
+              style={{ animationDelay: '200ms' }}
             >
               Explore
             </a>
@@ -89,8 +90,8 @@ export default function HeroCarousel() {
             key={s.id}
             onClick={() => setIndex(i)}
             aria-label={`Go to slide ${i + 1}`}
-            className={`h-2.5 w-2.5 rounded-full transition ${
-              i === index ? "bg-white" : "bg-white/50 hover:bg-white/80"
+            className={`h-2.5 w-2.5 rounded-full transition-all duration-300 transform hover:scale-125 ${
+              i === index ? "bg-yellow-400 w-8 shadow-lg" : "bg-white/50 hover:bg-yellow-300"
             }`}
           />
         ))}

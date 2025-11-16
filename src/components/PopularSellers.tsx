@@ -50,11 +50,11 @@ export default function PopularSellers() {
                 }
               } catch {}
             }}
-            className="flex flex-col items-center text-center p-3 border rounded bg-white hover:shadow focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            className="group flex flex-col items-center text-center p-3 border border-gray-200 rounded-xl bg-white hover:shadow-lg hover:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all duration-300 transform hover:-translate-y-1 hover:scale-105"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={s.avatar || "/images/seller1.jpg"} alt={s.seller_name} className="h-16 w-16 rounded-full object-cover" />
-            <div className="mt-2 text-sm font-semibold text-gray-900 line-clamp-1" title={s.seller_name}>{s.seller_name}</div>
+            <img src={s.avatar || "/images/seller1.jpg"} alt={s.seller_name} className="h-16 w-16 rounded-full object-cover ring-2 ring-gray-200 group-hover:ring-yellow-400 transition-all duration-300" />
+            <div className="mt-2 text-sm font-semibold text-gray-900 group-hover:text-yellow-600 line-clamp-1 transition-colors duration-300" title={s.seller_name}>{s.seller_name}</div>
             <div className="text-[11px] text-gray-600 flex items-center gap-2">
               <span>⭐ {typeof s.rating === 'number' ? s.rating.toFixed(1) : '5.0'}</span>
               <span className="text-gray-400">• {(s.clicks || 0).toLocaleString()} clicks</span>

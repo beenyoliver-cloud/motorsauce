@@ -179,22 +179,24 @@ export default function FeaturedRow({
     <section className="mb-8">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-xl font-bold text-black">{title}</h2>
-        <Link href="/search" className="text-sm text-gray-600 hover:underline">View all</Link>
+        <Link href="/search" className="text-sm text-gray-600 hover:text-yellow-600 hover:underline transition-colors duration-300">View all</Link>
       </div>
       <div className="-mx-1 overflow-x-auto">
         <div className="px-1 flex gap-3">
-          {items.map((p) => (
+          {items.map((p, idx) => (
             <Link
               key={p.id}
               href={`/listing/${p.id}`}
-              className="min-w-[160px] max-w-[200px] sm:min-w-[200px] sm:max-w-[240px] border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-sm transition"
+              className="group min-w-[160px] max-w-[200px] sm:min-w-[200px] sm:max-w-[240px] border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-lg hover:border-yellow-400 transition-all duration-300 transform hover:-translate-y-1 animate-fadeInUp"
+              style={{ animationDelay: `${idx * 50}ms` }}
             >
-              <div className="relative aspect-[4/3] bg-gray-50">
-                <SafeImage src={p.image} alt={p.title} className="absolute inset-0 w-full h-full object-cover" />
+              <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
+                <SafeImage src={p.image} alt={p.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
+                <div className="absolute inset-0 bg-yellow-500/0 group-hover:bg-yellow-500/10 transition-all duration-300" />
               </div>
               <div className="p-2">
-                <div className="text-xs font-semibold text-gray-900 line-clamp-2">{p.title}</div>
-                <div className="mt-1 text-sm font-bold text-gray-900">{p.price}</div>
+                <div className="text-xs font-semibold text-gray-900 line-clamp-2 group-hover:text-yellow-600 transition-colors duration-300">{p.title}</div>
+                <div className="mt-1 text-sm font-bold text-gray-900 group-hover:text-yellow-600 transition-colors duration-300">{p.price}</div>
               </div>
             </Link>
           ))}

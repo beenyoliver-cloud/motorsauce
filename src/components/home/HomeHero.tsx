@@ -28,14 +28,14 @@ export default function HomeHero() {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-4 md:p-8">
+    <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-4 md:p-8 transition-all duration-300 hover:shadow-lg hover:border-yellow-300">
       <div className="max-w-3xl">
-        <h1 className="text-2xl md:text-4xl font-extrabold text-black tracking-tight">Find the right part for your ride</h1>
-        <p className="mt-2 text-sm md:text-base text-gray-700">OEM and aftermarket parts from trusted sellers. Search by keyword or filter by your vehicle.</p>
+        <h1 className="text-2xl md:text-4xl font-extrabold text-black tracking-tight animate-fadeIn">Find the right part for your ride</h1>
+        <p className="mt-2 text-sm md:text-base text-gray-700 animate-fadeIn" style={{ animationDelay: '100ms' }}>OEM and aftermarket parts from trusted sellers. Search by keyword or filter by your vehicle.</p>
 
-        <form onSubmit={submitSearch} className="mt-4 flex items-center gap-2">
-          <div className="flex items-center w-full border border-gray-300 rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-yellow-400 bg-white shadow-sm">
-            <SearchIcon className="text-gray-400 mr-2" size={18} />
+        <form onSubmit={submitSearch} className="mt-4 flex items-center gap-2 animate-fadeIn" style={{ animationDelay: '200ms' }}>
+          <div className="flex items-center w-full border border-gray-300 rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-yellow-400 focus-within:border-yellow-400 bg-white shadow-sm transition-all duration-300 hover:shadow-md hover:border-yellow-300">
+            <SearchIcon className="text-gray-400 mr-2 transition-colors duration-300 group-focus-within:text-yellow-500" size={18} />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -43,19 +43,19 @@ export default function HomeHero() {
               className="flex-1 border-none focus:ring-0 text-[15px] text-gray-900 placeholder:text-gray-500 bg-transparent"
             />
           </div>
-          <button type="submit" className="shrink-0 rounded-full bg-gray-900 text-white px-4 py-2 font-semibold hover:bg-black">Search</button>
+          <button type="submit" className="shrink-0 rounded-full bg-gray-900 text-white px-4 py-2 font-semibold hover:bg-yellow-500 hover:text-black transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md">Search</button>
         </form>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm animate-fadeIn" style={{ animationDelay: '300ms' }}>
           {active ? (
             <button
               onClick={(e) => submitSearch(e as unknown as React.FormEvent)}
-              className="inline-flex items-center gap-1 rounded-full border border-yellow-500 bg-yellow-50 text-yellow-700 px-3 py-1 hover:bg-yellow-100"
+              className="inline-flex items-center gap-1 rounded-full border border-yellow-500 bg-yellow-50 text-yellow-700 px-3 py-1 hover:bg-yellow-500 hover:text-white transition-all duration-300 transform hover:scale-105 hover:shadow-md"
             >
               <Car size={14} /> {vehicleLabel(active)}
             </button>
           ) : (
-            <a href="/profile/You?tab=about&edit=1" className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-white text-gray-700 px-3 py-1 hover:bg-gray-50">
+            <a href="/profile/You?tab=about&edit=1" className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-white text-gray-700 px-3 py-1 hover:bg-yellow-50 hover:border-yellow-500 hover:text-yellow-700 transition-all duration-300 transform hover:scale-105">
               <Car size={14} /> Add your vehicle
             </a>
           )}
