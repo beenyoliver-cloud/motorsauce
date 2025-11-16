@@ -17,10 +17,17 @@ export default function BasketAddPage() {
 
   useEffect(() => {
     const id = sp.get("listing");
+    const redirect = sp.get("redirect");
     (async () => {
       try {
         if (id) await addToCartById(id, 1);
-        router.replace("/basket?added=1");
+        // If redirect=checkout, go directly to checkout (for "Buy now")
+        // Otherwise go to basket (for "Add to basket")
+        if (redirect === "checkout") {
+          router.replace("/checkout");
+        } else {
+          router.replace("/basket?added=1");
+        }
       } catch {
         router.replace("/basket?error=notfound");
       }

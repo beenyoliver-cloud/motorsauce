@@ -334,7 +334,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
           {/* CTAs */}
           <div className="flex flex-wrap gap-3 pt-1">
             <Link
-              href={`/checkout?listing=${encodeURIComponent(String(listing.id))}`}
+              href={`/basket/add?listing=${encodeURIComponent(String(listing.id))}&redirect=checkout`}
               className="inline-flex items-center justify-center rounded-md bg-yellow-500 px-5 py-2.5 font-semibold text-black hover:bg-yellow-600"
             >
               Buy now
@@ -404,12 +404,12 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
 
           {/* Seller card */}
           <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
               {/* Avatar + name clickable; prefers /profile/{id} if sellerId present */}
               <SellerLink
                 sellerName={listing.seller.name}
                 sellerId={listing.sellerId}
-                className="flex items-center gap-3 group"
+                className="flex items-center gap-3 group flex-1"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -428,15 +428,6 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
                   </div>
                 </div>
               </SellerLink>
-
-              <Link
-                href={`/messages/new?to=${encodeURIComponent(listing.seller.name)}&ref=${encodeURIComponent(
-                  String(listing.id)
-                )}`}
-                className="rounded-md bg-gray-900 px-3 py-2 text-sm text-white hover:bg-black"
-              >
-                Message seller
-              </Link>
             </div>
           </div>
 
