@@ -27,10 +27,14 @@ export default function LoginPage() {
     if (!email.trim() || !email.includes("@")) return setErr("Please enter a valid email.");
     if (!pw) return setErr("Please enter your password.");
 
+    const startTime = Date.now();
+    console.log('[login page] Starting login', { email: email.substring(0, 3) + '***' });
+
     try {
       setBusy(true);
       
       // First, use server-side login to set cookies for middleware
+      const beforeServerCall = Date.now();
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -38,28 +42,40 @@ export default function LoginPage() {
         },
         body: JSON.stringify({ email, password: pw }),
       });
+      const serverCallDuration = Date.now() - beforeServerCall;
+      console.log('[login page] Server call completed', { duration: serverCallDuration, status: response.status });
 
       const data = await response.json();
 
       if (!response.ok || data.error) {
+        console.error('[login page] Server returned error', { error: data.error, status: response.status });
         setErr(data.error || 'Login failed. Please try again.');
         return;
       }
 
       if (!data.user) {
+        console.error('[login page] Server returned no user');
         setErr("Login failed. Please try again.");
         return;
       }
 
       // Also do client-side login to update cache immediately
+      const beforeClientLogin = Date.now();
       const { user: clientUser } = await loginWithEmail(email, pw);
+      const clientLoginDuration = Date.now() - beforeClientLogin;
+      console.log('[login page] Client login completed', { duration: clientLoginDuration });
       
       // Dispatch auth event to update UI
       window.dispatchEvent(new Event("ms:auth"));
       
+      const totalDuration = Date.now() - startTime;
+      console.log('[login page] Login complete', { totalDuration, serverCallDuration, clientLoginDuration });
+      
       // Use router.replace for smooth navigation without full reload
       router.replace(next || `/profile/${encodeURIComponent(data.user.name)}`);
     } catch (e) {
+      const totalDuration = Date.now() - startTime;
+      console.error('[login page] Exception', { error: e instanceof Error ? e.message : String(e), totalDuration });
       setErr(e instanceof Error ? e.message : "Sign in failed.");
     } finally {
       setBusy(false);
