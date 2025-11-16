@@ -3,42 +3,46 @@
 import { useRouter } from "next/navigation";
 import { MessageCircle } from "lucide-react";
 import { getCurrentUserSync } from "@/lib/auth";
-import { upsertThreadForPeer } from "@/lib/chatStore";
+import { createThread } from "@/lib/messagesClient";
 import { displayName } from "@/lib/names";
 
 type ContactSellerButtonProps = {
   sellerName: string;
+  sellerId?: string;
   listingId: string | number;
   listingTitle?: string;
 };
 
 export default function ContactSellerButton({
   sellerName,
+  sellerId,
   listingId,
   listingTitle,
 }: ContactSellerButtonProps) {
   const router = useRouter();
   const me = getCurrentUserSync();
-  const myName = me?.name?.trim() || "You";
   
   // Disable if viewing own listing
-  const isOwn = me?.name === sellerName;
+  const isOwn = me?.id === sellerId || me?.name === sellerName;
 
-  function handleClick() {
+  async function handleClick() {
     if (!me) {
       router.push(`/auth/login?next=/listing/${encodeURIComponent(String(listingId))}`);
       return;
     }
 
-    // Create or find thread with this seller
-    const thread = upsertThreadForPeer(
-      myName,
-      sellerName,
-      {
-        listingRef: String(listingId),
-        initialLast: listingTitle ? `About: ${listingTitle}` : "New message",
-      }
-    );
+    if (!sellerId) {
+      console.warn("ContactSellerButton: No sellerId provided");
+      return;
+    }
+
+    // Create or find thread with this seller using new Supabase system
+    const thread = await createThread(sellerId, String(listingId));
+    
+    if (!thread) {
+      console.error("Failed to create thread");
+      return;
+    }
 
     // Navigate to the thread
     router.push(`/messages/${encodeURIComponent(thread.id)}`);

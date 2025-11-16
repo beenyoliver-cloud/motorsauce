@@ -358,6 +358,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             {/* Contact Seller (auto-disables on own listing) */}
             <ContactSellerButton
               sellerName={listing.seller?.name || "Seller"}
+              sellerId={listing.sellerId}
               listingId={listing.id}
               listingTitle={listing.title}
             />

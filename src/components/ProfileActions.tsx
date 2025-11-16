@@ -4,27 +4,26 @@
 import { useRouter } from "next/navigation";
 import { MessageSquare, Share2 } from "lucide-react";
 import { getCurrentUserSync } from "@/lib/auth";
-import { slugify, upsertThreadForPeer } from "@/lib/chatStore";
+import { createThread } from "@/lib/messagesClient";
 
 type ProfileActionsProps = {
   shareText: string;
   shareUrl: string;
-  toUsername: string;        // e.g. "OliverB"
-  toUserEmail?: string;      // STABLE peerId (optional) e.g. "beenyoliver@gmail.com"
+  toUsername: string;
+  toUserId?: string;  // Supabase user ID for creating threads
 };
 
 export default function ProfileActions({
   shareText,
   shareUrl,
   toUsername,
-  toUserEmail,               // ← required: we pass this as peerId
+  toUserId,
 }: ProfileActionsProps) {
   const router = useRouter();
   const me = getCurrentUserSync();
-  const selfName = (me?.name || "You").trim();
   
   // Prevent self-messaging
-  const isSelf = me?.name === toUsername;
+  const isSelf = me?.id === toUserId || me?.name === toUsername;
 
   async function handleShare() {
     try {
@@ -36,23 +35,26 @@ export default function ProfileActions({
     } catch {}
   }
 
-  function handleMessage() {
+  async function handleMessage() {
     if (!me) {
       router.push(`/auth/login?next=/profile/${encodeURIComponent(toUsername)}`);
       return;
     }
 
-    // direct profile chat (no listingRef)
-    const threadId = `t_${slugify(selfName)}_${slugify(toUsername)}`;
+    if (!toUserId) {
+      console.warn("ProfileActions: No toUserId provided for messaging");
+      return;
+    }
 
-    // Ensure the thread exists with *email* peerId
-      upsertThreadForPeer(selfName, toUsername, {
-        preferThreadId: threadId,
-        initialLast: "New conversation",
-        peerId: toUserEmail || toUsername,
-      });
+    // Create or find thread with this user using new Supabase system
+    const thread = await createThread(toUserId);
+    
+    if (!thread) {
+      console.error("Failed to create thread");
+      return;
+    }
 
-    router.push(`/messages/${encodeURIComponent(threadId)}`);
+    router.push(`/messages/${encodeURIComponent(thread.id)}`);
   }
 
   return (

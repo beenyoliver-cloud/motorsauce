@@ -3,7 +3,18 @@ import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+function assertAdmin(req: Request): NextResponse | null {
+  const key = process.env.ADMIN_API_KEY;
+  const provided = req.headers.get("x-admin-key");
+  if (!key || !provided || provided !== key) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  return null;
+}
+
+export async function GET(req: Request) {
+  const block = assertAdmin(req);
+  if (block) return block;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
