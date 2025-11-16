@@ -274,8 +274,8 @@ export async function GET(req: Request) {
   }
 
   if (!data || !Array.isArray(data)) {
-    console.warn("No data returned from listings query");
-    return NextResponse.json({ error: "No data", received: data, type: typeof data }, { status: 200 });
+    console.warn("No data returned from listings query; returning empty array");
+    return NextResponse.json([], { status: 200 });
   }
 
   let rows: Listing[] = Array.isArray(data) && data.length ? (data as RawListingRow[]).map(mapDbRow) : ([] as Listing[]);

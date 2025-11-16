@@ -132,21 +132,21 @@ export default function MessagesLayout({ children }: Props) {
 
   if (!mounted) {
     return (
-      <section className="h-full grid grid-cols-[280px_1fr]">
-        <aside className="border-r border-gray-200 p-3 space-y-2">
+      <section className="h-full grid grid-cols-1 md:grid-cols-[280px_1fr]">
+        <aside className="hidden md:block border-r border-gray-200 p-3 space-y-2">
           <div className="h-6 w-32 rounded bg-gray-200 animate-pulse" />
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="h-12 rounded bg-gray-50 border border-gray-200 animate-pulse" />
           ))}
         </aside>
-        <main>{children}</main>
+        <main className="min-h-0">{children}</main>
       </section>
     );
   }
 
   return (
-    <section className="h-full grid grid-cols-[300px_1fr]">
-      <aside className="border-r border-gray-200 flex flex-col">
+    <section className="h-full grid grid-cols-1 md:grid-cols-[300px_1fr]">
+      <aside className="hidden md:flex border-r border-gray-200 flex-col">
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <div className="mb-2 text-xs text-gray-600">Signed in as</div>

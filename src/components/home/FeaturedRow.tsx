@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import SafeImage from "@/components/SafeImage";
+import { supabaseBrowser } from "@/lib/supabase";
 
 type Listing = {
   id: string | number;
@@ -28,9 +29,53 @@ export default function FeaturedRow({
     let alive = true;
     async function load() {
       try {
-        const res = await fetch("/api/listings", { cache: "no-store" });
-        const rows = (await res.json()) as Listing[];
-        let list = Array.isArray(rows) ? rows : [];
+        const res = await fetch("/api/listings?limit=200", { cache: "no-store" });
+        const rows = (await res.json()) as unknown;
+        let list: Listing[] = Array.isArray(rows) ? (rows as Listing[]) : [];
+
+        // Fallback: if API fails or returns non-array/empty, query Supabase directly (public anon, RLS enforced)
+        if (!Array.isArray(rows) || list.length === 0) {
+          try {
+            const sb = supabaseBrowser();
+            const { data, error } = await sb
+              .from("listings")
+              .select("*")
+              .order("created_at", { ascending: false })
+              .limit(50);
+
+            if (!error && Array.isArray(data)) {
+              list = (data as any[]).map((row) => {
+                const images: string[] = Array.isArray(row.images) && row.images.length
+                  ? row.images
+                  : row.image_url
+                  ? [row.image_url]
+                  : row.image
+                  ? [row.image]
+                  : [];
+                const price =
+                  typeof row.price_cents === "number"
+                    ? "£" + (row.price_cents / 100).toFixed(2)
+                    : typeof row.price === "number"
+                    ? "£" + Number(row.price).toFixed(2)
+                    : typeof row.price === "string"
+                    ? row.price.startsWith("£")
+                      ? row.price
+                      : `£${row.price}`
+                    : "£0.00";
+                const createdAt = row.created_at || new Date().toISOString();
+                return {
+                  id: row.id,
+                  title: row.title,
+                  price,
+                  image: images[0] || "/images/placeholder.jpg",
+                  createdAt,
+                } as Listing;
+              });
+            }
+          } catch (e) {
+            // Ignore fallback errors; we'll just show empty state
+          }
+        }
         // Parse price helper
         const priceOf = (l: Listing) => Number(String(l.price).replace(/[^\d.]/g, ""));
 
