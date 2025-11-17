@@ -1,38 +1,29 @@
--- Create offers table for Make Offer functionality
--- Allows buyers to submit offers below asking price
+-- Create offers_new table for Make Offer functionality (enhanced version)
+-- Note: The existing 'offers' table uses 'starter' and 'recipient' columns
+-- This new table uses more intuitive 'buyer_id' and 'seller_id' naming
 
-CREATE TABLE IF NOT EXISTS public.offers (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  listing_id UUID NOT NULL REFERENCES public.listings(id) ON DELETE CASCADE,
-  buyer_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  seller_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  
-  -- Offer details
-  amount_cents INTEGER NOT NULL CHECK (amount_cents > 0),
-  message TEXT,
-  
-  -- Status: pending, accepted, rejected, countered, expired, withdrawn
-  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected', 'countered', 'expired', 'withdrawn')),
-  
-  -- Counter offer (if seller counters)
-  counter_amount_cents INTEGER CHECK (counter_amount_cents IS NULL OR counter_amount_cents > 0),
-  counter_message TEXT,
-  
-  -- Expiration
-  expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '48 hours'),
-  
-  -- Timestamps
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  responded_at TIMESTAMPTZ,
-  
-  CONSTRAINT buyer_not_seller CHECK (buyer_id != seller_id)
-);
+-- First, check if we need to migrate or if we can add to existing table
+-- Option 1: Add columns to existing offers table
+ALTER TABLE public.offers 
+  ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected', 'countered', 'expired', 'withdrawn')),
+  ADD COLUMN IF NOT EXISTS counter_amount DECIMAL(10,2) CHECK (counter_amount IS NULL OR counter_amount > 0),
+  ADD COLUMN IF NOT EXISTS counter_message TEXT,
+  ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '48 hours'),
+  ADD COLUMN IF NOT EXISTS responded_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS message TEXT;
 
--- Indexes for performance
+-- Update existing offers to have 'pending' status if NULL
+UPDATE public.offers SET status = 'pending' WHERE status IS NULL;
+
+-- Add constraint to existing table (starter = buyer, recipient = seller)
+-- Note: starter is the buyer (person making offer), recipient is the seller
+ALTER TABLE public.offers 
+  ADD CONSTRAINT IF NOT EXISTS buyer_not_seller CHECK (starter != recipient);
+
+-- Indexes for performance (using existing column names)
 CREATE INDEX IF NOT EXISTS idx_offers_listing_id ON public.offers(listing_id);
-CREATE INDEX IF NOT EXISTS idx_offers_buyer_id ON public.offers(buyer_id);
-CREATE INDEX IF NOT EXISTS idx_offers_seller_id ON public.offers(seller_id);
+CREATE INDEX IF NOT EXISTS idx_offers_starter ON public.offers(starter);
+CREATE INDEX IF NOT EXISTS idx_offers_recipient ON public.offers(recipient);
 CREATE INDEX IF NOT EXISTS idx_offers_status ON public.offers(status);
 CREATE INDEX IF NOT EXISTS idx_offers_expires_at ON public.offers(expires_at);
 
@@ -67,25 +58,32 @@ $$ LANGUAGE plpgsql;
 -- Enable RLS
 ALTER TABLE public.offers ENABLE ROW LEVEL SECURITY;
 
--- Buyers can view their own offers
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Buyers can view their offers" ON public.offers;
+DROP POLICY IF EXISTS "Sellers can view offers on their listings" ON public.offers;
+DROP POLICY IF EXISTS "Buyers can create offers" ON public.offers;
+DROP POLICY IF EXISTS "Buyers can withdraw pending offers" ON public.offers;
+DROP POLICY IF EXISTS "Sellers can respond to offers" ON public.offers;
+
+-- Buyers (starter) can view their own offers
 CREATE POLICY "Buyers can view their offers"
   ON public.offers
   FOR SELECT
-  USING (auth.uid() = buyer_id);
+  USING (auth.uid() = starter);
 
--- Sellers can view offers on their listings
+-- Sellers (recipient) can view offers on their listings
 CREATE POLICY "Sellers can view offers on their listings"
   ON public.offers
   FOR SELECT
-  USING (auth.uid() = seller_id);
+  USING (auth.uid() = recipient);
 
 -- Buyers can create offers (insert)
 CREATE POLICY "Buyers can create offers"
   ON public.offers
   FOR INSERT
   WITH CHECK (
-    auth.uid() = buyer_id
-    AND auth.uid() != seller_id
+    auth.uid() = starter
+    AND auth.uid() != recipient
   );
 
 -- Buyers can withdraw their pending offers
@@ -93,7 +91,7 @@ CREATE POLICY "Buyers can withdraw pending offers"
   ON public.offers
   FOR UPDATE
   USING (
-    auth.uid() = buyer_id
+    auth.uid() = starter
     AND status = 'pending'
   )
   WITH CHECK (
@@ -105,7 +103,7 @@ CREATE POLICY "Sellers can respond to offers"
   ON public.offers
   FOR UPDATE
   USING (
-    auth.uid() = seller_id
+    auth.uid() = recipient
     AND status IN ('pending', 'countered')
   )
   WITH CHECK (
@@ -114,7 +112,9 @@ CREATE POLICY "Sellers can respond to offers"
 
 -- Comments for documentation
 COMMENT ON TABLE public.offers IS 'Buyer offers on listings - allows price negotiation';
-COMMENT ON COLUMN public.offers.amount_cents IS 'Offer amount in cents (GBP)';
+COMMENT ON COLUMN public.offers.amount IS 'Offer amount in GBP (decimal)';
 COMMENT ON COLUMN public.offers.status IS 'pending, accepted, rejected, countered, expired, withdrawn';
 COMMENT ON COLUMN public.offers.expires_at IS 'Offer expires after 48 hours by default';
-COMMENT ON COLUMN public.offers.counter_amount_cents IS 'Seller counter-offer amount in cents';
+COMMENT ON COLUMN public.offers.counter_amount IS 'Seller counter-offer amount in GBP (decimal)';
+COMMENT ON COLUMN public.offers.starter IS 'Buyer user ID (person making the offer)';
+COMMENT ON COLUMN public.offers.recipient IS 'Seller user ID (person receiving the offer)';

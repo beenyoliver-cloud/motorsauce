@@ -5,9 +5,9 @@ CREATE TABLE IF NOT EXISTS public.price_history (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   listing_id UUID NOT NULL REFERENCES public.listings(id) ON DELETE CASCADE,
   
-  -- Price tracking
-  old_price_gbp NUMERIC(10, 2),
-  new_price_gbp NUMERIC(10, 2) NOT NULL,
+  -- Price tracking (using decimal to match listings.price column)
+  old_price DECIMAL(10, 2),
+  new_price DECIMAL(10, 2) NOT NULL,
   change_percentage NUMERIC(5, 2), -- Percentage change (e.g., -15.50 for 15.5% reduction)
   
   -- Change metadata
@@ -28,20 +28,20 @@ CREATE OR REPLACE FUNCTION log_price_change()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Only log if price actually changed
-  IF OLD.price_gbp IS DISTINCT FROM NEW.price_gbp THEN
+  IF OLD.price IS DISTINCT FROM NEW.price THEN
     INSERT INTO public.price_history (
       listing_id,
-      old_price_gbp,
-      new_price_gbp,
+      old_price,
+      new_price,
       change_percentage,
       changed_by
     ) VALUES (
       NEW.id,
-      OLD.price_gbp,
-      NEW.price_gbp,
+      OLD.price,
+      NEW.price,
       CASE 
-        WHEN OLD.price_gbp > 0 THEN
-          ROUND(((NEW.price_gbp - OLD.price_gbp) / OLD.price_gbp * 100)::numeric, 2)
+        WHEN OLD.price > 0 THEN
+          ROUND(((NEW.price - OLD.price) / OLD.price * 100)::numeric, 2)
         ELSE NULL
       END,
       auth.uid()
@@ -55,7 +55,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Trigger on listings table to auto-log price changes
 DROP TRIGGER IF EXISTS track_listing_price_changes ON public.listings;
 CREATE TRIGGER track_listing_price_changes
-  AFTER UPDATE OF price_gbp ON public.listings
+  AFTER UPDATE OF price ON public.listings
   FOR EACH ROW
   EXECUTE FUNCTION log_price_change();
 
@@ -65,14 +65,14 @@ RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.price_history (
     listing_id,
-    old_price_gbp,
-    new_price_gbp,
+    old_price,
+    new_price,
     change_percentage,
     changed_by
   ) VALUES (
     NEW.id,
     NULL, -- No old price for new listings
-    NEW.price_gbp,
+    NEW.price,
     NULL,
     auth.uid()
   );
@@ -106,17 +106,19 @@ CREATE POLICY "Price history is public"
 CREATE OR REPLACE VIEW public.latest_price_reductions AS
 SELECT DISTINCT ON (listing_id)
   listing_id,
-  old_price_gbp,
-  new_price_gbp,
+  old_price,
+  new_price,
   change_percentage,
   created_at
 FROM public.price_history
-WHERE old_price_gbp IS NOT NULL 
+WHERE old_price IS NOT NULL 
   AND change_percentage < 0 -- Only reductions
   AND created_at > NOW() - INTERVAL '30 days' -- Last 30 days only
 ORDER BY listing_id, created_at DESC;
 
 -- Comments for documentation
 COMMENT ON TABLE public.price_history IS 'Historical tracking of listing price changes';
+COMMENT ON COLUMN public.price_history.old_price IS 'Previous price in GBP (decimal)';
+COMMENT ON COLUMN public.price_history.new_price IS 'New price in GBP (decimal)';
 COMMENT ON COLUMN public.price_history.change_percentage IS 'Percentage change: negative for price drops, positive for increases';
 COMMENT ON VIEW public.latest_price_reductions IS 'Most recent price reduction for each listing (last 30 days)';
