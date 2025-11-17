@@ -32,20 +32,27 @@ export default function ContactSellerButton({
     }
 
     if (!sellerId) {
-      console.warn("ContactSellerButton: No sellerId provided");
+      console.error("ContactSellerButton: No sellerId provided");
+      alert("Unable to contact seller - seller information is missing");
       return;
     }
 
-    // Create or find thread with this seller using new Supabase system
-    const thread = await createThread(sellerId, String(listingId));
-    
-    if (!thread) {
-      console.error("Failed to create thread");
-      return;
-    }
+    try {
+      // Create or find thread with this seller using new Supabase system
+      const thread = await createThread(sellerId, String(listingId));
+      
+      if (!thread) {
+        console.error("Failed to create thread - createThread returned null");
+        alert("Unable to start conversation. Please try again or contact support.");
+        return;
+      }
 
-    // Navigate to the thread
-    router.push(`/messages/${encodeURIComponent(thread.id)}`);
+      // Navigate to the thread
+      router.push(`/messages/${encodeURIComponent(thread.id)}`);
+    } catch (error) {
+      console.error("Error in ContactSellerButton:", error);
+      alert("Unable to start conversation. Please try again.");
+    }
   }
 
   return (

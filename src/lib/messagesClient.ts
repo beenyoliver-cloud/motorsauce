@@ -97,7 +97,12 @@ export async function fetchThreads(): Promise<Thread[]> {
 export async function createThread(peerId: string, listingRef?: string): Promise<Thread | null> {
   try {
     const authHeader = await getAuthHeader();
-    if (!authHeader) return null;
+    if (!authHeader) {
+      console.error("[messagesClient] No auth header available");
+      return null;
+    }
+
+    console.log("[messagesClient] Creating thread with peerId:", peerId, "listingRef:", listingRef);
 
     const res = await fetch("/api/messages/threads", {
       method: "POST",
@@ -109,11 +114,13 @@ export async function createThread(peerId: string, listingRef?: string): Promise
     });
 
     if (!res.ok) {
-      console.error("[messagesClient] Failed to create thread:", res.status);
+      const errorData = await res.json().catch(() => ({ error: "Unknown error" }));
+      console.error("[messagesClient] Failed to create thread:", res.status, errorData);
       return null;
     }
 
     const data = await res.json();
+    console.log("[messagesClient] Thread created successfully:", data.thread);
     return data.thread;
   } catch (error) {
     console.error("[messagesClient] Error creating thread:", error);

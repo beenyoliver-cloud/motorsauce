@@ -125,29 +125,38 @@ export async function POST(req: Request) {
   try {
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      console.error("[threads API POST] No authorization header");
+      return NextResponse.json({ error: "Unauthorized - No auth header" }, { status: 401 });
     }
 
     const supabase = getSupabase(authHeader);
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      console.error("[threads API POST] Auth error:", authError);
+      return NextResponse.json({ error: "Unauthorized - Invalid token" }, { status: 401 });
     }
+
+    console.log("[threads API POST] Authenticated user:", user.id);
 
     const body = await req.json();
     const { peerId, listingRef } = body;
 
+    console.log("[threads API POST] Request body:", { peerId, listingRef });
+
     if (!peerId) {
+      console.error("[threads API POST] Missing peerId");
       return NextResponse.json({ error: "peerId is required" }, { status: 400 });
     }
 
     if (peerId === user.id) {
+      console.error("[threads API POST] User trying to message themselves");
       return NextResponse.json({ error: "Cannot create thread with yourself" }, { status: 400 });
     }
 
     // Participants ordered by UUID for consistency
     const [p1, p2] = [user.id, peerId].sort();
+    console.log("[threads API POST] Creating thread with participants:", { p1, p2, listingRef });
 
     // Upsert thread using composite unique key (participant_1_id, participant_2_id, listing_ref)
     const { data: thread, error: upsertError } = await supabase
@@ -166,10 +175,21 @@ export async function POST(req: Request) {
       .single();
 
     if (upsertError) {
-      console.error("[threads API] Error upserting thread:", upsertError);
-      return NextResponse.json({ error: upsertError.message }, { status: 500 });
+      console.error("[threads API POST] Error upserting thread:", {
+        error: upsertError,
+        code: upsertError.code,
+        message: upsertError.message,
+        details: upsertError.details,
+        hint: upsertError.hint,
+      });
+      return NextResponse.json({ 
+        error: `Failed to create thread: ${upsertError.message}`,
+        details: upsertError.details,
+        hint: upsertError.hint,
+      }, { status: 500 });
     }
 
+    console.log("[threads API POST] Thread created successfully:", thread);
     return NextResponse.json({ thread }, { status: 200 });
   } catch (error: any) {
     console.error("[threads API] POST error:", error);
