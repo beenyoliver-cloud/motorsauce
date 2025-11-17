@@ -219,12 +219,12 @@ export default function SellPage() {
 
   // ---- Render ----
   return (
-    <section className="max-w-4xl mx-auto px-4 py-8">
+    <section className="page-center px-4 py-10">
       <h1 className="text-2xl font-bold text-black mb-6">Sell a Part</h1>
 
       <form onSubmit={onSubmit} className="space-y-8">
         {/* Details card */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+  <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
           {/* Title */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-1">Listing Title *</label>

@@ -71,8 +71,8 @@ export default function NewMessageRouter() {
   }, [router, sp]);
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-10">
-      <div className="rounded-lg border border-gray-200 bg-white p-6 text-sm text-gray-700">
+    <section className="page-center px-4 py-16">
+      <div className="max-w-md mx-auto rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-700 shadow-sm text-center">
         Creating conversation…
       </div>
     </section>

@@ -129,7 +129,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
+    <div className="page-center px-4 py-10">
       <h1 className="text-3xl font-bold text-black mb-2">Account Settings</h1>
       <p className="text-gray-600 mb-8">Manage your account information and security</p>
 
@@ -144,7 +144,7 @@ export default function SettingsPage() {
       )}
 
       {/* Profile Settings */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+  <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6 shadow-sm">
         <h2 className="text-xl font-semibold text-black mb-4 flex items-center gap-2">
           <User size={20} className="text-yellow-600" />
           Profile Information
@@ -193,7 +193,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Password Settings */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+  <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
         <h2 className="text-xl font-semibold text-black mb-4 flex items-center gap-2">
           <Lock size={20} className="text-yellow-600" />
           Change Password

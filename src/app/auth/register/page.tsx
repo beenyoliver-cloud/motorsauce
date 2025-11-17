@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { registerUser } from "@/lib/auth";
+import CenteredCard from "@/components/layout/CenteredCard";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -46,16 +47,28 @@ export default function RegisterPage() {
     "bg-white text-gray-900 placeholder-gray-600 caret-gray-900";
 
   return (
-    <section className="max-w-md mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-black mb-4">Create your account</h1>
-
+    <CenteredCard
+      title="Create your account"
+      maxWidth="md"
+      pad="p-8"
+      footer={
+        <p className="text-sm text-gray-700 text-center">
+          Already have an account?{" "}
+          <a
+            href={`/auth/login${next ? `?next=${encodeURIComponent(next)}` : ""}`}
+            className="text-yellow-600 hover:underline font-medium"
+          >
+            Sign in
+          </a>
+        </p>
+      }
+    >
       {err && (
-        <div className="mb-3 rounded-md border border-red-200 bg-red-50 text-red-800 px-3 py-2 text-sm">
+        <div className="mb-4 rounded-md border border-red-200 bg-red-50 text-red-800 px-3 py-2 text-sm">
           {err}
         </div>
       )}
-
-      <form onSubmit={submit} className="space-y-3">
+      <form onSubmit={submit} className="space-y-4">
         <label className="grid gap-1">
           <span className="text-sm text-gray-700">Display name</span>
           <input
@@ -65,7 +78,6 @@ export default function RegisterPage() {
             placeholder="e.g. Partsguy123"
           />
         </label>
-
         <label className="grid gap-1">
           <span className="text-sm text-gray-700">Email</span>
           <input
@@ -76,7 +88,6 @@ export default function RegisterPage() {
             placeholder="you@example.com"
           />
         </label>
-
         <label className="grid gap-1">
           <span className="text-sm text-gray-700">Password</span>
           <input
@@ -87,7 +98,6 @@ export default function RegisterPage() {
             placeholder="At least 6 characters"
           />
         </label>
-
         <label className="grid gap-1">
           <span className="text-sm text-gray-700">Confirm password</span>
           <input
@@ -98,25 +108,14 @@ export default function RegisterPage() {
             placeholder="Repeat your password"
           />
         </label>
-
         <button
           type="submit"
           disabled={busy}
-          className="w-full rounded-md bg-yellow-500 text-black font-semibold px-4 py-2 hover:bg-yellow-600 disabled:opacity-60"
+          className="w-full rounded-md bg-yellow-500 text-black font-semibold px-4 py-2 hover:bg-yellow-600 disabled:opacity-60 shadow-sm"
         >
           {busy ? "Creating…" : "Create account"}
         </button>
       </form>
-
-      <p className="mt-3 text-sm text-gray-700">
-        Already have an account?{" "}
-        <a
-          href={`/auth/login${next ? `?next=${encodeURIComponent(next)}` : ""}`}
-          className="text-yellow-600 hover:underline"
-        >
-          Sign in
-        </a>
-      </p>
-    </section>
+    </CenteredCard>
   );
 }
