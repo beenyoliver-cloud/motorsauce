@@ -59,8 +59,8 @@ export default function HeroCarousel() {
         <SafeImage
           src={slide.image}
           alt={slide.title}
-          /* Preserve bottom of image on large screens while keeping balanced crop on smaller ones */
-          className="h-full w-full object-cover object-center lg:object-bottom"
+          /* Show more of the subject by anchoring to the top */
+          className="h-full w-full object-cover object-top"
           loading="eager"
         />
         {/* Add subtle gradient to ensure bottom content never looks hard-cropped */}
@@ -68,19 +68,19 @@ export default function HeroCarousel() {
       </div>
 
       {/* Text overlay */}
-      <div className="relative z-10 h-full w-full flex items-center">
-        <div className="px-6 md:px-10">
-          <h2 className="text-2xl md:text-4xl font-extrabold text-white drop-shadow-sm animate-fadeIn">
+      <div className="relative z-10 h-full w-full flex items-center justify-center">
+        <div className="px-6 md:px-10 text-center max-w-2xl mx-auto">
+          <h2 className="text-2xl md:text-5xl font-extrabold text-white drop-shadow-sm animate-fadeIn">
             {slide.title}
           </h2>
-          <p className="mt-2 max-w-xl text-sm md:text-base text-white/90 animate-fadeIn" style={{ animationDelay: '100ms' }}>
+          <p className="mt-3 md:mt-4 text-sm md:text-lg text-white/90 animate-fadeIn" style={{ animationDelay: '100ms' }}>
             {slide.blurb}
           </p>
 
           {slide.href && (
             <a
               href={slide.href}
-              className="mt-4 inline-flex items-center rounded-md bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-400 hover:shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 animate-fadeIn"
+              className="mt-6 inline-flex items-center justify-center rounded-md bg-yellow-500 px-5 py-2.5 text-sm md:text-base font-semibold text-black hover:bg-yellow-400 hover:shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 animate-fadeIn mx-auto"
               style={{ animationDelay: '200ms' }}
             >
               Explore
