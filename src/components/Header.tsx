@@ -144,6 +144,7 @@ export default function Header() {
   const profileLinks = [
     ["My Profile", profileHref],
     ["My Offers", "/offers"],
+    ["Saved Searches", "/saved-searches"],
     ["My Messages", "/messages"],
     ["Previous Sales", "/sales"],
     ["My Reviews", "/reviews"],

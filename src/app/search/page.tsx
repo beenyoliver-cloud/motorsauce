@@ -14,6 +14,7 @@ import QuickViewModal from "@/components/QuickViewModal";
 import Breadcrumb from "@/components/Breadcrumb";
 import { Eye } from "lucide-react";
 import { nsKey } from "@/lib/auth";
+import SaveSearchButton from "@/components/SaveSearchButton";
 
 /* ---------- Types ---------- */
 type Listing = {
@@ -387,7 +388,7 @@ function SearchPageInner() {
             onChange={setActiveTab}
           />
 
-          {/* Summary + sort */}
+          {/* Summary + sort + save search */}
           <div className="rounded-xl border border-gray-200 bg-white p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -407,11 +408,14 @@ function SearchPageInner() {
                   ) : null}
                 </p>
               </div>
-              {activeTab !== "sellers" && (
-                <div className="pt-1">
-                  <SortControl />
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                {activeTab !== "sellers" && <SaveSearchButton />}
+                {activeTab !== "sellers" && (
+                  <div className="pt-1">
+                    <SortControl />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
