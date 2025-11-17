@@ -15,21 +15,21 @@ type Slide = {
 const SLIDES: Slide[] = [
   {
     id: "reg",
-    image: "/images/race-car2.jpg",
+    image: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=1600&h=900&fit=crop&q=80",
     title: "Search by Registration",
     blurb: "Enter your reg to instantly find parts that fit your vehicle.",
     href: "/registration",
   },
   {
     id: "oem",
-    image: "/images/race-car1.jpg",
+    image: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=1600&h=900&fit=crop&q=80",
     title: "OEM & Aftermarket",
     blurb: "Quality parts from trusted sellers, all in one place.",
     href: "/categories/oem",
   },
   {
     id: "sell",
-    image: "/images/race-car3.jpg",
+    image: "https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?w=1600&h=900&fit=crop&q=80",
     title: "Sell your parts in minutes",
     blurb: "List, message buyers, and get paid with ease.",
     href: "/sell",
