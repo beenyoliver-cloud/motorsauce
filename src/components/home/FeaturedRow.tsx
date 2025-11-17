@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import SafeImage from "@/components/SafeImage";
 import { supabaseBrowser } from "@/lib/supabase";
+import { ListingCardSkeleton } from "@/components/skeletons/Skeletons";
 
 type Listing = {
   id: string | number;
@@ -159,14 +160,8 @@ export default function FeaturedRow({
         </div>
         <div className="-mx-1 overflow-x-auto">
           <div className="px-1 flex gap-3">
-            {Array.from({ length: Math.min(limit, 8) }).map((_, i) => (
-              <div key={i} className="min-w-[160px] max-w-[200px] sm:min-w-[200px] sm:max-w-[240px] border border-gray-200 rounded-lg overflow-hidden bg-white">
-                <div className="relative aspect-[4/3] bg-gray-100 animate-pulse" />
-                <div className="p-2 space-y-2">
-                  <div className="h-3 bg-gray-100 rounded animate-pulse" />
-                  <div className="h-3 bg-gray-100 rounded w-2/3 animate-pulse" />
-                </div>
-              </div>
+            {[...Array(Math.min(limit, 8))].map((_, i) => (
+              <ListingCardSkeleton key={i} />
             ))}
           </div>
         </div>

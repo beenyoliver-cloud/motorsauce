@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, Suspense } from "react";
+import { useEffect, useMemo, useState, Suspense, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import SafeImage from "@/components/SafeImage";
@@ -9,6 +9,7 @@ import SortControl from "@/components/SortControl";
 import TrustBadge from "@/components/TrustBadge";
 import SearchTabs from "@/components/SearchTabs";
 import SellerCard from "@/components/SellerCard";
+import { SearchResultSkeleton, SellerCardSkeleton } from "@/components/skeletons/Skeletons";
 import { nsKey } from "@/lib/auth";
 
 /* ---------- Types ---------- */
@@ -95,6 +96,9 @@ function SearchPageInner() {
   const [err, setErr] = useState<string | null>(null);
   const [recent, setRecent] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<"parts" | "sellers">("parts");
+  const [displayCount, setDisplayCount] = useState(24); // Start with 24 items
+  const [loadingMore, setLoadingMore] = useState(false);
+  const observerTargetRef = useRef<HTMLDivElement | null>(null);
 
   const sp = useSearchParams();
   const router = useRouter();
@@ -198,6 +202,33 @@ function SearchPageInner() {
       alive = false;
     };
   }, [q]);
+
+  // Infinite scroll with Intersection Observer
+  useEffect(() => {
+    const target = observerTargetRef.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loadingMore) {
+          setLoadingMore(true);
+          // Simulate loading delay for UX
+          setTimeout(() => {
+            setDisplayCount((prev) => {
+              const newCount = prev + 24;
+              setLoadingMore(false);
+              return newCount;
+            });
+          }, 300);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [loadingMore]);
+
   const seller = sp.get("seller") || "";
 
   const categories = arrify(sp.getAll("category"));
@@ -410,20 +441,18 @@ function SearchPageInner() {
             </div>
           )}
 
-          {/* Parts Results */}
-          {activeTab === "parts" && loading ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="animate-pulse border border-gray-200 rounded-xl overflow-hidden">
-                  <div className="aspect-[4/3] bg-gray-100" />
-                  <div className="p-3 space-y-2">
-                    <div className="h-4 bg-gray-100 rounded" />
-                    <div className="h-3 bg-gray-100 rounded w-2/3" />
-                    <div className="h-5 bg-gray-100 rounded w-1/3" />
-                  </div>
-                </div>
+          {/* Sellers Loading State */}
+          {activeTab === "sellers" && sellersLoading && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <SellerCardSkeleton key={i} />
               ))}
             </div>
+          )}
+
+          {/* Parts Results */}
+          {activeTab === "parts" && loading ? (
+            <SearchResultSkeleton />
           ) : activeTab === "parts" && sortedResults.length === 0 ? (
             <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
               <p className="text-gray-800">No results found. Try removing a filter or searching a different term.</p>
@@ -432,13 +461,14 @@ function SearchPageInner() {
               </div>
             </div>
           ) : activeTab === "parts" && sortedResults.length > 0 ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {sortedResults.map((l) => (
-                <Link
-                  key={l.id}
-                  href={`/listing/${l.id}`}
-                  className="block border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition"
-                >
+            <>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {sortedResults.slice(0, displayCount).map((l) => (
+                  <Link
+                    key={l.id}
+                    href={`/listing/${l.id}`}
+                    className="block border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition"
+                  >
                   <div className="relative aspect-[4/3] bg-gray-50">
                     <span
                       className={`absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded ${
@@ -484,6 +514,27 @@ function SearchPageInner() {
                 </Link>
               ))}
             </div>
+            
+            {/* Infinite scroll trigger */}
+            {displayCount < sortedResults.length && (
+              <>
+                <div 
+                  ref={observerTargetRef}
+                  className="h-20 flex items-center justify-center"
+                >
+                  {loadingMore && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <div className="h-5 w-5 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
+                      <span>Loading more results...</span>
+                    </div>
+                  )}
+                </div>
+                <div className="text-sm text-center text-gray-600 pb-4">
+                  Showing {displayCount} of {sortedResults.length} results
+                </div>
+              </>
+            )}
+          </>
           ) : null}
 
           {/* Breadcrumbs */}

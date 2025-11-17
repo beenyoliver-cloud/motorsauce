@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import SafeImage from "@/components/SafeImage";
+import { CardSkeleton } from "@/components/skeletons/Skeletons";
 import { loadMyCars, vehicleLabel } from "@/lib/garage";
 
 type Listing = {
@@ -56,14 +57,8 @@ export default function SuggestedParts({ limit = 12 }: Props) {
 
   if (loading) return (
     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-      {Array.from({ length: limit }).map((_, i) => (
-        <div key={i} className="border border-gray-200 rounded-lg sm:rounded-xl overflow-hidden bg-white">
-          <div className="relative aspect-square sm:aspect-[4/3] bg-gray-100 animate-pulse" />
-          <div className="p-2 sm:p-3 space-y-2">
-            <div className="h-3 bg-gray-100 rounded animate-pulse" />
-            <div className="h-3 bg-gray-100 rounded w-1/2 animate-pulse" />
-          </div>
-        </div>
+      {[...Array(limit)].map((_, i) => (
+        <CardSkeleton key={i} />
       ))}
     </div>
   );
