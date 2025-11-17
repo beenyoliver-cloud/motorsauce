@@ -4,8 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Search as SearchIcon, Car, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { loadMyCars, vehicleLabel } from "@/lib/garage";
-import dynamic from "next/dynamic";
-const TrendingChips = dynamic(() => import("./TrendingChips"), { ssr: false });
+import { VEHICLES } from "@/data/vehicles";
 
 const CATEGORIES = ["OEM", "Aftermarket", "Tool"];
 const CONDITIONS = ["New", "Used - Like New", "Used - Good", "Used - Fair"];
@@ -132,25 +131,32 @@ export default function HomeHero() {
                 {/* Make */}
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">Make</label>
-                  <input
-                    type="text"
+                  <select
                     value={make}
-                    onChange={(e) => setMake(e.target.value)}
-                    placeholder="e.g. BMW, Honda"
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all"
-                  />
+                    onChange={(e) => {
+                      setMake(e.target.value);
+                      // Reset model when make changes
+                      setModel('');
+                    }}
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all"
+                  >
+                    <option value="">All makes</option>
+                    {Object.keys(VEHICLES).sort().map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
                 </div>
 
                 {/* Model */}
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">Model</label>
-                  <input
-                    type="text"
+                  <select
                     value={model}
                     onChange={(e) => setModel(e.target.value)}
-                    placeholder="e.g. M3, Civic"
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all"
-                  />
+                    disabled={!make}
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="">All models</option>
+                    {make && VEHICLES[make]?.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
                 </div>
 
                 {/* Year Range */}
@@ -198,24 +204,16 @@ export default function HomeHero() {
           )}
         </form>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm animate-fadeIn" style={{ animationDelay: '300ms' }}>
-          {active ? (
+        {active && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm animate-fadeIn" style={{ animationDelay: '300ms' }}>
             <button
               onClick={(e) => submitSearch(e as unknown as React.FormEvent)}
               className="inline-flex items-center gap-1 rounded-full border border-yellow-500 bg-yellow-50 text-yellow-700 px-3 py-1 hover:bg-yellow-500 hover:text-white transition-all duration-300 transform hover:scale-105 hover:shadow-md"
             >
               <Car size={14} /> {vehicleLabel(active)}
             </button>
-          ) : (
-            <a href="/profile/You?tab=about&edit=1" className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-white text-gray-700 px-3 py-1 hover:bg-yellow-50 hover:border-yellow-500 hover:text-yellow-700 transition-all duration-300 transform hover:scale-105">
-              <Car size={14} /> Add your vehicle
-            </a>
-          )}
-          {/* Trending chips */}
-          <div className="w-full">
-            <TrendingChips />
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
