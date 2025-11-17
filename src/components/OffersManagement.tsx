@@ -25,12 +25,12 @@ type OfferStatus =
 interface Offer {
   id: string;
   listing_id: string;
-  buyer_id: string;
-  seller_id: string;
-  amount_cents: number;
+  starter: string; // buyer_id
+  recipient: string; // seller_id
+  amount: number; // decimal from database
   message: string | null;
   status: OfferStatus;
-  counter_amount_cents: number | null;
+  counter_amount: number | null; // decimal from database
   counter_message: string | null;
   expires_at: string;
   created_at: string;
@@ -38,18 +38,18 @@ interface Offer {
   listing: {
     id: string;
     title: string;
-    price_gbp: number;
+    price: number; // decimal price
     images: string[];
     status: string;
   };
   buyer: {
     id: string;
-    username: string;
+    name: string; // changed from username
     avatar_url: string | null;
   };
   seller: {
     id: string;
-    username: string;
+    name: string; // changed from username
     avatar_url: string | null;
   };
 }
@@ -163,8 +163,9 @@ export default function OffersManagement({ userId }: OffersManagementProps) {
     }
   }
 
-  function formatPrice(cents: number): string {
-    return `£${(cents / 100).toFixed(2)}`;
+  function formatPrice(amount: number): string {
+    // amount is already decimal from database
+    return `£${amount.toFixed(2)}`;
   }
 
   function formatDate(dateStr: string): string {
@@ -340,7 +341,7 @@ export default function OffersManagement({ userId }: OffersManagementProps) {
                             {offer.listing.title}
                           </Link>
                           <p className="mt-1 text-sm text-gray-500">
-                            Asking Price: {formatPrice(offer.listing.price_gbp * 100)}
+                            Asking Price: {formatPrice(offer.listing.price)}
                           </p>
                         </div>
                         {getStatusBadge(offer.status, offer.expires_at)}
@@ -352,7 +353,7 @@ export default function OffersManagement({ userId }: OffersManagementProps) {
                             {activeTab === "sent" ? "Your Offer" : "Buyer's Offer"}
                           </p>
                           <p className="mt-1 text-xl font-bold text-gray-900">
-                            {formatPrice(offer.amount_cents)}
+                            {formatPrice(offer.amount)}
                           </p>
                           {offer.message && (
                             <p className="mt-1 text-sm text-gray-600">
@@ -362,13 +363,13 @@ export default function OffersManagement({ userId }: OffersManagementProps) {
                         </div>
 
                         {offer.status === "countered" &&
-                          offer.counter_amount_cents && (
+                          offer.counter_amount && (
                             <div>
                               <p className="text-sm font-medium text-gray-500">
                                 Counter Offer
                               </p>
                               <p className="mt-1 text-xl font-bold text-blue-600">
-                                {formatPrice(offer.counter_amount_cents)}
+                                {formatPrice(offer.counter_amount)}
                               </p>
                               {offer.counter_message && (
                                 <p className="mt-1 text-sm text-gray-600">
@@ -443,7 +444,7 @@ export default function OffersManagement({ userId }: OffersManagementProps) {
                             </>
                           )}
 
-                          {canAcceptCounter && offer.counter_amount_cents && (
+                          {canAcceptCounter && offer.counter_amount && (
                             <button
                               onClick={() =>
                                 handleAction(offer.id, "accept_counter")
@@ -453,7 +454,7 @@ export default function OffersManagement({ userId }: OffersManagementProps) {
                             >
                               {actioningOfferId === offer.id
                                 ? "Accepting..."
-                                : `Accept Counter (${formatPrice(offer.counter_amount_cents)})`}
+                                : `Accept Counter (${formatPrice(offer.counter_amount)})`}
                             </button>
                           )}
                         </div>

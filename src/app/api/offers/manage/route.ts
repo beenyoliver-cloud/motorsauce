@@ -40,20 +40,20 @@ export async function GET(req: NextRequest) {
       .from("offers")
       .select(`
         *,
-        listing:listings(id, title, price, image),
-        buyer:buyer_id(id, username, avatar_url),
-        seller:seller_id(id, username, avatar_url)
+        listing:listing_id(id, title, price, images, status),
+        buyer:starter(id, name, avatar_url),
+        seller:recipient(id, name, avatar_url)
       `)
       .order("created_at", { ascending: false });
 
-    // Filter by role
+    // Filter by role (using starter for buyer, recipient for seller)
     if (role === "buyer") {
-      query = query.eq("buyer_id", user.id);
+      query = query.eq("starter", user.id);
     } else if (role === "seller") {
-      query = query.eq("seller_id", user.id);
+      query = query.eq("recipient", user.id);
     } else {
       // Return both buyer and seller offers
-      query = query.or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`);
+      query = query.or(`starter.eq.${user.id},recipient.eq.${user.id}`);
     }
 
     // Filter by listing
@@ -95,6 +95,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid offer data" }, { status: 400 });
     }
 
+    // Convert cents to decimal amount
+    const amount = amount_cents / 100;
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get listing to find seller
@@ -112,12 +115,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Cannot make offer on your own listing" }, { status: 400 });
     }
 
-    // Check for existing pending offer
+    // Check for existing pending offer (using starter for buyer)
     const { data: existingOffer } = await supabase
       .from("offers")
       .select("id")
       .eq("listing_id", listing_id)
-      .eq("buyer_id", user.id)
+      .eq("starter", user.id)
       .eq("status", "pending")
       .single();
 
@@ -125,14 +128,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "You already have a pending offer on this listing" }, { status: 400 });
     }
 
-    // Create offer
+    // Create offer (starter = buyer, recipient = seller, amount in decimal)
     const { data: offer, error: createError } = await supabase
       .from("offers")
       .insert({
         listing_id,
-        buyer_id: user.id,
-        seller_id: listing.seller_id,
-        amount_cents,
+        starter: user.id,
+        recipient: listing.seller_id,
+        amount,
         message: message || null,
         status: "pending",
         expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), // 48 hours
@@ -180,41 +183,41 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Offer not found" }, { status: 404 });
     }
 
-    // Check permissions and valid actions
+    // Check permissions and valid actions (using starter=buyer, recipient=seller)
     let updates: any = { responded_at: new Date().toISOString() };
 
     if (action === "withdraw") {
-      // Buyer can withdraw pending offer
-      if (offer.buyer_id !== user.id || offer.status !== "pending") {
+      // Buyer (starter) can withdraw pending offer
+      if (offer.starter !== user.id || offer.status !== "pending") {
         return NextResponse.json({ error: "Cannot withdraw this offer" }, { status: 403 });
       }
       updates.status = "withdrawn";
     } else if (action === "accept") {
-      // Seller can accept pending or countered offer
-      if (offer.seller_id !== user.id || !["pending", "countered"].includes(offer.status)) {
+      // Seller (recipient) can accept pending or countered offer
+      if (offer.recipient !== user.id || !["pending", "countered"].includes(offer.status)) {
         return NextResponse.json({ error: "Cannot accept this offer" }, { status: 403 });
       }
       updates.status = "accepted";
     } else if (action === "reject") {
-      // Seller can reject pending offer
-      if (offer.seller_id !== user.id || offer.status !== "pending") {
+      // Seller (recipient) can reject pending offer
+      if (offer.recipient !== user.id || offer.status !== "pending") {
         return NextResponse.json({ error: "Cannot reject this offer" }, { status: 403 });
       }
       updates.status = "rejected";
     } else if (action === "counter") {
-      // Seller can counter pending offer
-      if (offer.seller_id !== user.id || offer.status !== "pending") {
+      // Seller (recipient) can counter pending offer
+      if (offer.recipient !== user.id || offer.status !== "pending") {
         return NextResponse.json({ error: "Cannot counter this offer" }, { status: 403 });
       }
       if (!counter_amount_cents || counter_amount_cents <= 0) {
         return NextResponse.json({ error: "Invalid counter amount" }, { status: 400 });
       }
       updates.status = "countered";
-      updates.counter_amount_cents = counter_amount_cents;
+      updates.counter_amount = counter_amount_cents / 100; // Convert to decimal
       updates.counter_message = counter_message || null;
     } else if (action === "accept_counter") {
-      // Buyer can accept seller's counter offer
-      if (offer.buyer_id !== user.id || offer.status !== "countered") {
+      // Buyer (starter) can accept seller's counter offer
+      if (offer.starter !== user.id || offer.status !== "countered") {
         return NextResponse.json({ error: "Cannot accept counter offer" }, { status: 403 });
       }
       updates.status = "accepted";
