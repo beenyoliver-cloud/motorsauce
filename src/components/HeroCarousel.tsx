@@ -49,16 +49,22 @@ export default function HeroCarousel() {
   const slide = SLIDES[index];
 
   return (
-    <section className="relative aspect-[4/3] sm:aspect-[16/9] md:aspect-[5/2] lg:aspect-[21/9] w-full overflow-hidden rounded-2xl border border-gray-200 bg-gray-900">
+    <section
+      className="relative w-full overflow-hidden rounded-2xl border border-gray-200 bg-gray-900
+      aspect-[4/3] sm:aspect-[16/9] md:aspect-[5/2]
+      lg:min-h-[480px] lg:aspect-auto"
+    >
       {/* Image */}
       <div className="absolute inset-0">
         <SafeImage
           src={slide.image}
           alt={slide.title}
-          className="h-full w-full object-cover object-center"
+          /* Preserve bottom of image on large screens while keeping balanced crop on smaller ones */
+          className="h-full w-full object-cover object-center lg:object-bottom"
           loading="eager"
         />
-        <div className="absolute inset-0 bg-black/30" aria-hidden="true" />
+        {/* Add subtle gradient to ensure bottom content never looks hard-cropped */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/50" aria-hidden="true" />
       </div>
 
       {/* Text overlay */}
