@@ -22,14 +22,14 @@ const SLIDES: Slide[] = [
   },
   {
     id: "oem",
-    image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1600&h=900&fit=crop&q=80",
+    image: "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=1600&h=900&fit=crop&q=80",
     title: "OEM & Aftermarket",
     blurb: "Quality parts from trusted sellers, all in one place.",
     href: "/categories/oem",
   },
   {
     id: "sell",
-    image: "https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?w=1600&h=900&fit=crop&q=80",
+    image: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=1600&h=900&fit=crop&q=80",
     title: "Sell your parts in minutes",
     blurb: "List, message buyers, and get paid with ease.",
     href: "/sell",
