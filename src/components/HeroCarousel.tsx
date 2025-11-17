@@ -22,7 +22,7 @@ const SLIDES: Slide[] = [
   },
   {
     id: "oem",
-    image: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=1600&h=900&fit=crop&q=80",
+    image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1600&h=900&fit=crop&q=80",
     title: "OEM & Aftermarket",
     blurb: "Quality parts from trusted sellers, all in one place.",
     href: "/categories/oem",
