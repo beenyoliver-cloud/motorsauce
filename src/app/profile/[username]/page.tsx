@@ -51,8 +51,12 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
   const autoEdit = sp?.edit === "1";
   const baseHref = `/profile/${encodeURIComponent(displayName)}`;
 
-  // Fetch seller metrics for response time
-  let sellerMetrics: { avg_response_time_minutes?: number | null; response_rate?: number | null } = {};
+  // Fetch seller metrics and user ID for response time and messaging
+  let sellerMetrics: { 
+    id?: string;
+    avg_response_time_minutes?: number | null; 
+    response_rate?: number | null;
+  } = {};
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_SUPABASE_URL ? 'https://' + new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).host : 'http://localhost:3001'}/api/seller-profile?name=${encodeURIComponent(displayName)}`,
@@ -126,6 +130,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
                 shareText={`Check out ${displayName} on Motorsource`}
                 shareUrl={baseHref}
                 toUsername={displayName}
+                toUserId={sellerMetrics.id}
               />
               <ReportUserButton sellerName={displayName} />
               <div className="md:hidden flex-1">

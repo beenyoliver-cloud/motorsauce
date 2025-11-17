@@ -42,19 +42,26 @@ export default function ProfileActions({
     }
 
     if (!toUserId) {
-      console.warn("ProfileActions: No toUserId provided for messaging");
+      console.error("ProfileActions: No toUserId provided for messaging");
+      alert("Unable to message this user - user information is missing. Please refresh the page and try again.");
       return;
     }
 
-    // Create or find thread with this user using new Supabase system
-    const thread = await createThread(toUserId);
-    
-    if (!thread) {
-      console.error("Failed to create thread");
-      return;
-    }
+    try {
+      // Create or find thread with this user using new Supabase system
+      const thread = await createThread(toUserId);
+      
+      if (!thread) {
+        console.error("ProfileActions: Failed to create thread");
+        alert("Unable to start conversation. Please try again or contact support.");
+        return;
+      }
 
-    router.push(`/messages/${encodeURIComponent(thread.id)}`);
+      router.push(`/messages/${encodeURIComponent(thread.id)}`);
+    } catch (error) {
+      console.error("ProfileActions: Error creating thread:", error);
+      alert("Unable to start conversation. Please try again.");
+    }
   }
 
   return (
