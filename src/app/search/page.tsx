@@ -10,6 +10,8 @@ import TrustBadge from "@/components/TrustBadge";
 import SearchTabs from "@/components/SearchTabs";
 import SellerCard from "@/components/SellerCard";
 import { SearchResultSkeleton, SellerCardSkeleton } from "@/components/skeletons/Skeletons";
+import QuickViewModal from "@/components/QuickViewModal";
+import { Eye } from "lucide-react";
 import { nsKey } from "@/lib/auth";
 
 /* ---------- Types ---------- */
@@ -99,6 +101,7 @@ function SearchPageInner() {
   const [displayCount, setDisplayCount] = useState(24); // Start with 24 items
   const [loadingMore, setLoadingMore] = useState(false);
   const observerTargetRef = useRef<HTMLDivElement | null>(null);
+  const [quickViewListingId, setQuickViewListingId] = useState<string | null>(null);
 
   const sp = useSearchParams();
   const router = useRouter();
@@ -464,12 +467,12 @@ function SearchPageInner() {
             <>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {sortedResults.slice(0, displayCount).map((l) => (
-                  <Link
+                  <div
                     key={l.id}
-                    href={`/listing/${l.id}`}
-                    className="block border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition"
+                    className="group relative border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg transition-all"
                   >
-                  <div className="relative aspect-[4/3] bg-gray-50">
+                  <Link href={`/listing/${l.id}`} className="block">
+                    <div className="relative aspect-[4/3] bg-gray-50">
                     <span
                       className={`absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded ${
                         l.category === "OEM"
@@ -512,6 +515,19 @@ function SearchPageInner() {
                     </div>
                   </div>
                 </Link>
+                
+                {/* Quick View Button */}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setQuickViewListingId(l.id);
+                  }}
+                  className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-2 bg-white/90 hover:bg-white rounded-lg shadow-lg"
+                  aria-label="Quick view"
+                >
+                  <Eye className="h-4 w-4 text-gray-900" />
+                </button>
+              </div>
               ))}
             </div>
             
@@ -545,6 +561,13 @@ function SearchPageInner() {
           </div>
         </div>
       </section>
+
+      {/* Quick View Modal */}
+      <QuickViewModal
+        listingId={quickViewListingId || ""}
+        isOpen={!!quickViewListingId}
+        onClose={() => setQuickViewListingId(null)}
+      />
     </div>
   );
 }
