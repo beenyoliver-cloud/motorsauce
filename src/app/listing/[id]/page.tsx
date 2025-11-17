@@ -13,6 +13,8 @@ import SellerExposureTracker from "@/components/SellerExposureTracker";
 import TrackRecentlyViewed from "@/components/TrackRecentlyViewed";
 import TrustBadge from "@/components/TrustBadge";
 import Breadcrumb from "@/components/Breadcrumb";
+import PriceReducedBadge from "@/components/PriceReducedBadge";
+import PriceHistoryChart from "@/components/PriceHistoryChart";
 import { createClient } from "@supabase/supabase-js";
 
 // Ensure this page always renders dynamically at runtime on Vercel
@@ -329,8 +331,11 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             <FavoriteButton listingId={String(listing.id)} />
           </div>
 
-          {/* Price */}
-          <div className="text-3xl font-extrabold text-gray-900">{listing.price}</div>
+          {/* Price + Badge */}
+          <div className="space-y-2">
+            <div className="text-3xl font-extrabold text-gray-900">{listing.price}</div>
+            <PriceReducedBadge listingId={String(listing.id)} />
+          </div>
 
           {/* CTAs */}
           <div className="flex flex-wrap gap-3 pt-1">
@@ -439,6 +444,9 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               <p className="whitespace-pre-line text-sm text-gray-800">{listing.description}</p>
             </div>
           )}
+
+          {/* Price History Chart */}
+          <PriceHistoryChart listingId={String(listing.id)} />
         </div>
       </div>
     </section>
