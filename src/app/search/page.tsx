@@ -94,7 +94,7 @@ function SearchPageInner() {
   const [sellersLoading, setSellersLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [recent, setRecent] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<"all" | "parts" | "sellers">("all");
+  const [activeTab, setActiveTab] = useState<"parts" | "sellers">("parts");
 
   const sp = useSearchParams();
   const router = useRouter();
@@ -388,9 +388,8 @@ function SearchPageInner() {
           )}
 
           {/* Seller Results */}
-          {(activeTab === "sellers" || activeTab === "all") && sellers.length > 0 && (
+          {activeTab === "sellers" && sellers.length > 0 && (
             <div className="space-y-4">
-              {activeTab === "all" && <h3 className="text-sm font-semibold text-gray-700 px-1">Sellers matching "{q}"</h3>}
               {sellers.map((seller) => (
                 <SellerCard
                   key={seller.id}
@@ -404,8 +403,15 @@ function SearchPageInner() {
             </div>
           )}
 
+          {/* No sellers found */}
+          {activeTab === "sellers" && !sellersLoading && sellers.length === 0 && q && (
+            <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
+              <p className="text-gray-800">No sellers found matching "{q}".</p>
+            </div>
+          )}
+
           {/* Parts Results */}
-          {activeTab === "sellers" ? null : loading ? (
+          {activeTab === "parts" && loading ? (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="animate-pulse border border-gray-200 rounded-xl overflow-hidden">
@@ -418,14 +424,14 @@ function SearchPageInner() {
                 </div>
               ))}
             </div>
-          ) : sortedResults.length === 0 ? (
+          ) : activeTab === "parts" && sortedResults.length === 0 ? (
             <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
               <p className="text-gray-800">No results found. Try removing a filter or searching a different term.</p>
               <div className="mt-4 text-sm text-gray-600">
                 Quick tips: search by <em>part name</em>, <em>OEM ref</em>, or <em>make/model/generation</em>.
               </div>
             </div>
-          ) : (
+          ) : activeTab === "parts" && sortedResults.length > 0 ? (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {sortedResults.map((l) => (
                 <Link
@@ -478,7 +484,7 @@ function SearchPageInner() {
                 </Link>
               ))}
             </div>
-          )}
+          ) : null}
 
           {/* Breadcrumbs */}
           <div className="text-sm text-gray-600">

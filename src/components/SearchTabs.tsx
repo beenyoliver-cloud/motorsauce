@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { User, Package, MapPin, Star } from "lucide-react";
 
-type SearchTab = "all" | "parts" | "sellers";
+type SearchTab = "parts" | "sellers";
 
 type Props = {
   activeTab: SearchTab;
@@ -14,15 +14,7 @@ type Props = {
 };
 
 export default function SearchTabs({ activeTab, partsCount, sellersCount, onChange }: Props) {
-  const totalCount = partsCount + sellersCount;
-
   const tabs: Array<{ id: SearchTab; label: string; count: number; icon: React.ReactNode }> = [
-    {
-      id: "all",
-      label: "All",
-      count: totalCount,
-      icon: <Package size={16} />,
-    },
     {
       id: "parts",
       label: "Parts",
