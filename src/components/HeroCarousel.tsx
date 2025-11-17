@@ -49,13 +49,13 @@ export default function HeroCarousel() {
   const slide = SLIDES[index];
 
   return (
-    <section className="relative aspect-[4/3] sm:aspect-[16/7] md:aspect-[16/6] w-full overflow-hidden rounded-2xl border border-gray-200 bg-gray-100">
+    <section className="relative aspect-[4/3] sm:aspect-[16/9] md:aspect-[5/2] lg:aspect-[21/9] w-full overflow-hidden rounded-2xl border border-gray-200 bg-gray-900">
       {/* Image */}
       <div className="absolute inset-0">
         <SafeImage
           src={slide.image}
           alt={slide.title}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover object-center"
           loading="eager"
         />
         <div className="absolute inset-0 bg-black/30" aria-hidden="true" />
