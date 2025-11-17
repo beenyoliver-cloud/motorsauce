@@ -12,6 +12,7 @@ import SellerLink from "@/components/SellerLink";
 import SellerExposureTracker from "@/components/SellerExposureTracker";
 import TrackRecentlyViewed from "@/components/TrackRecentlyViewed";
 import TrustBadge from "@/components/TrustBadge";
+import Breadcrumb from "@/components/Breadcrumb";
 import { createClient } from "@supabase/supabase-js";
 
 // Ensure this page always renders dynamically at runtime on Vercel
@@ -272,13 +273,13 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
       />
 
       {/* Breadcrumbs */}
-      <nav className="mb-4 text-sm text-gray-600">
-        <Link href="/" className="hover:text-yellow-600">Home</Link>
-        <span className="mx-2">/</span>
-        <Link href="/search" className="hover:text-yellow-600">Search</Link>
-        <span className="mx-2">/</span>
-        <span className="line-clamp-1 text-gray-800">{listing.title}</span>
-      </nav>
+      <Breadcrumb 
+        items={[
+          { label: "Search", href: "/search" },
+          { label: listing.title }
+        ]}
+        className="mb-4"
+      />
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         {/* ---------- Gallery ---------- */}

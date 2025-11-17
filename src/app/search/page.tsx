@@ -11,6 +11,7 @@ import SearchTabs from "@/components/SearchTabs";
 import SellerCard from "@/components/SellerCard";
 import { SearchResultSkeleton, SellerCardSkeleton } from "@/components/skeletons/Skeletons";
 import QuickViewModal from "@/components/QuickViewModal";
+import Breadcrumb from "@/components/Breadcrumb";
 import { Eye } from "lucide-react";
 import { nsKey } from "@/lib/auth";
 
@@ -554,11 +555,12 @@ function SearchPageInner() {
           ) : null}
 
           {/* Breadcrumbs */}
-          <div className="text-sm text-gray-600">
-            <Link href="/" className="hover:text-yellow-600">Home</Link>
-            <span className="mx-2">/</span>
-            <span className="text-gray-800">Search</span>
-          </div>
+          <Breadcrumb 
+            items={[
+              { label: "Search", href: undefined }
+            ]}
+            className="py-4"
+          />
         </div>
       </section>
 
