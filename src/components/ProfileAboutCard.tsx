@@ -2,13 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { isMe, nsKey } from "@/lib/auth";
+import SellerResponseTimeBadge from "@/components/SellerResponseTimeBadge";
 
 export default function ProfileAboutCard({
   displayName,
   autoEdit = false,
+  avgResponseTimeMinutes,
+  responseRate,
 }: {
   displayName: string;
   autoEdit?: boolean;
+  avgResponseTimeMinutes?: number | null;
+  responseRate?: number | null;
 }) {
   const [me, setMe] = useState(false);
   const [about, setAbout] = useState<string>("");
@@ -89,10 +94,21 @@ export default function ProfileAboutCard({
         )}
       </div>
 
+      {/* Response Time Badge (show for all users if data available) */}
+      {!me && avgResponseTimeMinutes !== null && avgResponseTimeMinutes !== undefined && (
+        <div className="mt-4">
+          <SellerResponseTimeBadge
+            avgResponseTimeMinutes={avgResponseTimeMinutes}
+            responseRate={responseRate}
+            size="md"
+          />
+        </div>
+      )}
+
       {/* Content / Editor */}
       {!editing ? (
         <div className="mt-2 text-gray-800 whitespace-pre-wrap">
-          {about ? about : "This seller hasn’t added a bio yet."}
+          {about ? about : "This seller hasn't added a bio yet."}
         </div>
       ) : (
         <div className="mt-3">

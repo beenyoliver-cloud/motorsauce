@@ -51,6 +51,20 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
   const autoEdit = sp?.edit === "1";
   const baseHref = `/profile/${encodeURIComponent(displayName)}`;
 
+  // Fetch seller metrics for response time
+  let sellerMetrics: { avg_response_time_minutes?: number | null; response_rate?: number | null } = {};
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL ? 'https://' + new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).host : 'http://localhost:3001'}/api/seller-profile?name=${encodeURIComponent(displayName)}`,
+      { cache: "no-store" }
+    );
+    if (res.ok) {
+      sellerMetrics = await res.json();
+    }
+  } catch (error) {
+    console.error("Failed to fetch seller metrics:", error);
+  }
+
   return (
     <section className="max-w-6xl mx-auto px-4 py-6">
       {/* ---------- Header ---------- */}
@@ -130,7 +144,12 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
         {activeTab === "my" && <MyListingsTab sellerName={displayName} />}
 
         {activeTab === "about" && (
-          <ProfileAboutCard displayName={displayName} autoEdit={autoEdit} />
+          <ProfileAboutCard 
+            displayName={displayName} 
+            autoEdit={autoEdit}
+            avgResponseTimeMinutes={sellerMetrics.avg_response_time_minutes}
+            responseRate={sellerMetrics.response_rate}
+          />
         )}
 
         {activeTab === "reviews" && (
