@@ -59,17 +59,19 @@ export default function HeroCarousel() {
         <SafeImage
           src={slide.image}
           alt={slide.title}
-          /* Show more of the subject by anchoring to the top */
-          className="h-full w-full object-cover object-top"
+          /* Reveal more of the lower subject by anchoring to the bottom */
+          className="h-full w-full object-cover object-bottom"
           loading="eager"
         />
-        {/* Add subtle gradient to ensure bottom content never looks hard-cropped */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/50" aria-hidden="true" />
+        {/* Subtle gradient for legibility without obscuring bottom details */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-transparent" aria-hidden="true" />
       </div>
 
       {/* Text overlay */}
-      <div className="relative z-10 h-full w-full flex items-center justify-start">
-        <div className="px-6 md:px-10 max-w-2xl">
+      <div className="relative z-10 h-full w-full grid grid-cols-1 md:grid-cols-2">
+        {/* Left-half content, vertically centered, aligned to the centerline */}
+        <div className="flex items-center justify-end px-6 md:px-10">
+          <div className="w-full max-w-xl">
           <h2 className="text-2xl md:text-5xl font-extrabold text-white drop-shadow-sm animate-fadeIn text-left">
             {slide.title}
           </h2>
@@ -86,6 +88,7 @@ export default function HeroCarousel() {
               Explore
             </a>
           )}
+          </div>
         </div>
       </div>
 
