@@ -17,8 +17,15 @@ UPDATE public.offers SET status = 'pending' WHERE status IS NULL;
 
 -- Add constraint to existing table (starter = buyer, recipient = seller)
 -- Note: starter is the buyer (person making offer), recipient is the seller
-ALTER TABLE public.offers 
-  ADD CONSTRAINT IF NOT EXISTS buyer_not_seller CHECK (starter != recipient);
+-- Drop constraint if exists, then add it
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'buyer_not_seller'
+  ) THEN
+    ALTER TABLE public.offers ADD CONSTRAINT buyer_not_seller CHECK (starter != recipient);
+  END IF;
+END $$;
 
 -- Indexes for performance (using existing column names)
 CREATE INDEX IF NOT EXISTS idx_offers_listing_id ON public.offers(listing_id);
