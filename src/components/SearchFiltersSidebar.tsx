@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { VEHICLES as VEHICLES_FALLBACK } from "@/data/vehicles";
+import { VEHICLE_DATABASE, getAllMakes, getModelsForMake, getYearsForModel } from "@/data/vehicles";
 
 type Props = {
   q: string;
@@ -56,17 +56,23 @@ export default function SearchFiltersSidebar(props: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
-  const [vehicles, setVehicles] = useState<Record<string, string[]>>(VEHICLES_FALLBACK);
-
-  // Load makes/models dataset (runtime override)
-  useEffect(() => {
-    let active = true;
-    fetch('/vehicles.json')
-      .then(r => (r.ok ? r.json() : null))
-      .then((data) => { if (active && data) setVehicles(data as Record<string, string[]>); })
-      .catch(() => {/* ignore */});
-    return () => { active = false; };
-  }, []);
+  
+  const selectedMake = sp.get("make") || "";
+  const selectedModel = sp.get("model") || "";
+  
+  // Get available years based on selected model
+  const availableYears = useMemo(() => {
+    if (selectedMake && selectedModel) {
+      return getYearsForModel(selectedMake, selectedModel);
+    }
+    // Default year range if no model selected
+    const currentYear = new Date().getFullYear();
+    const years: number[] = [];
+    for (let year = currentYear; year >= 1960; year--) {
+      years.push(year);
+    }
+    return years;
+  }, [selectedMake, selectedModel]);
 
   function setParam(key: string, value?: string) {
     const params = new URLSearchParams(sp.toString());
@@ -199,7 +205,7 @@ export default function SearchFiltersSidebar(props: Props) {
               className={inputBase}
             >
               <option value="">All makes</option>
-              {Object.keys(vehicles).sort().map((m) => (
+              {getAllMakes().map((m) => (
                 <option key={m} value={m}>{m}</option>
               ))}
             </select>
@@ -211,7 +217,7 @@ export default function SearchFiltersSidebar(props: Props) {
               disabled={!sp.get("make")}
             >
               <option value="">{sp.get("make") ? "All models" : "Select a make first"}</option>
-              {sp.get("make") && (vehicles[sp.get("make") || ""] || []).map((m) => (
+              {sp.get("make") && getModelsForMake(sp.get("make") || "").map((m) => (
                 <option key={m} value={m}>{m}</option>
               ))}
             </select>
@@ -248,23 +254,27 @@ export default function SearchFiltersSidebar(props: Props) {
         <div>
           <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700">Year</div>
           <div className="flex items-center gap-2">
-            <input
-              inputMode="numeric"
-              pattern="[0-9]*"
-              placeholder="From"
-              defaultValue={sp.get("yearMin") || ""}
-              onBlur={(e) => setParam("yearMin", e.target.value)}
-              className={`${numberBase} w-28`}
-            />
+            <select
+              value={sp.get("yearMin") || ""}
+              onChange={(e) => setParam("yearMin", e.target.value)}
+              className={`${inputBase} flex-1`}
+            >
+              <option value="">From</option>
+              {availableYears.map((year) => (
+                <option key={`min-${year}`} value={year}>{year}</option>
+              ))}
+            </select>
             <span className="text-gray-500">–</span>
-            <input
-              inputMode="numeric"
-              pattern="[0-9]*"
-              placeholder="To"
-              defaultValue={sp.get("yearMax") || ""}
-              onBlur={(e) => setParam("yearMax", e.target.value)}
-              className={`${numberBase} w-28`}
-            />
+            <select
+              value={sp.get("yearMax") || ""}
+              onChange={(e) => setParam("yearMax", e.target.value)}
+              className={`${inputBase} flex-1`}
+            >
+              <option value="">To</option>
+              {availableYears.map((year) => (
+                <option key={`max-${year}`} value={year}>{year}</option>
+              ))}
+            </select>
           </div>
         </div>
 

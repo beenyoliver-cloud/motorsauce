@@ -1,10 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Search as SearchIcon, Car, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { loadMyCars, vehicleLabel } from "@/lib/garage";
-import { VEHICLES } from "@/data/vehicles";
+import { getAllMakes, getModelsForMake, getYearsForModel } from "@/data/vehicles";
 
 const CATEGORIES = ["OEM", "Aftermarket", "Tool"];
 const CONDITIONS = ["New", "Used - Like New", "Used - Good", "Used - Fair"];
@@ -23,6 +23,20 @@ export default function HomeHero() {
   
   const garage = loadMyCars();
   const active = garage[0];
+
+  // Get available years based on selected model
+  const availableYears = useMemo(() => {
+    if (make && model) {
+      return getYearsForModel(make, model);
+    }
+    // Default year range if no model selected
+    const currentYear = new Date().getFullYear();
+    const years: number[] = [];
+    for (let year = currentYear; year >= 1960; year--) {
+      years.push(year);
+    }
+    return years;
+  }, [make, model]);
 
   // Load vehicle data from garage if available
   useEffect(() => {
@@ -135,13 +149,15 @@ export default function HomeHero() {
                     value={make}
                     onChange={(e) => {
                       setMake(e.target.value);
-                      // Reset model when make changes
+                      // Reset model and years when make changes
                       setModel('');
+                      setYearMin('');
+                      setYearMax('');
                     }}
                     className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all"
                   >
                     <option value="">All makes</option>
-                    {Object.keys(VEHICLES).sort().map(m => <option key={m} value={m}>{m}</option>)}
+                    {getAllMakes().map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
                 </div>
 
@@ -150,12 +166,17 @@ export default function HomeHero() {
                   <label className="block text-xs font-semibold text-gray-700 mb-1">Model</label>
                   <select
                     value={model}
-                    onChange={(e) => setModel(e.target.value)}
+                    onChange={(e) => {
+                      setModel(e.target.value);
+                      // Reset years when model changes
+                      setYearMin('');
+                      setYearMax('');
+                    }}
                     disabled={!make}
                     className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="">All models</option>
-                    {make && VEHICLES[make]?.map(m => <option key={m} value={m}>{m}</option>)}
+                    {make && getModelsForMake(make).map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
                 </div>
 
@@ -163,21 +184,27 @@ export default function HomeHero() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">Year Range</label>
                   <div className="flex items-center gap-2">
-                    <input
-                      type="number"
+                    <select
                       value={yearMin}
                       onChange={(e) => setYearMin(e.target.value)}
-                      placeholder="From"
-                      className="w-full rounded-md border border-gray-300 bg-white px-2 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all"
-                    />
+                      className="w-full rounded-md border border-gray-300 bg-white px-2 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all"
+                    >
+                      <option value="">From</option>
+                      {availableYears.map((year) => (
+                        <option key={`min-${year}`} value={year}>{year}</option>
+                      ))}
+                    </select>
                     <span className="text-gray-500">-</span>
-                    <input
-                      type="number"
+                    <select
                       value={yearMax}
                       onChange={(e) => setYearMax(e.target.value)}
-                      placeholder="To"
-                      className="w-full rounded-md border border-gray-300 bg-white px-2 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all"
-                    />
+                      className="w-full rounded-md border border-gray-300 bg-white px-2 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all"
+                    >
+                      <option value="">To</option>
+                      {availableYears.map((year) => (
+                        <option key={`max-${year}`} value={year}>{year}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </div>
