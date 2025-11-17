@@ -78,9 +78,30 @@ export default function ProfileActions({
           } else {
             const errorText = await res.text();
             console.error("ProfileActions: Failed to fetch user ID:", res.status, errorText);
-            alert(`Unable to message this user - could not fetch user information (${res.status}). Please try again.`);
-            setIsLoading(false);
-            return;
+            // Fallback: try direct Supabase browser query
+            try {
+              console.log("ProfileActions: Attempting Supabase direct lookup fallback...");
+              const { supabaseBrowser } = await import("@/lib/supabase");
+              const supabase = supabaseBrowser();
+              const { data, error } = await supabase
+                .from("profiles")
+                .select("id")
+                .eq("name", toUsername)
+                .single();
+              if (error || !data?.id) {
+                console.error("ProfileActions: Supabase direct lookup failed", error);
+                alert(`Unable to message this user - lookup failed (${res.status}). Please try again later.`);
+                setIsLoading(false);
+                return;
+              }
+              userId = data.id;
+              console.log("ProfileActions: Fallback Supabase lookup succeeded with id:", userId);
+            } catch (supErr) {
+              console.error("ProfileActions: Fallback Supabase lookup exception", supErr);
+              alert(`Unable to message this user - internal error. Please try again.`);
+              setIsLoading(false);
+              return;
+            }
           }
         } catch (fetchError) {
           console.error("ProfileActions: Fetch error:", fetchError);
