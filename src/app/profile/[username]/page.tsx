@@ -63,19 +63,29 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
       ? `https://${process.env.VERCEL_URL}`
       : 'http://localhost:3001';
     
-    const res = await fetch(
-      `${baseUrl}/api/seller-profile?name=${encodeURIComponent(displayName)}`,
-      { cache: "no-store" }
-    );
+    const fullUrl = `${baseUrl}/api/seller-profile?name=${encodeURIComponent(displayName)}`;
+    console.log("[Profile SSR] Fetching seller metrics from:", fullUrl);
+    console.log("[Profile SSR] Environment:", { 
+      VERCEL_URL: process.env.VERCEL_URL,
+      NODE_ENV: process.env.NODE_ENV 
+    });
+    
+    const res = await fetch(fullUrl, { cache: "no-store" });
+    console.log("[Profile SSR] Fetch response status:", res.status);
     
     if (res.ok) {
       sellerMetrics = await res.json();
-      console.log("Fetched seller metrics:", sellerMetrics);
+      console.log("[Profile SSR] Successfully fetched seller metrics:", sellerMetrics);
     } else {
-      console.error("Failed to fetch seller metrics:", res.status, await res.text());
+      const errorText = await res.text();
+      console.error("[Profile SSR] Failed to fetch seller metrics:", {
+        status: res.status,
+        statusText: res.statusText,
+        body: errorText
+      });
     }
   } catch (error) {
-    console.error("Error fetching seller metrics:", error);
+    console.error("[Profile SSR] Error fetching seller metrics:", error);
   }
 
   return (

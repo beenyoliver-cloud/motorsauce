@@ -44,47 +44,77 @@ export default function ProfileActions({
     }
 
     setIsLoading(true);
+    console.log("ProfileActions: handleMessage called", {
+      toUsername,
+      initialUserId,
+      meId: me.id,
+      meName: me.name
+    });
 
     try {
       let userId = initialUserId;
 
       // If no user ID was provided, fetch it from the API
       if (!userId) {
-        console.log("ProfileActions: No toUserId provided, fetching from API...");
-        const res = await fetch(`/api/seller-profile?name=${encodeURIComponent(toUsername)}`);
+        console.log("ProfileActions: No toUserId provided, fetching from API for:", toUsername);
         
-        if (res.ok) {
-          const data = await res.json();
-          userId = data.id;
-          console.log("ProfileActions: Fetched user ID:", userId);
-        } else {
-          console.error("ProfileActions: Failed to fetch user ID:", res.status);
-          alert("Unable to message this user - user information is missing. Please try again.");
+        try {
+          const res = await fetch(`/api/seller-profile?name=${encodeURIComponent(toUsername)}`);
+          console.log("ProfileActions: API response status:", res.status);
+          
+          if (res.ok) {
+            const data = await res.json();
+            console.log("ProfileActions: API response data:", data);
+            userId = data.id;
+            
+            if (!userId) {
+              console.error("ProfileActions: API returned data but no ID field:", data);
+              alert("Unable to message this user - user ID not found in response. Please try again.");
+              setIsLoading(false);
+              return;
+            }
+            
+            console.log("ProfileActions: Successfully fetched user ID:", userId);
+          } else {
+            const errorText = await res.text();
+            console.error("ProfileActions: Failed to fetch user ID:", res.status, errorText);
+            alert(`Unable to message this user - could not fetch user information (${res.status}). Please try again.`);
+            setIsLoading(false);
+            return;
+          }
+        } catch (fetchError) {
+          console.error("ProfileActions: Fetch error:", fetchError);
+          alert("Unable to message this user - network error. Please check your connection and try again.");
           setIsLoading(false);
           return;
         }
+      } else {
+        console.log("ProfileActions: Using provided userId:", userId);
       }
 
       if (!userId) {
-        console.error("ProfileActions: Still no userId after fetch attempt");
+        console.error("ProfileActions: Still no userId after all attempts");
         alert("Unable to message this user - user not found. Please refresh the page and try again.");
         setIsLoading(false);
         return;
       }
 
+      console.log("ProfileActions: Creating thread with userId:", userId);
+      
       // Create or find thread with this user using new Supabase system
       const thread = await createThread(userId);
       
       if (!thread) {
-        console.error("ProfileActions: Failed to create thread");
+        console.error("ProfileActions: createThread returned null/undefined");
         alert("Unable to start conversation. Please try again or contact support.");
         setIsLoading(false);
         return;
       }
 
+      console.log("ProfileActions: Thread created successfully:", thread.id);
       router.push(`/messages/${encodeURIComponent(thread.id)}`);
     } catch (error) {
-      console.error("ProfileActions: Error in handleMessage:", error);
+      console.error("ProfileActions: Unexpected error in handleMessage:", error);
       alert("Unable to start conversation. Please try again.");
       setIsLoading(false);
     }
