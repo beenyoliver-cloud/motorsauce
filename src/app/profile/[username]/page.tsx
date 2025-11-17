@@ -79,37 +79,37 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
   }
 
   return (
-    <section className="max-w-6xl mx-auto px-4 py-6">
+    <section className="max-w-6xl mx-auto px-2 sm:px-4 py-4 md:py-6">
       {/* ---------- Header ---------- */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="p-4 md:p-6">
-          <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
+      <div className="rounded-lg md:rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="p-3 sm:p-4 md:p-6">
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-3 md:gap-4">
             {/* Avatar */}
             <div className="shrink-0">
               <EditableAvatar displayName={displayName} />
             </div>
 
             {/* Main info */}
-            <div className="flex-1 text-center md:text-left">
+            <div className="flex-1 text-center md:text-left w-full md:w-auto">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                <h1 className="text-2xl font-bold text-black">{displayName}</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-black truncate px-2 md:px-0">{displayName}</h1>
                 <div className="hidden md:block">
                   <EditProfileTopButton displayName={displayName} baseHref={baseHref} />
                 </div>
               </div>
 
-              <div className="mt-2 flex flex-wrap items-center justify-center md:justify-start gap-3 text-sm text-gray-600">
+              <div className="mt-2 flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-3 text-xs sm:text-sm text-gray-600 px-2 md:px-0">
                 <div className="flex items-center gap-1.5">
                   <StarRow value={5} />
                   <span className="font-medium text-black">5.0</span>
                   <span className="text-gray-500">(0)</span>
                 </div>
-                <span className="text-gray-300">•</span>
+                <span className="text-gray-300 hidden sm:inline">•</span>
                 <div className="flex items-center gap-1">
                   <MapPin className="h-3.5 w-3.5 text-gray-400" />
                   <span>UK</span>
                 </div>
-                <span className="text-gray-300">•</span>
+                <span className="text-gray-300 hidden sm:inline">•</span>
                 <div className="flex items-center gap-1">
                   <Store className="h-3.5 w-3.5 text-gray-400" />
                   <span>Joined 2025</span>
@@ -117,24 +117,24 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
               </div>
 
               {/* Stats */}
-              <div className="mt-4 inline-flex gap-6 text-center">
+              <div className="mt-3 md:mt-4 inline-flex gap-4 sm:gap-6 text-center">
                 <div>
-                  <SellerListingCount sellerName={displayName} className="block text-xl font-bold text-black" />
-                  <div className="text-xs text-gray-500 mt-0.5">Listings</div>
+                  <SellerListingCount sellerName={displayName} className="block text-lg sm:text-xl font-bold text-black" />
+                  <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5">Listings</div>
                 </div>
                 <div>
-                  <div className="text-xl font-bold text-black">5.0</div>
-                  <div className="text-xs text-gray-500 mt-0.5">Rating</div>
+                  <div className="text-lg sm:text-xl font-bold text-black">5.0</div>
+                  <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5">Rating</div>
                 </div>
                 <div>
-                  <div className="text-xl font-bold text-black">0</div>
-                  <div className="text-xs text-gray-500 mt-0.5">Reviews</div>
+                  <div className="text-lg sm:text-xl font-bold text-black">0</div>
+                  <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5">Reviews</div>
                 </div>
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="w-full md:w-auto flex md:flex-col gap-2">
+            {/* Actions - Desktop: Side column */}
+            <div className="hidden md:flex md:flex-col gap-2 md:w-auto">
               <ProfileActions
                 shareText={`Check out ${displayName} on Motorsource`}
                 shareUrl={baseHref}
@@ -142,7 +142,23 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
                 toUserId={sellerMetrics.id}
               />
               <ReportUserButton sellerName={displayName} />
-              <div className="md:hidden flex-1">
+              <EditProfileTopButton displayName={displayName} baseHref={baseHref} />
+            </div>
+          </div>
+
+          {/* Actions - Mobile: Full width below profile info */}
+          <div className="mt-3 flex flex-col gap-2 md:hidden">
+            <div className="flex gap-2">
+              <ProfileActions
+                shareText={`Check out ${displayName} on Motorsource`}
+                shareUrl={baseHref}
+                toUsername={displayName}
+                toUserId={sellerMetrics.id}
+              />
+            </div>
+            <div className="flex gap-2">
+              <ReportUserButton sellerName={displayName} />
+              <div className="flex-1">
                 <EditProfileTopButton displayName={displayName} baseHref={baseHref} />
               </div>
             </div>

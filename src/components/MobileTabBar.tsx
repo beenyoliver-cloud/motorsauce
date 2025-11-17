@@ -71,8 +71,8 @@ export default function MobileTabBar({ currentUser }: { currentUser?: string | n
               <div className="relative">
                 {it.icon}
                 {it.badge && it.badge > 0 && (
-                  <span className="absolute -top-1 -right-2 rounded-full bg-yellow-500 text-black text-[10px] font-bold px-1 min-w-[16px] h-[16px] flex items-center justify-center">
-                    {it.badge}
+                  <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-yellow-500 text-black text-[9px] font-bold px-1 min-w-[14px] h-[14px] flex items-center justify-center shadow-sm">
+                    {it.badge > 9 ? '9+' : it.badge}
                   </span>
                 )}
               </div>

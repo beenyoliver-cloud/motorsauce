@@ -91,12 +91,12 @@ export default function ProfileActions({
   }
 
   return (
-    <div className="flex flex-col gap-2 min-w-[120px]">
+    <div className="flex flex-row md:flex-col gap-2 w-full md:min-w-[120px]">
       <button
         type="button"
         onClick={handleMessage}
         disabled={isSelf || isLoading}
-        className="inline-flex items-center justify-center rounded-md px-3 py-2 bg-gray-900 text-white font-medium hover:bg-gray-800 text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex-1 md:flex-none inline-flex items-center justify-center rounded-md px-3 py-2 bg-gray-900 text-white font-medium hover:bg-gray-800 text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
         title={isSelf ? "You can't message yourself" : `Message ${toUsername}`}
       >
         <MessageSquare className="h-4 w-4 mr-2" /> 
@@ -106,7 +106,7 @@ export default function ProfileActions({
       <button
         type="button"
         onClick={handleShare}
-        className="inline-flex items-center justify-center rounded-md px-3 py-2 bg-yellow-500 text-black font-semibold hover:bg-yellow-600 text-sm transition shadow-sm"
+        className="flex-1 md:flex-none inline-flex items-center justify-center rounded-md px-3 py-2 bg-yellow-500 text-black font-semibold hover:bg-yellow-600 text-sm transition shadow-sm"
         title="Share profile"
       >
         <Share2 className="h-4 w-4 mr-2" /> Share

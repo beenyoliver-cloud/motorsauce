@@ -5,6 +5,19 @@ html, body {
   padding: 0;
   overflow-x: hidden;
   background-color: white;
+  width: 100%;
+  max-width: 100vw;
+}
+
+/* Prevent horizontal overflow on mobile */
+* {
+  max-width: 100%;
+}
+
+/* Allow specific elements to control their own width */
+img, svg, video, canvas, iframe {
+  max-width: 100%;
+  height: auto;
 }
 
 :root {
