@@ -58,15 +58,24 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
     response_rate?: number | null;
   } = {};
   try {
+    // Use absolute URL for server-side fetch
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3001';
+    
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL ? 'https://' + new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).host : 'http://localhost:3001'}/api/seller-profile?name=${encodeURIComponent(displayName)}`,
+      `${baseUrl}/api/seller-profile?name=${encodeURIComponent(displayName)}`,
       { cache: "no-store" }
     );
+    
     if (res.ok) {
       sellerMetrics = await res.json();
+      console.log("Fetched seller metrics:", sellerMetrics);
+    } else {
+      console.error("Failed to fetch seller metrics:", res.status, await res.text());
     }
   } catch (error) {
-    console.error("Failed to fetch seller metrics:", error);
+    console.error("Error fetching seller metrics:", error);
   }
 
   return (
