@@ -55,7 +55,7 @@ export default function HeroCarousel() {
         <SafeImage
           src={slide.image}
           alt={slide.title}
-          className="h-full w-full object-cover object-center"
+          className="h-full w-full object-cover object-bottom"
           loading="eager"
         />
         <div className="absolute inset-0 bg-black/30" aria-hidden="true" />
