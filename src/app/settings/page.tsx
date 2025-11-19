@@ -82,6 +82,16 @@ export default function SettingsPage() {
       // Update local state
       if (type === 'avatar') {
         setAvatar(data.url);
+        // Update localStorage for EditableAvatar component
+        try {
+          if (user) {
+            const avatarKey = `ms:${user.id}:avatar_v1`;
+            localStorage.setItem(avatarKey, data.url);
+            window.dispatchEvent(new Event("ms:profile"));
+          }
+        } catch (e) {
+          console.error('Failed to update localStorage:', e);
+        }
       } else {
         setBackgroundImage(data.url);
       }
@@ -134,6 +144,25 @@ export default function SettingsPage() {
         .eq('id', user.id);
 
       if (profileError) throw profileError;
+
+      // Update localStorage for profile components
+      try {
+        const avatarKey = `ms:${user.id}:avatar_v1`;
+        const aboutKey = `ms:${user.id}:about_v1`;
+        if (avatar.trim()) {
+          localStorage.setItem(avatarKey, avatar.trim());
+        } else {
+          localStorage.removeItem(avatarKey);
+        }
+        if (about.trim()) {
+          localStorage.setItem(aboutKey, about.trim());
+        } else {
+          localStorage.removeItem(aboutKey);
+        }
+        window.dispatchEvent(new Event("ms:profile"));
+      } catch (e) {
+        console.error('Failed to update localStorage:', e);
+      }
 
       // Update auth email if changed (may require verification)
       if (email !== user.email) {

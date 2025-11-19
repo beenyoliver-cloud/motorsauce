@@ -6,6 +6,9 @@ export type LocalUser = {
   id: string; 
   name: string; 
   email: string;
+  avatar?: string | null;
+  background_image?: string | null;
+  about?: string | null;
 };
 
 // Helper function to namespace localStorage keys by user
@@ -179,7 +182,7 @@ export async function getCurrentUser(): Promise<LocalUser | null> {
   // Fetch the user's profile from the profiles table
   const { data: profile } = await supabase
     .from('profiles')
-    .select('name, email')
+    .select('name, email, avatar, background_image, about')
     .eq('id', user.id)
     .single();
 
@@ -191,7 +194,10 @@ export async function getCurrentUser(): Promise<LocalUser | null> {
   _cachedUser = {
     id: user.id,
     email: profile.email,
-    name: profile.name
+    name: profile.name,
+    avatar: profile.avatar,
+    background_image: profile.background_image,
+    about: profile.about
   };
   return _cachedUser;
 }

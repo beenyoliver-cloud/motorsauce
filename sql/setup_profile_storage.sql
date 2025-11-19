@@ -19,6 +19,12 @@ ON CONFLICT (id) DO NOTHING;
 -- STORAGE POLICIES FOR PROFILE-AVATARS
 -- ============================================================================
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Public Access to Profile Avatars" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can upload avatars" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update own avatars" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete own avatars" ON storage.objects;
+
 -- Allow public read access to avatars
 CREATE POLICY "Public Access to Profile Avatars"
 ON storage.objects FOR SELECT
@@ -51,6 +57,12 @@ USING (
 -- ============================================================================
 -- STORAGE POLICIES FOR PROFILE-BACKGROUNDS
 -- ============================================================================
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Public Access to Profile Backgrounds" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can upload backgrounds" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update own backgrounds" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete own backgrounds" ON storage.objects;
 
 -- Allow public read access to backgrounds
 CREATE POLICY "Public Access to Profile Backgrounds"
