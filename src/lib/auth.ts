@@ -58,7 +58,13 @@ export async function loginWithEmail(email: string, password: string): Promise<{
   return { user, error: null };
 }
 
-export async function registerUser(name: string, email: string, password: string): Promise<LocalUser> {
+export async function registerUser(
+  name: string, 
+  email: string, 
+  password: string,
+  accountType: 'individual' | 'business' = 'individual',
+  businessInfo?: { businessName: string; businessType: string }
+): Promise<LocalUser> {
   const supabase = supabaseBrowser();
   
   // Register the new user
@@ -67,7 +73,8 @@ export async function registerUser(name: string, email: string, password: string
     password,
     options: {
       data: {
-        name: name.trim()
+        name: name.trim(),
+        account_type: accountType
       },
       emailRedirectTo: `${window.location.origin}/auth/callback`
     }
@@ -82,6 +89,34 @@ export async function registerUser(name: string, email: string, password: string
 
   if (!data.user) {
     throw new Error('Registration failed');
+  }
+
+  // If business account, create business_info record
+  if (accountType === 'business' && businessInfo) {
+    try {
+      // Update profile with business account type
+      await supabase
+        .from('profiles')
+        .update({ account_type: 'business' })
+        .eq('id', data.user.id);
+
+      // Create business info
+      const { error: bizError } = await supabase
+        .from('business_info')
+        .insert({
+          profile_id: data.user.id,
+          business_name: businessInfo.businessName,
+          business_type: businessInfo.businessType
+        });
+
+      if (bizError) {
+        console.error('Failed to create business info:', bizError);
+        // Don't fail registration, user can complete in settings
+      }
+    } catch (bizErr) {
+      console.error('Business setup error:', bizErr);
+      // Continue with registration
+    }
   }
 
   return {
