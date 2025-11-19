@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { supabaseBrowser } from "@/lib/supabase";
-import { Building2, Upload, Loader2, Image as ImageIcon } from "lucide-react";
+import { Building2, Upload, Loader2, Image as ImageIcon, X, Check } from "lucide-react";
+import Cropper from "react-easy-crop";
 
 type BusinessInfo = {
   business_name: string;
@@ -61,6 +62,42 @@ export default function BusinessSettingsPage() {
   });
 
   const [specialtyInput, setSpecialtyInput] = useState("");
+  // Cropping state
+  const [cropOpen, setCropOpen] = useState<null | 'logo' | 'banner'>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [crop, setCrop] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+
+  function onCropComplete(_: any, areaPixels: any) {
+    setCroppedAreaPixels(areaPixels);
+  }
+
+  async function createCroppedBlob(imageSrc: string, areaPixels: any, outW: number, outH: number, mime = 'image/webp', quality = 0.9): Promise<Blob> {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = imageSrc;
+    await new Promise((res, rej) => { img.onload = () => res(null); img.onerror = rej; });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = outW;
+    canvas.height = outH;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas not supported');
+    // Draw from source crop to output size
+    ctx.drawImage(
+      img,
+      areaPixels.x,
+      areaPixels.y,
+      areaPixels.width,
+      areaPixels.height,
+      0,
+      0,
+      outW,
+      outH
+    );
+    return await new Promise((resolve) => canvas.toBlob((b) => resolve(b as Blob), mime, quality));
+  }
 
   useEffect(() => {
     loadBusinessInfo();
@@ -185,20 +222,22 @@ export default function BusinessSettingsPage() {
   function handleLogoFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) {
-      // Create preview URL
       const previewUrl = URL.createObjectURL(file);
-      setBusinessInfo({ ...businessInfo, logo_url: previewUrl });
-      handleImageUpload(file, 'logo');
+      setCropSrc(previewUrl);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setCropOpen('logo');
     }
   }
 
   function handleBannerFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) {
-      // Create preview URL
       const previewUrl = URL.createObjectURL(file);
-      setBusinessInfo({ ...businessInfo, banner_url: previewUrl });
-      handleImageUpload(file, 'banner');
+      setCropSrc(previewUrl);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setCropOpen('banner');
     }
   }
 
@@ -217,6 +256,30 @@ export default function BusinessSettingsPage() {
       ...businessInfo,
       specialties: businessInfo.specialties.filter((_, i) => i !== index),
     });
+  }
+
+  async function confirmCrop() {
+    if (!cropOpen || !cropSrc || !croppedAreaPixels) return;
+    try {
+      if (cropOpen === 'logo') {
+        // output 512x512 webp
+        const blob = await createCroppedBlob(cropSrc, croppedAreaPixels, 512, 512, 'image/webp', 0.9);
+        const file = new File([blob], 'logo.webp', { type: 'image/webp' });
+        const localUrl = URL.createObjectURL(blob);
+        setBusinessInfo({ ...businessInfo, logo_url: localUrl });
+        await handleImageUpload(file, 'logo');
+      } else {
+        // banner: 1920x400 webp
+        const blob = await createCroppedBlob(cropSrc, croppedAreaPixels, 1920, 400, 'image/webp', 0.9);
+        const file = new File([blob], 'banner.webp', { type: 'image/webp' });
+        const localUrl = URL.createObjectURL(blob);
+        setBusinessInfo({ ...businessInfo, banner_url: localUrl });
+        await handleImageUpload(file, 'banner');
+      }
+    } finally {
+      setCropOpen(null);
+      setCropSrc(null);
+    }
   }
 
   const inputClass = "w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500";
@@ -646,6 +709,55 @@ export default function BusinessSettingsPage() {
             </button>
           </div>
         </div>
+        {/* Crop Modal */}
+        {cropOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/60" onClick={() => setCropOpen(null)} />
+            <div className="relative bg-white rounded-xl shadow-2xl w-[90vw] max-w-2xl">
+              <div className="p-4 border-b flex items-center justify-between">
+                <h3 className="font-semibold text-gray-900">
+                  {cropOpen === 'logo' ? 'Crop Business Logo' : 'Crop Storefront Banner'}
+                </h3>
+                <button className="p-2 rounded hover:bg-gray-100" onClick={() => setCropOpen(null)} aria-label="Close cropper">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-4">
+                <div className="relative w-full h-[50vh] bg-gray-100 rounded-lg overflow-hidden">
+                  {cropSrc && (
+                    <Cropper
+                      image={cropSrc}
+                      crop={crop}
+                      zoom={zoom}
+                      aspect={cropOpen === 'logo' ? 1 : 1920/400}
+                      onCropChange={setCrop}
+                      onZoomChange={setZoom}
+                      onCropComplete={onCropComplete}
+                      showGrid={false}
+                      cropShape={'rect'}
+                    />
+                  )}
+                  {cropOpen === 'logo' && (
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                      <div className="w-48 h-48 rounded-full ring-2 ring-white/70" />
+                    </div>
+                  )}
+                </div>
+                <div className="mt-4 flex items-center gap-4">
+                  <label className="text-sm text-gray-600">Zoom</label>
+                  <input type="range" min={1} max={3} step={0.01} value={zoom} onChange={(e) => setZoom(parseFloat(e.target.value))} className="w-full" />
+                </div>
+              </div>
+              <div className="p-4 border-t flex items-center justify-end gap-2">
+                <button className="px-4 py-2 rounded-lg border hover:bg-gray-50" onClick={() => setCropOpen(null)}>Cancel</button>
+                <button className="px-4 py-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 inline-flex items-center gap-2" onClick={confirmCrop}>
+                  <Check className="w-4 h-4" /> Apply
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

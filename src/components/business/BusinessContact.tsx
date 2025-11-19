@@ -10,6 +10,11 @@ type Props = {
 export default function BusinessContact({ business }: Props) {
   const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   const openingHours = business.opening_hours || {};
+  function track(event: string, payload: any) {
+    try {
+      window.dispatchEvent(new CustomEvent('ms:analytics', { detail: { event, payload } }));
+    } catch {}
+  }
 
   return (
     <div className="max-w-4xl">
@@ -23,7 +28,7 @@ export default function BusinessContact({ business }: Props) {
                 <Phone className="w-5 h-5 text-gray-600 mt-0.5" />
                 <div>
                   <div className="text-sm text-gray-600">Phone</div>
-                  <a href={`tel:${business.phone_number}`} className="text-blue-600 hover:underline">
+                  <a href={`tel:${business.phone_number}`} onClick={() => track('business_phone_click', { id: business.id })} className="text-blue-600 hover:underline">
                     {business.phone_number}
                   </a>
                 </div>
@@ -37,6 +42,7 @@ export default function BusinessContact({ business }: Props) {
                   <div className="text-sm text-gray-600">Email</div>
                   <a
                     href={`mailto:${business.customer_support_email}`}
+                    onClick={() => track('business_email_click', { id: business.id })}
                     className="text-blue-600 hover:underline break-all"
                   >
                     {business.customer_support_email}
@@ -54,6 +60,7 @@ export default function BusinessContact({ business }: Props) {
                     href={business.website_url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => track('business_website_click', { id: business.id })}
                     className="text-blue-600 hover:underline break-all"
                   >
                     {business.website_url.replace(/^https?:\/\//, '')}

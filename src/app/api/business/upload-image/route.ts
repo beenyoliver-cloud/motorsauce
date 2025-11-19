@@ -38,13 +38,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Determine bucket based on type
-    const bucket = type === "logo" ? "business-logos" : "business-banners";
-    
-    // Generate unique filename
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-    const filePath = `${user.id}/${fileName}`;
+  // Determine bucket based on type and use fixed key paths
+  const bucket = type === "logo" ? "business-logos" : "business-banners";
+  const filePath = `${user.id}/${type === "logo" ? "logo.webp" : "banner.webp"}`;
 
     // Convert file to buffer for upload
     const arrayBuffer = await file.arrayBuffer();
@@ -54,7 +50,7 @@ export async function POST(request: Request) {
     const { data, error: uploadError } = await supabase.storage
       .from(bucket)
       .upload(filePath, buffer, {
-        contentType: file.type,
+        contentType: file.type || "image/webp",
         upsert: true,
       });
 

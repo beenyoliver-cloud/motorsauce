@@ -60,8 +60,26 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
     { id: 'contact', label: 'Contact', icon: '📞' },
   ];
 
+  const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://motorsauce.vercel.app';
+  const businessUrl = `${siteUrl}/profile/${encodeURIComponent(business.name)}`;
+  const logo = business.logo_url || business.avatar || undefined;
+  const banner = business.banner_url || undefined;
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: business.business_name,
+    url: businessUrl,
+    logo,
+    image: banner,
+    email: business.customer_support_email || undefined,
+    telephone: business.phone_number || undefined,
+    sameAs: business.website_url ? [business.website_url] : undefined,
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* Business Header with Banner */}
       <BusinessHeader business={business} isOwner={isOwner} />
 
