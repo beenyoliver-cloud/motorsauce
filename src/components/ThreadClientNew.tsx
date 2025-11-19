@@ -34,8 +34,11 @@ export default function ThreadClientNew({
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [peerProfile, setPeerProfile] = useState<PeerProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [draft, setDraft] = useState<string>("");
+  const draftKey = `ms_thread_draft:${threadId}`;
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
@@ -51,16 +54,39 @@ export default function ThreadClientNew({
     })();
   }, [mounted]);
 
-  // Fetch messages and peer profile
+  // Load draft from localStorage
+  useEffect(() => {
+    if (!mounted) return;
+    try {
+      const saved = localStorage.getItem(draftKey);
+      if (saved) setDraft(saved);
+    } catch {}
+  }, [mounted, draftKey]);
+
+  // Persist draft
+  useEffect(() => {
+    try {
+      localStorage.setItem(draftKey, draft);
+    } catch {}
+  }, [draft, draftKey]);
+
+  // Fetch messages and peer profile (initial + polling refresh without nuking input)
   useEffect(() => {
     if (!mounted || !currentUserId) return;
 
-    const loadData = async () => {
+    let active = true;
+    const supabase = supabaseBrowser();
+
+    const loadData = async (initial = false) => {
       try {
-        setLoading(true);
+        if (initial) {
+          setIsInitialLoading(true);
+        } else {
+          setIsRefreshing(true);
+        }
         const msgs = await fetchMessages(threadId);
+        if (!active) return;
         setMessages(msgs);
-        const supabase = supabaseBrowser();
 
         // Derive peer from messages if any
         let peerId = msgs.find(m => m.from.id !== currentUserId)?.from.id;
@@ -89,23 +115,22 @@ export default function ThreadClientNew({
           if (profileData) setPeerProfile(profileData);
         }
 
-        setLoading(false);
         setError(null);
       } catch (err: any) {
         console.error("[ThreadClientNew] Load error:", err);
-        setError(err.message || "Failed to load messages");
-        setLoading(false);
+        if (active) setError(err.message || "Failed to load messages");
+      } finally {
+        if (active) {
+          setIsInitialLoading(false);
+          setIsRefreshing(false);
+        }
       }
     };
 
-    loadData();
-    
-    // Mark thread as read
+    loadData(true);
     markThreadRead(threadId);
-
-    // Poll for new messages every 5 seconds
-    const interval = setInterval(loadData, 5000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => loadData(false), 5000);
+    return () => { active = false; clearInterval(interval); };
   }, [mounted, currentUserId, threadId]);
 
   // Auto-scroll on new messages
@@ -132,7 +157,7 @@ export default function ThreadClientNew({
   }
 
   // Skeleton while loading
-  if (!mounted || loading) {
+  if (!mounted || isInitialLoading) {
     return (
       <div className="flex h-full flex-col">
         <div className="flex items-center justify-between border-b border-gray-200 p-3">
@@ -242,7 +267,13 @@ export default function ThreadClientNew({
         ref={scrollRef}
         className="flex-1 min-h-0 overflow-y-auto p-3 space-y-6 overscroll-contain"
       >
-        {showEmptyState && (
+        {isRefreshing && (
+          <div className="absolute top-2 right-3 text-[10px] text-gray-400 flex items-center gap-1">
+            <span className="inline-block h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
+            Syncing…
+          </div>
+        )}
+        {showEmptyState && !isRefreshing && (
           <div className="flex h-full items-center justify-center">
             <div className="text-xs text-gray-500 bg-gray-50 border border-gray-200 px-4 py-2 rounded-full">
               Conversation started. Send a message to begin.
@@ -333,6 +364,8 @@ export default function ThreadClientNew({
             placeholder="Type a message"
             className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
             autoComplete="off"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
           />
           <button className="rounded-md bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black">
             Send
