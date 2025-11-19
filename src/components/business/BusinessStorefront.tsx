@@ -78,7 +78,7 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* Business Header with Banner */}
       <BusinessHeader business={business} isOwner={isOwner} />
