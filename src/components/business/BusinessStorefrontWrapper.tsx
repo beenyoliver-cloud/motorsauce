@@ -21,6 +21,8 @@ export default function BusinessStorefrontWrapper({ profileId, displayName, isOw
       try {
         const supabase = supabaseBrowser();
         
+        console.log("[BusinessStorefront] Fetching profile for ID:", profileId);
+        
         // Fetch profile data
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
@@ -28,9 +30,11 @@ export default function BusinessStorefrontWrapper({ profileId, displayName, isOw
           .eq("id", profileId)
           .single();
 
+        console.log("[BusinessStorefront] Profile fetch result:", { profile, profileError });
+
         if (profileError || !profile) {
           console.error("Error fetching profile:", profileError);
-          setError("Failed to load profile");
+          setError(`Failed to load profile: ${profileError?.message || 'Unknown error'}`);
           return;
         }
 
@@ -41,9 +45,11 @@ export default function BusinessStorefrontWrapper({ profileId, displayName, isOw
           .eq("profile_id", profileId)
           .single();
 
+        console.log("[BusinessStorefront] Business info fetch result:", { businessInfo, businessError });
+
         if (businessError || !businessInfo) {
           console.error("Error fetching business info:", businessError);
-          setError("Business information not found");
+          setError(`Business information not found: ${businessError?.message || 'No data'}`);
           return;
         }
 
@@ -99,10 +105,11 @@ export default function BusinessStorefrontWrapper({ profileId, displayName, isOw
           one_star_count: ratingCounts[1],
         };
 
+        console.log("[BusinessStorefront] Successfully built business profile:", businessProfile);
         setBusinessProfile(businessProfile);
       } catch (err) {
-        console.error("Error:", err);
-        setError("An error occurred");
+        console.error("[BusinessStorefront] Unexpected error:", err);
+        setError(`An error occurred: ${err instanceof Error ? err.message : String(err)}`);
       } finally {
         setLoading(false);
       }
