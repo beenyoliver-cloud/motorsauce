@@ -31,6 +31,24 @@ ALTER TABLE public.threads ADD COLUMN IF NOT EXISTS last_message_at TIMESTAMPTZ 
 ALTER TABLE public.threads ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
 ALTER TABLE public.threads ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
+-- Remove NOT NULL constraints from legacy columns if they exist
+DO $$ 
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'threads' AND column_name = 'a_user' AND table_schema = 'public'
+  ) THEN
+    ALTER TABLE public.threads ALTER COLUMN a_user DROP NOT NULL;
+  END IF;
+  
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'threads' AND column_name = 'b_user' AND table_schema = 'public'
+  ) THEN
+    ALTER TABLE public.threads ALTER COLUMN b_user DROP NOT NULL;
+  END IF;
+END $$;
+
 -- Add constraints if they don't exist
 DO $$ 
 BEGIN
