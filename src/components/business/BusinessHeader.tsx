@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { useState } from "react";
 import Link from "next/link";
 import { BusinessProfile } from "./BusinessStorefront";
 import { Building2, CheckCircle, Settings } from "lucide-react";
@@ -11,20 +11,22 @@ type Props = {
 };
 
 export default function BusinessHeader({ business, isOwner }: Props) {
-  const bannerUrl = business.banner_url || "/images/default-banner.jpg";
-  const logoUrl = business.logo_url || business.avatar || "/images/default-logo.png";
+  const [bannerError, setBannerError] = useState(false);
+  const [logoError, setLogoError] = useState(false);
+  
+  const bannerUrl = business.banner_url;
+  const logoUrl = business.logo_url || business.avatar;
 
   return (
     <div className="bg-white">
       {/* Banner Image */}
       <div className="relative h-48 md:h-64 lg:h-80 w-full bg-gradient-to-r from-gray-800 to-gray-600">
-        {business.banner_url && (
-          <Image
+        {bannerUrl && !bannerError && (
+          <img
             src={bannerUrl}
             alt={`${business.business_name} banner`}
-            fill
-            className="object-cover"
-            priority
+            className="absolute inset-0 w-full h-full object-cover"
+            onError={() => setBannerError(true)}
           />
         )}
         {isOwner && (
@@ -44,13 +46,18 @@ export default function BusinessHeader({ business, isOwner }: Props) {
           {/* Logo */}
           <div className="flex-shrink-0">
             <div className="w-32 h-32 rounded-xl bg-white shadow-xl border-4 border-white overflow-hidden">
-              <Image
-                src={logoUrl}
-                alt={`${business.business_name} logo`}
-                width={128}
-                height={128}
-                className="w-full h-full object-cover"
-              />
+              {logoUrl && !logoError ? (
+                <img
+                  src={logoUrl}
+                  alt={`${business.business_name} logo`}
+                  className="w-full h-full object-cover"
+                  onError={() => setLogoError(true)}
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                  <Building2 className="w-16 h-16 text-gray-400" />
+                </div>
+              )}
             </div>
           </div>
 
