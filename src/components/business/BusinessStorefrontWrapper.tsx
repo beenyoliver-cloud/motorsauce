@@ -21,25 +21,85 @@ export default function BusinessStorefrontWrapper({ profileId, displayName, isOw
       try {
         const supabase = supabaseBrowser();
         
-        // Fetch from business_profiles_public view
-        const { data, error } = await supabase
-          .from("business_profiles_public")
-          .select("*")
+        // Fetch profile data
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("id, name, email, avatar, account_type, business_verified, total_sales, avg_response_time_minutes, response_rate, created_at")
           .eq("id", profileId)
           .single();
 
-        if (error) {
-          console.error("Error fetching business profile:", error);
-          setError("Failed to load business profile");
+        if (profileError || !profile) {
+          console.error("Error fetching profile:", profileError);
+          setError("Failed to load profile");
           return;
         }
 
-        if (!data) {
-          setError("Business profile not found");
+        // Fetch business_info
+        const { data: businessInfo, error: businessError } = await supabase
+          .from("business_info")
+          .select("*")
+          .eq("profile_id", profileId)
+          .single();
+
+        if (businessError || !businessInfo) {
+          console.error("Error fetching business info:", businessError);
+          setError("Business information not found");
           return;
         }
 
-        setBusinessProfile(data as BusinessProfile);
+        // Fetch reviews for ratings
+        const { data: reviews } = await supabase
+          .from("business_reviews")
+          .select("rating")
+          .eq("business_profile_id", profileId)
+          .eq("admin_approved", true)
+          .eq("flagged", false);
+
+        const reviewCount = reviews?.length || 0;
+        const avgRating = reviewCount > 0 && reviews
+          ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+          : 0;
+
+        const ratingCounts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+        reviews?.forEach(r => {
+          if (r.rating >= 1 && r.rating <= 5) {
+            ratingCounts[r.rating as keyof typeof ratingCounts]++;
+          }
+        });
+
+        // Combine into BusinessProfile
+        const businessProfile: BusinessProfile = {
+          id: profile.id,
+          name: profile.name,
+          email: profile.email,
+          avatar: profile.avatar,
+          business_verified: profile.business_verified || false,
+          total_sales: profile.total_sales || 0,
+          avg_response_time_minutes: profile.avg_response_time_minutes,
+          response_rate: profile.response_rate,
+          member_since: profile.created_at,
+          business_name: businessInfo.business_name,
+          business_type: businessInfo.business_type,
+          logo_url: businessInfo.logo_url,
+          banner_url: businessInfo.banner_url,
+          phone_number: businessInfo.phone_number,
+          website_url: businessInfo.website_url,
+          customer_support_email: businessInfo.customer_support_email,
+          opening_hours: businessInfo.opening_hours,
+          customer_service_hours: businessInfo.customer_service_hours,
+          about_business: businessInfo.about_business,
+          specialties: businessInfo.specialties || [],
+          years_established: businessInfo.years_established,
+          avg_rating: avgRating,
+          review_count: reviewCount,
+          five_star_count: ratingCounts[5],
+          four_star_count: ratingCounts[4],
+          three_star_count: ratingCounts[3],
+          two_star_count: ratingCounts[2],
+          one_star_count: ratingCounts[1],
+        };
+
+        setBusinessProfile(businessProfile);
       } catch (err) {
         console.error("Error:", err);
         setError("An error occurred");
