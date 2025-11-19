@@ -155,7 +155,7 @@ export default function BusinessCatalogue({ businessId, isOwner }: Props) {
                 </div>
                 <div className="p-4">
                   <h3 className="font-semibold text-gray-900 line-clamp-2 mb-2">{listing.title}</h3>
-                  <p className="text-lg font-bold text-gray-900">£{listing.price.toFixed(2)}</p>
+                  <p className="text-lg font-bold text-gray-900">£{Number(listing.price).toFixed(2)}</p>
                 </div>
               </Link>
             );
