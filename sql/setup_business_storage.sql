@@ -3,6 +3,8 @@
 -- ============================================================================
 -- Run this in Supabase SQL Editor to create storage buckets for business
 -- logos and banners with proper access policies.
+--
+-- STATUS: ✅ Executed successfully on 19 November 2025
 -- ============================================================================
 
 -- Create business-logos bucket
