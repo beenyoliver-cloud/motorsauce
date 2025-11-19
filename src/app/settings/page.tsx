@@ -18,6 +18,8 @@ export default function SettingsPage() {
   // Form states
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [avatar, setAvatar] = useState("");
+  const [about, setAbout] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -32,10 +34,23 @@ export default function SettingsPage() {
       setUser(currentUser);
       setName(currentUser.name || "");
       setEmail(currentUser.email || "");
+      
+      // Load profile data (avatar and about)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('avatar, about')
+        .eq('id', currentUser.id)
+        .single();
+      
+      if (profile) {
+        setAvatar(profile.avatar || "");
+        setAbout(profile.about || "");
+      }
+      
       setLoading(false);
     };
     loadUser();
-  }, [router]);
+  }, [router, supabase]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,10 +62,15 @@ export default function SettingsPage() {
     }
 
     try {
-      // Update name and email in profiles table to keep in sync with auth
+      // Update name, email, avatar, and about in profiles table
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ name: name.trim(), email: email.trim() })
+        .update({ 
+          name: name.trim(), 
+          email: email.trim(),
+          avatar: avatar.trim() || null,
+          about: about.trim() || null
+        })
         .eq('id', user.id);
 
       if (profileError) throw profileError;
@@ -178,6 +198,44 @@ export default function SettingsPage() {
             />
             <p className="text-xs text-gray-500 mt-1">
               Changing your email will require verification
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Avatar URL
+            </label>
+            <input
+              type="url"
+              value={avatar}
+              onChange={(e) => setAvatar(e.target.value)}
+              placeholder="https://example.com/avatar.jpg"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-gray-700"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Link to your profile picture (optional)
+            </p>
+            {avatar && (
+              <div className="mt-2">
+                <img src={avatar} alt="Avatar preview" className="w-16 h-16 rounded-full object-cover border-2 border-gray-200" onError={(e) => e.currentTarget.style.display = 'none'} />
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              About / Bio
+            </label>
+            <textarea
+              value={about}
+              onChange={(e) => setAbout(e.target.value)}
+              placeholder="Tell others about yourself..."
+              rows={4}
+              maxLength={500}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-gray-700 resize-none"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              {about.length}/500 characters
             </p>
           </div>
 

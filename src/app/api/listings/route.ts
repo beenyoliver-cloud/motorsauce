@@ -158,6 +158,7 @@ export async function GET(req: Request) {
   const year = searchParams.get("year");
   const sort = searchParams.get("sort"); // "new" | "random"
   const limitParam = searchParams.get("limit");
+  const sellerId = searchParams.get("seller_id"); // Filter by seller
   const limit = Math.min( Number(limitParam ?? 24) || 24, 100 );
 
   if (id) {
@@ -231,10 +232,17 @@ export async function GET(req: Request) {
     anonKeyPrefix: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.substring(0, 20) + "...",
   });
   
-  console.log("[listings API] Fetching from Supabase...");
-  const { data, error } = await supabase
+  console.log("[listings API] Fetching from Supabase...", { sellerId });
+  let query = supabase
     .from("listings")
-    .select("*")
+    .select("*");
+  
+  // Filter by seller if provided
+  if (sellerId) {
+    query = query.eq("seller_id", sellerId);
+  }
+  
+  const { data, error } = await query
     .order("created_at", { ascending: false })
     .limit(200);
 
