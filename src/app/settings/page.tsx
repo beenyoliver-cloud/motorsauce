@@ -108,6 +108,9 @@ export default function SettingsPage() {
   const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Create a preview URL to show circular crop
+      const previewUrl = URL.createObjectURL(file);
+      setAvatar(previewUrl); // Show preview immediately
       handleImageUpload(file, 'avatar');
     }
   };

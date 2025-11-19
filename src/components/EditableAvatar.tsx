@@ -69,24 +69,43 @@ export default function EditableAvatar({
       e.target.value = '';
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      alert('Image is larger than 2MB. Please choose a smaller image.');
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image is larger than 5MB. Please choose a smaller image.');
       e.target.value = '';
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = String(reader.result || '');
-      try {
-        localStorage.setItem(nsKey('avatar_v1'), dataUrl);
-        setSrc(dataUrl);
-        window.dispatchEvent(new Event('ms:profile'));
-      } catch {
-        alert('Could not save your photo. Try a smaller image.');
-      }
-    };
-    reader.readAsDataURL(file);
+    // Upload via API instead of localStorage
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', 'avatar');
+
+    fetch('/api/profile/upload-image', {
+      method: 'POST',
+      body: formData,
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.url) {
+          // Update localStorage for immediate display
+          try {
+            localStorage.setItem(nsKey('avatar_v1'), data.url);
+            setSrc(data.url);
+            window.dispatchEvent(new Event('ms:profile'));
+            // Reload to update everywhere
+            window.location.reload();
+          } catch (err) {
+            console.error('Failed to update localStorage:', err);
+          }
+        } else {
+          alert('Upload failed: ' + (data.error || 'Unknown error'));
+        }
+      })
+      .catch(err => {
+        console.error('Upload error:', err);
+        alert('Upload failed. Please try again.');
+      });
+
     e.target.value = '';
   };
 
