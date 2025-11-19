@@ -7,6 +7,7 @@ import MyListingsTab from "@/components/MyListingsTab";
 import SavedTabGate from "@/components/SavedTabGate";
 import SellerListingCount from "@/components/SellerListingCount";
 import EditableAvatar from "@/components/EditableAvatar";
+import EditableBackground from "@/components/EditableBackground";
 import ProfileAboutCard from "@/components/ProfileAboutCard";
 import EditProfileTopButton from "@/components/EditProfileTopButton";
 import MyGarageCard from "@/components/MyGarageCard";
@@ -106,17 +107,11 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
     <section className="max-w-6xl mx-auto px-2 sm:px-4 py-4 md:py-6">
       {/* ---------- Header ---------- */}
       <div className="rounded-lg md:rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        {/* Background Banner */}
-        {sellerMetrics.background_image && (
-          <div className="h-32 md:h-48 w-full overflow-hidden bg-gray-100">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img 
-              src={sellerMetrics.background_image} 
-              alt="" 
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
+        {/* Background Banner - Editable */}
+        <EditableBackground 
+          displayName={displayName} 
+          backgroundUrl={sellerMetrics.background_image}
+        />
         <div className="p-3 sm:p-4 md:p-6">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-3 md:gap-4">
             {/* Avatar */}
