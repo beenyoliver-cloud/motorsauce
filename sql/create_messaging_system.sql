@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS public.threads (
 );
 
 -- Backward compatibility: if an older threads table exists without these columns,
--- ensure the required columns are present so policies don’t fail.
+-- ensure the required columns are present so policies don't fail.
 ALTER TABLE public.threads ADD COLUMN IF NOT EXISTS participant_1_id UUID;
 ALTER TABLE public.threads ADD COLUMN IF NOT EXISTS participant_2_id UUID;
 ALTER TABLE public.threads ADD COLUMN IF NOT EXISTS listing_ref TEXT;
@@ -30,6 +30,43 @@ ALTER TABLE public.threads ADD COLUMN IF NOT EXISTS last_message_text TEXT;
 ALTER TABLE public.threads ADD COLUMN IF NOT EXISTS last_message_at TIMESTAMPTZ DEFAULT NOW();
 ALTER TABLE public.threads ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
 ALTER TABLE public.threads ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+-- Add constraints if they don't exist
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'threads_participants_unique'
+  ) THEN
+    ALTER TABLE public.threads 
+    ADD CONSTRAINT threads_participants_unique 
+    UNIQUE (participant_1_id, participant_2_id, listing_ref);
+  END IF;
+END $$;
+
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'threads_participants_ordered'
+  ) THEN
+    ALTER TABLE public.threads 
+    ADD CONSTRAINT threads_participants_ordered 
+    CHECK (participant_1_id < participant_2_id);
+  END IF;
+END $$;
+
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'threads_participants_different'
+  ) THEN
+    ALTER TABLE public.threads 
+    ADD CONSTRAINT threads_participants_different 
+    CHECK (participant_1_id != participant_2_id);
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_threads_participant_1 ON public.threads(participant_1_id);
 CREATE INDEX IF NOT EXISTS idx_threads_participant_2 ON public.threads(participant_2_id);
