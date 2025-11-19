@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { supabaseBrowser } from "@/lib/supabase";
+import { createThread, createOffer } from "@/lib/messagesClient";
 
 type MakeOfferButtonNewProps = {
   sellerName: string;
@@ -54,47 +54,31 @@ export default function MakeOfferButtonNew({
     }
 
     setSubmitting(true);
-
     try {
-      const supabase = supabaseBrowser();
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        router.push(`/auth/login?next=/listing/${encodeURIComponent(String(listingId))}`);
-        return;
-      }
+      // Ensure thread exists with seller (listingRef optional: listingId)
+      const thread = await createThread(sellerId, String(listingId));
+      if (!thread) throw new Error("Failed to create or load conversation");
 
-      // Create offer via API
-      const response = await fetch("/api/offers/manage", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          listing_id: String(listingId),
-          amount_cents: Math.round(pounds * 100),
-          message: `I'd like to offer £${pounds.toFixed(2)} for ${listingTitle}`,
-        }),
+      const offer = await createOffer({
+        threadId: thread.id,
+        listingId: String(listingId),
+        listingTitle,
+        listingImage,
+        recipientId: sellerId,
+        amountCents: Math.round(pounds * 100),
+        currency: "GBP",
       });
 
-      const data = await response.json();
+      if (!offer) throw new Error("Offer creation failed");
 
-      if (!response.ok) {
-        alert(data.error || "Failed to create offer");
-        setSubmitting(false);
-        return;
-      }
-
-      // Success - close modal and show success message
       setOpen(false);
-      alert(`Offer of £${pounds.toFixed(2)} sent successfully! The seller will be notified.`);
-      
-      // Optionally navigate to offers page
-      router.push("/profile/You?tab=offers");
-    } catch (error) {
-      console.error("[MakeOfferButtonNew] Submit error:", error);
-      alert("Failed to send offer. Please try again.");
+      alert(`Offer of £${pounds.toFixed(2)} sent! Opening conversation…`);
+      // Navigate to unified messages thread
+      router.push(`/messages/${thread.id}`);
+    } catch (err: any) {
+      console.error("[MakeOfferButtonNew] Unified offer submit error", err);
+      alert(err.message || "Failed to send offer. Please try again.");
+    } finally {
       setSubmitting(false);
     }
   }
@@ -152,9 +136,10 @@ export default function MakeOfferButtonNew({
               <button
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="rounded-md bg-yellow-500 px-3 py-2 text-sm font-semibold text-black hover:bg-yellow-600 disabled:opacity-50"
+                className="rounded-md bg-yellow-500 px-3 py-2 text-sm font-semibold text-black hover:bg-yellow-600 disabled:opacity-50 flex items-center gap-2"
               >
-                {submitting ? "Sending..." : "Send offer"}
+                {submitting && <span className="h-2 w-2 rounded-full bg-black/40 animate-pulse" />}
+                {submitting ? "Sending…" : "Send offer"}
               </button>
             </div>
           </div>

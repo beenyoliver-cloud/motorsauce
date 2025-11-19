@@ -38,6 +38,9 @@ export default function ThreadClientNew({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<string>("");
+  const [isSending, setIsSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [hasHadMessages, setHasHadMessages] = useState(false);
   const draftKey = `ms_thread_draft:${threadId}`;
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -86,7 +89,8 @@ export default function ThreadClientNew({
         }
         const msgs = await fetchMessages(threadId);
         if (!active) return;
-        setMessages(msgs);
+  setMessages(msgs);
+  if (msgs.length > 0) setHasHadMessages(true);
 
         // Derive peer from messages if any
         let peerId = msgs.find(m => m.from.id !== currentUserId)?.from.id;
@@ -141,11 +145,22 @@ export default function ThreadClientNew({
   }, [messages.length]);
 
   async function handleSend(text: string) {
-    if (!text.trim()) return;
-    const sent = await sendMessage(threadId, text);
-    if (sent) {
-      // Optimistically add to local state
-      setMessages(prev => [...prev, sent]);
+    if (!text.trim() || isSending) return;
+    setSendError(null);
+    setIsSending(true);
+    try {
+      const sent = await sendMessage(threadId, text.trim());
+      if (sent) {
+        // Optimistically add to local state
+        setMessages(prev => [...prev, sent]);
+        // Clear draft only on success
+        setDraft("");
+      }
+    } catch (err: any) {
+      console.error("[ThreadClientNew] send error", err);
+      setSendError(err.message || "Failed to send message");
+    } finally {
+      setIsSending(false);
     }
   }
 
@@ -193,7 +208,7 @@ export default function ThreadClientNew({
   }
 
   // Show header even if there are no messages yet (new thread)
-  const showEmptyState = messages.length === 0;
+  const showEmptyState = messages.length === 0 && !hasHadMessages;
 
   const memberSince = peerProfile?.created_at
     ? new Date(peerProfile.created_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
@@ -352,24 +367,34 @@ export default function ThreadClientNew({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            const fd = new FormData(e.currentTarget);
-            const text = String(fd.get("text") || "");
-            (e.currentTarget as HTMLFormElement).reset();
-            handleSend(text);
+            handleSend(draft);
           }}
-          className="flex gap-2"
+          className="flex flex-col gap-2"
         >
-          <input
-            name="text"
-            placeholder="Type a message"
-            className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-            autoComplete="off"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-          />
-          <button className="rounded-md bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black">
-            Send
-          </button>
+          <div className="flex gap-2">
+            <input
+              name="text"
+              placeholder="Type a message"
+              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 disabled:opacity-50"
+              autoComplete="off"
+              value={draft}
+              onChange={(e) => { setDraft(e.target.value); if (sendError) setSendError(null); }}
+              disabled={isSending}
+            />
+            <button
+              type="submit"
+              disabled={isSending || !draft.trim()}
+              className="rounded-md bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {isSending && (
+                <span className="inline-block h-2 w-2 rounded-full bg-yellow-400 animate-pulse" />
+              )}
+              {isSending ? "Sending…" : "Send"}
+            </button>
+          </div>
+          {sendError && (
+            <div className="text-xs text-red-600" role="alert" aria-live="polite">{sendError}</div>
+          )}
         </form>
       </div>
     </div>
