@@ -1,0 +1,530 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
+import { supabaseBrowser } from "@/lib/supabase";
+import { Building2, Upload, Loader2 } from "lucide-react";
+
+type BusinessInfo = {
+  business_name: string;
+  business_type: string;
+  logo_url: string | null;
+  banner_url: string | null;
+  phone_number: string | null;
+  website_url: string | null;
+  customer_support_email: string | null;
+  about_business: string | null;
+  specialties: string[];
+  years_established: number | null;
+  opening_hours: any;
+  business_address: {
+    street: string;
+    city: string;
+    postcode: string;
+    country: string;
+  } | null;
+};
+
+export default function BusinessSettingsPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  
+  const [businessInfo, setBusinessInfo] = useState<BusinessInfo>({
+    business_name: "",
+    business_type: "",
+    logo_url: null,
+    banner_url: null,
+    phone_number: null,
+    website_url: null,
+    customer_support_email: null,
+    about_business: null,
+    specialties: [],
+    years_established: null,
+    opening_hours: {
+      monday: { open: "09:00", close: "17:00", closed: false },
+      tuesday: { open: "09:00", close: "17:00", closed: false },
+      wednesday: { open: "09:00", close: "17:00", closed: false },
+      thursday: { open: "09:00", close: "17:00", closed: false },
+      friday: { open: "09:00", close: "17:00", closed: false },
+      saturday: { open: "09:00", close: "13:00", closed: false },
+      sunday: { open: "", close: "", closed: true },
+    },
+    business_address: null,
+  });
+
+  const [specialtyInput, setSpecialtyInput] = useState("");
+
+  useEffect(() => {
+    loadBusinessInfo();
+  }, []);
+
+  async function loadBusinessInfo() {
+    try {
+      const user = await getCurrentUser();
+      if (!user) {
+        router.push("/auth/login?next=/settings/business");
+        return;
+      }
+
+      const supabase = supabaseBrowser();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("account_type")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.account_type !== "business") {
+        router.push("/settings");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("business_info")
+        .select("*")
+        .eq("profile_id", user.id)
+        .single();
+
+      if (data) {
+        setBusinessInfo({
+          business_name: data.business_name || "",
+          business_type: data.business_type || "",
+          logo_url: data.logo_url,
+          banner_url: data.banner_url,
+          phone_number: data.phone_number,
+          website_url: data.website_url,
+          customer_support_email: data.customer_support_email,
+          about_business: data.about_business,
+          specialties: data.specialties || [],
+          years_established: data.years_established,
+          opening_hours: data.opening_hours || businessInfo.opening_hours,
+          business_address: data.business_address,
+        });
+      }
+    } catch (err) {
+      console.error("Error loading business info:", err);
+      setError("Failed to load business information");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSave() {
+    setError(null);
+    setSuccess(false);
+    setSaving(true);
+
+    try {
+      const user = await getCurrentUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const supabase = supabaseBrowser();
+      
+      const { error: updateError } = await supabase
+        .from("business_info")
+        .upsert({
+          profile_id: user.id,
+          ...businessInfo,
+        });
+
+      if (updateError) throw updateError;
+
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      console.error("Error saving:", err);
+      setError(err instanceof Error ? err.message : "Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function addSpecialty() {
+    if (specialtyInput.trim() && !businessInfo.specialties.includes(specialtyInput.trim())) {
+      setBusinessInfo({
+        ...businessInfo,
+        specialties: [...businessInfo.specialties, specialtyInput.trim()],
+      });
+      setSpecialtyInput("");
+    }
+  }
+
+  function removeSpecialty(index: number) {
+    setBusinessInfo({
+      ...businessInfo,
+      specialties: businessInfo.specialties.filter((_, i) => i !== index),
+    });
+  }
+
+  const inputClass = "w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500";
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-yellow-500" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+            <Building2 className="w-8 h-8" />
+            Business Settings
+          </h1>
+          <p className="text-gray-600 mt-2">Manage your business storefront appearance and information</p>
+        </div>
+
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800">
+            Settings saved successfully!
+          </div>
+        )}
+
+        <div className="space-y-6">
+          {/* Business Identity */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Business Identity</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Business Name *
+                </label>
+                <input
+                  type="text"
+                  value={businessInfo.business_name}
+                  onChange={(e) => setBusinessInfo({ ...businessInfo, business_name: e.target.value })}
+                  className={inputClass}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Business Type *
+                </label>
+                <select
+                  value={businessInfo.business_type}
+                  onChange={(e) => setBusinessInfo({ ...businessInfo, business_type: e.target.value })}
+                  className={inputClass}
+                  required
+                >
+                  <option value="">Select type...</option>
+                  <option value="oem_supplier">OEM Supplier</option>
+                  <option value="breaker">Breaker / Salvage Yard</option>
+                  <option value="parts_retailer">Parts Retailer</option>
+                  <option value="performance_tuner">Performance Tuner</option>
+                  <option value="restoration_specialist">Restoration Specialist</option>
+                  <option value="racing_team">Racing Team</option>
+                  <option value="custom_fabricator">Custom Fabricator</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Year Established
+                </label>
+                <input
+                  type="number"
+                  value={businessInfo.years_established || ""}
+                  onChange={(e) => setBusinessInfo({ ...businessInfo, years_established: e.target.value ? parseInt(e.target.value) : null })}
+                  className={inputClass}
+                  min="1900"
+                  max={new Date().getFullYear()}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Branding */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Branding</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Logo URL
+                </label>
+                <input
+                  type="url"
+                  value={businessInfo.logo_url || ""}
+                  onChange={(e) => setBusinessInfo({ ...businessInfo, logo_url: e.target.value })}
+                  className={inputClass}
+                  placeholder="https://..."
+                />
+                <p className="text-xs text-gray-500 mt-1">Square image recommended (e.g., 400x400px)</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Banner URL
+                </label>
+                <input
+                  type="url"
+                  value={businessInfo.banner_url || ""}
+                  onChange={(e) => setBusinessInfo({ ...businessInfo, banner_url: e.target.value })}
+                  className={inputClass}
+                  placeholder="https://..."
+                />
+                <p className="text-xs text-gray-500 mt-1">Wide banner for storefront header (e.g., 1920x400px)</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Information */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Contact Information</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={businessInfo.phone_number || ""}
+                  onChange={(e) => setBusinessInfo({ ...businessInfo, phone_number: e.target.value })}
+                  className={inputClass}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Website URL
+                </label>
+                <input
+                  type="url"
+                  value={businessInfo.website_url || ""}
+                  onChange={(e) => setBusinessInfo({ ...businessInfo, website_url: e.target.value })}
+                  className={inputClass}
+                  placeholder="https://..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Customer Support Email
+                </label>
+                <input
+                  type="email"
+                  value={businessInfo.customer_support_email || ""}
+                  onChange={(e) => setBusinessInfo({ ...businessInfo, customer_support_email: e.target.value })}
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* About Business */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">About Your Business</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={businessInfo.about_business || ""}
+                  onChange={(e) => setBusinessInfo({ ...businessInfo, about_business: e.target.value })}
+                  className={inputClass}
+                  rows={6}
+                  placeholder="Tell customers about your business..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Specialties
+                </label>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={specialtyInput}
+                    onChange={(e) => setSpecialtyInput(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addSpecialty())}
+                    className={inputClass}
+                    placeholder="e.g., BMW, Performance Parts"
+                  />
+                  <button
+                    type="button"
+                    onClick={addSpecialty}
+                    className="px-4 py-2 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-600"
+                  >
+                    Add
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {businessInfo.specialties.map((specialty, idx) => (
+                    <span
+                      key={idx}
+                      className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                    >
+                      {specialty}
+                      <button
+                        onClick={() => removeSpecialty(idx)}
+                        className="text-gray-500 hover:text-red-600"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Opening Hours */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Opening Hours</h2>
+            <div className="space-y-3">
+              {Object.entries(businessInfo.opening_hours).map(([day, hours]: [string, any]) => (
+                <div key={day} className="flex items-center gap-4">
+                  <div className="w-28 font-medium text-gray-700 capitalize">{day}</div>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={!hours.closed}
+                      onChange={(e) => setBusinessInfo({
+                        ...businessInfo,
+                        opening_hours: {
+                          ...businessInfo.opening_hours,
+                          [day]: { ...hours, closed: !e.target.checked }
+                        }
+                      })}
+                      className="rounded text-yellow-500"
+                    />
+                    <span className="text-sm text-gray-600">Open</span>
+                  </label>
+                  {!hours.closed && (
+                    <>
+                      <input
+                        type="time"
+                        value={hours.open}
+                        onChange={(e) => setBusinessInfo({
+                          ...businessInfo,
+                          opening_hours: {
+                            ...businessInfo.opening_hours,
+                            [day]: { ...hours, open: e.target.value }
+                          }
+                        })}
+                        className="px-2 py-1 border border-gray-300 rounded"
+                      />
+                      <span className="text-gray-500">to</span>
+                      <input
+                        type="time"
+                        value={hours.close}
+                        onChange={(e) => setBusinessInfo({
+                          ...businessInfo,
+                          opening_hours: {
+                            ...businessInfo.opening_hours,
+                            [day]: { ...hours, close: e.target.value }
+                          }
+                        })}
+                        className="px-2 py-1 border border-gray-300 rounded"
+                      />
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Business Address (GDPR-protected) */}
+          <div className="bg-blue-50 rounded-lg border border-blue-200 p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Business Address</h2>
+            <p className="text-sm text-blue-800 mb-4">
+              🔒 This information is private and will never be displayed publicly. It's stored securely for verification purposes only.
+            </p>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Street Address
+                </label>
+                <input
+                  type="text"
+                  value={businessInfo.business_address?.street || ""}
+                  onChange={(e) => setBusinessInfo({
+                    ...businessInfo,
+                    business_address: { ...businessInfo.business_address!, street: e.target.value }
+                  })}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  City
+                </label>
+                <input
+                  type="text"
+                  value={businessInfo.business_address?.city || ""}
+                  onChange={(e) => setBusinessInfo({
+                    ...businessInfo,
+                    business_address: { ...businessInfo.business_address!, city: e.target.value }
+                  })}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Postcode
+                </label>
+                <input
+                  type="text"
+                  value={businessInfo.business_address?.postcode || ""}
+                  onChange={(e) => setBusinessInfo({
+                    ...businessInfo,
+                    business_address: { ...businessInfo.business_address!, postcode: e.target.value }
+                  })}
+                  className={inputClass}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Country
+                </label>
+                <input
+                  type="text"
+                  value={businessInfo.business_address?.country || ""}
+                  onChange={(e) => setBusinessInfo({
+                    ...businessInfo,
+                    business_address: { ...businessInfo.business_address!, country: e.target.value }
+                  })}
+                  className={inputClass}
+                  defaultValue="United Kingdom"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Save Button */}
+          <div className="flex justify-end gap-4">
+            <button
+              onClick={() => router.back()}
+              className="px-6 py-2 border border-gray-300 rounded-lg font-medium hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving || !businessInfo.business_name || !businessInfo.business_type}
+              className="px-6 py-2 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 disabled:opacity-50 flex items-center gap-2"
+            >
+              {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

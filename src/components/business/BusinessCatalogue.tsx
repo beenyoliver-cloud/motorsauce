@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Package, Search } from "lucide-react";
+import { Package, Search, Star, Flame, Sparkles } from "lucide-react";
 
 type Props = {
   businessId: string;
@@ -17,27 +17,64 @@ type Listing = {
   created_at: string;
 };
 
+type Promotion = {
+  id: string;
+  listing_id: string;
+  promotion_type: string;
+  promotion_text: string | null;
+  discount_percentage: number | null;
+};
+
 export default function BusinessCatalogue({ businessId, isOwner }: Props) {
   const [listings, setListings] = useState<Listing[]>([]);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    async function fetchListings() {
+    async function fetchData() {
       try {
-        const res = await fetch(`/api/listings?seller_id=${businessId}`);
-        if (res.ok) {
-          const data = await res.json();
+        const [listingsRes, promotionsRes] = await Promise.all([
+          fetch(`/api/listings?seller_id=${businessId}`),
+          fetch(`/api/business/promotions?business_id=${businessId}`),
+        ]);
+        
+        if (listingsRes.ok) {
+          const data = await listingsRes.json();
           setListings(data);
         }
+        
+        if (promotionsRes.ok) {
+          const promoData = await promotionsRes.json();
+          setPromotions(promoData);
+        }
       } catch (error) {
-        console.error("Failed to fetch listings:", error);
+        console.error("Failed to fetch data:", error);
       } finally {
         setLoading(false);
       }
     }
-    fetchListings();
+    fetchData();
   }, [businessId]);
+
+  function getPromotion(listingId: string) {
+    return promotions.find((p) => p.listing_id === listingId);
+  }
+
+  function getPromoBadge(promoType: string) {
+    switch (promoType) {
+      case "featured":
+        return { icon: Star, color: "bg-yellow-500", text: "Featured" };
+      case "sale":
+        return { icon: Flame, color: "bg-red-500", text: "Sale" };
+      case "new_arrival":
+        return { icon: Sparkles, color: "bg-blue-500", text: "New" };
+      case "spotlight":
+        return { icon: Star, color: "bg-purple-500", text: "Spotlight" };
+      default:
+        return null;
+    }
+  }
 
   const filteredListings = listings.filter((listing) =>
     listing.title.toLowerCase().includes(searchTerm.toLowerCase())
@@ -78,31 +115,51 @@ export default function BusinessCatalogue({ businessId, isOwner }: Props) {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredListings.map((listing) => (
-            <Link
-              key={listing.id}
-              href={`/listing/${listing.id}`}
-              className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow overflow-hidden group"
-            >
-              <div className="aspect-square bg-gray-100 relative overflow-hidden">
-                {listing.images && listing.images.length > 0 ? (
-                  <img
-                    src={listing.images[0]}
-                    alt={listing.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Package className="w-16 h-16 text-gray-300" />
-                  </div>
-                )}
-              </div>
-              <div className="p-4">
-                <h3 className="font-semibold text-gray-900 line-clamp-2 mb-2">{listing.title}</h3>
-                <p className="text-lg font-bold text-gray-900">£{listing.price.toFixed(2)}</p>
-              </div>
-            </Link>
-          ))}
+          {filteredListings.map((listing) => {
+            const promo = getPromotion(listing.id);
+            const promoBadge = promo ? getPromoBadge(promo.promotion_type) : null;
+            
+            return (
+              <Link
+                key={listing.id}
+                href={`/listing/${listing.id}`}
+                className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow overflow-hidden group relative"
+              >
+                <div className="aspect-square bg-gray-100 relative overflow-hidden">
+                  {listing.images && listing.images.length > 0 ? (
+                    <img
+                      src={listing.images[0]}
+                      alt={listing.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Package className="w-16 h-16 text-gray-300" />
+                    </div>
+                  )}
+                  
+                  {/* Promotion Badge */}
+                  {promoBadge && promo && (
+                    <div className={`absolute top-2 right-2 ${promoBadge.color} text-white px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1 shadow-lg`}>
+                      <promoBadge.icon className="w-3 h-3" />
+                      {promo.promotion_text || promoBadge.text}
+                    </div>
+                  )}
+                  
+                  {/* Discount Badge */}
+                  {promo?.discount_percentage && (
+                    <div className="absolute top-2 left-2 bg-red-600 text-white px-2 py-1 rounded-md text-sm font-bold shadow-lg">
+                      -{promo.discount_percentage}%
+                    </div>
+                  )}
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-gray-900 line-clamp-2 mb-2">{listing.title}</h3>
+                  <p className="text-lg font-bold text-gray-900">£{listing.price.toFixed(2)}</p>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>
