@@ -99,6 +99,7 @@ export async function createThread(peerId: string, listingRef?: string): Promise
     const authHeader = await getAuthHeader();
     if (!authHeader) {
       console.error("[messagesClient] No auth header available");
+      alert("Not authenticated. Please log in and try again.");
       return null;
     }
 
@@ -116,6 +117,10 @@ export async function createThread(peerId: string, listingRef?: string): Promise
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({ error: "Unknown error" }));
       console.error("[messagesClient] Failed to create thread:", res.status, errorData);
+      
+      // Show more specific error message to user
+      const errorMsg = errorData.error || errorData.message || "Unknown error";
+      alert(`Failed to start conversation: ${errorMsg}\n\nStatus: ${res.status}`);
       return null;
     }
 
@@ -124,6 +129,7 @@ export async function createThread(peerId: string, listingRef?: string): Promise
     return data.thread;
   } catch (error) {
     console.error("[messagesClient] Error creating thread:", error);
+    alert(`Network error: ${error instanceof Error ? error.message : "Unknown error"}`);
     return null;
   }
 }

@@ -127,7 +127,7 @@ export default function ProfileActions({
       
       if (!thread) {
         console.error("ProfileActions: createThread returned null/undefined");
-        alert("Unable to start conversation. Please try again or contact support.");
+        // Error already shown by createThread function
         setIsLoading(false);
         return;
       }
@@ -136,7 +136,7 @@ export default function ProfileActions({
       router.push(`/messages/${encodeURIComponent(thread.id)}`);
     } catch (error) {
       console.error("ProfileActions: Unexpected error in handleMessage:", error);
-      alert("Unable to start conversation. Please try again.");
+      alert(`Unexpected error: ${error instanceof Error ? error.message : "Please try again"}`);
       setIsLoading(false);
     }
   }

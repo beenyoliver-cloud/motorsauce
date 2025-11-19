@@ -43,7 +43,7 @@ export default function ContactSellerButton({
       
       if (!thread) {
         console.error("Failed to create thread - createThread returned null");
-        alert("Unable to start conversation. Please try again or contact support.");
+        // Error already shown by createThread function
         return;
       }
 
@@ -51,7 +51,7 @@ export default function ContactSellerButton({
       router.push(`/messages/${encodeURIComponent(thread.id)}`);
     } catch (error) {
       console.error("Error in ContactSellerButton:", error);
-      alert("Unable to start conversation. Please try again.");
+      alert(`Unexpected error: ${error instanceof Error ? error.message : "Please try again"}`);
     }
   }
 
