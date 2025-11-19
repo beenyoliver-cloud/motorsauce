@@ -94,24 +94,44 @@ export async function registerUser(
   // If business account, create business_info record
   if (accountType === 'business' && businessInfo) {
     try {
-      // Update profile with business account type
-      await supabase
-        .from('profiles')
-        .update({ account_type: 'business' })
-        .eq('id', data.user.id);
+      // Wait for profile to be created by trigger (max 5 seconds)
+      let profileExists = false;
+      for (let i = 0; i < 10; i++) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', data.user.id)
+          .single();
+        
+        if (profile) {
+          profileExists = true;
+          break;
+        }
+        await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms
+      }
 
-      // Create business info
-      const { error: bizError } = await supabase
-        .from('business_info')
-        .insert({
-          profile_id: data.user.id,
-          business_name: businessInfo.businessName,
-          business_type: businessInfo.businessType
-        });
+      if (profileExists) {
+        // Update profile with business account type
+        await supabase
+          .from('profiles')
+          .update({ account_type: 'business' })
+          .eq('id', data.user.id);
 
-      if (bizError) {
-        console.error('Failed to create business info:', bizError);
-        // Don't fail registration, user can complete in settings
+        // Create business info
+        const { error: bizError } = await supabase
+          .from('business_info')
+          .insert({
+            profile_id: data.user.id,
+            business_name: businessInfo.businessName,
+            business_type: businessInfo.businessType
+          });
+
+        if (bizError) {
+          console.error('Failed to create business info:', bizError);
+          // Don't fail registration, user can complete in settings
+        }
+      } else {
+        console.error('Profile not created within timeout - business setup skipped');
       }
     } catch (bizErr) {
       console.error('Business setup error:', bizErr);
