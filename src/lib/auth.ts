@@ -180,15 +180,24 @@ export async function getCurrentUser(): Promise<LocalUser | null> {
   }
 
   // Fetch the user's profile from the profiles table
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('name, email, avatar, background_image, about')
     .eq('id', user.id)
     .single();
 
+  if (profileError) {
+    console.error('[getCurrentUser] Profile fetch error:', profileError);
+  }
+
   if (!profile) {
-    _cachedUser = null;
-    return null;
+    // If profile doesn't exist, return basic user info from auth
+    _cachedUser = {
+      id: user.id,
+      email: user.email || '',
+      name: user.email?.split('@')[0] || 'User'
+    };
+    return _cachedUser;
   }
 
   _cachedUser = {
