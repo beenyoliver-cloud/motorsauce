@@ -58,6 +58,9 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
     avg_response_time_minutes?: number | null; 
     response_rate?: number | null;
     account_type?: string;
+    avatar?: string | null;
+    background_image?: string | null;
+    about?: string | null;
   } = {};
   try {
     // Use absolute URL for server-side fetch
@@ -102,12 +105,23 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
   return (
     <section className="max-w-6xl mx-auto px-2 sm:px-4 py-4 md:py-6">
       {/* ---------- Header ---------- */}
-      <div className="rounded-lg md:rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="rounded-lg md:rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        {/* Background Banner */}
+        {sellerMetrics.background_image && (
+          <div className="h-32 md:h-48 w-full overflow-hidden bg-gray-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img 
+              src={sellerMetrics.background_image} 
+              alt="" 
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
         <div className="p-3 sm:p-4 md:p-6">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-3 md:gap-4">
             {/* Avatar */}
             <div className="shrink-0">
-              <EditableAvatar displayName={displayName} />
+              <EditableAvatar displayName={displayName} avatarUrl={sellerMetrics.avatar} />
             </div>
 
             {/* Main info */}

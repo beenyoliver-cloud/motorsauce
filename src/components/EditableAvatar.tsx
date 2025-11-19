@@ -15,14 +15,23 @@ function getInitials(label: string): string {
 
 export default function EditableAvatar({
   displayName,
+  avatarUrl,
   className = ''
 }: {
   displayName: string;
+  avatarUrl?: string | null;
   className?: string;
 }) {
-  const [src, setSrc] = useState<string | null>(null);
+  const [src, setSrc] = useState<string | null>(avatarUrl || null);
   const [canEdit, setCanEdit] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
+
+  // Update src when avatarUrl prop changes
+  useEffect(() => {
+    if (avatarUrl) {
+      setSrc(avatarUrl);
+    }
+  }, [avatarUrl]);
 
   useEffect(() => {
     const checkMe = async () => {
@@ -31,24 +40,25 @@ export default function EditableAvatar({
       if (isMine) {
         try {
           const val = localStorage.getItem(nsKey('avatar_v1'));
-          setSrc(val || null);
+          setSrc(val || avatarUrl || null);
         } catch {
-          setSrc(null);
+          setSrc(avatarUrl || null);
         }
         const onProfile = () => {
           try {
             const v = localStorage.getItem(nsKey('avatar_v1'));
-            setSrc(v || null);
+            setSrc(v || avatarUrl || null);
           } catch {}
         };
         window.addEventListener('ms:profile', onProfile as EventListener);
         return () => window.removeEventListener('ms:profile', onProfile as EventListener);
       } else {
-        setSrc(null);
+        // For other users, use the provided avatarUrl
+        setSrc(avatarUrl || null);
       }
     };
     checkMe();
-  }, [displayName]);
+  }, [displayName, avatarUrl]);
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
