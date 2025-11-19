@@ -10,6 +10,7 @@ import EditableAvatar from "@/components/EditableAvatar";
 import ProfileAboutCard from "@/components/ProfileAboutCard";
 import EditProfileTopButton from "@/components/EditProfileTopButton";
 import MyGarageCard from "@/components/MyGarageCard";
+import BusinessStorefrontWrapper from "@/components/business/BusinessStorefrontWrapper";
 import { Star, MapPin, Store } from "lucide-react";
 
 /** Route types */
@@ -56,6 +57,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
     id?: string;
     avg_response_time_minutes?: number | null; 
     response_rate?: number | null;
+    account_type?: string;
   } = {};
   try {
     // Use absolute URL for server-side fetch
@@ -86,6 +88,15 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
     }
   } catch (error) {
     console.error("[Profile SSR] Error fetching seller metrics:", error);
+  }
+
+  // If business account, show different profile layout
+  const isBusinessAccount = sellerMetrics.account_type === 'business';
+  console.log("[Profile SSR] Is business account:", isBusinessAccount, "account_type:", sellerMetrics.account_type);
+
+  // If business account, render business storefront
+  if (isBusinessAccount && sellerMetrics.id) {
+    return <BusinessStorefrontWrapper profileId={sellerMetrics.id} displayName={displayName} />;
   }
 
   return (

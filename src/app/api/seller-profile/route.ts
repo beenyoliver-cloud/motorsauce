@@ -27,10 +27,10 @@ export async function GET(req: NextRequest) {
 
     const supabase = createClient(supabaseUrl, usingService ? serviceKey : anonKey);
 
-    // Fetch profile with response metrics
+    // Fetch profile with response metrics and account type
     const { data: profile, error } = await supabase
       .from("profiles")
-      .select("id, name, avatar_url, avg_response_time_minutes, response_rate, total_responses, total_inquiries_received")
+      .select("id, name, avatar_url, avg_response_time_minutes, response_rate, total_responses, total_inquiries_received, account_type")
       .eq("name", name)
       .single();
 

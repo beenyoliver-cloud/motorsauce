@@ -8,7 +8,7 @@
 -- Step 1: Update the profile to business account type
 UPDATE public.profiles
 SET account_type = 'business'
-WHERE email = 'YOUR_EMAIL_HERE';
+WHERE email = 'oliver@motorsource.com';
 
 -- Step 2: Create business_info record (if it doesn't exist)
 INSERT INTO public.business_info (
@@ -18,10 +18,10 @@ INSERT INTO public.business_info (
 )
 SELECT 
   id,
-  'Your Business Name', -- Replace with your business name
-  'parts_retailer'      -- Replace with your business type
+  'Motorsource', -- Replace with your business name
+  'other'      -- Replace with your business type
 FROM public.profiles
-WHERE email = 'YOUR_EMAIL_HERE'
+WHERE email = 'oliver@motorsource.com'
   AND NOT EXISTS (
     SELECT 1 FROM public.business_info WHERE profile_id = profiles.id
   );
@@ -36,7 +36,7 @@ SELECT
   bi.business_type
 FROM public.profiles p
 LEFT JOIN public.business_info bi ON bi.profile_id = p.id
-WHERE p.email = 'YOUR_EMAIL_HERE';
+WHERE p.email = 'oliver@motorsource.com';
 
 -- ============================================================================
 -- BUSINESS TYPE OPTIONS (for reference):
