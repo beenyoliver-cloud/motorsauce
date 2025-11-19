@@ -20,7 +20,7 @@ export default function BusinessHeader({ business, isOwner }: Props) {
   return (
     <div className="bg-white">
       {/* Banner Image */}
-      <div className="relative h-48 md:h-64 lg:h-80 w-full bg-gradient-to-r from-gray-800 to-gray-600">
+      <div className="relative h-24 md:h-28 lg:h-32 w-full bg-gradient-to-r from-gray-800 to-gray-600">
         {bannerUrl && !bannerError && (
           <img
             src={bannerUrl}
