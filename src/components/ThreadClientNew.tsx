@@ -60,17 +60,33 @@ export default function ThreadClientNew({
         setLoading(true);
         const msgs = await fetchMessages(threadId);
         setMessages(msgs);
+        const supabase = supabaseBrowser();
 
-        // Derive peer from messages
-        const peerId = msgs.find(m => m.from.id !== currentUserId)?.from.id;
+        // Derive peer from messages if any
+        let peerId = msgs.find(m => m.from.id !== currentUserId)?.from.id;
+
+        // Fallback: fetch thread participants if no messages yet (new conversation)
+        if (!peerId) {
+          const { data: threadRow, error: threadErr } = await supabase
+            .from("threads")
+            .select("participant_1_id, participant_2_id")
+            .eq("id", threadId)
+            .single();
+          if (!threadErr && threadRow) {
+            const { participant_1_id, participant_2_id } = threadRow as any;
+            if (participant_1_id && participant_2_id) {
+              peerId = participant_1_id === currentUserId ? participant_2_id : participant_1_id;
+            }
+          }
+        }
+
         if (peerId) {
-          const supabase = supabaseBrowser();
-          const { data } = await supabase
+          const { data: profileData } = await supabase
             .from("profiles")
             .select("id, name, email, created_at, avatar")
             .eq("id", peerId)
             .single();
-          if (data) setPeerProfile(data);
+          if (profileData) setPeerProfile(profileData);
         }
 
         setLoading(false);
@@ -151,19 +167,8 @@ export default function ThreadClientNew({
     );
   }
 
-  if (messages.length === 0) {
-    return (
-      <div className="p-6">
-        <div className="text-sm text-gray-700 mb-2">No messages yet in this thread.</div>
-        <Link
-          href="/messages"
-          className="inline-block text-sm text-gray-900 underline"
-        >
-          Back to messages
-        </Link>
-      </div>
-    );
-  }
+  // Show header even if there are no messages yet (new thread)
+  const showEmptyState = messages.length === 0;
 
   const memberSince = peerProfile?.created_at
     ? new Date(peerProfile.created_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
@@ -232,12 +237,19 @@ export default function ThreadClientNew({
         </div>
       </div>
 
-      {/* Messages */}
+      {/* Messages / Empty state */}
       <div
         ref={scrollRef}
         className="flex-1 min-h-0 overflow-y-auto p-3 space-y-6 overscroll-contain"
       >
-        {grouped.map(group => (
+        {showEmptyState && (
+          <div className="flex h-full items-center justify-center">
+            <div className="text-xs text-gray-500 bg-gray-50 border border-gray-200 px-4 py-2 rounded-full">
+              Conversation started. Send a message to begin.
+            </div>
+          </div>
+        )}
+        {!showEmptyState && grouped.map(group => (
           <div key={group.day}>
             <div className="sticky top-0 z-10 mb-2 flex justify-center">
               <span className="text-[10px] tracking-wide uppercase bg-gray-100 text-gray-600 px-2 py-1 rounded-full border border-gray-200">

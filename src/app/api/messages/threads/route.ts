@@ -166,7 +166,7 @@ export async function POST(req: Request) {
     const [p1, p2] = [user.id, peerId].sort();
     console.log("[threads API POST] Creating thread with participants:", { p1, p2, listingRef });
 
-    // Try new schema first
+    // Try new schema first (requires unique constraint on participant_1_id,participant_2_id,listing_ref)
     let threadAttempt = await supabase
       .from("threads")
       .upsert(
@@ -217,21 +217,74 @@ export async function POST(req: Request) {
     }
 
     const raw = threadAttempt.data as ThreadRow;
-    const thread = raw.participant_1_id
+    const threadNormalized: ThreadRow = raw.participant_1_id
       ? raw
       : {
           id: raw.id,
           participant_1_id: (raw.a_user! < raw.b_user! ? raw.a_user : raw.b_user)!,
           participant_2_id: (raw.a_user! < raw.b_user! ? raw.b_user : raw.a_user)!,
-          listing_ref: null,
-          last_message_text: "New conversation",
-          last_message_at: raw.created_at || new Date().toISOString(),
+          listing_ref: raw.listing_ref || null,
+          last_message_text: raw.last_message_text || "New conversation",
+          last_message_at: raw.last_message_at || raw.created_at || new Date().toISOString(),
           created_at: raw.created_at || new Date().toISOString(),
           updated_at: raw.updated_at || raw.created_at || new Date().toISOString(),
         } as ThreadRow;
 
-    console.log("[threads API POST] Thread created successfully (normalized):", thread);
-    return NextResponse.json({ thread }, { status: 200 });
+    // Determine if this is a brand new thread (no messages yet)
+    let isNew = false;
+    const { count: messageCount, error: countError } = await supabase
+      .from("messages")
+      .select("id", { count: "exact", head: true })
+      .eq("thread_id", threadNormalized.id);
+    if (!countError && (messageCount === 0 || messageCount === null)) {
+      isNew = true;
+    }
+
+    if (isNew) {
+      // Insert initial system message so UI can derive peer & show timeline
+      const { error: systemError } = await supabase
+        .from("messages")
+        .insert({
+          thread_id: threadNormalized.id,
+          from_user_id: user.id, // system message authored by creator for RLS compliance
+          message_type: "system",
+          text_content: listingRef ? "Conversation started regarding listing" : "Conversation started",
+        });
+      if (systemError) {
+        console.warn("[threads API POST] Failed to create initial system message", systemError);
+      }
+    }
+
+    // Create read status entry for creator if not exists
+    const { error: readStatusError } = await supabase
+      .from("thread_read_status")
+      .upsert({
+        thread_id: threadNormalized.id,
+        user_id: user.id,
+        last_read_at: new Date().toISOString(),
+      }, { onConflict: "thread_id,user_id" });
+    if (readStatusError) {
+      console.warn("[threads API POST] Failed to upsert read status", readStatusError);
+    }
+
+    // Fetch peer profile for enrichment
+    const derivedPeerId = threadNormalized.participant_1_id === user.id
+      ? threadNormalized.participant_2_id
+      : threadNormalized.participant_1_id;
+    let peer: ProfileRow | null = null;
+    const { data: peerProfile } = await supabase
+      .from("profiles")
+      .select("id, name, email, avatar")
+  .eq("id", derivedPeerId)
+      .single();
+    if (peerProfile) peer = peerProfile as ProfileRow;
+
+    console.log("[threads API POST] Thread created successfully (normalized):", threadNormalized, { isNew });
+    return NextResponse.json({
+      thread: threadNormalized,
+      peer: peer ? { id: peer.id, name: peer.name, email: peer.email, avatar: peer.avatar } : null,
+      isNew,
+    }, { status: 200 });
   } catch (error: any) {
     console.error("[threads API] POST error:", error);
     return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
