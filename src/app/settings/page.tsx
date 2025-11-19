@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { getCurrentUser, type LocalUser } from "@/lib/auth";
+import { getCurrentUser, type LocalUser, nsKey } from "@/lib/auth";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { User, Mail, Lock, Save, Upload, Image as ImageIcon } from "lucide-react";
 
@@ -84,11 +84,9 @@ export default function SettingsPage() {
         setAvatar(data.url);
         // Update localStorage for EditableAvatar component
         try {
-          if (user) {
-            const avatarKey = `ms:${user.id}:avatar_v1`;
-            localStorage.setItem(avatarKey, data.url);
-            window.dispatchEvent(new Event("ms:profile"));
-          }
+          const avatarKey = nsKey("avatar_v1");
+          localStorage.setItem(avatarKey, data.url);
+          window.dispatchEvent(new Event("ms:profile"));
         } catch (e) {
           console.error('Failed to update localStorage:', e);
         }
@@ -145,10 +143,10 @@ export default function SettingsPage() {
 
       if (profileError) throw profileError;
 
-      // Update localStorage for profile components
+      // Update localStorage for profile components  
       try {
-        const avatarKey = `ms:${user.id}:avatar_v1`;
-        const aboutKey = `ms:${user.id}:about_v1`;
+        const avatarKey = nsKey("avatar_v1");
+        const aboutKey = nsKey("about_v1");
         if (avatar.trim()) {
           localStorage.setItem(avatarKey, avatar.trim());
         } else {
