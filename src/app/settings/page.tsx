@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser, type LocalUser } from "@/lib/auth";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { User, Mail, Lock, Save } from "lucide-react";
+import { User, Mail, Lock, Save, Upload, Image as ImageIcon } from "lucide-react";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -13,16 +13,22 @@ export default function SettingsPage() {
   const [user, setUser] = useState<LocalUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState<'avatar' | 'background' | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   // Form states
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [avatar, setAvatar] = useState("");
+  const [backgroundImage, setBackgroundImage] = useState("");
   const [about, setAbout] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  // File input refs
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const backgroundInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -35,15 +41,16 @@ export default function SettingsPage() {
       setName(currentUser.name || "");
       setEmail(currentUser.email || "");
       
-      // Load profile data (avatar and about)
+      // Load profile data (avatar, background, and about)
       const { data: profile } = await supabase
         .from('profiles')
-        .select('avatar, about')
+        .select('avatar, background_image, about')
         .eq('id', currentUser.id)
         .single();
       
       if (profile) {
         setAvatar(profile.avatar || "");
+        setBackgroundImage(profile.background_image || "");
         setAbout(profile.about || "");
       }
       
@@ -51,6 +58,58 @@ export default function SettingsPage() {
     };
     loadUser();
   }, [router, supabase]);
+
+  const handleImageUpload = async (file: File, type: 'avatar' | 'background') => {
+    setUploading(type);
+    setMessage(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', type);
+
+      const response = await fetch('/api/profile/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Upload failed');
+      }
+
+      // Update local state
+      if (type === 'avatar') {
+        setAvatar(data.url);
+      } else {
+        setBackgroundImage(data.url);
+      }
+
+      setMessage({ type: 'success', text: `${type === 'avatar' ? 'Avatar' : 'Background'} updated successfully!` });
+      
+      // Refresh user data
+      window.dispatchEvent(new Event("ms:auth"));
+    } catch (err) {
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Upload failed' });
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageUpload(file, 'avatar');
+    }
+  };
+
+  const handleBackgroundFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageUpload(file, 'background');
+    }
+  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,13 +121,14 @@ export default function SettingsPage() {
     }
 
     try {
-      // Update name, email, avatar, and about in profiles table
+      // Update name, email, avatar, background, and about in profiles table
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ 
           name: name.trim(), 
           email: email.trim(),
           avatar: avatar.trim() || null,
+          background_image: backgroundImage.trim() || null,
           about: about.trim() || null
         })
         .eq('id', user.id);
@@ -203,23 +263,92 @@ export default function SettingsPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Avatar URL
+              Profile Picture
             </label>
-            <input
-              type="url"
-              value={avatar}
-              onChange={(e) => setAvatar(e.target.value)}
-              placeholder="https://example.com/avatar.jpg"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-gray-700"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Link to your profile picture (optional)
-            </p>
-            {avatar && (
-              <div className="mt-2">
-                <img src={avatar} alt="Avatar preview" className="w-16 h-16 rounded-full object-cover border-2 border-gray-200" onError={(e) => e.currentTarget.style.display = 'none'} />
+            <div className="flex items-start gap-4">
+              {avatar && (
+                <img 
+                  src={avatar} 
+                  alt="Avatar preview" 
+                  className="w-20 h-20 rounded-full object-cover border-2 border-gray-200" 
+                  onError={(e) => e.currentTarget.style.display = 'none'} 
+                />
+              )}
+              <div className="flex-1">
+                <input
+                  type="url"
+                  value={avatar}
+                  onChange={(e) => setAvatar(e.target.value)}
+                  placeholder="https://example.com/avatar.jpg"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-gray-700 mb-2"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={uploading === 'avatar'}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    <Upload size={16} />
+                    {uploading === 'avatar' ? 'Uploading...' : 'Upload Image'}
+                  </button>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    onChange={handleAvatarFileChange}
+                    className="hidden"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Upload an image or paste a URL. Max 5MB (JPEG, PNG, WebP)
+                </p>
               </div>
-            )}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Profile Background / Banner
+            </label>
+            <div className="space-y-2">
+              {backgroundImage && (
+                <img 
+                  src={backgroundImage} 
+                  alt="Background preview" 
+                  className="w-full h-32 rounded-lg object-cover border-2 border-gray-200" 
+                  onError={(e) => e.currentTarget.style.display = 'none'} 
+                />
+              )}
+              <input
+                type="url"
+                value={backgroundImage}
+                onChange={(e) => setBackgroundImage(e.target.value)}
+                placeholder="https://example.com/background.jpg"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-gray-700"
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => backgroundInputRef.current?.click()}
+                  disabled={uploading === 'background'}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  <ImageIcon size={16} />
+                  {uploading === 'background' ? 'Uploading...' : 'Upload Banner'}
+                </button>
+                <input
+                  ref={backgroundInputRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={handleBackgroundFileChange}
+                  className="hidden"
+                />
+              </div>
+              <p className="text-xs text-gray-500">
+                Upload an image or paste a URL. Recommended: 1200x300px. Max 5MB
+              </p>
+            </div>
           </div>
 
           <div>
