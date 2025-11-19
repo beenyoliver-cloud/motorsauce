@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { supabaseBrowser } from "@/lib/supabase";
-import { Building2, Upload, Loader2 } from "lucide-react";
+import { Building2, Upload, Loader2, Image as ImageIcon } from "lucide-react";
 
 type BusinessInfo = {
   business_name: string;
@@ -32,6 +32,10 @@ export default function BusinessSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [uploading, setUploading] = useState<'logo' | 'banner' | null>(null);
+  
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
   
   const [businessInfo, setBusinessInfo] = useState<BusinessInfo>({
     business_name: "",
@@ -139,6 +143,62 @@ export default function BusinessSettingsPage() {
       setError(err instanceof Error ? err.message : "Failed to save");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleImageUpload(file: File, type: 'logo' | 'banner') {
+    setUploading(type);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', type);
+
+      const response = await fetch('/api/business/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Upload failed');
+      }
+
+      // Update local state
+      if (type === 'logo') {
+        setBusinessInfo({ ...businessInfo, logo_url: data.url });
+      } else {
+        setBusinessInfo({ ...businessInfo, banner_url: data.url });
+      }
+
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setUploading(null);
+    }
+  }
+
+  function handleLogoFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setBusinessInfo({ ...businessInfo, logo_url: previewUrl });
+      handleImageUpload(file, 'logo');
+    }
+  }
+
+  function handleBannerFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setBusinessInfo({ ...businessInfo, banner_url: previewUrl });
+      handleImageUpload(file, 'banner');
     }
   }
 
@@ -253,31 +313,93 @@ export default function BusinessSettingsPage() {
             <h2 className="text-xl font-bold text-gray-900 mb-4">Branding</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Logo URL
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Business Logo
                 </label>
-                <input
-                  type="url"
-                  value={businessInfo.logo_url || ""}
-                  onChange={(e) => setBusinessInfo({ ...businessInfo, logo_url: e.target.value })}
-                  className={inputClass}
-                  placeholder="https://..."
-                />
-                <p className="text-xs text-gray-500 mt-1">Square image recommended (e.g., 400x400px)</p>
+                <div className="flex items-start gap-4">
+                  {businessInfo.logo_url && (
+                    <img 
+                      src={businessInfo.logo_url} 
+                      alt="Logo preview" 
+                      className="w-20 h-20 rounded-full object-cover border-2 border-gray-200" 
+                      onError={(e) => e.currentTarget.style.display = 'none'} 
+                    />
+                  )}
+                  <div className="flex-1">
+                    <input
+                      type="url"
+                      value={businessInfo.logo_url || ""}
+                      onChange={(e) => setBusinessInfo({ ...businessInfo, logo_url: e.target.value })}
+                      placeholder="https://example.com/logo.jpg"
+                      className={inputClass + " mb-2"}
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => logoInputRef.current?.click()}
+                        disabled={uploading === 'logo'}
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
+                      >
+                        <Upload size={16} />
+                        {uploading === 'logo' ? 'Uploading...' : 'Upload Logo'}
+                      </button>
+                      <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        onChange={handleLogoFileChange}
+                        className="hidden"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Upload an image or paste a URL. Square image recommended. Max 5MB (JPEG, PNG, WebP)
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Banner URL
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Storefront Banner
                 </label>
-                <input
-                  type="url"
-                  value={businessInfo.banner_url || ""}
-                  onChange={(e) => setBusinessInfo({ ...businessInfo, banner_url: e.target.value })}
-                  className={inputClass}
-                  placeholder="https://..."
-                />
-                <p className="text-xs text-gray-500 mt-1">Wide banner for storefront header (e.g., 1920x400px)</p>
+                <div className="space-y-2">
+                  {businessInfo.banner_url && (
+                    <img 
+                      src={businessInfo.banner_url} 
+                      alt="Banner preview" 
+                      className="w-full h-32 rounded-lg object-cover border-2 border-gray-200" 
+                      onError={(e) => e.currentTarget.style.display = 'none'} 
+                    />
+                  )}
+                  <input
+                    type="url"
+                    value={businessInfo.banner_url || ""}
+                    onChange={(e) => setBusinessInfo({ ...businessInfo, banner_url: e.target.value })}
+                    placeholder="https://example.com/banner.jpg"
+                    className={inputClass + " mb-2"}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => bannerInputRef.current?.click()}
+                      disabled={uploading === 'banner'}
+                      className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    >
+                      <ImageIcon size={16} />
+                      {uploading === 'banner' ? 'Uploading...' : 'Upload Banner'}
+                    </button>
+                    <input
+                      ref={bannerInputRef}
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      onChange={handleBannerFileChange}
+                      className="hidden"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Upload an image or paste a URL. Wide banner recommended (1920x400px). Max 5MB (JPEG, PNG, WebP)
+                  </p>
+                </div>
               </div>
             </div>
           </div>

@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
 
 export async function POST(request: Request) {
   try {
-    const supabase = await supabaseServer();
+    const supabase = createRouteHandlerClient({ cookies });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -43,11 +44,16 @@ export async function POST(request: Request) {
     // Generate unique filename
     const fileExt = file.name.split(".").pop();
     const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+    const filePath = `${user.id}/${fileName}`;
+
+    // Convert file to buffer for upload
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
     // Upload to Supabase Storage
     const { data, error: uploadError } = await supabase.storage
       .from(bucket)
-      .upload(fileName, file, {
+      .upload(filePath, buffer, {
         contentType: file.type,
         upsert: true,
       });
@@ -63,13 +69,15 @@ export async function POST(request: Request) {
     // Get public URL
     const { data: urlData } = supabase.storage
       .from(bucket)
-      .getPublicUrl(fileName);
+      .getPublicUrl(filePath);
+
+    const publicUrl = urlData.publicUrl;
 
     // Update business_info with new URL
     const updateField = type === "logo" ? "logo_url" : "banner_url";
     const { error: updateError } = await supabase
       .from("business_info")
-      .update({ [updateField]: urlData.publicUrl })
+      .update({ [updateField]: publicUrl })
       .eq("profile_id", user.id);
 
     if (updateError) {
@@ -82,7 +90,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      url: urlData.publicUrl,
+      url: publicUrl,
+      type,
     });
   } catch (error) {
     console.error("Image upload error:", error);
