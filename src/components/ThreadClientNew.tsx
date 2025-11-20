@@ -177,10 +177,10 @@ export default function ThreadClientNew({
     try {
       const sent = await sendMessage(threadId, text.trim());
       if (sent) {
-        // Optimistically add to local state
         setMessages(prev => [...prev, sent]);
-        // Clear draft only on success
         setDraft("");
+      } else {
+        setSendError("Message failed to send. Please try again.");
       }
     } catch (err: any) {
       console.error("[ThreadClientNew] send error", err);

@@ -177,15 +177,68 @@ export async function sendMessage(threadId: string, text: string): Promise<Messa
     });
 
     if (!res.ok) {
-      console.error("[messagesClient] Failed to send message:", res.status);
-      return null;
+      let errorDetail: any = null;
+      try { errorDetail = await res.json(); } catch {}
+      const msg = errorDetail?.error || errorDetail?.message || `HTTP ${res.status}`;
+      console.error("[messagesClient] Failed to send message:", res.status, msg);
+      throw new Error(msg);
     }
 
     const data = await res.json();
-    return data.message;
+    const raw = data.message;
+    if (!raw) return null;
+
+    // Enrich raw message row to Message shape expected by UI
+    // We only know current sender (the user) so we can fetch their profile for name/avatar.
+    try {
+      const supabase = supabaseBrowser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      let name: string = "You";
+      let avatar: string | undefined = undefined;
+      if (userId) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("name, avatar")
+          .eq("id", userId)
+          .single();
+        if (profile) {
+          name = profile.name || name;
+          avatar = profile.avatar || undefined;
+        }
+      }
+      const enriched: Message = {
+        id: raw.id,
+        threadId: raw.thread_id,
+        from: { id: userId || "", name, avatar },
+        type: raw.message_type,
+        text: raw.text_content,
+        offer: raw.message_type === "offer" ? {
+          id: raw.offer_id,
+          amountCents: raw.offer_amount_cents,
+          currency: raw.offer_currency,
+          status: raw.offer_status,
+        } : undefined,
+        createdAt: raw.created_at,
+        updatedAt: raw.updated_at,
+      };
+      return enriched;
+    } catch (enrichErr) {
+      console.warn("[messagesClient] Failed to enrich sent message, falling back to raw", enrichErr);
+      return {
+        id: raw.id,
+        threadId: raw.thread_id,
+        from: { id: raw.from_user_id, name: "You" },
+        type: raw.message_type,
+        text: raw.text_content,
+        offer: undefined,
+        createdAt: raw.created_at,
+        updatedAt: raw.updated_at,
+      };
+    }
   } catch (error) {
     console.error("[messagesClient] Error sending message:", error);
-    return null;
+    throw error; // propagate so UI can surface
   }
 }
 
