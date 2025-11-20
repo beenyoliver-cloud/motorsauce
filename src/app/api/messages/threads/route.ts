@@ -241,17 +241,31 @@ export async function POST(req: Request) {
     }
 
     if (isNew) {
-      // Insert initial system message so UI can derive peer & show timeline
-      const { error: systemError } = await supabase
+      // Insert initial system message so UI can derive peer & show timeline (support legacy sender column)
+      let systemInsert = await supabase
         .from("messages")
         .insert({
           thread_id: threadNormalized.id,
           from_user_id: user.id, // system message authored by creator for RLS compliance
+          sender: user.id,
           message_type: "system",
           text_content: listingRef ? "Conversation started regarding listing" : "Conversation started",
         });
-      if (systemError) {
-        console.warn("[threads API POST] Failed to create initial system message", systemError);
+      if (systemInsert.error) {
+        if (systemInsert.error.code === "42703") {
+          // Legacy fallback (text_content may be 'text', sender column present)
+          systemInsert = await supabase
+            .from("messages")
+            .insert({
+              thread_id: threadNormalized.id,
+              sender: user.id,
+              message_type: "system",
+              text: listingRef ? "Conversation started regarding listing" : "Conversation started",
+            });
+        }
+        if (systemInsert.error) {
+          console.warn("[threads API POST] Failed to create initial system message after fallback", systemInsert.error);
+        }
       }
     }
 
