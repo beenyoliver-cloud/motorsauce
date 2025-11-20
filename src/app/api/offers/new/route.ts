@@ -130,24 +130,44 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: offerError.message }, { status: 500 });
     }
 
-    // Create system message for the offer
-    await supabase.from("messages").insert({
+    // Create system + offer messages with legacy sender support
+    const systemInsert = await supabase.from("messages").insert({
       thread_id: threadId,
       from_user_id: user.id,
+      sender: user.id,
       message_type: "system",
       text_content: `Started an offer of £${(amountCents / 100).toFixed(2)}`,
     });
+    if (systemInsert.error && systemInsert.error.code === "42703") {
+      await supabase.from("messages").insert({
+        thread_id: threadId,
+        sender: user.id,
+        message_type: "system",
+        text: `Started an offer of £${(amountCents / 100).toFixed(2)}`,
+      });
+    }
 
-    // Create offer message
-    await supabase.from("messages").insert({
+    const offerInsert = await supabase.from("messages").insert({
       thread_id: threadId,
       from_user_id: user.id,
+      sender: user.id,
       message_type: "offer",
       offer_id: offer.id,
       offer_amount_cents: amountCents,
       offer_currency: currency,
       offer_status: "pending",
     });
+    if (offerInsert.error && offerInsert.error.code === "42703") {
+      await supabase.from("messages").insert({
+        thread_id: threadId,
+        sender: user.id,
+        message_type: "offer",
+        offer_id: offer.id,
+        offer_amount_cents: amountCents,
+        offer_currency: currency,
+        offer_status: "pending",
+      });
+    }
 
     return NextResponse.json({ offer }, { status: 201 });
   } catch (error: any) {
@@ -237,12 +257,21 @@ export async function PATCH(req: Request) {
     else if (status === "withdrawn") statusText = `${userName} withdrew the offer`;
 
     if (statusText) {
-      await supabase.from("messages").insert({
+      const statusInsert = await supabase.from("messages").insert({
         thread_id: offer.thread_id,
         from_user_id: user.id,
+        sender: user.id,
         message_type: "system",
         text_content: statusText,
       });
+      if (statusInsert.error && statusInsert.error.code === "42703") {
+        await supabase.from("messages").insert({
+          thread_id: offer.thread_id,
+          sender: user.id,
+          message_type: "system",
+          text: statusText,
+        });
+      }
     }
 
     return NextResponse.json({ offer: updated }, { status: 200 });

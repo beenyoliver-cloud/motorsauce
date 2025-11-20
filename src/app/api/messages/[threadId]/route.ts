@@ -63,7 +63,7 @@ export async function GET(
     }
 
     // Fetch profiles for message senders
-    const senderIds = [...new Set(messages?.map((m: any) => m.from_user_id) || [])];
+  const senderIds = [...new Set((messages || []).map((m: any) => m.from_user_id || m.sender) || [])];
     const { data: profiles } = await supabase
       .from("profiles")
       .select("id, name, avatar")
@@ -73,17 +73,18 @@ export async function GET(
 
     // Enrich messages
     const enriched = (messages || []).map((m: any) => {
-      const sender = profileMap.get(m.from_user_id);
+      const senderId = m.from_user_id || m.sender;
+      const sender = profileMap.get(senderId);
       return {
         id: m.id,
         threadId: m.thread_id,
         from: {
-          id: m.from_user_id,
+          id: senderId,
           name: sender?.name || "Unknown",
           avatar: sender?.avatar,
         },
-        type: m.message_type,
-        text: m.text_content,
+        type: m.message_type || m.type || "text",
+        text: m.text_content || m.text,
         offer: m.message_type === "offer" ? {
           id: m.offer_id,
           amountCents: m.offer_amount_cents,
@@ -148,12 +149,13 @@ export async function POST(
       return NextResponse.json({ error: "Thread not found" }, { status: 404 });
     }
 
-    // Insert message
-    const { data: message, error: insertError } = await supabase
+    // Attempt insert using new schema (from_user_id). Also include legacy 'sender' column to satisfy NOT NULL if present.
+    let insert = await supabase
       .from("messages")
       .insert({
         thread_id: threadId,
         from_user_id: user.id,
+        sender: user.id, // legacy support; ignored if column doesn't exist
         message_type: type,
         text_content: type === "system" || type === "text" ? text : null,
         offer_id: type === "offer" ? offerId : null,
@@ -164,10 +166,32 @@ export async function POST(
       .select()
       .single();
 
-    if (insertError) {
-      console.error("[messages API] Insert error:", insertError);
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+    if (insert.error) {
+      // Fall back if 'from_user_id' or 'text_content' columns not found (legacy schema 42703) by using simpler legacy column names
+      if (insert.error.code === "42703") {
+        console.warn("[messages API] Falling back to legacy message schema", insert.error.details || insert.error.message);
+        insert = await supabase
+          .from("messages")
+          .insert({
+            thread_id: threadId,
+            sender: user.id,
+            message_type: type,
+            text: type === "system" || type === "text" ? text : null,
+            offer_id: type === "offer" ? offerId : null,
+            offer_amount_cents: type === "offer" ? offerAmountCents : null,
+            offer_currency: type === "offer" ? (offerCurrency || "GBP") : null,
+            offer_status: type === "offer" ? offerStatus : null,
+          })
+          .select()
+          .single();
+      }
     }
+
+    if (insert.error) {
+      console.error("[messages API] Insert error after fallback:", insert.error);
+      return NextResponse.json({ error: insert.error.message }, { status: 500 });
+    }
+    const message = insert.data;
 
     return NextResponse.json({ message }, { status: 201 });
   } catch (error: any) {
