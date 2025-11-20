@@ -134,6 +134,38 @@ CREATE INDEX IF NOT EXISTS idx_messages_thread ON public.messages(thread_id, cre
 CREATE INDEX IF NOT EXISTS idx_messages_from_user ON public.messages(from_user_id);
 CREATE INDEX IF NOT EXISTS idx_messages_offer ON public.messages(offer_id) WHERE offer_id IS NOT NULL;
 
+-- Legacy compatibility for old 'sender' column (was NOT NULL in legacy schema).
+-- Ensure column exists, drop NOT NULL if still enforced, and auto-populate from from_user_id.
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS sender UUID;
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name='messages' AND column_name='sender' AND table_schema='public' AND is_nullable='NO'
+  ) THEN
+    ALTER TABLE public.messages ALTER COLUMN sender DROP NOT NULL;
+  END IF;
+END $$;
+
+-- Backfill any existing NULL sender values
+UPDATE public.messages SET sender = from_user_id WHERE sender IS NULL AND from_user_id IS NOT NULL;
+
+-- Trigger to keep legacy sender column in sync during inserts (harmless if column nullable)
+CREATE OR REPLACE FUNCTION sync_legacy_sender_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.sender IS NULL THEN
+    NEW.sender := NEW.from_user_id;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_sync_legacy_sender ON public.messages;
+CREATE TRIGGER trg_sync_legacy_sender
+  BEFORE INSERT ON public.messages
+  FOR EACH ROW
+  EXECUTE FUNCTION sync_legacy_sender_column();
+
 -- ==================== THREAD_DELETIONS TABLE ====================
 -- Tracks which users have "deleted" (hidden) a thread locally
 -- Thread only archives after both users delete; purges after 30 days
