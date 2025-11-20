@@ -43,6 +43,9 @@ export default function ThreadClientNew({
   const [hasHadMessages, setHasHadMessages] = useState(false);
   const draftKey = `ms_thread_draft:${threadId}`;
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const headerRef = useRef<HTMLDivElement | null>(null);
+  const composerRef = useRef<HTMLDivElement | null>(null);
+  const [viewportAdjustedHeight, setViewportAdjustedHeight] = useState<string | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -144,6 +147,29 @@ export default function ThreadClientNew({
     requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
   }, [messages.length]);
 
+  // Dynamic height calculation for mobile to avoid header + bottom bar overlap
+  useEffect(() => {
+    if (!mounted) return;
+    function compute() {
+      const isMobile = window.innerWidth < 768; // md breakpoint
+      if (!isMobile) {
+        setViewportAdjustedHeight(null);
+        return;
+      }
+      const headerH = headerRef.current?.offsetHeight || 0;
+      const composerH = composerRef.current?.offsetHeight || 0;
+      // Mobile tab bar estimated height (from MobileTabBar ~56px)
+      const tabBarH = 56;
+      const safeBottom = Number.parseInt(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-bottom)')) || 0;
+      const totalOffset = headerH + composerH + tabBarH + safeBottom;
+      const h = Math.max(window.innerHeight - totalOffset, 200); // clamp minimum
+      setViewportAdjustedHeight(`${h}px`);
+    }
+    compute();
+    window.addEventListener('resize', compute);
+    return () => window.removeEventListener('resize', compute);
+  }, [mounted]);
+
   async function handleSend(text: string) {
     if (!text.trim() || isSending) return;
     setSendError(null);
@@ -231,7 +257,7 @@ export default function ThreadClientNew({
   return (
     <div className="flex h-full flex-col w-full overflow-x-hidden">
       {/* User Profile Bar */}
-      <div className="border-b border-gray-200 bg-white shrink-0">
+  <div ref={headerRef} className="border-b border-gray-200 bg-white shrink-0">
         <div className="flex items-center justify-between p-3 md:p-4">
           {peerProfile && (
             <Link
@@ -281,6 +307,7 @@ export default function ThreadClientNew({
       <div
         ref={scrollRef}
         className="flex-1 min-h-0 overflow-y-auto p-3 space-y-6 overscroll-contain"
+        style={viewportAdjustedHeight ? { height: viewportAdjustedHeight } : undefined}
       >
         {isRefreshing && (
           <div className="absolute top-2 right-3 text-[10px] text-gray-400 flex items-center gap-1">
@@ -363,7 +390,7 @@ export default function ThreadClientNew({
       </div>
 
       {/* Composer */}
-      <div className="border-t border-gray-200 p-3 bg-white shrink-0">
+  <div ref={composerRef} className="border-t border-gray-200 p-3 bg-white shrink-0">
         <form
           onSubmit={(e) => {
             e.preventDefault();
