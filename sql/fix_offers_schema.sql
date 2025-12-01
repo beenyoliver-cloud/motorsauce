@@ -105,13 +105,13 @@ CREATE POLICY "Users can view offers on their listings as seller"
   FOR SELECT
   USING (auth.uid() = recipient_id OR auth.uid() = recipient);
 
--- Users can create offers
+-- Users can create offers (as buyer/starter)
 CREATE POLICY "Users can create offers"
   ON public.offers
   FOR INSERT
   WITH CHECK (
-    auth.uid() = starter_id 
-    AND (recipient_id IS NULL OR auth.uid() != recipient_id)
+    (auth.uid() = starter_id AND starter_id IS NOT NULL)
+    OR (auth.uid() = starter AND starter IS NOT NULL)
   );
 
 -- Buyers can update their own pending/countered offers (withdraw)

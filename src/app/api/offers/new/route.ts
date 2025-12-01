@@ -109,6 +109,14 @@ export async function POST(req: Request) {
     }
 
     // Create offer
+    console.log("[offers API] Creating offer with data:", {
+      thread_id: threadId,
+      listing_id: listingId,
+      starter_id: user.id,
+      recipient_id: recipientId,
+      amount_cents: amountCents,
+    });
+
     const { data: offer, error: offerError } = await supabase
       .from("offers")
       .insert({
@@ -127,8 +135,16 @@ export async function POST(req: Request) {
 
     if (offerError) {
       console.error("[offers API] Create error:", offerError);
-      return NextResponse.json({ error: offerError.message }, { status: 500 });
+      console.error("[offers API] Error details:", JSON.stringify(offerError, null, 2));
+      return NextResponse.json({ 
+        error: offerError.message,
+        details: offerError.details,
+        hint: offerError.hint,
+        code: offerError.code
+      }, { status: 500 });
     }
+
+    console.log("[offers API] Offer created successfully:", offer.id);
 
     // Create system message about the offer
     const systemMessage = `Started an offer of £${(amountCents / 100).toFixed(2)}`;

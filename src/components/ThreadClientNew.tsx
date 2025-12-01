@@ -16,6 +16,7 @@ import {
 import { getCurrentUser } from "@/lib/auth";
 import { displayName } from "@/lib/names";
 import { supabaseBrowser } from "@/lib/supabase";
+import OfferCard from "@/components/OfferCard";
 
 type PeerProfile = {
   id: string;
@@ -368,14 +369,22 @@ export default function ThreadClientNew({
                   minute: '2-digit',
                 });
 
-                // Handle offer messages (placeholder for now - will integrate OfferMessage component)
-                if (m.type === "offer") {
+                // Handle offer messages with interactive card
+                if (m.type === "offer" && m.offer) {
+                  // Determine if current user is the seller (recipient of offer)
+                  const isCurrentUserSeller = m.from.id !== currentUserId;
+                  
                   return (
-                    <div key={m.id} className="px-0">
-                      <div className="max-w-[90vw] sm:max-w-[78%] mx-auto">
-                        <div className="px-3 py-2 rounded-lg border border-yellow-400 bg-yellow-50 text-sm">
-                          Offer: £{((m.offer?.amountCents || 0) / 100).toFixed(2)} • {m.offer?.status}
-                        </div>
+                    <div key={m.id} className="px-0 py-1">
+                      <div className="max-w-[90vw] sm:max-w-md mx-auto">
+                        <OfferCard
+                          offerId={m.offer.id}
+                          amount={m.offer.amountCents}
+                          currency={m.offer.currency}
+                          status={m.offer.status}
+                          isCurrentUserSeller={isCurrentUserSeller}
+                          onUpdate={refresh}
+                        />
                       </div>
                     </div>
                   );
