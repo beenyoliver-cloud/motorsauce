@@ -11,6 +11,7 @@ export default function PopularSellers() {
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Fetch popular sellers
   useEffect(() => {
     let mounted = true;
     setLoading(true);
@@ -26,8 +27,6 @@ export default function PopularSellers() {
       mounted = false;
     };
   }, []);
-
-  if (loading) return <div className="text-sm text-gray-500">Loading popular sellers…</div>;
   
   // If no popular sellers, fetch top 5 sellers as fallback
   useEffect(() => {
@@ -52,7 +51,8 @@ export default function PopularSellers() {
     }
   }, [loading, sellers.length]);
 
-  if (!loading && !sellers.length) return <div className="text-sm text-gray-500">No sellers yet.</div>;
+  if (loading) return <div className="text-sm text-gray-500">Loading popular sellers…</div>;
+  if (!sellers.length) return <div className="text-sm text-gray-500">No sellers yet.</div>;
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
