@@ -383,7 +383,11 @@ export default function ThreadClientNew({
                           currency={m.offer.currency}
                           status={m.offer.status}
                           isCurrentUserSeller={isCurrentUserSeller}
-                          onUpdate={refresh}
+                          onUpdate={async () => {
+                            // Refresh messages after offer update
+                            const msgs = await fetchMessages(threadId);
+                            setMessages(msgs);
+                          }}
                         />
                       </div>
                     </div>
