@@ -24,18 +24,11 @@ svg, video, canvas, iframe {
   display: block;
 }
 
-/* Images without explicit sizing get responsive defaults */
-img:not([class*="w-"]):not([class*="h-"]):not(.site-image) {
+/* Only apply responsive defaults to images without any classes */
+img:not([class]) {
   max-width: 100%;
   height: auto;
   display: block;
-}
-
-/* Images with w-full or h-full should not be constrained */
-img[class*="w-full"],
-img[class*="h-full"] {
-  max-width: none;
-  height: auto;
 }
 
 /* Utility: Constrain central forms */
