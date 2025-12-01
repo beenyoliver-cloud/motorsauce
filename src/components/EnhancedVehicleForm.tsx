@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, FormEvent } from "react";
-import { Check, X, Image as ImageIcon, Shield, Calendar, Gauge } from "lucide-react";
+import { Check, X, Image as ImageIcon, Shield, Calendar, Gauge, Search } from "lucide-react";
 import { Car } from "@/lib/garage";
 
 interface EnhancedVehicleFormProps {
@@ -34,8 +34,40 @@ export default function EnhancedVehicleForm({
   const [notes, setNotes] = useState(initialData?.notes || "");
   const [image, setImage] = useState<string | undefined>(initialData?.image);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [lookupLoading, setLookupLoading] = useState(false);
   
   const uploadRef = useRef<HTMLInputElement>(null);
+
+  // Lookup vehicle by registration plate
+  const handleRegistrationLookup = async () => {
+    if (!registration || registration.length < 2) {
+      alert("Please enter a registration plate");
+      return;
+    }
+
+    setLookupLoading(true);
+    try {
+      const res = await fetch(`/api/registration?reg=${encodeURIComponent(registration)}`);
+      if (!res.ok) {
+        throw new Error("Vehicle not found");
+      }
+
+      const data = await res.json();
+      
+      // Auto-fill fields from DVLA data
+      if (data.make) setMake(data.make);
+      if (data.model) setModel(data.model);
+      if (data.year) setYear(data.year.toString());
+      if (data.color) setColor(data.color);
+      if (data.motExpiry) setMotExpiry(data.motExpiry);
+      
+      alert("Vehicle details loaded successfully! Review and save.");
+    } catch (err) {
+      alert("Could not find vehicle. Please enter details manually.");
+    } finally {
+      setLookupLoading(false);
+    }
+  };
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -46,8 +78,8 @@ export default function EnhancedVehicleForm({
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      alert("Image must be under 2MB");
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image must be under 5MB");
       return;
     }
 
@@ -85,6 +117,44 @@ export default function EnhancedVehicleForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Quick Lookup by Registration */}
+      <div className="p-4 rounded-lg border-2 border-yellow-200 bg-yellow-50">
+        <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+          <Search className="h-4 w-4" />
+          Quick Add by Registration Plate
+        </h3>
+        <p className="text-xs text-gray-600 mb-3">
+          Enter your UK registration plate to auto-fill vehicle details including MOT expiry date.
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={registration}
+            onChange={(e) => setRegistration(e.target.value.toUpperCase())}
+            placeholder="AB12 CDE"
+            className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-gray-900 font-mono uppercase focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          />
+          <button
+            type="button"
+            onClick={handleRegistrationLookup}
+            disabled={lookupLoading || !registration}
+            className="px-4 py-2 rounded-md bg-yellow-500 text-black font-semibold hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {lookupLoading ? (
+              <>
+                <div className="animate-spin h-4 w-4 border-2 border-black border-t-transparent rounded-full" />
+                Looking up...
+              </>
+            ) : (
+              <>
+                <Search className="h-4 w-4" />
+                Lookup
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
       {/* Basic Info */}
       <div>
         <h3 className="text-sm font-semibold text-gray-900 mb-3">Basic Information</h3>
@@ -202,7 +272,7 @@ export default function EnhancedVehicleForm({
                 Remove
               </button>
             )}
-            <p className="text-xs text-gray-600">Max 2MB • JPG, PNG</p>
+            <p className="text-xs text-gray-600">Max 5MB • JPG, PNG</p>
           </div>
         </div>
       </div>

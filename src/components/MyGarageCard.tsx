@@ -129,6 +129,9 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
   // viewer state
   const [publicView, setPublicView] = useState<{ cars: CarType[]; selected?: string | null } | null>(null);
 
+  // tabs
+  const [activeTab, setActiveTab] = useState<"garage" | "display-wall">("garage");
+
   // add vehicle
   const [openAdd, setOpenAdd] = useState(false);
   const [make, setMake] = useState<string>("");
@@ -553,17 +556,55 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
         </div>
       )}
 
-      {/* Stats for default car */}
-      {defaultCar && (
-        <div className="px-6 py-5">
-          <GarageStats car={defaultCar} />
+      {/* Tabs Navigation */}
+      <div className="border-t border-gray-200">
+        <div className="px-6">
+          <div className="flex gap-1 -mb-px">
+            <button
+              onClick={() => setActiveTab("garage")}
+              className={cx(
+                "px-4 py-3 text-sm font-semibold border-b-2 transition-colors",
+                activeTab === "garage"
+                  ? "border-yellow-500 text-gray-900"
+                  : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
+              )}
+            >
+              🚗 Garage
+            </button>
+            <button
+              onClick={() => setActiveTab("display-wall")}
+              className={cx(
+                "px-4 py-3 text-sm font-semibold border-b-2 transition-colors",
+                activeTab === "display-wall"
+                  ? "border-yellow-500 text-gray-900"
+                  : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
+              )}
+            >
+              📸 Display Wall
+            </button>
+          </div>
         </div>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === "garage" && (
+        <>
+          {/* Stats for default car */}
+          {defaultCar && (
+            <div className="px-6 py-5">
+              <GarageStats car={defaultCar} />
+            </div>
+          )}
+          
+          {/* Other cars will be rendered below */}
+        </>
       )}
 
-      {/* Display Wall - Instagram-style grid of all vehicle photos */}
-      <div className="px-6 pb-6">
-        <DisplayWall cars={cars} />
-      </div>
+      {activeTab === "display-wall" && (
+        <div className="px-6 py-6">
+          <DisplayWall cars={cars} />
+        </div>
+      )}
 
       {/* Add vehicle panel */}
       {mine && openAdd && (
@@ -622,8 +663,9 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
         </div>
       )}
 
-  {/* Other cars grid */}
-  <div className="px-6 py-6">
+  {/* Other cars grid - only show in Garage tab */}
+  {activeTab === "garage" && (
+    <div className="px-6 py-6">
         {list.length === 0 && !mine && (
           <div className="rounded-xl border border-dashed border-gray-300 p-10 text-center">
             <div className="mx-auto h-16 w-24 rounded-md bg-gray-100 flex items-center justify-center mb-3">
@@ -875,7 +917,8 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
             </tbody>
           </table>
         )}
-      </div>
+    </div>
+  )}
 
       {/* Motorsauce-themed animations */}
       <style jsx>{`

@@ -1,6 +1,7 @@
 -- Create persistent tables for Garage vehicles and reminders
+-- NOTE: This is for PERSONAL users only, not business accounts
 
--- Vehicles table
+-- Vehicles table (personal users only)
 CREATE TABLE IF NOT EXISTS garage_vehicles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -51,3 +52,15 @@ CREATE TABLE IF NOT EXISTS garage_reminders (
 
 CREATE INDEX IF NOT EXISTS idx_reminders_user ON garage_reminders(user_id);
 CREATE INDEX IF NOT EXISTS idx_reminders_due ON garage_reminders(scheduled_for) WHERE NOT sent;
+
+-- Ensure garage is only for personal users (not businesses)
+-- Add check constraint to prevent business accounts from using garage
+ALTER TABLE garage_vehicles 
+ADD CONSTRAINT garage_personal_users_only 
+CHECK (
+  NOT EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE profiles.id = garage_vehicles.user_id 
+    AND profiles.is_business = true
+  )
+);

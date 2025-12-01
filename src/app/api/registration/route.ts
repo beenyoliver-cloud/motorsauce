@@ -19,10 +19,14 @@ type VehicleData = {
   year?: number;
   gen?: string;
   engine?: string;
+  color?: string;
+  motExpiry?: string; // ISO date
+  taxStatus?: string;
+  taxDue?: string; // ISO date
 };
 
 // Mock vehicle database for development
-// Replace this with real API integration
+// Replace this with real DVLA API integration
 const MOCK_VEHICLES: Record<string, VehicleData> = {
   "AB12CDE": {
     make: "BMW",
@@ -30,6 +34,10 @@ const MOCK_VEHICLES: Record<string, VehicleData> = {
     year: 2015,
     gen: "F30",
     engine: "2.0 Diesel",
+    color: "Black",
+    motExpiry: "2025-08-15",
+    taxStatus: "Taxed",
+    taxDue: "2025-12-01",
   },
   "XY34FGH": {
     make: "Audi",
@@ -37,6 +45,10 @@ const MOCK_VEHICLES: Record<string, VehicleData> = {
     year: 2018,
     gen: "B9",
     engine: "2.0 TFSI",
+    color: "Silver",
+    motExpiry: "2025-06-20",
+    taxStatus: "Taxed",
+    taxDue: "2026-01-15",
   },
   "LM56NOP": {
     make: "Volkswagen",
@@ -44,6 +56,10 @@ const MOCK_VEHICLES: Record<string, VehicleData> = {
     year: 2020,
     gen: "Mk8",
     engine: "1.5 TSI",
+    color: "White",
+    motExpiry: "2025-11-30",
+    taxStatus: "Taxed",
+    taxDue: "2025-12-31",
   },
 };
 
