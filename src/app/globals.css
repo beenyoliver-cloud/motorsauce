@@ -8,11 +8,13 @@ html, body {
 }
 
 /* Media should scale responsively without constraining layout containers */
-img, svg, video, canvas, iframe {
+/* But don't override explicit Tailwind utility classes like w-full, h-full */
+svg, video, canvas, iframe {
   max-width: 100%;
   height: auto;
   display: block;
 }
+
 /* All site images fill their container, maintain aspect ratio, and never overflow */
 .site-image {
   width: 100%;
@@ -22,11 +24,18 @@ img, svg, video, canvas, iframe {
   display: block;
 }
 
-/* Generic img elements scale responsively but don't force 100% dimensions */
-/* Do not force height here; let utility classes (e.g., h-full) take precedence */
-img:not(.site-image) {
+/* Images without explicit sizing get responsive defaults */
+img:not([class*="w-"]):not([class*="h-"]):not(.site-image) {
   max-width: 100%;
+  height: auto;
   display: block;
+}
+
+/* Images with w-full or h-full should not be constrained */
+img[class*="w-full"],
+img[class*="h-full"] {
+  max-width: none;
+  height: auto;
 }
 
 /* Utility: Constrain central forms */
