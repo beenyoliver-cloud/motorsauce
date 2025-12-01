@@ -180,7 +180,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g., Vauxhall Astra J Front Brake Pads"
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400"
             required
           />
           <p className="mt-1 text-xs text-gray-600">Clear & specific titles sell faster.</p>
@@ -194,7 +194,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
               name="category"
               value={category}
               onChange={(e) => setCategory(e.target.value as Category)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
               required
             >
               <option value="">Select a category</option>
@@ -209,7 +209,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
               name="partType"
               value={partType}
               onChange={(e) => setPartType(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
             >
               <option value="">Select type (optional)</option>
               <option value="Engine">Engine</option>
@@ -239,7 +239,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
               name="make"
               value={make}
               onChange={(e) => { setMake(e.target.value); setModel(""); }}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-100"
               disabled={!isVehicleSpecific}
             >
               <option value="">Select a make</option>
@@ -257,8 +257,8 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
               name="model"
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              disabled={!isVehicleSpecific || !make}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-100"
+              disabled={!isVehicleSpecific}
             >
               <option value="">{make ? "Select a model" : "Select a make first"}</option>
               {(vehicles[make] || []).map((mdl) => (
@@ -273,7 +273,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
               name="genCode"
               value={genCode}
               onChange={(e) => setGenCode(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-100"
               disabled={!isVehicleSpecific || !make || !model || !getGenOptions(detailed, make, model).length}
             >
               <option value="">{!make || !model ? "Select make & model first" : (getGenOptions(detailed, make, model).length ? "Select a generation (optional)" : "No generations available")}</option>
@@ -292,7 +292,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
               value={year ?? ""}
               onChange={(e) => setYear(e.target.value ? Number(e.target.value) : undefined)}
               placeholder="2018"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-100"
               disabled={!isVehicleSpecific}
             />
           </div>
@@ -306,7 +306,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
               name="condition"
               value={condition}
               onChange={(e) => setCondition(e.target.value as Condition)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
             >
               <option>New</option>
               <option>Used - Like New</option>
@@ -328,7 +328,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 placeholder="0.00"
-                className="w-full border border-gray-300 rounded-md pl-7 pr-3 py-2 text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                className="w-full border border-gray-300 rounded-md pl-7 pr-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400"
                 required
               />
             </div>
@@ -345,7 +345,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
             min={1}
             value={quantity}
             onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
-            className="w-40 border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            className="w-40 border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
         </div>
 
@@ -362,7 +362,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
               onChange={(e) => setPostcode(e.target.value.toUpperCase())}
               placeholder="e.g., SW1A 1AA"
               maxLength={8}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400"
             />
             <p className="mt-1 text-xs text-gray-600">Helps buyers estimate shipping costs</p>
           </div>
@@ -373,7 +373,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
               name="shippingOption"
               value={shippingOption}
               onChange={(e) => setShippingOption(e.target.value as ShippingOption)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
               required
             >
               <option value="both">Collection or Delivery</option>
@@ -408,7 +408,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
                 name="returnDays"
                 value={returnDays}
                 onChange={(e) => setReturnDays(Number(e.target.value))}
-                className="w-40 border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                className="w-40 border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
               >
                 <option value={7}>7 days</option>
                 <option value={14}>14 days</option>
@@ -426,7 +426,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Add any useful details: mileage, wear, defects, what's included, shipping/collection…"
-            className="w-full min-h-[120px] border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            className="w-full min-h-[120px] border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400"
             maxLength={1000}
           />
           <p className="mt-1 text-xs text-gray-600">{description.length}/1000</p>
