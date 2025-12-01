@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import MobileTabBar from "@/components/MobileTabBar";
 import Footer from "@/components/Footer";
 import type { ReactNode } from "react";
+import { Analytics } from "@vercel/analytics/react";
 // Removed unused import
 // We need a small client wrapper for the tab bar to fetch current user name
 // Keep this tiny client island inside layout without converting full layout to client.
@@ -23,6 +24,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         </div>
         {/* Mobile persistent tab bar */}
         <MobileNavWrapper />
+        {/* Vercel Analytics */}
+        <Analytics />
       </body>
     </html>
   );
