@@ -19,6 +19,7 @@ import {
 import DisplayWall from "@/components/DisplayWall";
 import GarageStats from "@/components/GarageStats";
 import EnhancedVehicleForm from "@/components/EnhancedVehicleForm";
+import { scheduleVehicleReminders } from "@/lib/reminderScheduler";
 
 /* ----------------------------- Small helpers ----------------------------- */
 function cx(...parts: Array<string | false | null | undefined>) {
@@ -568,7 +569,7 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
       {mine && openAdd && (
         <div className="px-6 py-5 border-t border-gray-200 bg-gray-50/60">
           <EnhancedVehicleForm
-            onSubmit={(vehicle) => {
+            onSubmit={async (vehicle) => {
               const newCar: CarType = {
                 id: String(Date.now()),
                 make: vehicle.make!,
@@ -590,6 +591,19 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
               saveMyCars([...cars, newCar]);
               setCars((prev) => [...prev, newCar]);
               if (cars.length === 0) setSelectedCarId(newCar.id);
+              
+              // Schedule reminders if enabled
+              await scheduleVehicleReminders(displayName, newCar.id, {
+                mot: {
+                  enabled: newCar.motReminder || false,
+                  expiryDate: newCar.motExpiry,
+                },
+                insurance: {
+                  enabled: newCar.insuranceReminder || false,
+                  expiryDate: newCar.insuranceExpiry,
+                },
+              });
+              
               setOpenAdd(false);
               setFormErr(null);
             }}
