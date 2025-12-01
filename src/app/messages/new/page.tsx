@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase";
 
-export default function NewMessageRouter() {
+function NewMessageRouterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
@@ -104,5 +104,19 @@ export default function NewMessageRouter() {
         )}
       </div>
     </section>
+  );
+}
+
+export default function NewMessageRouter() {
+  return (
+    <Suspense fallback={
+      <section className="page-center px-4 py-16">
+        <div className="max-w-md mx-auto rounded-xl border border-gray-200 bg-white p-6 text-sm shadow-sm text-center">
+          <div className="text-gray-700">Loading…</div>
+        </div>
+      </section>
+    }>
+      <NewMessageRouterContent />
+    </Suspense>
   );
 }
