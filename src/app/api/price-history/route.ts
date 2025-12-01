@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+// Force Node runtime (avoid Edge subtle env differences)
+export const runtime = "nodejs";
+
 /*
   Enhanced logging added to help diagnose 500 errors in production.
   Logs avoid leaking secret values; only presence/length metadata is recorded.
 */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Prefer anon key for public SELECT; avoid exposing service role unnecessarily
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // optional fallback
 
 // GET /api/price-history?listing_id=xxx - Fetch price history for a listing
 export async function GET(req: NextRequest) {
@@ -23,16 +28,19 @@ export async function GET(req: NextRequest) {
     }
 
     // Validate environment configuration early
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error("[price-history] Missing Supabase env vars", {
-        hasUrl: !!supabaseUrl,
-        hasServiceKey: !!supabaseServiceKey,
-      });
-      return NextResponse.json({ error: "Service configuration error" }, { status: 500 });
+    if (!supabaseUrl) {
+      console.error("[price-history] Missing Supabase URL env var");
+      return NextResponse.json({ error: "Service configuration error: no URL" }, { status: 500 });
+    }
+    if (!supabaseAnonKey && !supabaseServiceKey) {
+      console.error("[price-history] Missing both anon and service role keys");
+      return NextResponse.json({ error: "Service configuration error: no auth key" }, { status: 500 });
     }
 
-    // Create client
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  // Decide which key to use (anon preferred for public read)
+  const keyToUse = supabaseAnonKey || supabaseServiceKey!;
+  const usingService = !supabaseAnonKey && !!supabaseServiceKey;
+  const supabase = createClient(supabaseUrl, keyToUse);
 
     // Perform query
     const { data: history, error } = await supabase
@@ -42,14 +50,16 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: true });
 
     if (error) {
-      console.error("[price-history] Query error", {
-        listing_id,
+      const errPayload = {
+        error: "Failed to fetch price history",
         code: (error as any)?.code,
         message: (error as any)?.message,
         details: (error as any)?.details,
         hint: (error as any)?.hint,
-      });
-      return NextResponse.json({ error: "Failed to fetch price history" }, { status: 500 });
+        listing_id,
+      };
+      console.error("[price-history] Query error", errPayload);
+      return NextResponse.json(errPayload, { status: 500, headers: { "X-Price-History-Stage": "query-error" } });
     }
 
     const safeHistory = Array.isArray(history) ? history : [];
@@ -79,19 +89,21 @@ export async function GET(req: NextRequest) {
       payload._debug = {
         env: {
           hasUrl: !!supabaseUrl,
-          hasServiceKey: !!supabaseServiceKey,
+          hasAnon: !!supabaseAnonKey,
+          usingServiceRole: usingService,
         },
         timing_ms: Date.now() - started,
         listing_id,
         rows: safeHistory.length,
+        stage: "success",
       };
     }
-    return NextResponse.json(payload, { status: 200, headers: { "X-Price-History-Trace": "v2" } });
+    return NextResponse.json(payload, { status: 200, headers: { "X-Price-History-Trace": "v3" } });
   } catch (error) {
     console.error("[price-history] Uncaught error", {
       listing_id: new URL(req.url).searchParams.get("listing_id"),
       err: (error as any)?.message || error,
     });
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error", stage: "uncaught" }, { status: 500, headers: { "X-Price-History-Stage": "uncaught" } });
   }
 }
