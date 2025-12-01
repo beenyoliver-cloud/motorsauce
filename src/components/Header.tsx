@@ -143,6 +143,13 @@ export default function Header() {
     };
   }, []);
 
+   // Open cart drawer on custom event
+   useEffect(() => {
+     const handleOpenCart = () => setCartOpen(true);
+     window.addEventListener("ms:opencart", handleOpenCart as EventListener);
+     return () => window.removeEventListener("ms:opencart", handleOpenCart as EventListener);
+   }, []);
+
   const displayName = useMemo(() => getDisplayName(user), [user]);
   const initials = useMemo(() => getInitials(displayName), [displayName]);
   const profileHref = user ? `/profile/${encodeURIComponent(user.name)}` : "/auth/login";
