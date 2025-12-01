@@ -6,6 +6,7 @@ import Link from "next/link";
 import { MessageCircle, CheckSquare, Square, Trash2, X, Search, Filter } from "lucide-react";
 import { fetchThreads, Thread, deleteThread } from "@/lib/messagesClient";
 import { displayName } from "@/lib/names";
+import OffersInbox from "@/components/OffersInbox";
 
 export default function MessagesIndex() {
   const router = useRouter();
@@ -137,7 +138,24 @@ export default function MessagesIndex() {
   }
 
   return (
-    <div className="max-w-screen-sm mx-auto">
+    <div className="max-w-7xl mx-auto lg:flex lg:gap-6 lg:p-4">
+      {/* Offers Sidebar - Desktop only */}
+      <aside className="hidden lg:block lg:w-80 xl:w-96 shrink-0">
+        <div className="sticky top-4 border border-gray-200 rounded-xl bg-white shadow-sm overflow-hidden">
+          <div className="px-4 py-3 bg-gradient-to-r from-yellow-50 to-yellow-100 border-b border-yellow-200">
+            <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+              <MessageCircle size={18} className="text-yellow-600" />
+              Offers on Your Listings
+            </h2>
+          </div>
+          <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
+            <OffersInbox />
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Messages List */}
+      <div className="flex-1 min-w-0">
       {/* Header with actions */}
       <div className="border-b border-gray-200 bg-white px-4 py-3 sticky top-0 z-10">
         <div className="flex items-center justify-between mb-3">
@@ -309,6 +327,7 @@ export default function MessagesIndex() {
             );
           })
         )}
+      </div>
       </div>
     </div>
   );
