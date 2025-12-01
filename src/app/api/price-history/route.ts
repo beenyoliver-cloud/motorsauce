@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const listing_id = searchParams.get("listing_id");
+    const debug = searchParams.get("debug") === "1";
 
     if (!listing_id) {
       console.warn("[price-history] Missing listing_id param");
@@ -66,14 +67,26 @@ export async function GET(req: NextRequest) {
       ms: Date.now() - started,
     });
 
-    return NextResponse.json({
+    const payload: any = {
       history: safeHistory,
       stats: {
         total_changes: priceChanges.length,
         has_recent_reduction: hasReduction,
         latest_reduction: latestReduction,
       },
-    });
+    };
+    if (debug) {
+      payload._debug = {
+        env: {
+          hasUrl: !!supabaseUrl,
+          hasServiceKey: !!supabaseServiceKey,
+        },
+        timing_ms: Date.now() - started,
+        listing_id,
+        rows: safeHistory.length,
+      };
+    }
+    return NextResponse.json(payload, { status: 200, headers: { "X-Price-History-Trace": "v2" } });
   } catch (error) {
     console.error("[price-history] Uncaught error", {
       listing_id: new URL(req.url).searchParams.get("listing_id"),
