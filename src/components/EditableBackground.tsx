@@ -86,7 +86,7 @@ export default function EditableBackground({
           <img 
             src={src} 
             alt="Profile background" 
-            className="w-full h-full object-cover"
+            className="site-image w-full h-full object-cover"
           />
         )}
       </div>

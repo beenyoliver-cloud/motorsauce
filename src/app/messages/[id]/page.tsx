@@ -5,15 +5,33 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import ThreadClientNew from "@/components/ThreadClientNew";
 
-export default function MessagesThreadPage({ params }: { params: { id: string } }) {
-  // Params are already resolved for client components; avoid React experimental use() which breaks on client.
-  const threadId = decodeURIComponent(params.id);
+type PageProps = {
+  params: Promise<{ id: string }>;
+};
+
+export default function MessagesThreadPage({ params }: PageProps) {
+  // For client components in Next.js 15, we need to unwrap params
+  const [threadId, setThreadId] = useState<string>("");
+
+  useEffect(() => {
+    params.then(p => setThreadId(decodeURIComponent(p.id)));
+  }, [params]);
   const [forceOfferToast, setForceOfferToast] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setForceOfferToast(params.get("offer") ? true : false);
   }, []);
+
+  if (!threadId) {
+    return (
+      <section className="fixed inset-0 md:relative md:py-4 md:px-4 md:max-w-5xl md:mx-auto">
+        <div className="h-full flex items-center justify-center">
+          <div className="text-sm text-gray-500">Loading...</div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="fixed inset-0 md:relative md:py-4 md:px-4 md:max-w-5xl md:mx-auto">

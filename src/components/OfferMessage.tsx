@@ -228,7 +228,7 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
             <img 
               src={img} 
               alt="" 
-              className="h-20 w-28 rounded-lg object-cover bg-gray-100 border border-gray-200" 
+              className="site-image h-20 w-28 rounded-lg bg-gray-100 border border-gray-200 object-cover"
             />
           ) : (
             <div className="h-20 w-28 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center">
