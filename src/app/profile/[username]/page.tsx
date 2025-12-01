@@ -49,7 +49,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
   const { username } = await params;
   const sp = await searchParams;
   const displayName = decodeURIComponent(username);
-  const activeTab = (sp?.tab ?? "my") as "saved" | "my" | "about" | "reviews";
+  const activeTab = (sp?.tab ?? "my") as "saved" | "my" | "about" | "reviews" | "garage";
   const autoEdit = sp?.edit === "1";
   const baseHref = `/profile/${encodeURIComponent(displayName)}`;
 
@@ -172,7 +172,6 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
                 toUserId={sellerMetrics.id}
               />
               <ReportUserButton sellerName={displayName} />
-              <EditProfileTopButton displayName={displayName} baseHref={baseHref} />
             </div>
           </div>
 
@@ -197,7 +196,12 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
       </div>
 
       {/* ---------- Tabs (Saved is private; label adapts to owner/other) ---------- */}
-      <SavedTabGate sellerName={displayName} baseHref={baseHref} activeTab={activeTab} />
+      <SavedTabGate 
+        sellerName={displayName} 
+        baseHref={baseHref} 
+        activeTab={activeTab}
+        isBusinessAccount={isBusinessAccount}
+      />
 
       {/* ---------- Content ---------- */}
       <div className="mt-4 space-y-4">
@@ -218,8 +222,10 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
           </div>
         )}
 
-        {/* NEW: My Garage (owner can toggle Public/Private, others see only if Public) */}
-        <MyGarageCard displayName={displayName} />
+        {/* Garage tab - personal users only */}
+        {activeTab === "garage" && !isBusinessAccount && (
+          <MyGarageCard displayName={displayName} />
+        )}
       </div>
 
       {/* Breadcrumbs */}

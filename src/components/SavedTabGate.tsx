@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
 import { getCurrentUserSync, isMe } from "@/lib/auth";
 import MySavedTab from "@/components/MySavedTab";
+import { loadMyCars } from "@/lib/garage";
 
 /** Simple tab link */
 function TabLink({ href, label, isActive }: { href: string; label: string; isActive: boolean }) {
@@ -25,17 +26,30 @@ export default function SavedTabGate({
   sellerName,
   baseHref,
   activeTab,
+  isBusinessAccount,
 }: {
   sellerName: string;
   baseHref: string;
-  activeTab: "saved" | "my" | "about" | "reviews";
+  activeTab: "saved" | "my" | "about" | "reviews" | "garage";
+  isBusinessAccount?: boolean;
 }) {
   const [me, setMe] = useState(false);
+  const [garageCount, setGarageCount] = useState(0);
 
   useEffect(() => {
     isMe(sellerName).then(setMe);
     getCurrentUserSync() ?? null;
-  }, [sellerName]);
+    
+    // Load garage count if not business
+    if (!isBusinessAccount) {
+      try {
+        const cars = loadMyCars();
+        setGarageCount(cars.length);
+      } catch {
+        setGarageCount(0);
+      }
+    }
+  }, [sellerName, isBusinessAccount]);
 
   const listingsLabel = useMemo(
     () => (me ? "My Listings" : `${sellerName}'s listings`),
@@ -50,6 +64,13 @@ export default function SavedTabGate({
         <TabLink href={`${baseHref}?tab=my`} label={listingsLabel} isActive={activeTab === "my"} />
         <TabLink href={`${baseHref}?tab=about`} label="About" isActive={activeTab === "about"} />
         <TabLink href={`${baseHref}?tab=reviews`} label="Reviews (0)" isActive={activeTab === "reviews"} />
+        {!isBusinessAccount && (
+          <TabLink 
+            href={`${baseHref}?tab=garage`} 
+            label={`🚗 Garage${garageCount > 0 ? ` (${garageCount})` : ''}`} 
+            isActive={activeTab === "garage"} 
+          />
+        )}
       </div>
 
       {/* Saved content (gated) */}
