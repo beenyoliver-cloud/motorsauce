@@ -34,6 +34,8 @@ export default function BusinessSettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [uploading, setUploading] = useState<'logo' | 'banner' | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [initialBusinessInfo, setInitialBusinessInfo] = useState<BusinessInfo | null>(null);
   
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -103,6 +105,19 @@ export default function BusinessSettingsPage() {
     loadBusinessInfo();
   }, []);
 
+  // Warn user about unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
   async function loadBusinessInfo() {
     try {
       const user = await getCurrentUser();
@@ -130,7 +145,7 @@ export default function BusinessSettingsPage() {
         .single();
 
       if (data) {
-        setBusinessInfo({
+        const loadedInfo = {
           business_name: data.business_name || "",
           business_type: data.business_type || "",
           logo_url: data.logo_url,
@@ -143,7 +158,9 @@ export default function BusinessSettingsPage() {
           years_established: data.years_established,
           opening_hours: data.opening_hours || businessInfo.opening_hours,
           business_address: data.business_address,
-        });
+        };
+        setBusinessInfo(loadedInfo);
+        setInitialBusinessInfo(loadedInfo);
       }
     } catch (err) {
       console.error("Error loading business info:", err);
@@ -174,6 +191,8 @@ export default function BusinessSettingsPage() {
       if (updateError) throw updateError;
 
       setSuccess(true);
+      setHasUnsavedChanges(false);
+      setInitialBusinessInfo(businessInfo);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       console.error("Error saving:", err);
@@ -210,6 +229,7 @@ export default function BusinessSettingsPage() {
         setBusinessInfo({ ...businessInfo, banner_url: data.url });
       }
 
+      setHasUnsavedChanges(true);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
@@ -217,6 +237,11 @@ export default function BusinessSettingsPage() {
     } finally {
       setUploading(null);
     }
+  }
+
+  function handleBusinessInfoChange(updates: Partial<BusinessInfo>) {
+    setBusinessInfo({ ...businessInfo, ...updates });
+    setHasUnsavedChanges(true);
   }
 
   function handleLogoFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -243,8 +268,7 @@ export default function BusinessSettingsPage() {
 
   function addSpecialty() {
     if (specialtyInput.trim() && !businessInfo.specialties.includes(specialtyInput.trim())) {
-      setBusinessInfo({
-        ...businessInfo,
+      handleBusinessInfoChange({
         specialties: [...businessInfo.specialties, specialtyInput.trim()],
       });
       setSpecialtyInput("");
@@ -252,8 +276,7 @@ export default function BusinessSettingsPage() {
   }
 
   function removeSpecialty(index: number) {
-    setBusinessInfo({
-      ...businessInfo,
+    handleBusinessInfoChange({
       specialties: businessInfo.specialties.filter((_, i) => i !== index),
     });
   }
@@ -327,7 +350,7 @@ export default function BusinessSettingsPage() {
                 <input
                   type="text"
                   value={businessInfo.business_name}
-                  onChange={(e) => setBusinessInfo({ ...businessInfo, business_name: e.target.value })}
+                  onChange={(e) => handleBusinessInfoChange({ business_name: e.target.value })}
                   className={inputClass}
                   required
                 />
@@ -339,7 +362,7 @@ export default function BusinessSettingsPage() {
                 </label>
                 <select
                   value={businessInfo.business_type}
-                  onChange={(e) => setBusinessInfo({ ...businessInfo, business_type: e.target.value })}
+                  onChange={(e) => handleBusinessInfoChange({ business_type: e.target.value })}
                   className={inputClass}
                   required
                 >
@@ -362,7 +385,7 @@ export default function BusinessSettingsPage() {
                 <input
                   type="number"
                   value={businessInfo.years_established || ""}
-                  onChange={(e) => setBusinessInfo({ ...businessInfo, years_established: e.target.value ? parseInt(e.target.value) : null })}
+                  onChange={(e) => handleBusinessInfoChange({ years_established: e.target.value ? parseInt(e.target.value) : null })}
                   className={inputClass}
                   min="1900"
                   max={new Date().getFullYear()}
@@ -394,7 +417,7 @@ export default function BusinessSettingsPage() {
                     <input
                       type="url"
                       value={businessInfo.logo_url || ""}
-                      onChange={(e) => setBusinessInfo({ ...businessInfo, logo_url: e.target.value })}
+                      onChange={(e) => handleBusinessInfoChange({ logo_url: e.target.value })}
                       placeholder="https://example.com/logo.jpg"
                       className={inputClass + " mb-2"}
                     />
@@ -439,7 +462,7 @@ export default function BusinessSettingsPage() {
                   <input
                     type="url"
                     value={businessInfo.banner_url || ""}
-                    onChange={(e) => setBusinessInfo({ ...businessInfo, banner_url: e.target.value })}
+                    onChange={(e) => handleBusinessInfoChange({ banner_url: e.target.value })}
                     placeholder="https://example.com/banner.jpg"
                     className={inputClass + " mb-2"}
                   />
@@ -480,7 +503,7 @@ export default function BusinessSettingsPage() {
                 <input
                   type="tel"
                   value={businessInfo.phone_number || ""}
-                  onChange={(e) => setBusinessInfo({ ...businessInfo, phone_number: e.target.value })}
+                  onChange={(e) => handleBusinessInfoChange({ phone_number: e.target.value })}
                   className={inputClass}
                 />
               </div>
@@ -492,7 +515,7 @@ export default function BusinessSettingsPage() {
                 <input
                   type="url"
                   value={businessInfo.website_url || ""}
-                  onChange={(e) => setBusinessInfo({ ...businessInfo, website_url: e.target.value })}
+                  onChange={(e) => handleBusinessInfoChange({ website_url: e.target.value })}
                   className={inputClass}
                   placeholder="https://..."
                 />
@@ -505,7 +528,7 @@ export default function BusinessSettingsPage() {
                 <input
                   type="email"
                   value={businessInfo.customer_support_email || ""}
-                  onChange={(e) => setBusinessInfo({ ...businessInfo, customer_support_email: e.target.value })}
+                  onChange={(e) => handleBusinessInfoChange({ customer_support_email: e.target.value })}
                   className={inputClass}
                 />
               </div>
@@ -522,7 +545,7 @@ export default function BusinessSettingsPage() {
                 </label>
                 <textarea
                   value={businessInfo.about_business || ""}
-                  onChange={(e) => setBusinessInfo({ ...businessInfo, about_business: e.target.value })}
+                  onChange={(e) => handleBusinessInfoChange({ about_business: e.target.value })}
                   className={inputClass}
                   rows={6}
                   placeholder="Tell customers about your business..."
@@ -581,8 +604,7 @@ export default function BusinessSettingsPage() {
                     <input
                       type="checkbox"
                       checked={!hours.closed}
-                      onChange={(e) => setBusinessInfo({
-                        ...businessInfo,
+                      onChange={(e) => handleBusinessInfoChange({
                         opening_hours: {
                           ...businessInfo.opening_hours,
                           [day]: { ...hours, closed: !e.target.checked }
@@ -597,8 +619,7 @@ export default function BusinessSettingsPage() {
                       <input
                         type="time"
                         value={hours.open}
-                        onChange={(e) => setBusinessInfo({
-                          ...businessInfo,
+                        onChange={(e) => handleBusinessInfoChange({
                           opening_hours: {
                             ...businessInfo.opening_hours,
                             [day]: { ...hours, open: e.target.value }
@@ -610,8 +631,7 @@ export default function BusinessSettingsPage() {
                       <input
                         type="time"
                         value={hours.close}
-                        onChange={(e) => setBusinessInfo({
-                          ...businessInfo,
+                        onChange={(e) => handleBusinessInfoChange({
                           opening_hours: {
                             ...businessInfo.opening_hours,
                             [day]: { ...hours, close: e.target.value }
@@ -640,8 +660,7 @@ export default function BusinessSettingsPage() {
                 <input
                   type="text"
                   value={businessInfo.business_address?.street || ""}
-                  onChange={(e) => setBusinessInfo({
-                    ...businessInfo,
+                  onChange={(e) => handleBusinessInfoChange({
                     business_address: { ...businessInfo.business_address!, street: e.target.value }
                   })}
                   className={inputClass}
@@ -654,8 +673,7 @@ export default function BusinessSettingsPage() {
                 <input
                   type="text"
                   value={businessInfo.business_address?.city || ""}
-                  onChange={(e) => setBusinessInfo({
-                    ...businessInfo,
+                  onChange={(e) => handleBusinessInfoChange({
                     business_address: { ...businessInfo.business_address!, city: e.target.value }
                   })}
                   className={inputClass}
@@ -668,8 +686,7 @@ export default function BusinessSettingsPage() {
                 <input
                   type="text"
                   value={businessInfo.business_address?.postcode || ""}
-                  onChange={(e) => setBusinessInfo({
-                    ...businessInfo,
+                  onChange={(e) => handleBusinessInfoChange({
                     business_address: { ...businessInfo.business_address!, postcode: e.target.value }
                   })}
                   className={inputClass}
@@ -682,8 +699,7 @@ export default function BusinessSettingsPage() {
                 <input
                   type="text"
                   value={businessInfo.business_address?.country || ""}
-                  onChange={(e) => setBusinessInfo({
-                    ...businessInfo,
+                  onChange={(e) => handleBusinessInfoChange({
                     business_address: { ...businessInfo.business_address!, country: e.target.value }
                   })}
                   className={inputClass}
