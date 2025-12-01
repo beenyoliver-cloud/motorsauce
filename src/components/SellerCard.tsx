@@ -32,17 +32,19 @@ export default function SellerCard({
       <div className="flex items-start gap-4">
         {/* Avatar */}
         <Link href={profileUrl} className="flex-shrink-0">
+          <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200">
           {avatar ? (
             <SafeImage
               src={avatar}
               alt={name}
-              className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+              className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-16 h-16 rounded-full bg-yellow-100 flex items-center justify-center border-2 border-gray-200">
+            <div className="w-full h-full bg-yellow-100 flex items-center justify-center">
               <User size={32} className="text-yellow-700" />
             </div>
           )}
+          </div>
         </Link>
 
         {/* Info */}

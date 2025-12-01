@@ -25,7 +25,7 @@ export default function BusinessHeader({ business, isOwner }: Props) {
           <img
             src={bannerUrl}
             alt={`${business.business_name} banner`}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover object-center"
             onError={() => setBannerError(true)}
           />
         )}
@@ -52,7 +52,7 @@ export default function BusinessHeader({ business, isOwner }: Props) {
                 <img
                   src={logoUrl}
                   alt={`${business.business_name} logo`}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-center"
                   onError={() => setLogoError(true)}
                 />
               ) : (
