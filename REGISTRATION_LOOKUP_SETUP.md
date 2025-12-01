@@ -1,5 +1,8 @@
 # Vehicle Registration Lookup Setup
 
+> **📌 STATUS UPDATE (1 Dec 2025):** DVLA API key application submitted and pending approval.  
+> Once approved, add the key to `.env.local` and uncomment the `lookupDVLA()` function in `/api/registration/route.ts`.
+
 ## Overview
 
 The registration lookup feature allows users to search for compatible parts by entering their UK number plate. The system looks up vehicle details (make, model, year, generation, engine) and filters listings accordingly.
