@@ -70,4 +70,8 @@ CREATE TRIGGER trg_sync_message_content
   FOR EACH ROW
   EXECUTE FUNCTION sync_message_content();
 
-RAISE NOTICE '✅ Messages schema fixed: content (legacy) and text_content (new) are now compatible';
+-- Final success message
+DO $$
+BEGIN
+  RAISE NOTICE '✅ Messages schema fixed: content (legacy) and text_content (new) are now compatible';
+END $$;
