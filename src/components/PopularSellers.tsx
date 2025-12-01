@@ -76,9 +76,11 @@ export default function PopularSellers() {
             }}
             className="group flex flex-col items-center text-center p-3 border border-gray-200 rounded-xl bg-white hover:shadow-lg hover:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all duration-300 transform hover:-translate-y-1 hover:scale-105"
           >
-            <div className="relative w-16 h-16 rounded-full overflow-hidden ring-2 ring-gray-200 group-hover:ring-yellow-400 transition-all duration-300 shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={s.avatar || "/images/seller1.jpg"} alt={s.seller_name} className="absolute inset-0 w-full h-full object-cover object-center" />
+            <div className="w-16 h-16 shrink-0 ring-2 ring-gray-200 group-hover:ring-yellow-400 transition-all duration-300 rounded-full overflow-hidden">
+              <div className="w-full h-full overflow-hidden rounded-full">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={s.avatar || "/images/seller1.jpg"} alt={s.seller_name} className="w-full h-full object-cover object-center" />
+              </div>
             </div>
             <div className="mt-2 text-sm font-semibold text-gray-900 group-hover:text-yellow-600 line-clamp-1 transition-colors duration-300" title={s.seller_name}>{s.seller_name}</div>
             <div className="text-[11px] text-gray-600 flex items-center gap-2">
