@@ -1,79 +1,107 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import {
-  appendMessage,
-  getReadThreads,
-  nowClock,
-  publishUnread,
-  setReadThreads,
-  Thread,
-  upsertThreadForPeer,
-  loadThreads,
-} from "@/lib/chatStore";
-import { getCurrentUserSync } from "@/lib/auth";
-
-function slugify(x: string) {
-  return x.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-}
+import { useRouter, useSearchParams } from "next/navigation";
+import { supabaseBrowser } from "@/lib/supabase";
 
 export default function NewMessageRouter() {
   const router = useRouter();
-  const [sp, setSp] = useState(() => new URLSearchParams(typeof window !== 'undefined' ? window.location.search : ""));
+  const searchParams = useSearchParams();
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const onPop = () => setSp(new URLSearchParams(window.location.search));
-    window.addEventListener("popstate", onPop as EventListener);
-    return () => window.removeEventListener("popstate", onPop as EventListener);
-  }, []);
+    async function findOrCreateThread() {
+      try {
+        const to = searchParams.get("to")?.trim();
+        const body = searchParams.get("body")?.trim();
+        const listingRef = searchParams.get("ref")?.trim();
 
-  useEffect(() => {
-    const me = getCurrentUserSync();
-    const selfName = me?.name?.trim() || "You";
-    const to = (sp.get("to") || "").trim();
-    const body = (sp.get("body") || "").trim();
-    const ref = (sp.get("ref") || "").trim();
+        if (!to) {
+          router.replace("/messages");
+          return;
+        }
 
-    if (!to) {
-      router.replace("/messages");
-      return;
+        const supabase = supabaseBrowser();
+        
+        // Get current user
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+          router.push("/auth/login?next=/messages");
+          return;
+        }
+
+        // Find peer by name (case-insensitive)
+        const { data: peerProfiles } = await supabase
+          .from("profiles")
+          .select("id, name")
+          .ilike("name", to);
+
+        if (!peerProfiles || peerProfiles.length === 0) {
+          setError(`Could not find user "${to}"`);
+          setTimeout(() => router.replace("/messages"), 2000);
+          return;
+        }
+
+        const peer = peerProfiles[0];
+
+        if (peer.id === user.id) {
+          setError("You cannot message yourself");
+          setTimeout(() => router.replace("/messages"), 2000);
+          return;
+        }
+
+        // Get auth token for API call
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          router.push("/auth/login?next=/messages");
+          return;
+        }
+
+        // Call API to find or create thread
+        const response = await fetch("/api/messages/threads", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            peerId: peer.id,
+            listingRef: listingRef || null,
+          }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || "Failed to create conversation");
+        }
+
+        const { thread } = await response.json();
+
+        // If there's an initial message, navigate with it as a query param
+        // The ThreadClientNew component can handle showing it in the input
+        if (body) {
+          router.replace(`/messages/${encodeURIComponent(thread.id)}?initialMessage=${encodeURIComponent(body)}`);
+        } else {
+          router.replace(`/messages/${encodeURIComponent(thread.id)}`);
+        }
+      } catch (err) {
+        console.error("[NewMessage] Error:", err);
+        setError(err instanceof Error ? err.message : "Failed to create conversation");
+        setTimeout(() => router.replace("/messages"), 2000);
+      }
     }
-    if (to.toLowerCase() === selfName.toLowerCase()) {
-      router.replace("/messages?err=self");
-      return;
-    }
 
-    const preferThreadId = ref ? `t_${slugify(selfName)}_${slugify(to)}_${ref}` : undefined;
-
-    const thread: Thread = upsertThreadForPeer(selfName, to, {
-      preferThreadId,
-      initialLast: body || "New conversation",
-    });
-
-    const currentRead = getReadThreads();
-    if (!currentRead.includes(thread.id)) {
-      const next = [...currentRead, thread.id];
-      setReadThreads(next);
-      publishUnread(loadThreads(), next);
-    }
-
-    if (body) {
-      appendMessage(thread.id, {
-        id: `m_${Date.now()}`,
-        from: selfName,
-        text: body,
-        ts: nowClock(),
-      });
-    }
-
-    router.replace(`/messages/${encodeURIComponent(thread.id)}`);
-  }, [router, sp]);
+    findOrCreateThread();
+  }, [router, searchParams]);
 
   return (
     <section className="page-center px-4 py-16">
-      <div className="max-w-md mx-auto rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-700 shadow-sm text-center">
-        Creating conversation…
+      <div className="max-w-md mx-auto rounded-xl border border-gray-200 bg-white p-6 text-sm shadow-sm text-center">
+        {error ? (
+          <div className="text-red-600 font-medium">{error}</div>
+        ) : (
+          <div className="text-gray-700">Finding or creating conversation…</div>
+        )}
       </div>
     </section>
   );
