@@ -186,7 +186,7 @@ export default function FeaturedRow({
               style={{ animationDelay: `${idx * 50}ms` }}
             >
               <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
-                <SafeImage src={p.image} alt={p.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
+                <SafeImage src={p.image} alt={p.title} className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-110" />
                 <div className="absolute inset-0 bg-yellow-500/0 group-hover:bg-yellow-500/10 transition-all duration-300" />
               </div>
               <div className="p-2">

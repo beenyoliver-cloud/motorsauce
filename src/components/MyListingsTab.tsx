@@ -90,13 +90,13 @@ export default function MyListingsTab({ sellerName }: { sellerName?: string }) {
         return (
           <div key={String(l.id)} className="group border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition">
             <Link href={`/listing/${l.id}`} className="block">
-              <div className="relative aspect-[4/3] bg-gray-50">
-                <SafeImage src={l.image} alt={l.title} className="absolute inset-0 w-full h-full object-cover" />
+              <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
+                <SafeImage src={l.image} alt={l.title} className="absolute inset-0 w-full h-full object-cover object-center" />
                 {isMine && (
                   <button
                     type="button"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/listing/${l.id}/edit`); }}
-                    className="absolute top-2 right-2 rounded-md bg-black/70 px-2 py-1 text-xs font-medium text-white opacity-0 group-hover:opacity-100 transition"
+                    className="absolute top-2 right-2 rounded-md bg-black/70 px-2 py-1 text-xs font-medium text-white opacity-0 group-hover:opacity-100 transition z-10"
                   >
                     Edit
                   </button>

@@ -139,8 +139,8 @@ export default function ResultsGrid() {
           href={`/listing/${l.id}`}
           className="block border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition"
         >
-          <div className="relative aspect-[4/3] bg-gray-50">
-            <SafeImage src={l.image} alt={l.title} className="absolute inset-0 w-full h-full object-cover" />
+          <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
+            <SafeImage src={l.image} alt={l.title} className="absolute inset-0 w-full h-full object-cover object-center" />
           </div>
           <div className="p-3">
             <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">{l.title}</h3>

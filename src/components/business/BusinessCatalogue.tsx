@@ -130,7 +130,7 @@ export default function BusinessCatalogue({ businessId, isOwner }: Props) {
                     <img
                       src={listing.images[0]}
                       alt={listing.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-200"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
@@ -140,7 +140,7 @@ export default function BusinessCatalogue({ businessId, isOwner }: Props) {
                   
                   {/* Promotion Badge */}
                   {promoBadge && promo && (
-                    <div className={`absolute top-2 right-2 ${promoBadge.color} text-white px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1 shadow-lg`}>
+                    <div className={`absolute top-2 right-2 z-10 ${promoBadge.color} text-white px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1 shadow-lg`}>
                       <promoBadge.icon className="w-3 h-3" />
                       {promo.promotion_text || promoBadge.text}
                     </div>

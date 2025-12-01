@@ -480,9 +480,9 @@ function SearchPageInner() {
                     className="group relative border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg transition-all"
                   >
                   <Link href={`/listing/${l.id}`} className="block">
-                    <div className="relative aspect-[4/3] bg-gray-50">
+                    <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
                     <span
-                      className={`absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded ${
+                      className={`absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded z-10 ${
                         l.category === "OEM"
                           ? "bg-yellow-500 text-black"
                           : l.category === "Aftermarket"
@@ -495,7 +495,7 @@ function SearchPageInner() {
                     <SafeImage
                       src={l.image}
                       alt={l.title}
-                      className="absolute inset-0 h-full w-full object-cover"
+                      className="absolute inset-0 h-full w-full object-cover object-center"
                       loading="lazy"
                     />
                   </div>
