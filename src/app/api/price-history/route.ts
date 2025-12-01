@@ -43,23 +43,52 @@ export async function GET(req: NextRequest) {
   const supabase = createClient(supabaseUrl, keyToUse);
 
     // Perform query
-    const { data: history, error } = await supabase
-      .from("price_history")
-      .select("*")
-      .eq("listing_id", listing_id)
-      .order("created_at", { ascending: true });
+    let history: any[] | null = null;
+    let error: any = null;
+    try {
+      const { data, error: qError } = await supabase
+        .from("price_history")
+        .select("*")
+        .eq("listing_id", listing_id)
+        .order("created_at", { ascending: true });
+      history = data || [];
+      error = qError;
+    } catch (e) {
+      error = e;
+    }
+
+    // REST fallback if primary query failed
+    if (error) {
+      try {
+        const restUrl = `${supabaseUrl!.replace(/\/$/, '')}/rest/v1/price_history?select=*&listing_id=eq.${listing_id}&order=created_at.asc`;
+        const restRes = await fetch(restUrl, {
+          headers: {
+            apikey: keyToUse,
+            Authorization: `Bearer ${keyToUse}`,
+            Prefer: "transient" // avoid caching issues
+          }
+        });
+        if (restRes.ok) {
+          history = await restRes.json();
+          error = null; // recovered via REST
+        } else {
+          const restBody = await restRes.text();
+          console.error('[price-history] REST fallback failed', { status: restRes.status, body: restBody });
+        }
+      } catch (restErr) {
+        console.error('[price-history] REST fallback exception', { err: (restErr as any)?.message || restErr });
+      }
+    }
 
     if (error) {
       const errPayload = {
         error: "Failed to fetch price history",
-        code: (error as any)?.code,
-        message: (error as any)?.message,
-        details: (error as any)?.details,
-        hint: (error as any)?.hint,
+        stage: 'query-error',
         listing_id,
+        message: (error as any)?.message || String(error),
       };
-      console.error("[price-history] Query error", errPayload);
-      return NextResponse.json(errPayload, { status: 500, headers: { "X-Price-History-Stage": "query-error" } });
+      console.error('[price-history] Final failure', errPayload);
+      return NextResponse.json(errPayload, { status: 500, headers: { "X-Price-History-Stage": "final-failure" } });
     }
 
     const safeHistory = Array.isArray(history) ? history : [];
