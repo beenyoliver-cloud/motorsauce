@@ -149,7 +149,7 @@ export async function POST(
       return NextResponse.json({ error: "Thread not found" }, { status: 404 });
     }
 
-    // Attempt insert using new schema (from_user_id). Also include legacy 'sender' column to satisfy NOT NULL if present.
+    // Attempt insert using new schema (from_user_id). Also include legacy columns to satisfy NOT NULL if present.
     let insert = await supabase
       .from("messages")
       .insert({
@@ -158,6 +158,8 @@ export async function POST(
         sender: user.id, // legacy support; ignored if column doesn't exist
         message_type: type,
         text_content: type === "system" || type === "text" ? text : null,
+        content: type === "system" || type === "text" ? text : null, // legacy content column
+        text: type === "system" || type === "text" ? text : null, // another legacy variant
         offer_id: type === "offer" ? offerId : null,
         offer_amount_cents: type === "offer" ? offerAmountCents : null,
         offer_currency: type === "offer" ? (offerCurrency || "GBP") : null,
@@ -176,6 +178,7 @@ export async function POST(
             thread_id: threadId,
             sender: user.id,
             message_type: type,
+            content: type === "system" || type === "text" ? text : null,
             text: type === "system" || type === "text" ? text : null,
             offer_id: type === "offer" ? offerId : null,
             offer_amount_cents: type === "offer" ? offerAmountCents : null,
