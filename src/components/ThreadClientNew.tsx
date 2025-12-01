@@ -4,11 +4,12 @@
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { User, Calendar, Trash2 } from "lucide-react";
+import { User, Calendar, Trash2, Mail } from "lucide-react";
 import {
   fetchMessages,
   sendMessage,
   markThreadRead,
+  markThreadUnread,
   deleteThread as apiDeleteThread,
   Message,
 } from "@/lib/messagesClient";
@@ -46,6 +47,7 @@ export default function ThreadClientNew({
   const headerRef = useRef<HTMLDivElement | null>(null);
   const composerRef = useRef<HTMLDivElement | null>(null);
   const [viewportAdjustedHeight, setViewportAdjustedHeight] = useState<string | null>(null);
+  const isSendingRef = useRef(false); // Prevent polling during send
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -85,6 +87,11 @@ export default function ThreadClientNew({
 
     const loadData = async (initial = false) => {
       try {
+        // Skip polling refresh if user is sending a message
+        if (!initial && isSendingRef.current) {
+          return;
+        }
+        
         if (initial) {
           setIsInitialLoading(true);
         } else {
@@ -174,17 +181,24 @@ export default function ThreadClientNew({
     if (!text.trim() || isSending) return;
     setSendError(null);
     setIsSending(true);
+    isSendingRef.current = true; // Block polling during send
     try {
       const sent = await sendMessage(threadId, text.trim());
       if (sent) {
         setMessages(prev => [...prev, sent]);
         setDraft("");
+        // Force immediate refresh after send to ensure message appears
+        setTimeout(() => {
+          isSendingRef.current = false;
+        }, 1000); // Small delay to let server process
       } else {
         setSendError("Message failed to send. Please try again.");
+        isSendingRef.current = false;
       }
     } catch (err: any) {
       console.error("[ThreadClientNew] send error", err);
       setSendError(err.message || "Failed to send message");
+      isSendingRef.current = false;
     } finally {
       setIsSending(false);
     }
@@ -192,6 +206,13 @@ export default function ThreadClientNew({
 
   async function handleDelete() {
     const success = await apiDeleteThread(threadId);
+    if (success) {
+      router.push("/messages");
+    }
+  }
+
+  async function handleMarkUnread() {
+    const success = await markThreadUnread(threadId);
     if (success) {
       router.push("/messages");
     }
@@ -292,14 +313,24 @@ export default function ThreadClientNew({
               </div>
             </Link>
           )}
-          <button
-            onClick={handleDelete}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition"
-            title="Delete this conversation (only for you)"
-          >
-            <Trash2 size={16} />
-            Delete
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleMarkUnread}
+              className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition"
+              title="Mark as unread (eBay-style)"
+            >
+              <Mail size={16} />
+              <span className="hidden sm:inline">Unread</span>
+            </button>
+            <button
+              onClick={handleDelete}
+              className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition"
+              title="Delete this conversation (only for you)"
+            >
+              <Trash2 size={16} />
+              <span className="hidden sm:inline">Delete</span>
+            </button>
+          </div>
         </div>
       </div>
 

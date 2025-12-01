@@ -267,6 +267,30 @@ export async function markThreadRead(threadId: string): Promise<boolean> {
 }
 
 /**
+ * Mark a thread as unread (eBay-style)
+ */
+export async function markThreadUnread(threadId: string): Promise<boolean> {
+  try {
+    const authHeader = await getAuthHeader();
+    if (!authHeader) return false;
+
+    const res = await fetch("/api/messages/read", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: authHeader,
+      },
+      body: JSON.stringify({ threadId }),
+    });
+
+    return res.ok;
+  } catch (error) {
+    console.error("[messagesClient] Error marking thread unread:", error);
+    return false;
+  }
+}
+
+/**
  * Soft-delete a thread (only hides for current user)
  */
 export async function deleteThread(threadId: string): Promise<boolean> {
