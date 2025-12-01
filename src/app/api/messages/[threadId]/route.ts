@@ -159,7 +159,6 @@ export async function POST(
         message_type: type,
         text_content: type === "system" || type === "text" ? text : null,
         content: type === "system" || type === "text" ? text : null, // legacy content column
-        text: type === "system" || type === "text" ? text : null, // another legacy variant
         offer_id: type === "offer" ? offerId : null,
         offer_amount_cents: type === "offer" ? offerAmountCents : null,
         offer_currency: type === "offer" ? (offerCurrency || "GBP") : null,
@@ -179,7 +178,6 @@ export async function POST(
             sender: user.id,
             message_type: type,
             content: type === "system" || type === "text" ? text : null,
-            text: type === "system" || type === "text" ? text : null,
             offer_id: type === "offer" ? offerId : null,
             offer_amount_cents: type === "offer" ? offerAmountCents : null,
             offer_currency: type === "offer" ? (offerCurrency || "GBP") : null,
