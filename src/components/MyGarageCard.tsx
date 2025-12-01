@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import DisplayWall from "@/components/DisplayWall";
 import GarageStats from "@/components/GarageStats";
+import EnhancedVehicleForm from "@/components/EnhancedVehicleForm";
 
 /* ----------------------------- Small helpers ----------------------------- */
 function cx(...parts: Array<string | false | null | undefined>) {
@@ -566,108 +567,41 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
       {/* Add vehicle panel */}
       {mine && openAdd && (
         <div className="px-6 py-5 border-t border-gray-200 bg-gray-50/60">
-          <form onSubmit={addCar} className="grid grid-cols-1 md:grid-cols-6 gap-3">
-            {/* Make */}
-            <label className="grid gap-1">
-              <span className="text-xs text-gray-700">Make</span>
-              <select
-                value={make}
-                onChange={(e) => setMake(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              >
-                <option value="">Select make…</option>
-                {Object.keys(VEHICLES).map((mk) => (
-                  <option key={mk} value={mk}>{mk}</option>
-                ))}
-              </select>
-            </label>
-
-            {/* Model */}
-            <label className="grid gap-1">
-              <span className="text-xs text-gray-700">Model</span>
-              <select
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                disabled={!make}
-                className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-100 disabled:text-gray-500"
-              >
-                <option value="">{make ? "Select model…" : "Choose make first"}</option>
-                {(VEHICLES[make] || []).map((md) => (
-                  <option key={md} value={md}>{md}</option>
-                ))}
-              </select>
-            </label>
-
-            {/* Year */}
-            <label className="grid gap-1">
-              <span className="text-xs text-gray-700">Year</span>
-              <select
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              >
-                <option value="">Year…</option>
-                {YEARS.map((y) => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
-            </label>
-
-            {/* Upload */}
-            <div className="md:col-span-2">
-              <span className="text-xs text-gray-700">Photo</span>
-              <div className="mt-1 flex items-center gap-3">
-                <div className="h-16 w-24 rounded-md bg-white border border-gray-200 overflow-hidden">
-                  <CarThumb
-                    src={newImage}
-                    alt={year || make || model ? `${year} ${make} ${model}`.trim() : "Car preview"}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <label className="inline-flex items-center gap-1 text-xs px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 cursor-pointer focus-within:ring-2 focus-within:ring-yellow-400">
-                    <ImageIcon className="h-4 w-4" />
-                    Upload
-                    <input ref={uploadRef} type="file" accept="image/*" hidden onChange={onAddImageChange} />
-                  </label>
-                  {newImage && (
-                    <button
-                      type="button"
-                      onClick={() => setNewImage(undefined)}
-                      className="text-xs px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-900 hover:bg-gray-50"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div className="mt-1 text-[11px] text-gray-600">Tip: keep images under 2MB.</div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-end gap-2">
-              <button
-                type="submit"
-                disabled={!make || !model || !year}
-                className="inline-flex items-center justify-center gap-2 rounded-md bg-yellow-500 text-black font-semibold px-4 py-2 hover:bg-yellow-600 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              >
-                <Check className="h-4 w-4" /> Save
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setOpenAdd(false);
-                  setFormErr(null);
-                  setMake(""); setModel(""); setYear(""); setNewImage(undefined);
-                }}
-                className="inline-flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white text-gray-900 px-4 py-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              >
-                <X className="h-4 w-4" /> Cancel
-              </button>
-            </div>
-          </form>
-
+          <EnhancedVehicleForm
+            onSubmit={(vehicle) => {
+              const newCar: CarType = {
+                id: String(Date.now()),
+                make: vehicle.make!,
+                model: vehicle.model!,
+                year: vehicle.year!,
+                trim: vehicle.trim,
+                color: vehicle.color,
+                registration: vehicle.registration,
+                hideRegistration: vehicle.hideRegistration || false,
+                mileage: vehicle.mileage,
+                motExpiry: vehicle.motExpiry,
+                motReminder: vehicle.motReminder || false,
+                insuranceExpiry: vehicle.insuranceExpiry,
+                insuranceReminder: vehicle.insuranceReminder || false,
+                notes: vehicle.notes,
+                image: vehicle.image,
+                photos: [],
+              };
+              saveMyCars([...cars, newCar]);
+              setCars((prev) => [...prev, newCar]);
+              if (cars.length === 0) setSelectedCarId(newCar.id);
+              setOpenAdd(false);
+              setFormErr(null);
+            }}
+            onCancel={() => {
+              setOpenAdd(false);
+              setFormErr(null);
+            }}
+            vehicleMakes={VEHICLES}
+            years={YEARS}
+          />
           {formErr && (
-            <div className="mt-2 text-xs rounded-md border border-red-200 bg-red-50 text-red-800 px-2 py-1">
+            <div className="mt-3 text-xs rounded-md border border-red-200 bg-red-50 text-red-800 px-3 py-2">
               {formErr}
             </div>
           )}
