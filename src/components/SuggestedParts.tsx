@@ -77,8 +77,8 @@ export default function SuggestedParts({ limit = 12 }: Props) {
           href={`/listing/${p.id}`}
           className="block border border-gray-200 rounded-lg sm:rounded-xl overflow-hidden bg-white hover:shadow-md transition"
         >
-          <div className="relative aspect-square sm:aspect-[4/3] bg-gray-50">
-            <SafeImage src={p.image} alt={p.title} className="absolute inset-0 w-full h-full object-cover" />
+          <div className="relative aspect-square sm:aspect-[4/3] bg-gray-50 overflow-hidden">
+            <SafeImage src={p.image} alt={p.title} className="absolute inset-0 w-full h-full object-cover object-center" />
           </div>
           <div className="p-2 sm:p-3">
             <h3 className="text-[13px] sm:text-sm font-semibold text-gray-900 line-clamp-2">{p.title}</h3>

@@ -125,7 +125,7 @@ export default function ListingGallery({
             <SafeImage
               src={images[i]}
               alt={`${altBase} — image ${i + 1} of ${total}`}
-              className={`h-full w-full object-cover ${prefersReducedMotion ? "" : "transition-all"} duration-300 group-hover:scale-105`}
+              className={`h-full w-full object-cover object-center ${prefersReducedMotion ? "" : "transition-all"} duration-300 group-hover:scale-105`}
             />
           </button>
           {/* Zoom hint overlay */}

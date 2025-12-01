@@ -339,7 +339,7 @@ export default function CompatibilityPage() {
                       <img
                         src={img}
                         alt={item.title}
-                        className="h-full w-full object-cover group-hover:opacity-95 transition"
+                        className="h-full w-full object-cover object-center group-hover:opacity-95 transition"
                       />
                     </div>
                     <div className="p-3">

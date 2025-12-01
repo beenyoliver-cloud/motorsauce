@@ -120,10 +120,10 @@ export default function QuickViewModal({ listingId, isOpen, onClose }: QuickView
                   <SafeImage
                     src={images[currentImageIndex] || listing.image}
                     alt={listing.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover object-center"
                   />
                   <span
-                    className={`absolute top-3 left-3 text-xs px-3 py-1 rounded-full font-semibold ${
+                    className={`absolute top-3 left-3 text-xs px-3 py-1 rounded-full font-semibold z-10 ${
                       listing.category === "OEM"
                         ? "bg-yellow-500 text-black"
                         : listing.category === "Aftermarket"

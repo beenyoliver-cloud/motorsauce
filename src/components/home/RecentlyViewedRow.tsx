@@ -106,11 +106,11 @@ export default function RecentlyViewedRow() {
                       <SafeImage
                         src={listing.image}
                         alt={listing.title}
-                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
                       />
 
                       {/* Badges overlay */}
-                      <div className="absolute top-2 left-2 flex flex-col gap-1">
+                      <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
                         {listing.status === "active" && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-500 text-white text-[10px] font-semibold rounded-full shadow">
                             <CheckCircle2 className="h-3 w-3" />
