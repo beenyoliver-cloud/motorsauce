@@ -1,25 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+/*
+  Enhanced logging added to help diagnose 500 errors in production.
+  Logs avoid leaking secret values; only presence/length metadata is recorded.
+*/
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // GET /api/price-history?listing_id=xxx - Fetch price history for a listing
 export async function GET(req: NextRequest) {
+  const started = Date.now();
   try {
     const { searchParams } = new URL(req.url);
     const listing_id = searchParams.get("listing_id");
 
     if (!listing_id) {
-      return NextResponse.json(
-        { error: "listing_id is required" },
-        { status: 400 }
-      );
+      console.warn("[price-history] Missing listing_id param");
+      return NextResponse.json({ error: "listing_id is required" }, { status: 400 });
     }
 
+    // Validate environment configuration early
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error("[price-history] Missing Supabase env vars", {
+        hasUrl: !!supabaseUrl,
+        hasServiceKey: !!supabaseServiceKey,
+      });
+      return NextResponse.json({ error: "Service configuration error" }, { status: 500 });
+    }
+
+    // Create client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch price history
+    // Perform query
     const { data: history, error } = await supabase
       .from("price_history")
       .select("*")
@@ -27,33 +41,44 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: true });
 
     if (error) {
-      console.error("[price-history] Fetch error:", error);
-      return NextResponse.json(
-        { error: "Failed to fetch price history" },
-        { status: 500 }
-      );
+      console.error("[price-history] Query error", {
+        listing_id,
+        code: (error as any)?.code,
+        message: (error as any)?.message,
+        details: (error as any)?.details,
+        hint: (error as any)?.hint,
+      });
+      return NextResponse.json({ error: "Failed to fetch price history" }, { status: 500 });
     }
 
-    // Calculate stats
-    const priceChanges = history?.filter((h) => h.old_price_gbp !== null) || [];
+    const safeHistory = Array.isArray(history) ? history : [];
+    const priceChanges = safeHistory.filter((h) => h.old_price_gbp !== null);
     const hasReduction = priceChanges.some((h) => (h.change_percentage || 0) < 0);
     const latestReduction = priceChanges
       .filter((h) => (h.change_percentage || 0) < 0)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0] || null;
+
+    console.log("[price-history] Success", {
+      listing_id,
+      rows: safeHistory.length,
+      changes: priceChanges.length,
+      reduced: hasReduction,
+      ms: Date.now() - started,
+    });
 
     return NextResponse.json({
-      history: history || [],
+      history: safeHistory,
       stats: {
         total_changes: priceChanges.length,
         has_recent_reduction: hasReduction,
-        latest_reduction: latestReduction || null,
+        latest_reduction: latestReduction,
       },
     });
   } catch (error) {
-    console.error("[price-history] GET error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    console.error("[price-history] Uncaught error", {
+      listing_id: new URL(req.url).searchParams.get("listing_id"),
+      err: (error as any)?.message || error,
+    });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
