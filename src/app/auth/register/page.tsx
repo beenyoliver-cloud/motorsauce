@@ -66,6 +66,7 @@ export default function RegisterPage() {
   return (
     <CenteredCard
       title="Create your account"
+      overlayImage="/images/msracing1.jpg"
       maxWidth="md"
       pad="p-8"
       footer={

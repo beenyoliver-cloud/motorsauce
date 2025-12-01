@@ -11,6 +11,7 @@ import {
   Menu,
   X,
   ShoppingCart,
+  Bell,
 } from "lucide-react";
 import { getCurrentUser, LocalUser, nsKey } from "@/lib/auth";
 import { isAdmin } from "@/lib/admin";
@@ -186,6 +187,16 @@ export default function Header() {
               {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
             <div className="flex items-center gap-3">
+              {isUserLoaded && user && (
+                <Link href="/messages" aria-label="Messages" className="relative text-black hover:text-yellow-500">
+                  <Bell size={22} />
+                  {unread > 0 && (
+                    <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[10px] font-bold min-w-[16px] h-[16px] px-1">
+                      {unread}
+                    </span>
+                  )}
+                </Link>
+              )}
               <Link href={profileHref} aria-label="Profile" className="text-black hover:text-yellow-500">
                 <User size={22} />
               </Link>
@@ -433,6 +444,20 @@ export default function Header() {
             className="flex items-center gap-1 text-sm font-medium text-black hover:text-yellow-500 transition-colors"
           >
             <User size={16} /> Admin
+          </Link>
+        )}
+        {isUserLoaded && user && (
+          <Link
+            href="/messages"
+            className="relative flex items-center text-black hover:text-yellow-500 transition-colors"
+            aria-label="Messages"
+          >
+            <Bell size={20} />
+            {unread > 0 && (
+              <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[11px] font-bold min-w-[18px] h-[18px] px-1">
+                {unread}
+              </span>
+            )}
           </Link>
         )}
         <button

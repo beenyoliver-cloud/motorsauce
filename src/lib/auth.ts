@@ -70,6 +70,17 @@ export async function registerUser(
 ): Promise<LocalUser> {
   const supabase = supabaseBrowser();
   
+  // Check if username already exists
+  const { data: existingProfile } = await supabase
+    .from('profiles')
+    .select('name')
+    .eq('name', name.trim())
+    .single();
+  
+  if (existingProfile) {
+    throw new Error('This username is already taken. Please choose a different one.');
+  }
+  
   // Register the new user
   const { data, error } = await supabase.auth.signUp({
     email,
