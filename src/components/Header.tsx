@@ -99,9 +99,14 @@ export default function Header() {
     return () => window.removeEventListener("ms:auth", refreshUser as EventListener);
   }, []);
 
-  // Avatar
+  // Avatar - sync from user object and localStorage
   useEffect(() => {
-    const refreshAvatar = () => setAvatar(readAvatar());
+    const refreshAvatar = () => {
+      // Prioritize user.avatar from database, fallback to localStorage
+      const dbAvatar = user?.avatar;
+      const localAvatar = readAvatar();
+      setAvatar(dbAvatar || localAvatar);
+    };
     refreshAvatar();
     window.addEventListener("ms:profile", refreshAvatar as EventListener);
     window.addEventListener("ms:auth", refreshAvatar as EventListener);
