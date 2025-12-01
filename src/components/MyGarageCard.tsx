@@ -19,6 +19,8 @@ import {
 import DisplayWall from "@/components/DisplayWall";
 import GarageStats from "@/components/GarageStats";
 import EnhancedVehicleForm from "@/components/EnhancedVehicleForm";
+import GaragePartsIntegration from "@/components/GaragePartsIntegration";
+import GarageQRCode from "@/components/GarageQRCode";
 import { scheduleVehicleReminders } from "@/lib/reminderScheduler";
 
 /* ----------------------------- Small helpers ----------------------------- */
@@ -375,27 +377,30 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
               </button>
               <Toggle checked={pub} onChange={togglePublic} />
               {pub && (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      const url = `${window.location.origin}/profile/${encodeURIComponent(displayName)}#garage`;
-                      await navigator.clipboard.writeText(url);
-                      setCopiedId("__public__");
-                      setTimeout(() => setCopiedId((prev) => (prev === "__public__" ? null : prev)), 1200);
-                    } catch {}
-                  }}
-                  className={cx(
-                    "inline-flex items-center gap-1 rounded-md border text-sm px-3 py-1.5",
-                    copiedId === "__public__"
-                      ? "bg-white border-green-300 text-green-700"
-                      : "bg-white border-gray-200 text-gray-900 hover:bg-gray-50"
-                  )}
-                  title="Copy public garage link"
-                >
-                  <LinkIcon className="h-4 w-4" />
-                  {copiedId === "__public__" ? "Link copied" : "Copy public link"}
-                </button>
+                <>
+                  <GarageQRCode username={displayName} vehicleCount={cars.length} />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const url = `${window.location.origin}/profile/${encodeURIComponent(displayName)}#garage`;
+                        await navigator.clipboard.writeText(url);
+                        setCopiedId("__public__");
+                        setTimeout(() => setCopiedId((prev) => (prev === "__public__" ? null : prev)), 1200);
+                      } catch {}
+                    }}
+                    className={cx(
+                      "inline-flex items-center gap-1 rounded-md border text-sm px-3 py-1.5",
+                      copiedId === "__public__"
+                        ? "bg-white border-green-300 text-green-700"
+                        : "bg-white border-gray-200 text-gray-900 hover:bg-gray-50"
+                    )}
+                    title="Copy public garage link"
+                  >
+                    <LinkIcon className="h-4 w-4" />
+                    {copiedId === "__public__" ? "Link copied" : "Copy public link"}
+                  </button>
+                </>
               )}
             </>
           )}
@@ -591,8 +596,16 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
         <>
           {/* Stats for default car */}
           {defaultCar && (
-            <div className="px-6 py-5">
+            <div className="px-6 py-5 border-b border-gray-200">
               <GarageStats car={defaultCar} />
+            </div>
+          )}
+          
+          {/* Parts Integration for default car */}
+          {mine && defaultCar && (
+            <div className="px-6 py-5 border-b border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">🔧 Compatible Parts</h3>
+              <GaragePartsIntegration car={defaultCar} />
             </div>
           )}
           
