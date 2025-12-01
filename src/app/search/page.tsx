@@ -182,17 +182,18 @@ function SearchPageInner() {
     (sp.get("query") && String(sp.get("query"))) ||
     "";
   
-  /* Fetch sellers when query changes */
+  /* Fetch sellers when query changes or when activeTab is sellers */
   useEffect(() => {
     const query = q.trim();
-    if (!query) {
-      setSellers([]);
-      return;
-    }
 
     let alive = true;
     setSellersLoading(true);
-    fetch(`/api/search/sellers?q=${encodeURIComponent(query)}`)
+    // Always fetch sellers (with or without query)
+    const url = query 
+      ? `/api/search/sellers?q=${encodeURIComponent(query)}`
+      : `/api/search/sellers`;
+    
+    fetch(url)
       .then(async (r) => {
         if (!r.ok) throw new Error("Failed to search sellers");
         return r.json();
@@ -443,9 +444,11 @@ function SearchPageInner() {
           )}
 
           {/* No sellers found */}
-          {activeTab === "sellers" && !sellersLoading && sellers.length === 0 && q && (
+          {activeTab === "sellers" && !sellersLoading && sellers.length === 0 && (
             <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
-              <p className="text-gray-800">No sellers found matching "{q}".</p>
+              <p className="text-gray-800">
+                {q ? `No sellers found matching "${q}".` : "No sellers available."}
+              </p>
             </div>
           )}
 

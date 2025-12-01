@@ -7,10 +7,6 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const query = (searchParams.get("q") || "").trim();
 
-  if (!query || query.length < 1) {
-    return NextResponse.json({ sellers: [] });
-  }
-
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -23,12 +19,22 @@ export async function GET(req: Request) {
       auth: { persistSession: false },
     });
 
-    // Search profiles by name
-    const { data: profiles, error } = await supabase
+    // If no query, return top 50 profiles by name; otherwise search
+    let profilesQuery = supabase
       .from("profiles")
       .select("id, name, avatar")
-      .ilike("name", `%${query}%`)
-      .limit(20);
+      .order("name", { ascending: true })
+      .limit(50);
+
+    if (query && query.length >= 1) {
+      profilesQuery = supabase
+        .from("profiles")
+        .select("id, name, avatar")
+        .ilike("name", `%${query}%`)
+        .limit(20);
+    }
+
+    const { data: profiles, error } = await profilesQuery;
 
     if (error) {
       console.error("[search/sellers] Error:", error);
