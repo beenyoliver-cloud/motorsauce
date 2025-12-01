@@ -26,7 +26,7 @@ END; $$ LANGUAGE plpgsql STABLE;
 -- Create an offer safely and emit messages
 CREATE OR REPLACE FUNCTION public.create_offer(
   p_thread_id uuid,
-  p_listing_id text,
+  p_listing_id uuid,
   p_amount_cents integer,
   p_currency text DEFAULT 'GBP',
   p_listing_title text DEFAULT NULL,
@@ -175,5 +175,5 @@ BEGIN
 END; $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Permissions
-GRANT EXECUTE ON FUNCTION public.create_offer(uuid, text, integer, text, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_offer(uuid, uuid, integer, text, text, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.respond_offer(uuid, text, integer) TO authenticated;
