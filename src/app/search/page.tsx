@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, Suspense, useRef } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import SafeImage from "@/components/SafeImage";
@@ -12,7 +12,8 @@ import SellerCard from "@/components/SellerCard";
 import { SearchResultSkeleton, SellerCardSkeleton } from "@/components/skeletons/Skeletons";
 import QuickViewModal from "@/components/QuickViewModal";
 import Breadcrumb from "@/components/Breadcrumb";
-import { Eye } from "lucide-react";
+import ActiveFilters from "@/components/ActiveFilters";
+import { Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { nsKey } from "@/lib/auth";
 import SaveSearchButton from "@/components/SaveSearchButton";
 
@@ -100,9 +101,6 @@ function SearchPageInner() {
   const [err, setErr] = useState<string | null>(null);
   const [recent, setRecent] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<"parts" | "sellers">("parts");
-  const [displayCount, setDisplayCount] = useState(24); // Start with 24 items
-  const [loadingMore, setLoadingMore] = useState(false);
-  const observerTargetRef = useRef<HTMLDivElement | null>(null);
   const [quickViewListingId, setQuickViewListingId] = useState<string | null>(null);
 
   const sp = useSearchParams();
@@ -209,32 +207,6 @@ function SearchPageInner() {
     };
   }, [q]);
 
-  // Infinite scroll with Intersection Observer
-  useEffect(() => {
-    const target = observerTargetRef.current;
-    if (!target) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !loadingMore) {
-          setLoadingMore(true);
-          // Simulate loading delay for UX
-          setTimeout(() => {
-            setDisplayCount((prev) => {
-              const newCount = prev + 24;
-              setLoadingMore(false);
-              return newCount;
-            });
-          }, 300);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [loadingMore]);
-
   const seller = sp.get("seller") || "";
 
   const categories = arrify(sp.getAll("category"));
@@ -309,6 +281,24 @@ function SearchPageInner() {
     } // relevance = original order
     return arr;
   }, [results, sortKey]);
+
+  // Pagination
+  const ITEMS_PER_PAGE = 50;
+  const currentPage = toNum(sp.get("page")) || 1;
+  const totalPages = Math.ceil(sortedResults.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedResults = sortedResults.slice(startIndex, endIndex);
+
+  function goToPage(page: number) {
+    const params = new URLSearchParams(sp.toString());
+    if (page <= 1) {
+      params.delete("page");
+    } else {
+      params.set("page", String(page));
+    }
+    router.push(`${pathname}?${params.toString()}`, { scroll: true });
+  }
 
   const makeOptions = uniq(all.map((l) => l.make));
   const modelOptions = uniq(all.map((l) => l.model));
@@ -388,6 +378,9 @@ function SearchPageInner() {
             sellersCount={sellers.length}
             onChange={setActiveTab}
           />
+
+          {/* Active Filters */}
+          <ActiveFilters />
 
           {/* Summary + sort + save search */}
           <div className="rounded-xl border border-gray-200 bg-white p-5">
@@ -474,7 +467,7 @@ function SearchPageInner() {
           ) : activeTab === "parts" && sortedResults.length > 0 ? (
             <>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {sortedResults.slice(0, displayCount).map((l) => (
+                {paginatedResults.map((l) => (
                   <div
                     key={l.id}
                     className="group relative border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg transition-all"
@@ -539,24 +532,85 @@ function SearchPageInner() {
               ))}
             </div>
             
-            {/* Infinite scroll trigger */}
-            {displayCount < sortedResults.length && (
-              <>
-                <div 
-                  ref={observerTargetRef}
-                  className="h-20 flex items-center justify-center"
-                >
-                  {loadingMore && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <div className="h-5 w-5 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
-                      <span>Loading more results...</span>
-                    </div>
-                  )}
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex flex-col items-center gap-4 mt-8 pb-4">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage <= 1}
+                    className="inline-flex items-center gap-1 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </button>
+                  
+                  <div className="flex items-center gap-1">
+                    {/* Show first page */}
+                    {currentPage > 3 && (
+                      <>
+                        <button
+                          onClick={() => goToPage(1)}
+                          className="w-10 h-10 rounded-lg border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 transition-colors"
+                        >
+                          1
+                        </button>
+                        {currentPage > 4 && (
+                          <span className="px-2 text-gray-600">...</span>
+                        )}
+                      </>
+                    )}
+                    
+                    {/* Show pages around current */}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(page => {
+                        const distance = Math.abs(page - currentPage);
+                        return distance <= 2;
+                      })
+                      .map(page => (
+                        <button
+                          key={page}
+                          onClick={() => goToPage(page)}
+                          className={`w-10 h-10 rounded-lg border transition-colors ${
+                            page === currentPage
+                              ? "border-yellow-500 bg-yellow-500 text-white font-semibold"
+                              : "border-gray-300 bg-white text-gray-900 hover:bg-gray-50"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                    
+                    {/* Show last page */}
+                    {currentPage < totalPages - 2 && (
+                      <>
+                        {currentPage < totalPages - 3 && (
+                          <span className="px-2 text-gray-600">...</span>
+                        )}
+                        <button
+                          onClick={() => goToPage(totalPages)}
+                          className="w-10 h-10 rounded-lg border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 transition-colors"
+                        >
+                          {totalPages}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  
+                  <button
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage >= totalPages}
+                    className="inline-flex items-center gap-1 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
                 </div>
-                <div className="text-sm text-center text-gray-600 pb-4">
-                  Showing {displayCount} of {sortedResults.length} results
+                
+                <div className="text-sm text-gray-600">
+                  Showing {startIndex + 1}-{Math.min(endIndex, sortedResults.length)} of {sortedResults.length} results
                 </div>
-              </>
+              </div>
             )}
           </>
           ) : null}
