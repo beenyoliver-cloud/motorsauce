@@ -381,12 +381,14 @@ export default function BusinessSettingsPage() {
                 </label>
                 <div className="flex items-start gap-4">
                   {businessInfo.logo_url && (
-                    <img 
-                      src={businessInfo.logo_url} 
-                      alt="Logo preview" 
-                      className="w-20 h-20 rounded-full object-cover border-2 border-gray-200" 
-                      onError={(e) => e.currentTarget.style.display = 'none'} 
-                    />
+                    <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-gray-200 shrink-0 bg-gray-100">
+                      <img 
+                        src={businessInfo.logo_url} 
+                        alt="Logo preview" 
+                        className="w-full h-full object-cover object-center" 
+                        onError={(e) => e.currentTarget.style.display = 'none'} 
+                      />
+                    </div>
                   )}
                   <div className="flex-1">
                     <input
