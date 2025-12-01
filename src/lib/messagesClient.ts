@@ -332,7 +332,12 @@ export async function createOffer(params: {
 }): Promise<Offer | null> {
   try {
     const authHeader = await getAuthHeader();
-    if (!authHeader) return null;
+    if (!authHeader) {
+      console.error("[messagesClient] No auth header for createOffer");
+      return null;
+    }
+
+    console.log("[messagesClient] Creating offer with params:", params);
 
     const res = await fetch("/api/offers/new", {
       method: "POST",
@@ -344,15 +349,20 @@ export async function createOffer(params: {
     });
 
     if (!res.ok) {
-      console.error("[messagesClient] Failed to create offer:", res.status);
-      return null;
+      const errorData = await res.json().catch(() => ({}));
+      console.error("[messagesClient] Failed to create offer:", {
+        status: res.status,
+        error: errorData
+      });
+      throw new Error(errorData.error || `Failed to create offer (${res.status})`);
     }
 
     const data = await res.json();
+    console.log("[messagesClient] Offer created successfully:", data.offer);
     return data.offer;
   } catch (error) {
     console.error("[messagesClient] Error creating offer:", error);
-    return null;
+    throw error;
   }
 }
 

@@ -118,20 +118,40 @@ export async function POST(req: Request) {
     });
 
     // Use RPC to create offer and emit messages atomically
+    console.log("[offers API] Calling RPC create_offer with params:", {
+      p_thread_id: threadId,
+      p_listing_id: listingId,
+      p_amount_cents: amountCents,
+      p_currency: currency || "GBP",
+      p_listing_title: listingTitle || null,
+      p_listing_image: listingImage || null,
+    });
+
     const { data: offer, error: rpcError } = await supabase.rpc("create_offer", {
       p_thread_id: threadId,
       p_listing_id: listingId,
-      p_listing_title: listingTitle || null,
-      p_listing_image: listingImage || null,
       p_amount_cents: amountCents,
       p_currency: currency || "GBP",
+      p_listing_title: listingTitle || null,
+      p_listing_image: listingImage || null,
     });
 
     if (rpcError) {
-      console.error("[offers API] RPC create_offer error:", rpcError);
-      return NextResponse.json({ error: rpcError.message, code: rpcError.code, details: rpcError.details }, { status: 500 });
+      console.error("[offers API] RPC create_offer error:", {
+        message: rpcError.message,
+        code: rpcError.code,
+        details: rpcError.details,
+        hint: rpcError.hint,
+      });
+      return NextResponse.json({ 
+        error: rpcError.message || "RPC call failed",
+        code: rpcError.code,
+        details: rpcError.details,
+        hint: rpcError.hint,
+      }, { status: 500 });
     }
 
+    console.log("[offers API] Offer created successfully:", offer);
     return NextResponse.json({ offer }, { status: 201 });
   } catch (error: any) {
     console.error("[offers API] POST error:", error);
@@ -178,6 +198,12 @@ export async function PATCH(req: Request) {
     }
 
     // Use RPC to respond (accept/decline/counter)
+    console.log("[offers API] Calling RPC respond_offer with params:", {
+      p_offer_id: offerId,
+      p_status: status,
+      p_counter_amount_cents: counterAmountCents || null,
+    });
+
     const { data: responded, error: respErr } = await supabase.rpc("respond_offer", {
       p_offer_id: offerId,
       p_status: status,
@@ -185,10 +211,21 @@ export async function PATCH(req: Request) {
     });
 
     if (respErr) {
-      console.error("[offers API] RPC respond_offer error:", respErr);
-      return NextResponse.json({ error: respErr.message, code: respErr.code, details: respErr.details }, { status: 500 });
+      console.error("[offers API] RPC respond_offer error:", {
+        message: respErr.message,
+        code: respErr.code,
+        details: respErr.details,
+        hint: respErr.hint,
+      });
+      return NextResponse.json({ 
+        error: respErr.message || "RPC call failed",
+        code: respErr.code,
+        details: respErr.details,
+        hint: respErr.hint,
+      }, { status: 500 });
     }
 
+    console.log("[offers API] Offer response processed:", responded);
     return NextResponse.json({ offer: responded }, { status: 200 });
   } catch (error: any) {
     console.error("[offers API] PATCH error:", error);
