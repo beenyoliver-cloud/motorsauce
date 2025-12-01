@@ -38,44 +38,69 @@ END $$;
 -- Ensure text_content column exists (from new schema)
 ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS text_content TEXT;
 
--- Backfill text_content from content if needed
-UPDATE public.messages 
-SET text_content = COALESCE(text_content, content, text)
-WHERE text_content IS NULL;
+-- Add text column if it doesn't exist (some schemas may have it)
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS text TEXT;
 
--- Backfill content from text_content for legacy compatibility
-UPDATE public.messages 
-SET content = text_content 
-WHERE content IS NULL AND text_content IS NOT NULL;
+-- Backfill text_content from content if needed
+DO $$
+BEGIN
+  -- Check if content column exists
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'messages' AND column_name = 'content' AND table_schema = 'public'
+  ) THEN
+    UPDATE public.messages 
+    SET text_content = content
+    WHERE text_content IS NULL AND content IS NOT NULL;
+  END IF;
+  
+  -- Backfill content from text_content for legacy compatibility
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'messages' AND column_name = 'content' AND table_schema = 'public'
+  ) THEN
+    UPDATE public.messages 
+    SET content = text_content 
+    WHERE content IS NULL AND text_content IS NOT NULL;
+  END IF;
+  
+  -- Sync text column if it exists
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'messages' AND column_name = 'text' AND table_schema = 'public'
+  ) THEN
+    UPDATE public.messages 
+    SET text = COALESCE(text, text_content, content)
+    WHERE text IS NULL;
+  END IF;
+END $$;
 
 -- Create trigger to sync legacy columns when inserting via new schema
+-- This trigger will attempt to sync columns that exist, ignoring missing ones
 CREATE OR REPLACE FUNCTION sync_legacy_message_columns()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Sync text_content to legacy columns
-  IF NEW.text_content IS NOT NULL THEN
-    IF TG_OP = 'INSERT' OR NEW.content IS NULL THEN
+  -- Try to sync text_content to content (ignore if content column doesn't exist)
+  BEGIN
+    IF NEW.text_content IS NOT NULL THEN
       NEW.content := NEW.text_content;
+    ELSIF NEW.content IS NOT NULL THEN
+      NEW.text_content := NEW.content;
     END IF;
-    IF TG_OP = 'INSERT' OR NEW.text IS NULL THEN
+  EXCEPTION 
+    WHEN undefined_column THEN NULL; -- Ignore if content column doesn't exist
+  END;
+  
+  -- Try to sync text_content to text (ignore if text column doesn't exist)
+  BEGIN
+    IF NEW.text_content IS NOT NULL THEN
       NEW.text := NEW.text_content;
+    ELSIF NEW.text IS NOT NULL THEN
+      NEW.text_content := NEW.text;
     END IF;
-  END IF;
-  
-  -- Sync legacy columns to text_content if text_content is NULL
-  IF NEW.text_content IS NULL AND NEW.content IS NOT NULL THEN
-    NEW.text_content := NEW.content;
-    IF NEW.text IS NULL THEN
-      NEW.text := NEW.content;
-    END IF;
-  END IF;
-  
-  IF NEW.text_content IS NULL AND NEW.text IS NOT NULL THEN
-    NEW.text_content := NEW.text;
-    IF NEW.content IS NULL THEN
-      NEW.content := NEW.text;
-    END IF;
-  END IF;
+  EXCEPTION 
+    WHEN undefined_column THEN NULL; -- Ignore if text column doesn't exist
+  END;
   
   RETURN NEW;
 END;
