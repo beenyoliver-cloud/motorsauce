@@ -117,88 +117,20 @@ export async function POST(req: Request) {
       amount_cents: amountCents,
     });
 
-    let { data: offer, error: offerError } = await supabase
-      .from("offers")
-      .insert({
-        thread_id: threadId,
-        listing_id: listingId,
-        listing_title: listingTitle,
-        listing_image: listingImage,
-        starter_id: user.id,
-        recipient_id: recipientId,
-        amount_cents: amountCents,
-        currency,
-        status: "pending",
-      })
-      .select()
-      .single();
+    // Use RPC to create offer and emit messages atomically
+    const { data: offer, error: rpcError } = await supabase.rpc("create_offer", {
+      p_thread_id: threadId,
+      p_listing_id: listingId,
+      p_listing_title: listingTitle || null,
+      p_listing_image: listingImage || null,
+      p_amount_cents: amountCents,
+      p_currency: currency || "GBP",
+    });
 
-    if (offerError) {
-      console.error("[offers API] Create error (v2 columns):", offerError);
-      // Fallback: legacy columns (starter/recipient/amount)
-      if (offerError.code === "42703") {
-        console.warn("[offers API] Falling back to legacy offers columns (starter/recipient/amount)");
-        const legacyAmount = Math.round(amountCents) / 100;
-        const legacyInsert = await supabase
-          .from("offers")
-          .insert({
-            thread_id: threadId,
-            listing_id: listingId,
-            starter: user.id as any,
-            recipient: recipientId as any,
-            amount: legacyAmount as any,
-            status: "pending",
-          })
-          .select()
-          .single();
-        if (legacyInsert.error) {
-          console.error("[offers API] Legacy insert also failed:", legacyInsert.error);
-          return NextResponse.json({ 
-            error: legacyInsert.error.message,
-            details: legacyInsert.error.details,
-            hint: legacyInsert.error.hint,
-            code: legacyInsert.error.code
-          }, { status: 500 });
-        }
-        offer = legacyInsert.data as any;
-      } else {
-        console.error("[offers API] Error details:", JSON.stringify(offerError, null, 2));
-        return NextResponse.json({ 
-          error: offerError.message,
-          details: offerError.details,
-          hint: offerError.hint,
-          code: offerError.code
-        }, { status: 500 });
-      }
+    if (rpcError) {
+      console.error("[offers API] RPC create_offer error:", rpcError);
+      return NextResponse.json({ error: rpcError.message, code: rpcError.code, details: rpcError.details }, { status: 500 });
     }
-
-    console.log("[offers API] Offer created successfully:", offer.id);
-
-    // Create system message about the offer
-    const systemMessage = `Started an offer of £${(amountCents / 100).toFixed(2)}`;
-    await supabase.from("messages").insert({
-      thread_id: threadId,
-      from_user_id: user.id,
-      sender: user.id,
-      content: systemMessage,
-      text_content: systemMessage,
-      message_type: "system",
-    });
-
-    // Create offer message
-    const offerMessage = `Offer: £${(amountCents / 100).toFixed(2)}`;
-    await supabase.from("messages").insert({
-      thread_id: threadId,
-      from_user_id: user.id,
-      sender: user.id,
-      content: offerMessage,
-      text_content: offerMessage,
-      message_type: "offer",
-      offer_id: offer.id,
-      offer_amount_cents: amountCents,
-      offer_currency: currency,
-      offer_status: "pending",
-    });
 
     return NextResponse.json({ offer }, { status: 201 });
   } catch (error: any) {
@@ -222,8 +154,8 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { offerId, status, counterAmountCents } = body;
+  const body = await req.json();
+  const { offerId, status, counterAmountCents } = body;
 
     if (!offerId || !status) {
       return NextResponse.json({ error: "offerId and status are required" }, { status: 400 });
@@ -245,60 +177,19 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Offer not found" }, { status: 404 });
     }
 
-    // Update offer
-    const updates: any = { status, updated_at: new Date().toISOString() };
-    if (status === "countered" && counterAmountCents) {
-      updates.amount_cents = counterAmountCents;
+    // Use RPC to respond (accept/decline/counter)
+    const { data: responded, error: respErr } = await supabase.rpc("respond_offer", {
+      p_offer_id: offerId,
+      p_status: status,
+      p_counter_amount_cents: counterAmountCents || null,
+    });
+
+    if (respErr) {
+      console.error("[offers API] RPC respond_offer error:", respErr);
+      return NextResponse.json({ error: respErr.message, code: respErr.code, details: respErr.details }, { status: 500 });
     }
 
-    const { data: updated, error: updateError } = await supabase
-      .from("offers")
-      .update(updates)
-      .eq("id", offerId)
-      .select()
-      .single();
-
-    if (updateError) {
-      console.error("[offers API] Update error:", updateError);
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
-    }
-
-    // Update corresponding message
-    await supabase
-      .from("messages")
-      .update({
-        offer_status: status,
-        offer_amount_cents: updates.amount_cents || offer.amount_cents,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("offer_id", offerId);
-
-    // Add system message about status change
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("name")
-      .eq("id", user.id)
-      .single();
-
-    const userName = profile?.name || "Someone";
-    let statusText = "";
-    if (status === "accepted") statusText = `${userName} accepted the offer`;
-    else if (status === "declined") statusText = `${userName} declined the offer`;
-    else if (status === "countered") statusText = `${userName} countered with £${(updates.amount_cents / 100).toFixed(2)}`;
-    else if (status === "withdrawn") statusText = `${userName} withdrew the offer`;
-
-    if (statusText) {
-      await supabase.from("messages").insert({
-        thread_id: offer.thread_id,
-        from_user_id: user.id,
-        sender: user.id,
-        content: statusText,
-        text_content: statusText,
-        message_type: "system",
-      });
-    }
-
-    return NextResponse.json({ offer: updated }, { status: 200 });
+    return NextResponse.json({ offer: responded }, { status: 200 });
   } catch (error: any) {
     console.error("[offers API] PATCH error:", error);
     return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
