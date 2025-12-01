@@ -23,9 +23,9 @@ img, svg, video, canvas, iframe {
 }
 
 /* Generic img elements scale responsively but don't force 100% dimensions */
+/* Do not force height here; let utility classes (e.g., h-full) take precedence */
 img:not(.site-image) {
   max-width: 100%;
-  height: auto;
   display: block;
 }
 
