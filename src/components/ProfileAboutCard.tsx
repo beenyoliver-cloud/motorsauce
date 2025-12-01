@@ -117,7 +117,7 @@ export default function ProfileAboutCard({
             onChange={(e) => setDraft(e.target.value)}
             rows={6}
             placeholder="Write a short bio about yourself, what you sell, shipping, etc."
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 bg-white text-gray-900 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
           <div className="mt-2 text-xs text-gray-600">
             Tip: keep it under 400–600 characters for best readability.

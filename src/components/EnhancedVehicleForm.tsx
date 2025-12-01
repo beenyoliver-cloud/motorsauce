@@ -132,7 +132,7 @@ export default function EnhancedVehicleForm({
             value={registration}
             onChange={(e) => setRegistration(e.target.value.toUpperCase())}
             placeholder="AB12 CDE"
-            className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-gray-900 font-mono uppercase focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            className="flex-1 border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 font-mono uppercase focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
           <button
             type="button"
@@ -167,7 +167,7 @@ export default function EnhancedVehicleForm({
                 setMake(e.target.value);
                 setModel("");
               }}
-              className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
               required
             >
               <option value="">Select make…</option>
@@ -183,7 +183,7 @@ export default function EnhancedVehicleForm({
               value={model}
               onChange={(e) => setModel(e.target.value)}
               disabled={!make}
-              className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-100"
+              className="border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-100 disabled:text-gray-600"
               required
             >
               <option value="">Select model…</option>
@@ -198,7 +198,7 @@ export default function EnhancedVehicleForm({
             <select
               value={year}
               onChange={(e) => setYear(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
               required
             >
               <option value="">Select year…</option>
@@ -215,7 +215,7 @@ export default function EnhancedVehicleForm({
               value={trim}
               onChange={(e) => setTrim(e.target.value)}
               placeholder="e.g. Sport, GT"
-              className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
             />
           </label>
 
@@ -226,7 +226,7 @@ export default function EnhancedVehicleForm({
               value={color}
               onChange={(e) => setColor(e.target.value)}
               placeholder="e.g. Black"
-              className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
             />
           </label>
 
@@ -239,7 +239,7 @@ export default function EnhancedVehicleForm({
                 value={mileage}
                 onChange={(e) => setMileage(e.target.value)}
                 placeholder="50000"
-                className="border border-gray-300 rounded-md pl-10 pr-3 py-2 w-full text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                className="border border-gray-300 rounded-md pl-10 pr-3 py-2 w-full bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
               />
             </div>
           </label>
@@ -291,7 +291,7 @@ export default function EnhancedVehicleForm({
                 type="date"
                 value={motExpiry}
                 onChange={(e) => setMotExpiry(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                className="border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
               />
             </label>
             <label className="flex items-center gap-2 text-sm text-gray-700">
@@ -312,7 +312,7 @@ export default function EnhancedVehicleForm({
                 type="date"
                 value={insuranceExpiry}
                 onChange={(e) => setInsuranceExpiry(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                className="border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
               />
             </label>
             <label className="flex items-center gap-2 text-sm text-gray-700">
@@ -348,7 +348,7 @@ export default function EnhancedVehicleForm({
                 value={registration}
                 onChange={(e) => setRegistration(e.target.value.toUpperCase())}
                 placeholder="AB12 CDE"
-                className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                className="border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
               />
             </label>
 
@@ -369,7 +369,7 @@ export default function EnhancedVehicleForm({
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Personal notes about this vehicle..."
                 rows={3}
-                className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                className="border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
               />
             </label>
           </div>
