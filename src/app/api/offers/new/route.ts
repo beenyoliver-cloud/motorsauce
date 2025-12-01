@@ -117,7 +117,7 @@ export async function POST(req: Request) {
       amount_cents: amountCents,
     });
 
-    const { data: offer, error: offerError } = await supabase
+    let { data: offer, error: offerError } = await supabase
       .from("offers")
       .insert({
         thread_id: threadId,
@@ -134,14 +134,42 @@ export async function POST(req: Request) {
       .single();
 
     if (offerError) {
-      console.error("[offers API] Create error:", offerError);
-      console.error("[offers API] Error details:", JSON.stringify(offerError, null, 2));
-      return NextResponse.json({ 
-        error: offerError.message,
-        details: offerError.details,
-        hint: offerError.hint,
-        code: offerError.code
-      }, { status: 500 });
+      console.error("[offers API] Create error (v2 columns):", offerError);
+      // Fallback: legacy columns (starter/recipient/amount)
+      if (offerError.code === "42703") {
+        console.warn("[offers API] Falling back to legacy offers columns (starter/recipient/amount)");
+        const legacyAmount = Math.round(amountCents) / 100;
+        const legacyInsert = await supabase
+          .from("offers")
+          .insert({
+            thread_id: threadId,
+            listing_id: listingId,
+            starter: user.id as any,
+            recipient: recipientId as any,
+            amount: legacyAmount as any,
+            status: "pending",
+          })
+          .select()
+          .single();
+        if (legacyInsert.error) {
+          console.error("[offers API] Legacy insert also failed:", legacyInsert.error);
+          return NextResponse.json({ 
+            error: legacyInsert.error.message,
+            details: legacyInsert.error.details,
+            hint: legacyInsert.error.hint,
+            code: legacyInsert.error.code
+          }, { status: 500 });
+        }
+        offer = legacyInsert.data as any;
+      } else {
+        console.error("[offers API] Error details:", JSON.stringify(offerError, null, 2));
+        return NextResponse.json({ 
+          error: offerError.message,
+          details: offerError.details,
+          hint: offerError.hint,
+          code: offerError.code
+        }, { status: 500 });
+      }
     }
 
     console.log("[offers API] Offer created successfully:", offer.id);

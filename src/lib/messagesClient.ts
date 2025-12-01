@@ -302,8 +302,16 @@ export async function deleteThread(threadId: string): Promise<boolean> {
       method: "DELETE",
       headers: { Authorization: authHeader },
     });
-
-    return res.ok;
+    if (!res.ok) {
+      try {
+        const data = await res.json();
+        console.error("[messagesClient] Delete failed:", data);
+      } catch (e) {
+        console.error("[messagesClient] Delete failed with status", res.status);
+      }
+      return false;
+    }
+    return true;
   } catch (error) {
     console.error("[messagesClient] Error deleting thread:", error);
     return false;

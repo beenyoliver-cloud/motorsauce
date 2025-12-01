@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { MessageCircle, CheckSquare, Square, Trash2, X, Search, Filter } from "lucide-react";
 import { fetchThreads, Thread, deleteThread } from "@/lib/messagesClient";
 import { displayName } from "@/lib/names";
 import OffersInbox from "@/components/OffersInbox";
+import { supabaseBrowser } from "@/lib/supabase";
 
 export default function MessagesIndex() {
   const router = useRouter();
@@ -23,21 +24,63 @@ export default function MessagesIndex() {
     setMounted(true);
   }, []);
 
+  // Initial fetch + realtime updates (replaces polling)
   useEffect(() => {
     if (!mounted) return;
-    
+
+    let isActive = true;
+    const supabase = supabaseBrowser();
     const refresh = async () => {
-      setLoading(true);
       const t = await fetchThreads();
+      if (!isActive) return;
       setThreads(t);
       setLoading(false);
     };
-    
+
+    setLoading(true);
     refresh();
-    
-    // Poll for updates every 10 seconds
-    const interval = setInterval(refresh, 10000);
-    return () => clearInterval(interval);
+
+    // Coalesce rapid events
+    const refreshPending = { current: false } as { current: boolean };
+    const scheduleRefresh = () => {
+      if (refreshPending.current) return;
+      refreshPending.current = true;
+      setTimeout(async () => {
+        await refresh();
+        refreshPending.current = false;
+      }, 300);
+    };
+
+    // Subscribe to thread changes (insert/update/delete)
+    const channel = supabase
+      .channel("threads-updates")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "threads" },
+        () => scheduleRefresh()
+      )
+      // Also watch deletions markers and read status which affect list
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "thread_deletions" },
+        () => scheduleRefresh()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "thread_read_status" },
+        () => scheduleRefresh()
+      )
+      .subscribe();
+
+    // Refresh on tab focus
+    const onFocus = () => scheduleRefresh();
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      isActive = false;
+      try { supabase.removeChannel(channel); } catch {}
+      window.removeEventListener("focus", onFocus);
+    };
   }, [mounted]);
 
   const toggleSelectMode = () => {
