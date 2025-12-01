@@ -449,7 +449,7 @@ export default function Header() {
             <div className="h-9 w-9 rounded-full ring-2 ring-yellow-500 ring-offset-2 ring-offset-white overflow-hidden shrink-0">
               {isUserLoaded && user && avatar ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatar} alt="" className="h-full w-full object-cover" />
+                <img src={avatar} alt="" className="site-image" />
               ) : (
                 <div className="h-full w-full bg-yellow-500 text-black flex items-center justify-center text-xs font-semibold">
                   {isUserLoaded && user ? initials : <User size={18} />}

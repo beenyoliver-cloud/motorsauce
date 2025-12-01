@@ -304,7 +304,7 @@ export default function ListingGallery({
                   }`}
                   aria-label={`Go to image ${idx + 1}`}
                 >
-                  <img src={src} alt="" className="w-full h-full object-cover" />
+                  <img src={src} alt="" className="site-image" />
                 </button>
               ))}
             </div>

@@ -114,7 +114,7 @@ export default function EditableAvatar({
       <div className="h-20 w-20 md:h-24 md:w-24 rounded-full ring-2 ring-yellow-500 ring-offset-2 ring-offset-white overflow-hidden shadow flex items-center justify-center bg-gray-900 text-white text-2xl font-semibold">
         {src ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={src} alt={`${displayName} avatar`} className="h-full w-full object-cover" />
+          <img src={src} alt={`${displayName} avatar`} className="site-image" />
         ) : (
           <span>{getInitials(displayName)}</span>
         )}

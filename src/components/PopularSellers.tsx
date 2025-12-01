@@ -14,7 +14,7 @@ export default function PopularSellers() {
   useEffect(() => {
     let mounted = true;
     setLoading(true);
-    fetch("/api/popular-sellers")
+    fetch("/api/popular-sellers-weekly")
       .then((r) => r.json())
       .then((data) => {
         if (!mounted) return;
@@ -53,7 +53,7 @@ export default function PopularSellers() {
             className="group flex flex-col items-center text-center p-3 border border-gray-200 rounded-xl bg-white hover:shadow-lg hover:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all duration-300 transform hover:-translate-y-1 hover:scale-105"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={s.avatar || "/images/seller1.jpg"} alt={s.seller_name} className="h-16 w-16 rounded-full object-cover ring-2 ring-gray-200 group-hover:ring-yellow-400 transition-all duration-300" />
+            <img src={s.avatar || "/images/seller1.jpg"} alt={s.seller_name} className="site-image rounded-full ring-2 ring-gray-200 group-hover:ring-yellow-400 transition-all duration-300" style={{ width: 64, height: 64, objectFit: 'cover', objectPosition: 'center' }} />
             <div className="mt-2 text-sm font-semibold text-gray-900 group-hover:text-yellow-600 line-clamp-1 transition-colors duration-300" title={s.seller_name}>{s.seller_name}</div>
             <div className="text-[11px] text-gray-600 flex items-center gap-2">
               <span>⭐ {typeof s.rating === 'number' ? s.rating.toFixed(1) : '5.0'}</span>

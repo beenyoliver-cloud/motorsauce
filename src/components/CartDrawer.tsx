@@ -117,7 +117,7 @@ function Row({ item }: { item: CartItem }) {
   return (
     <li className="p-3 flex gap-3 items-center">
       <div className="h-16 w-20 rounded-md overflow-hidden border border-gray-200 bg-gray-50">
-        <Image src={img} alt={item.title} width={160} height={120} className="h-full w-full object-cover" />
+  <Image src={img} alt={item.title} width={160} height={120} className="site-image" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium text-gray-900 line-clamp-2">{item.title}</div>

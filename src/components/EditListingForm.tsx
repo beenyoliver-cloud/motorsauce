@@ -460,7 +460,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
             {existingImages.map((img, i) => (
               <div key={`ex-${i}`} className="relative group rounded-lg overflow-hidden border border-gray-200">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={img} alt="Existing" className="h-32 w-full object-cover" />
+                <img src={img} alt="Existing" className="site-image" />
                 <button
                   type="button"
                   onClick={() => removeExisting(i)}
@@ -474,7 +474,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
 
             {newFiles.map((f, i) => (
               <div key={`new-${i}`} className="relative group rounded-lg overflow-hidden border border-yellow-300">
-                <img src={URL.createObjectURL(f)} alt="New" className="h-32 w-full object-cover" />
+                <img src={URL.createObjectURL(f)} alt="New" className="site-image" />
                 <button
                   type="button"
                   onClick={() => removeNew(i)}

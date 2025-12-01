@@ -148,7 +148,7 @@ export default function QuickViewModal({ listingId, isOpen, onClose }: QuickView
                             : "border-gray-200 hover:border-gray-400"
                         }`}
                       >
-                        <img src={img} alt="" className="w-full h-full object-cover" />
+                        <img src={img} alt="" className="site-image" />
                       </button>
                     ))}
                   </div>

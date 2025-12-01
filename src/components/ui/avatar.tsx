@@ -9,7 +9,7 @@ export function Avatar({ children }: { children: React.ReactNode }) {
 }
 
 export function AvatarImage({ src, alt }: { src: string; alt?: string }) {
-  return <img src={src} alt={alt} className="w-full h-full object-cover" />;
+  return <img src={src} alt={alt} className="site-image" />;
 }
 
 export function AvatarFallback({ children }: { children: React.ReactNode }) {

@@ -51,7 +51,7 @@ function CarThumb({ src, alt }: { src?: string; alt: string }) {
   const [img, setImg] = useState<string>(src || fallbackCarImage());
   useEffect(() => setImg(src || fallbackCarImage()), [src]);
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={img} alt={alt} className="w-full h-full object-cover" onError={() => setImg(fallbackCarImage())} />;
+  return <img src={img} alt={alt} className="site-image" onError={() => setImg(fallbackCarImage())} />;
 }
 
 /* Cover image (default card) */
@@ -870,7 +870,7 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="h-10 w-16 rounded-md bg-gray-100 overflow-hidden shrink-0">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={c.image || fallbackCarImage()} alt={label} className="h-full w-full object-cover" loading="lazy" />
+                          <img src={c.image || fallbackCarImage()} alt={label} className="site-image" loading="lazy" />
                         </div>
                         <span className="font-semibold text-gray-900 truncate">{label}</span>
                       </div>

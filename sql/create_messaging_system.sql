@@ -1,8 +1,6 @@
 -- Complete messaging system with persistence, user isolation, soft deletes, and archival
 -- Run this in your Supabase SQL editor
 
--- ==================== THREADS TABLE ====================
--- Stores conversation threads between two users
 CREATE TABLE IF NOT EXISTS public.threads (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   participant_1_id UUID NOT NULL,         -- First user (sorted by UUID for consistency)
@@ -21,6 +19,13 @@ CREATE TABLE IF NOT EXISTS public.threads (
   CONSTRAINT threads_participants_unique UNIQUE (participant_1_id, participant_2_id, listing_ref)
 );
 
+-- ==================== PROFILE VISITS TABLE ====================
+-- Tracks each time a seller profile is viewed
+CREATE TABLE IF NOT EXISTS public.profile_visits (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  seller_id UUID NOT NULL,
+  visited_at TIMESTAMPTZ DEFAULT NOW()
+);
 -- Backward compatibility: if an older threads table exists without these columns,
 -- ensure the required columns are present so policies don't fail.
 ALTER TABLE public.threads ADD COLUMN IF NOT EXISTS participant_1_id UUID;

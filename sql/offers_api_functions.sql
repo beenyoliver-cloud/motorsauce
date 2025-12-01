@@ -27,10 +27,10 @@ END; $$ LANGUAGE plpgsql STABLE;
 CREATE OR REPLACE FUNCTION public.create_offer(
   p_thread_id uuid,
   p_listing_id text,
-  p_listing_title text DEFAULT NULL,
-  p_listing_image text DEFAULT NULL,
   p_amount_cents integer,
-  p_currency text DEFAULT 'GBP'
+  p_currency text DEFAULT 'GBP',
+  p_listing_title text DEFAULT NULL,
+  p_listing_image text DEFAULT NULL
 )
 RETURNS public.offers AS $$
 DECLARE
@@ -175,5 +175,5 @@ BEGIN
 END; $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Permissions
-GRANT EXECUTE ON FUNCTION public.create_offer(uuid, text, text, text, integer, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_offer(uuid, text, integer, text, text, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.respond_offer(uuid, text, integer) TO authenticated;
