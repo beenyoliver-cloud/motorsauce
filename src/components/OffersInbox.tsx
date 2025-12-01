@@ -205,18 +205,20 @@ export default function OffersInbox() {
             className={`p-3 rounded-lg border transition ${getStatusColor(offer.status)}`}
           >
             <div className="flex items-start gap-3 mb-2">
+              <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-white shrink-0 bg-gray-100">
               {offer.buyer_avatar ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={offer.buyer_avatar}
                   alt={displayName(offer.buyer_name)}
-                  className="h-10 w-10 rounded-full object-cover border-2 border-white"
+                  className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="h-10 w-10 rounded-full bg-yellow-500 flex items-center justify-center text-black font-bold text-xs border-2 border-white">
+                <div className="w-full h-full bg-yellow-500 flex items-center justify-center text-black font-bold text-xs">
                   {(offer.buyer_name || "?").slice(0, 2).toUpperCase()}
                 </div>
               )}
+              </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-sm font-semibold text-gray-900 truncate">

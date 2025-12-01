@@ -212,11 +212,13 @@ export default function QuickViewModal({ listingId, isOpen, onClose }: QuickView
               {/* Seller Info */}
               <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
                 <div className="flex items-center gap-3 mb-3">
-                  <SafeImage
-                    src={listing.seller.avatar}
-                    alt={listing.seller.name}
-                    className="h-12 w-12 rounded-full object-cover"
-                  />
+                  <div className="h-12 w-12 rounded-full overflow-hidden bg-gray-100 shrink-0">
+                    <SafeImage
+                      src={listing.seller.avatar}
+                      alt={listing.seller.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                   <div className="flex-1">
                     <div className="font-semibold text-gray-900">{listing.seller.name}</div>
                     <div className="flex items-center gap-2 text-xs text-gray-600">

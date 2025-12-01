@@ -20,14 +20,12 @@ img, svg, video, canvas, iframe {
   object-fit: cover;
   object-position: center;
   display: block;
-  overflow: hidden;
 }
 
 /* Generic img elements scale responsively but don't force 100% dimensions */
 img:not(.site-image) {
   max-width: 100%;
   height: auto;
-  object-fit: cover;
   display: block;
 }
 

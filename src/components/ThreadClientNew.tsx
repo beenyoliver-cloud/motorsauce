@@ -286,18 +286,20 @@ export default function ThreadClientNew({
               href={`/profile/${encodeURIComponent(peerProfile.name)}`}
               className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80 transition"
             >
+              <div className="h-12 w-12 rounded-full overflow-hidden bg-gray-100 border-2 border-yellow-500 shrink-0">
               {peerProfile.avatar ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={peerProfile.avatar}
                   alt={displayName(peerProfile.name)}
-                  className="h-12 w-12 rounded-full object-cover bg-gray-100 border-2 border-yellow-500"
+                  className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="h-12 w-12 rounded-full bg-yellow-500 flex items-center justify-center text-black font-bold text-lg border-2 border-yellow-600">
+                <div className="w-full h-full bg-yellow-500 flex items-center justify-center text-black font-bold text-lg">
                   {(peerProfile.name || "?").slice(0, 2).toUpperCase()}
                 </div>
               )}
+              </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <h2 className="text-lg font-bold text-black truncate">
