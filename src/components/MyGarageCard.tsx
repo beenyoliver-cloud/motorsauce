@@ -16,6 +16,8 @@ import { VEHICLES, YEARS } from "@/data/vehicles";
 import {
   Trash2, Plus, Eye, EyeOff, Star, Image as ImageIcon, PencilLine, Check, X, Link as LinkIcon, Copy
 } from "lucide-react";
+import DisplayWall from "@/components/DisplayWall";
+import GarageStats from "@/components/GarageStats";
 
 /* ----------------------------- Small helpers ----------------------------- */
 function cx(...parts: Array<string | false | null | undefined>) {
@@ -548,6 +550,18 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
           )}
         </div>
       )}
+
+      {/* Stats for default car */}
+      {defaultCar && (
+        <div className="px-6 py-5">
+          <GarageStats car={defaultCar} />
+        </div>
+      )}
+
+      {/* Display Wall - Instagram-style grid of all vehicle photos */}
+      <div className="px-6 pb-6">
+        <DisplayWall cars={cars} />
+      </div>
 
       {/* Add vehicle panel */}
       {mine && openAdd && (
