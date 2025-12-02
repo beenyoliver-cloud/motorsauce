@@ -18,7 +18,7 @@ DROP FUNCTION IF EXISTS public.create_offer(uuid, text, integer, text, text, tex
 -- RETURNS public.offers AS $$
 -- ... (see offers_api_functions.sql for full body)
 
--- Create a wrapper with an unambiguous name
+-- Create a wrapper with an unambiguous name that handles both schemas
 CREATE OR REPLACE FUNCTION public.create_offer_uuid(
   p_thread_id uuid,
   p_listing_id uuid,
@@ -28,15 +28,63 @@ CREATE OR REPLACE FUNCTION public.create_offer_uuid(
   p_listing_image text DEFAULT NULL
 )
 RETURNS public.offers AS $$
+DECLARE
+  uid uuid;
+  recipient uuid;
+  new_offer public.offers;
 BEGIN
-  RETURN public.create_offer(
-    p_thread_id,
-    p_listing_id,
-    p_amount_cents,
-    p_currency,
-    p_listing_title,
-    p_listing_image
+  uid := auth.uid();
+  IF uid IS NULL THEN
+    RAISE EXCEPTION 'unauthorized';
+  END IF;
+  IF p_amount_cents IS NULL OR p_amount_cents <= 0 THEN
+    RAISE EXCEPTION 'invalid_amount';
+  END IF;
+  recipient := public.get_other_participant(p_thread_id, uid);
+
+  -- Try new schema (starter_id, recipient_id) first; fall back to legacy (starter, recipient)
+  BEGIN
+    INSERT INTO public.offers (
+      thread_id, listing_id, listing_title, listing_image,
+      starter_id, recipient_id, amount_cents, currency, status
+    ) VALUES (
+      p_thread_id, p_listing_id, p_listing_title, p_listing_image,
+      uid, recipient, p_amount_cents, COALESCE(p_currency, 'GBP'), 'pending'
+    ) RETURNING * INTO new_offer;
+  EXCEPTION
+    WHEN undefined_column THEN
+      -- Legacy schema: use starter, recipient (no _id suffix)
+      INSERT INTO public.offers (
+        thread_id, listing_id, listing_title, listing_image,
+        starter, recipient, amount_cents, currency, status
+      ) VALUES (
+        p_thread_id, p_listing_id, p_listing_title, p_listing_image,
+        uid, recipient, p_amount_cents, COALESCE(p_currency, 'GBP'), 'pending'
+      ) RETURNING * INTO new_offer;
+  END;
+
+  -- System message
+  INSERT INTO public.messages (
+    thread_id, from_user_id, sender, message_type, text_content, content
+  ) VALUES (
+    p_thread_id, uid, uid, 'system',
+    'Started an offer of £' || (p_amount_cents::float/100)::text,
+    'Started an offer of £' || (p_amount_cents::float/100)::text
   );
+
+  -- Offer message
+  INSERT INTO public.messages (
+    thread_id, from_user_id, sender, message_type,
+    offer_id, offer_amount_cents, offer_currency, offer_status,
+    text_content, content
+  ) VALUES (
+    p_thread_id, uid, uid, 'offer',
+    new_offer.id, p_amount_cents, COALESCE(p_currency,'GBP'), 'pending',
+    'Offer: £' || (p_amount_cents::float/100)::text,
+    'Offer: £' || (p_amount_cents::float/100)::text
+  );
+
+  RETURN new_offer;
 END; $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 GRANT EXECUTE ON FUNCTION public.create_offer_uuid(uuid, uuid, integer, text, text, text) TO authenticated;

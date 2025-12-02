@@ -48,13 +48,26 @@ BEGIN
   END IF;
   recipient := public.get_other_participant(p_thread_id, uid);
 
-  INSERT INTO public.offers (
-    thread_id, listing_id, listing_title, listing_image,
-    starter_id, recipient_id, amount_cents, currency, status
-  ) VALUES (
-    p_thread_id, p_listing_id, p_listing_title, p_listing_image,
-    uid, recipient, p_amount_cents, COALESCE(p_currency, 'GBP'), 'pending'
-  ) RETURNING * INTO new_offer;
+  -- Try new schema (starter_id, recipient_id) first; fall back to legacy (starter, recipient)
+  BEGIN
+    INSERT INTO public.offers (
+      thread_id, listing_id, listing_title, listing_image,
+      starter_id, recipient_id, amount_cents, currency, status
+    ) VALUES (
+      p_thread_id, p_listing_id, p_listing_title, p_listing_image,
+      uid, recipient, p_amount_cents, COALESCE(p_currency, 'GBP'), 'pending'
+    ) RETURNING * INTO new_offer;
+  EXCEPTION
+    WHEN undefined_column THEN
+      -- Legacy schema: use starter, recipient (no _id suffix)
+      INSERT INTO public.offers (
+        thread_id, listing_id, listing_title, listing_image,
+        starter, recipient, amount_cents, currency, status
+      ) VALUES (
+        p_thread_id, p_listing_id, p_listing_title, p_listing_image,
+        uid, recipient, p_amount_cents, COALESCE(p_currency, 'GBP'), 'pending'
+      ) RETURNING * INTO new_offer;
+  END;
 
   -- System message
   INSERT INTO public.messages (
@@ -103,8 +116,8 @@ BEGIN
     RAISE EXCEPTION 'invalid_status';
   END IF;
 
-  -- Only participants can respond
-  IF uid NOT IN (o.starter_id, o.recipient_id) THEN
+  -- Only participants can respond (handle both new and legacy schema)
+  IF uid NOT IN (COALESCE(o.starter_id, o.starter), COALESCE(o.recipient_id, o.recipient)) THEN
     RAISE EXCEPTION 'forbidden';
   END IF;
 
@@ -134,7 +147,7 @@ BEGIN
 
   -- Counter: seller proposes a new amount; automatically declines previous
   IF p_status = 'countered' THEN
-    IF uid != o.recipient_id THEN
+    IF uid != COALESCE(o.recipient_id, o.recipient) THEN
       RAISE EXCEPTION 'only_recipient_can_counter';
     END IF;
     IF p_counter_amount_cents IS NULL OR p_counter_amount_cents <= 0 THEN
@@ -144,14 +157,26 @@ BEGIN
     -- Decline old offer
     UPDATE public.offers SET status='declined', updated_at=NOW() WHERE id = p_offer_id;
 
-    -- Create counter offer from seller to buyer
-    INSERT INTO public.offers (
-      thread_id, listing_id, listing_title, listing_image,
-      starter_id, recipient_id, amount_cents, currency, status
-    ) VALUES (
-      o.thread_id, o.listing_id, o.listing_title, o.listing_image,
-      uid, o.starter_id, p_counter_amount_cents, COALESCE(o.currency,'GBP'), 'pending'
-    ) RETURNING * INTO new_counter;
+    -- Create counter offer from seller to buyer (handle both schemas)
+    BEGIN
+      INSERT INTO public.offers (
+        thread_id, listing_id, listing_title, listing_image,
+        starter_id, recipient_id, amount_cents, currency, status
+      ) VALUES (
+        o.thread_id, o.listing_id, o.listing_title, o.listing_image,
+        uid, COALESCE(o.starter_id, o.starter), p_counter_amount_cents, COALESCE(o.currency,'GBP'), 'pending'
+      ) RETURNING * INTO new_counter;
+    EXCEPTION
+      WHEN undefined_column THEN
+        -- Legacy schema
+        INSERT INTO public.offers (
+          thread_id, listing_id, listing_title, listing_image,
+          starter, recipient, amount_cents, currency, status
+        ) VALUES (
+          o.thread_id, o.listing_id, o.listing_title, o.listing_image,
+          uid, COALESCE(o.starter_id, o.starter), p_counter_amount_cents, COALESCE(o.currency,'GBP'), 'pending'
+        ) RETURNING * INTO new_counter;
+    END;
 
     -- Messages
     INSERT INTO public.messages (thread_id, from_user_id, sender, message_type, text_content, content)
