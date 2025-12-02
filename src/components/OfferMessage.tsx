@@ -3,7 +3,8 @@
 
 import { useMemo, useState } from "react";
 import { CheckCircle, XCircle, Clock, Ban, TrendingUp, Package } from "lucide-react";
-import { createOffer, updateOfferStatus, formatGBP } from "@/lib/offersStore";
+import { createOffer, formatGBP } from "@/lib/offersStore";
+import { updateOfferStatus as updateOfferStatusAPI } from "@/lib/messagesClient";
 import { appendMessage, nowClock, updateOfferInThread, appendOfferMessage } from "@/lib/chatStore";
 import { displayName } from "@/lib/names";
 import { getCurrentUserSync } from "@/lib/auth";
@@ -68,9 +69,9 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
   }
 
   // Actions
-  function withdraw() {
+    async function withdraw() {
     if (!(o.status === "pending" && isMeBuyer && iAmStarter)) return; // only buyer withdrawing their own pending
-    updateOfferStatus(msg.threadId, o.id, "withdrawn");
+      await updateOfferStatusAPI(o.id, "withdrawn");
     updateOfferInThread(msg.threadId, {
       id: o.id,
       amountCents: o.amountCents,
@@ -82,9 +83,9 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
     sysLine(`${displayName(selfName)} withdrew the offer of ${formatGBP(o.amountCents)}.`);
   }
 
-  function accept() {
+    async function accept() {
     if (!(o.status === "pending" && isMeSeller && iAmRecipient)) return; // only seller, as recipient
-    updateOfferStatus(msg.threadId, o.id, "accepted");
+      await updateOfferStatusAPI(o.id, "accepted");
     updateOfferInThread(msg.threadId, {
       id: o.id,
       amountCents: o.amountCents,
@@ -96,9 +97,9 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
     sysLine(`${displayName(selfName)} accepted the offer of ${formatGBP(o.amountCents)}.`);
   }
 
-  function decline() {
+    async function decline() {
     if (!(o.status === "pending" && isMeSeller && iAmRecipient)) return; // only seller, as recipient
-    updateOfferStatus(msg.threadId, o.id, "declined");
+      await updateOfferStatusAPI(o.id, "declined");
     updateOfferInThread(msg.threadId, {
       id: o.id,
       amountCents: o.amountCents,
@@ -110,7 +111,7 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
     sysLine(`${displayName(selfName)} declined the offer of ${formatGBP(o.amountCents)}.`);
   }
 
-  function counterSubmit() {
+    async function counterSubmit() {
     // Seller can counter when they are the recipient of buyer's pending offer
     // Buyer can counter only when they are the recipient of a seller counter
     const canSellerCounter = o.status === "pending" && isMeSeller && iAmRecipient;
@@ -122,7 +123,7 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
     if (!Number.isFinite(pounds) || pounds <= 0) return;
 
     // 1) Supersede current
-    updateOfferStatus(msg.threadId, o.id, "countered");
+      await updateOfferStatusAPI(o.id, "countered");
     updateOfferInThread(msg.threadId, {
       id: o.id,
       amountCents: o.amountCents,
