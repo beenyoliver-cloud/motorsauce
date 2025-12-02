@@ -446,7 +446,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
           )}
 
           {/* Price History Chart */}
-          <PriceHistoryChart listingId={String(listing.id)} />
+          {/* Temporarily disabled: <PriceHistoryChart listingId={String(listing.id)} /> */}
         </div>
       </div>
     </section>
