@@ -55,6 +55,14 @@ export async function addToCartById(listingId: string, qty = 1) {
   // Use first image from images array, fallback to image field, then placeholder
   const image = (l.images && l.images.length > 0) ? l.images[0] : (l.image || "/images/placeholder.png");
   
+  console.log('[addToCartById] Listing data:', {
+    id: l.id,
+    title: l.title,
+    imageField: l.image,
+    imagesArray: l.images,
+    resolvedImage: image
+  });
+  
   const idx = cart.items.findIndex((i) => i.id === l.id);
   if (idx >= 0) {
     // Don't exceed available quantity when adding more
@@ -62,6 +70,8 @@ export async function addToCartById(listingId: string, qty = 1) {
     cart.items[idx].qty = newQty;
     // Update maxQty in case it changed
     cart.items[idx].maxQty = maxQty;
+    // Update image in case it changed
+    cart.items[idx].image = image;
   } else {
     cart.items.push({
       id: l.id,
