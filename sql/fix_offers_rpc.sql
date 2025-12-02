@@ -1,0 +1,42 @@
+-- Fix PostgREST ambiguity: create_offer has overloads with text vs uuid listing_id
+-- Create a wrapper that explicitly casts to uuid to avoid "Could not choose best candidate"
+
+-- Drop old overload with text listing_id if it exists (legacy from early schema)
+DROP FUNCTION IF EXISTS public.create_offer(uuid, text, integer, text, text, text);
+
+-- Ensure only the uuid version exists
+-- This should already be present from offers_api_functions.sql
+-- If not, uncomment and run:
+-- CREATE OR REPLACE FUNCTION public.create_offer(
+--   p_thread_id uuid,
+--   p_listing_id uuid,
+--   p_amount_cents integer,
+--   p_currency text DEFAULT 'GBP',
+--   p_listing_title text DEFAULT NULL,
+--   p_listing_image text DEFAULT NULL
+-- )
+-- RETURNS public.offers AS $$
+-- ... (see offers_api_functions.sql for full body)
+
+-- Create a wrapper with an unambiguous name
+CREATE OR REPLACE FUNCTION public.create_offer_uuid(
+  p_thread_id uuid,
+  p_listing_id uuid,
+  p_amount_cents integer,
+  p_currency text DEFAULT 'GBP',
+  p_listing_title text DEFAULT NULL,
+  p_listing_image text DEFAULT NULL
+)
+RETURNS public.offers AS $$
+BEGIN
+  RETURN public.create_offer(
+    p_thread_id,
+    p_listing_id,
+    p_amount_cents,
+    p_currency,
+    p_listing_title,
+    p_listing_image
+  );
+END; $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+GRANT EXECUTE ON FUNCTION public.create_offer_uuid(uuid, uuid, integer, text, text, text) TO authenticated;

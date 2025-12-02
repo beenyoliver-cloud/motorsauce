@@ -127,7 +127,8 @@ export async function POST(req: Request) {
       p_listing_image: listingImage || null,
     });
 
-    const { data: offer, error: rpcError } = await supabase.rpc("create_offer", {
+    // Prefer a disambiguated wrapper to avoid PostgREST overload ambiguity
+    let { data: offer, error: rpcError } = await supabase.rpc("create_offer_uuid", {
       p_thread_id: threadId,
       p_listing_id: listingId,
       p_amount_cents: amountCents,
@@ -137,18 +138,41 @@ export async function POST(req: Request) {
     });
 
     if (rpcError) {
-      console.error("[offers API] RPC create_offer error:", {
+      console.error("[offers API] RPC create_offer_uuid error:", {
         message: rpcError.message,
         code: rpcError.code,
         details: rpcError.details,
         hint: rpcError.hint,
       });
-      return NextResponse.json({ 
-        error: rpcError.message || "RPC call failed",
-        code: rpcError.code,
-        details: rpcError.details,
-        hint: rpcError.hint,
-      }, { status: 500 });
+      // Fallback to old name if wrapper not yet deployed
+      const ambiguous = (rpcError.details || "").includes("Could not choose the best candidate function");
+      if (!ambiguous) {
+        const fallback = await supabase.rpc("create_offer", {
+          p_thread_id: threadId,
+          p_listing_id: listingId,
+          p_amount_cents: amountCents,
+          p_currency: currency || "GBP",
+          p_listing_title: listingTitle || null,
+          p_listing_image: listingImage || null,
+        });
+        offer = fallback.data as any;
+        if (fallback.error) {
+          console.error("[offers API] RPC create_offer (fallback) error:", fallback.error);
+          return NextResponse.json({
+            error: fallback.error.message || "RPC call failed",
+            code: fallback.error.code,
+            details: fallback.error.details,
+            hint: fallback.error.hint,
+          }, { status: 500 });
+        }
+      } else {
+        return NextResponse.json({ 
+          error: rpcError.message || "RPC overload ambiguity; deploy fix_offers_rpc.sql",
+          code: rpcError.code,
+          details: rpcError.details,
+          hint: rpcError.hint,
+        }, { status: 500 });
+      }
     }
 
     console.log("[offers API] Offer created successfully:", offer);
