@@ -11,7 +11,15 @@ export const runtime = "nodejs";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { items, shipping, totals, address } = body;
+    const { 
+      items, 
+      shipping_method, 
+      shipping_address,
+      items_subtotal, 
+      service_fee, 
+      shipping_cost, 
+      total 
+    } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "No items provided" }, { status: 400 });
@@ -39,11 +47,11 @@ export async function POST(req: NextRequest) {
       .from("orders")
       .insert({
         buyer_id: user.id,
-        items_subtotal: totals.itemsSubtotal,
-        service_fee: totals.serviceFee,
-        shipping_cost: totals.shipping,
-        total: totals.total,
-        shipping_method: shipping,
+        items_subtotal: items_subtotal,
+        service_fee: service_fee,
+        shipping_cost: shipping_cost,
+        total: total,
+        shipping_method: shipping_method,
         status: "confirmed",
       })
       .select()
@@ -57,13 +65,13 @@ export async function POST(req: NextRequest) {
     // Create order items
     const orderItems = items.map((item: any) => ({
       order_id: order.id,
-      listing_id: item.id,
-      seller_id: item.sellerId, // Need to pass this from cart
-      seller_name: item.seller?.name || "Unknown",
+      listing_id: item.listing_id,
+      seller_id: item.seller_id || "",
+      seller_name: item.seller_name,
       title: item.title,
       image: item.image,
       price: item.price,
-      quantity: item.qty,
+      quantity: item.quantity,
     }));
 
     const { error: itemsError } = await supabase
