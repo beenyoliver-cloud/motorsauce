@@ -11,6 +11,8 @@ export const runtime = "nodejs";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+   console.log("[orders] Received request body:", JSON.stringify(body, null, 2));
+   
     const { 
       items, 
       shipping_method, 
@@ -33,14 +35,18 @@ export async function POST(req: NextRequest) {
     const token = authHeader?.replace("Bearer ", "");
     
     if (!token) {
+     console.error("[orders] No auth token provided");
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user) {
+     console.error("[orders] Auth error:", authError);
       return NextResponse.json({ error: "Invalid authentication" }, { status: 401 });
     }
+   
+   console.log("[orders] Authenticated user:", user.id);
 
     // Create order record
     const { data: order, error: orderError } = await supabase
@@ -58,32 +64,41 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (orderError) {
-      console.error("[orders] Failed to create order:", orderError);
+     console.error("[orders] Failed to create order:", JSON.stringify(orderError, null, 2));
       return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
     }
+   
+   console.log("[orders] Order created:", order.id);
 
     // Create order items
     const orderItems = items.map((item: any) => ({
       order_id: order.id,
       listing_id: item.listing_id,
-      seller_id: item.seller_id || "",
+     seller_id: item.seller_id || null, // Use null instead of empty string for database
       seller_name: item.seller_name,
       title: item.title,
       image: item.image,
       price: item.price,
       quantity: item.quantity,
     }));
+   
+   console.log("[orders] Inserting order items:", JSON.stringify(orderItems, null, 2));
 
     const { error: itemsError } = await supabase
       .from("order_items")
       .insert(orderItems);
 
     if (itemsError) {
-      console.error("[orders] Failed to create order items:", itemsError);
+       console.error("[orders] Failed to create order items:", JSON.stringify(itemsError, null, 2));
       // Rollback: delete the order
       await supabase.from("orders").delete().eq("id", order.id);
-      return NextResponse.json({ error: "Failed to create order items" }, { status: 500 });
+       return NextResponse.json({ 
+         error: "Failed to create order items",
+         details: itemsError.message || itemsError 
+       }, { status: 500 });
     }
+   
+     console.log("[orders] Order items created successfully");
 
     return NextResponse.json({
       success: true,
@@ -91,8 +106,11 @@ export async function POST(req: NextRequest) {
       orderRef: `MS-${order.id.split("-")[0].toUpperCase()}`,
     });
   } catch (error) {
-    console.error("[orders] Unexpected error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+     console.error("[orders] Unexpected error:", error);
+     return NextResponse.json({ 
+       error: "Internal server error",
+       details: error instanceof Error ? error.message : String(error)
+     }, { status: 500 });
   }
 }
 
