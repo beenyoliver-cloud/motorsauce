@@ -113,6 +113,7 @@ function Row({ item }: { item: CartItem }) {
   useEffect(() => setQty(item.qty), [item.qty]);
 
   const img = resolveListingImage({ image: item.image, images: undefined, listingImage: undefined });
+  const maxQty = item.maxQty || 99; // fallback to 99 for old cart items without maxQty
 
   return (
     <li className="p-3 flex gap-3 items-center">
@@ -121,6 +122,7 @@ function Row({ item }: { item: CartItem }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium text-gray-900 line-clamp-2">{item.title}</div>
+        <div className="mt-1 text-xs text-gray-500">{maxQty} available</div>
         <div className="mt-2 flex items-center gap-2">
           <div className="inline-flex items-stretch rounded-md border border-gray-300 overflow-hidden">
             <button
@@ -137,20 +139,21 @@ function Row({ item }: { item: CartItem }) {
             <input
               type="number"
               min={1}
-              max={99}
+              max={maxQty}
               value={qty}
-              onChange={(e) => setQty(Math.max(1, Math.min(99, parseInt(e.target.value || "1", 10))))}
+              onChange={(e) => setQty(Math.max(1, Math.min(maxQty, parseInt(e.target.value || "1", 10))))}
               onBlur={() => updateQty(item.id, qty)}
               className="w-12 text-center text-sm text-gray-900 bg-white"
               aria-label="Quantity"
             />
             <button
-              className="px-2 text-sm text-gray-900 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="px-2 text-sm text-gray-900 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => {
-                const next = Math.min(99, qty + 1);
+                const next = Math.min(maxQty, qty + 1);
                 setQty(next);
                 updateQty(item.id, next);
               }}
+              disabled={qty >= maxQty}
               aria-label="Increase quantity"
             >
               +

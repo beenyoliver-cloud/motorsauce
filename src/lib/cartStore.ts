@@ -10,6 +10,7 @@ export type CartItem = {
   price: number;       // numeric £
   seller: { name: string };
   qty: number;
+  maxQty: number;      // available quantity from listing
 };
 
 export type Cart = {
@@ -46,19 +47,30 @@ export async function addToCartById(listingId: string, qty = 1) {
   const cart = getCart();
   const l: Listing | null = await getListingById(listingId);
   if (!l) throw new Error("Listing not found");
+  
   // price in DB may be stored as number or string; attempt to parse
   const price = typeof l.price === 'number' ? l.price : parseGBP(String(l.price || "0"));
+  const maxQty = l.quantity || 1; // default to 1 if not specified
+  
+  // Use first image from images array, fallback to image field, then placeholder
+  const image = (l.images && l.images.length > 0) ? l.images[0] : (l.image || "/images/placeholder.png");
+  
   const idx = cart.items.findIndex((i) => i.id === l.id);
   if (idx >= 0) {
-    cart.items[idx].qty += qty;
+    // Don't exceed available quantity when adding more
+    const newQty = Math.min(cart.items[idx].qty + qty, maxQty);
+    cart.items[idx].qty = newQty;
+    // Update maxQty in case it changed
+    cart.items[idx].maxQty = maxQty;
   } else {
     cart.items.push({
       id: l.id,
       title: l.title,
-      image: l.image || "/images/placeholder.png",
+      image,
       price,
       seller: { name: l.seller?.name || "Seller" },
-      qty,
+      qty: Math.min(qty, maxQty), // don't exceed available quantity
+      maxQty,
     });
   }
   writeRaw(cart);
@@ -68,7 +80,8 @@ export function updateQty(id: string, qty: number) {
   const cart = getCart();
   const item = cart.items.find((i) => i.id === id);
   if (!item) return;
-  item.qty = Math.max(1, Math.min(99, Math.floor(qty || 1)));
+  // Enforce min 1, max of either available quantity or 99, whichever is lower
+  item.qty = Math.max(1, Math.min(item.maxQty, Math.floor(qty || 1)));
   writeRaw(cart);
 }
 
