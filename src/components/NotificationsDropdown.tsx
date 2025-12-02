@@ -136,12 +136,12 @@ export function NotificationsDropdown() {
       {/* Bell Icon Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-full hover:bg-gray-100 transition"
+        className="relative text-black hover:text-yellow-500"
         aria-label="Notifications"
       >
-        <Bell size={20} className="text-gray-700" />
+        <Bell size={22} />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 min-w-[20px] flex items-center justify-center px-1">
+          <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[10px] font-bold min-w-[16px] h-[16px] px-1">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -156,8 +156,8 @@ export function NotificationsDropdown() {
             onClick={() => setIsOpen(false)}
           />
           
-          {/* Dropdown Panel */}
-          <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[500px] overflow-hidden flex flex-col">
+          {/* Dropdown Panel - responsive positioning */}
+          <div className="absolute right-0 md:right-0 mt-2 w-[calc(100vw-2rem)] md:w-80 max-w-sm bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[70vh] md:max-h-[500px] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">Notifications</h3>
