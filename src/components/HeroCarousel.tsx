@@ -12,26 +12,28 @@ type Slide = {
   href?: string;
 };
 
+// Use three latest uploaded images placed in public/uploads
+// If you replace these files, the carousel will show your new images automatically.
 const SLIDES: Slide[] = [
   {
-    id: "reg",
-    image: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=1600&h=900&fit=crop&q=80",
-    title: "Search by Registration",
-    blurb: "Enter your reg to instantly find parts that fit your vehicle.",
+    id: "hero-1",
+    image: "/uploads/LOC-mflm4oyu-8w8qw-00.jpg",
+    title: "Find parts that fit",
+    blurb: "Search by vehicle or number plate and shop trusted sellers.",
     href: "/registration",
   },
   {
-    id: "oem",
-    image: "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=1600&h=900&fit=crop&q=80",
-    title: "OEM & Aftermarket",
-    blurb: "Quality parts from trusted sellers, all in one place.",
+    id: "hero-2",
+    image: "/uploads/LOC-mfd0iehc-0sy2x-00.jpg",
+    title: "OEM and aftermarket",
+    blurb: "Quality parts with clear fitment and price history.",
     href: "/categories/oem",
   },
   {
-    id: "sell",
-    image: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=1600&h=900&fit=crop&q=80",
-    title: "Sell your parts in minutes",
-    blurb: "List, message buyers, and get paid with ease.",
+    id: "hero-3",
+    image: "/uploads/LOC-metrfzhm-8wequ-00.jpg",
+    title: "Sell your parts fast",
+    blurb: "Create a listing in minutes and chat with buyers.",
     href: "/sell",
   },
 ];

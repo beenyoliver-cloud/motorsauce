@@ -18,7 +18,7 @@ export default function MessagesThreadPage({ params }: PageProps) {
 
   if (!threadId) {
     return (
-      <section className="fixed inset-0 md:relative md:py-4 md:px-4 md:max-w-3xl md:mx-auto">
+      <section className="fixed inset-x-0 top-[128px] bottom-0 md:relative md:py-4 md:px-4 md:max-w-3xl md:mx-auto">
         <div className="h-full flex items-center justify-center">
           <div className="text-sm text-gray-500">Loading...</div>
         </div>
@@ -27,7 +27,7 @@ export default function MessagesThreadPage({ params }: PageProps) {
   }
 
   return (
-    <section className="fixed inset-0 md:relative md:py-4 md:px-4 md:max-w-3xl md:mx-auto">
+    <section className="fixed inset-x-0 top-[128px] bottom-0 md:relative md:py-4 md:px-4 md:max-w-3xl md:mx-auto">
       <div className="h-full md:h-[calc(100vh-8rem)] border-0 md:border md:border-gray-200 md:rounded-xl bg-white md:shadow-sm overflow-hidden flex flex-col">
         {/* Top bar with back button */}
         <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200 bg-white shrink-0">
