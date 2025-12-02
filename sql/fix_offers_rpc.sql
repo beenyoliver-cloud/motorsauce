@@ -47,7 +47,7 @@ BEGIN
     SELECT 1 FROM information_schema.columns 
     WHERE table_schema = 'public' AND table_name = 'offers' AND column_name = 'starter_id'
   ) THEN
-    -- New schema: starter_id, recipient_id
+    -- New messaging schema: starter_id, recipient_id, thread_id, amount_cents
     INSERT INTO public.offers (
       thread_id, listing_id, listing_title, listing_image,
       starter_id, recipient_id, amount_cents, currency, status
@@ -56,13 +56,11 @@ BEGIN
       uid, recipient, p_amount_cents, COALESCE(p_currency, 'GBP'), 'pending'
     ) RETURNING * INTO new_offer;
   ELSE
-    -- Legacy schema: starter, recipient
+    -- Legacy init_db schema: starter, recipient, listing_id (uuid), amount (decimal), no thread_id
     INSERT INTO public.offers (
-      thread_id, listing_id, listing_title, listing_image,
-      starter, recipient, amount_cents, currency, status
+      listing_id, starter, recipient, amount, status
     ) VALUES (
-      p_thread_id, p_listing_id, p_listing_title, p_listing_image,
-      uid, recipient, p_amount_cents, COALESCE(p_currency, 'GBP'), 'pending'
+      p_listing_id::uuid, uid, recipient, (p_amount_cents::decimal / 100), 'pending'
     ) RETURNING * INTO new_offer;
   END IF;
 
