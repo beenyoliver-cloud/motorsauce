@@ -19,26 +19,54 @@ export default function BasketAddPage() {
   useEffect(() => {
     const id = sp.get("listing");
     const redirect = sp.get("redirect");
+    
+    console.log("BasketAddPage mounted - listing id:", id, "redirect:", redirect);
+    
+    if (!id) {
+      console.error("No listing id provided in URL");
+      setError(true);
+      return;
+    }
+
+    let didFinish = false;
+    const timer = setTimeout(() => {
+      if (!didFinish) {
+        console.error("Timeout: add to cart did not finish after 7 seconds");
+        setError(true);
+      }
+    }, 7000);
+
     (async () => {
       try {
-       if (id) {
-         await addToCartById(id, 1);
-         
-         // If redirect=checkout, go directly to checkout (for "Buy now")
-         if (redirect === "checkout") {
-           router.replace("/checkout");
-         } else {
-           // Open the cart drawer by dispatching an event
-           window.dispatchEvent(new CustomEvent("ms:opencart"));
-           // Go back to the previous page (listing page)
-           router.back();
-         }
+        console.log("Starting addToCartById for listing:", id);
+        await addToCartById(id, 1);
+        console.log("Successfully added to cart");
+        didFinish = true;
+        clearTimeout(timer);
+        
+        // If redirect=checkout, go directly to checkout (for "Buy now")
+        if (redirect === "checkout") {
+          console.log("Redirecting to checkout");
+          router.replace("/checkout");
+        } else {
+          // Open the cart drawer by dispatching an event
+          console.log("Dispatching ms:opencart event and going back");
+          window.dispatchEvent(new CustomEvent("ms:opencart"));
+          // Small delay to ensure event is processed
+          setTimeout(() => {
+            router.back();
+          }, 100);
         }
-     } catch (err) {
-       console.error("Failed to add to cart:", err);
-       setError(true);
+      } catch (err) {
+        console.error("Failed to add to cart:", err);
+        setError(true);
+        clearTimeout(timer);
       }
     })();
+
+    return () => {
+      clearTimeout(timer);
+    };
   }, [sp, router]);
 
  if (error) {
