@@ -17,21 +17,21 @@ type Slide = {
 const DEFAULT_SLIDES: Slide[] = [
   {
     id: "hero-11",
-    image: "/uploads/Hero11.png",
+  image: "/uploads/Hero11.jpg",
     title: "Find parts that fit",
     blurb: "Search by vehicle or number plate and shop trusted sellers.",
     href: "/registration",
   },
   {
     id: "hero-12",
-    image: "/uploads/Hero12.png",
+  image: "/uploads/Hero12.jpg",
     title: "OEM and aftermarket",
     blurb: "Quality parts with clear fitment and price history.",
     href: "/categories/oem",
   },
   {
     id: "hero-13",
-    image: "/uploads/Hero13.png",
+  image: "/uploads/Hero13.jpg",
     title: "Sell your parts fast",
     blurb: "Create a listing in minutes and chat with buyers.",
     href: "/sell",
