@@ -66,50 +66,22 @@ const MOCK_VEHICLES: Record<string, VehicleData> = {
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const reg = searchParams.get("reg");
-
+    const reg = searchParams.get("reg") || "";
     if (!reg) {
-      return NextResponse.json(
-        { error: "Missing registration parameter" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing registration parameter" }, { status: 400 });
     }
-
-    // Normalize registration: uppercase, remove spaces/special chars
     const normalizedReg = reg.toUpperCase().replace(/[^A-Z0-9]/g, "");
-
-    if (normalizedReg.length < 2 || normalizedReg.length > 7) {
-      return NextResponse.json(
-        { error: "Invalid UK registration format" },
-        { status: 400 }
-      );
+    if (normalizedReg.length < 2 || normalizedReg.length > 8) {
+      return NextResponse.json({ error: "Invalid UK registration format" }, { status: 400 });
     }
-
-    // OPTION 1: Use DVLA API (requires API key and setup)
-    // const vehicleData = await lookupDVLA(normalizedReg);
-    
-    // OPTION 2: Use third-party service
-    // const vehicleData = await lookupThirdParty(normalizedReg);
-    
-    // OPTION 3: Mock data (current implementation)
-    const vehicleData = MOCK_VEHICLES[normalizedReg];
-
-    if (!vehicleData) {
-      // Return 404 if vehicle not found
-      return NextResponse.json(
-        { error: "Vehicle not found" },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(vehicleData);
-
+    // Forward to unified DVLA lookup route for single implementation
+    const forwardUrl = `${request.nextUrl.origin}/api/garage/registration-lookup?reg=${encodeURIComponent(normalizedReg)}`;
+    const res = await fetch(forwardUrl, { cache: "no-store" });
+    const bodyText = await res.text();
+    return new NextResponse(bodyText, { status: res.status, headers: { "content-type": res.headers.get("content-type") || "application/json" } });
   } catch (error) {
     console.error("Registration lookup error:", error);
-    return NextResponse.json(
-      { error: "Failed to lookup registration" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to lookup registration" }, { status: 500 });
   }
 }
 

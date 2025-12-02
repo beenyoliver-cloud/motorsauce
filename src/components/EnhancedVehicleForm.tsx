@@ -47,17 +47,18 @@ export default function EnhancedVehicleForm({
 
     setLookupLoading(true);
     try {
-      const res = await fetch(`/api/registration?reg=${encodeURIComponent(registration)}`);
+      const res = await fetch(`/api/garage/registration-lookup?reg=${encodeURIComponent(registration)}`, { cache: "no-store" });
+      const data = await res.json();
       if (!res.ok) {
-        throw new Error("Vehicle not found");
+        throw new Error(data?.error || "Vehicle not found");
       }
 
-      const data = await res.json();
-      
       // Auto-fill fields from DVLA data
       if (data.make) setMake(data.make);
       if (data.model) setModel(data.model);
-      if (data.year) setYear(data.year.toString());
+      if (typeof data.year !== "undefined" && data.year !== null) setYear(String(data.year));
+      if (data.trim) setTrim(data.trim);
+      // Optional fields if provider supplies them
       if (data.color) setColor(data.color);
       if (data.motExpiry) setMotExpiry(data.motExpiry);
       

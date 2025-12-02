@@ -344,8 +344,10 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 pt-5">
-        <div className="flex items-center gap-3 flex-wrap">
+      <div className="px-4 sm:px-6 pt-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          {/* Title + default badge */}
+          <div className="flex items-center gap-3 flex-wrap">
           <h2 className="text-2xl font-extrabold text-black tracking-tight">
             {mine ? "My Garage" : `${displayName}'s Garage`}
           </h2>
@@ -363,47 +365,52 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
               {compact ? 'Expanded view' : 'Compact view'}
             </button>
           )}
-        </div>
+          </div>
 
-        <div className="flex items-center gap-3">
-          {mine && (
-            <>
-              <button
-                type="button"
-                onClick={() => setOpenAdd((v) => !v)}
-                className="inline-flex items-center gap-2 rounded-lg bg-yellow-500 text-black font-semibold px-4 py-2 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              >
-                <Plus className="h-4 w-4" /> Add vehicle
-              </button>
-              <Toggle checked={pub} onChange={togglePublic} />
-              {pub && (
-                <>
-                  <GarageQRCode username={displayName} vehicleCount={cars.length} />
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        const url = `${window.location.origin}/profile/${encodeURIComponent(displayName)}#garage`;
-                        await navigator.clipboard.writeText(url);
-                        setCopiedId("__public__");
-                        setTimeout(() => setCopiedId((prev) => (prev === "__public__" ? null : prev)), 1200);
-                      } catch {}
-                    }}
-                    className={cx(
-                      "inline-flex items-center gap-1 rounded-md border text-sm px-3 py-1.5",
-                      copiedId === "__public__"
-                        ? "bg-white border-green-300 text-green-700"
-                        : "bg-white border-gray-200 text-gray-900 hover:bg-gray-50"
-                    )}
-                    title="Copy public garage link"
-                  >
-                    <LinkIcon className="h-4 w-4" />
-                    {copiedId === "__public__" ? "Link copied" : "Copy public link"}
-                  </button>
-                </>
-              )}
-            </>
-          )}
+          {/* Actions - stack on mobile */}
+          <div className="grid grid-cols-1 sm:auto-cols-max sm:grid-flow-col gap-2">
+            {mine && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setOpenAdd((v) => !v)}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-yellow-500 text-black font-semibold px-4 py-2 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                >
+                  <Plus className="h-4 w-4" /> Add vehicle
+                </button>
+                <div className="inline-flex items-center justify-between sm:justify-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2">
+                  <span className="text-xs text-gray-700">Public</span>
+                  <Toggle checked={pub} onChange={togglePublic} />
+                </div>
+                {pub && (
+                  <div className="inline-flex items-center gap-2">
+                    <GarageQRCode username={displayName} vehicleCount={cars.length} />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const url = `${window.location.origin}/profile/${encodeURIComponent(displayName)}#garage`;
+                          await navigator.clipboard.writeText(url);
+                          setCopiedId("__public__");
+                          setTimeout(() => setCopiedId((prev) => (prev === "__public__" ? null : prev)), 1200);
+                        } catch {}
+                      }}
+                      className={cx(
+                        "inline-flex items-center gap-1 rounded-md border text-sm px-3 py-1.5",
+                        copiedId === "__public__"
+                          ? "bg-white border-green-300 text-green-700"
+                          : "bg-white border-gray-200 text-gray-900 hover:bg-gray-50"
+                      )}
+                      title="Copy public garage link"
+                    >
+                      <LinkIcon className="h-4 w-4" />
+                      {copiedId === "__public__" ? "Link copied" : "Copy public link"}
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
 

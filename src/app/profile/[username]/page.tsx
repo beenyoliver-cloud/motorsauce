@@ -128,26 +128,25 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
                 </div>
               </div>
 
-              <div className="mt-2 flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-3 text-xs sm:text-sm text-gray-600 px-2 md:px-0">
-                <div className="flex items-center gap-1.5">
+              {/* Info bubbles - organized grid on mobile */}
+              <div className="mt-2 grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-3 text-xs sm:text-sm text-gray-600 px-2 md:px-0">
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1">
                   <StarRow value={5} />
                   <span className="font-medium text-black">5.0</span>
                   <span className="text-gray-500">(0)</span>
                 </div>
-                <span className="text-gray-300 hidden sm:inline">•</span>
-                <div className="flex items-center gap-1">
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1">
                   <MapPin className="h-3.5 w-3.5 text-gray-400" />
                   <span>UK</span>
                 </div>
-                <span className="text-gray-300 hidden sm:inline">•</span>
-                <div className="flex items-center gap-1">
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1">
                   <Store className="h-3.5 w-3.5 text-gray-400" />
                   <span>Joined 2025</span>
                 </div>
               </div>
 
               {/* Stats */}
-              <div className="mt-3 md:mt-4 inline-flex gap-4 sm:gap-6 text-center">
+              <div className="mt-3 md:mt-4 grid grid-cols-3 sm:inline-flex gap-2 sm:gap-6 text-center">
                 <div>
                   <SellerListingCount sellerName={displayName} className="block text-lg sm:text-xl font-bold text-black" />
                   <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5">Listings</div>
