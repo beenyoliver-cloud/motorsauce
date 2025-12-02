@@ -111,35 +111,78 @@ export default function MakeOfferButtonNew({
             onClick={() => !submitting && setOpen(false)}
             aria-hidden
           />
-          <div className="absolute left-1/2 top-1/2 w-[92vw] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-5 shadow-2xl">
-            <h3 className="text-lg font-semibold text-black">Make an offer</h3>
-            <p className="mt-1 text-sm text-gray-700 line-clamp-2">{listingTitle}</p>
+          <div className="absolute left-1/2 top-1/2 w-[92vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white shadow-2xl">
+            {/* Header */}
+            <div className="border-b border-gray-200 px-5 py-4">
+              <h3 className="text-lg font-semibold text-black">Make an offer</h3>
+              <p className="text-xs text-gray-600 mt-0.5">Send a private offer to {sellerName}</p>
+            </div>
 
-            <label className="mt-4 block text-sm text-gray-900">Amount (£)</label>
-            <input
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              inputMode="decimal"
-              placeholder="e.g. 75"
-              disabled={submitting}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-900 disabled:bg-gray-100"
-            />
+            {/* Listing preview */}
+            <div className="px-5 py-4 border-b border-gray-100 bg-gray-50">
+              <a
+                href={`/listing/${encodeURIComponent(String(listingId))}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-start gap-3 group"
+              >
+                {listingImage && (
+                  <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border border-gray-200 bg-white">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={listingImage}
+                      alt={listingTitle}
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-black group-hover:underline">
+                    {listingTitle}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    View listing
+                  </p>
+                </div>
+              </a>
+            </div>
 
-            <div className="mt-4 flex items-center justify-end gap-2">
+            {/* Offer form */}
+            <div className="px-5 py-4">
+              <label className="block text-sm font-medium text-gray-900">Your offer</label>
+              <div className="mt-2 relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">£</span>
+                <input
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  disabled={submitting}
+                  className="w-full rounded-md border border-gray-300 pl-7 pr-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 disabled:bg-gray-100"
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1.5">The seller will be notified and can accept, decline, or counter your offer</p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2 border-t border-gray-200 px-5 py-4 bg-gray-50">
               <button
                 onClick={() => setOpen(false)}
                 disabled={submitting}
-                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50"
+                className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 transition"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="rounded-md bg-yellow-500 px-3 py-2 text-sm font-semibold text-black hover:bg-yellow-600 disabled:opacity-50 flex items-center gap-2"
+                className="rounded-md bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-600 disabled:opacity-50 flex items-center gap-2 transition"
               >
                 {submitting && <span className="h-2 w-2 rounded-full bg-black/40 animate-pulse" />}
-                {submitting ? "Sending…" : "Send offer"}
+                {submitting ? "Sending offer…" : "Send offer"}
               </button>
             </div>
           </div>
