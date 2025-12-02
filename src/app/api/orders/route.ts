@@ -70,12 +70,35 @@ export async function POST(req: NextRequest) {
    
    console.log("[orders] Order created:", order.id);
 
+    // Ensure seller_id is present by backfilling from listings if needed
+    const missingSeller = (items as any[]).filter((i) => !i.seller_id || String(i.seller_id).length === 0);
+    if (missingSeller.length > 0) {
+      const ids = missingSeller.map((i) => i.listing_id);
+      const { data: listings, error: listingsErr } = await supabase
+        .from("listings")
+        .select("id, seller_id, owner_id")
+        .in("id", ids);
+
+      if (listingsErr) {
+        console.error("[orders] Failed to fetch listings for seller backfill:", listingsErr);
+      } else {
+        const byId = new Map(listings.map((l: any) => [l.id, l]));
+        for (const it of items as any[]) {
+          if (!it.seller_id || String(it.seller_id).length === 0) {
+            const row = byId.get(it.listing_id);
+            it.seller_id = row?.seller_id || row?.owner_id || null;
+          }
+          if (!it.seller_name) it.seller_name = "Unknown";
+        }
+      }
+    }
+
     // Create order items
-    const orderItems = items.map((item: any) => ({
+    const orderItems = (items as any[]).map((item) => ({
       order_id: order.id,
       listing_id: item.listing_id,
-     seller_id: item.seller_id || null, // Use null instead of empty string for database
-      seller_name: item.seller_name,
+      seller_id: item.seller_id, // after backfill
+      seller_name: item.seller_name || "Unknown",
       title: item.title,
       image: item.image,
       price: item.price,
