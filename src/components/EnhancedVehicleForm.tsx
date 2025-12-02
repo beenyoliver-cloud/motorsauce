@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, FormEvent } from "react";
-import { Check, X, Image as ImageIcon, Shield, Calendar, Gauge, Search } from "lucide-react";
+import { useEffect, useState, useRef, FormEvent } from "react";
+import { Check, X, Image as ImageIcon, Calendar, Gauge, Search } from "lucide-react";
 import { Car } from "@/lib/garage";
+import { nsKey } from "@/lib/auth";
 
 interface EnhancedVehicleFormProps {
   onSubmit: (vehicle: Partial<Car>) => void;
@@ -33,10 +34,41 @@ export default function EnhancedVehicleForm({
   const [insuranceReminder, setInsuranceReminder] = useState(initialData?.insuranceReminder || false);
   const [notes, setNotes] = useState(initialData?.notes || "");
   const [image, setImage] = useState<string | undefined>(initialData?.image);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [lookupLoading, setLookupLoading] = useState(false);
   
   const uploadRef = useRef<HTMLInputElement>(null);
+
+  // Canonicalize make/model to known options
+  function canonicalMake(mk: string): string {
+    const keys = Object.keys(vehicleMakes || {});
+    const found = keys.find((k) => k.toLowerCase() === mk.toLowerCase());
+    return found || mk;
+  }
+  function canonicalModel(mk: string, md: string): string {
+    const list = (vehicleMakes?.[canonicalMake(mk)] || []) as string[];
+    const found = list.find((m) => m.toLowerCase() === md.toLowerCase());
+    return found || md;
+  }
+
+  // Prefill from last DVLA lookup (set by homepage plate search)
+  useEffect(() => {
+    try {
+      const key = nsKey("last_dvla_lookup");
+      const raw = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
+      if (!raw) return;
+      const v = JSON.parse(raw);
+      if (!v || typeof v !== 'object') return;
+      // Only prefill if fields are empty or initial
+      const mk = v.make?.toString() || "";
+      const md = v.model?.toString() || "";
+      const yr = v.year ? String(v.year) : "";
+      if (!make && mk) setMake(canonicalMake(mk));
+      if (!model && md) setModel(canonicalModel(mk, md));
+      if (!year && yr) setYear(yr);
+      if (!trim && v.trim) setTrim(v.trim.toString());
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Lookup vehicle by registration plate
   const handleRegistrationLookup = async () => {
@@ -54,8 +86,8 @@ export default function EnhancedVehicleForm({
       }
 
       // Auto-fill fields from DVLA data
-      if (data.make) setMake(data.make);
-      if (data.model) setModel(data.model);
+      if (data.make) setMake(canonicalMake(data.make));
+      if (data.model) setModel(canonicalModel(data.make, data.model));
       if (typeof data.year !== "undefined" && data.year !== null) setYear(String(data.year));
       if (data.trim) setTrim(data.trim);
       // Optional fields if provider supplies them
@@ -329,53 +361,7 @@ export default function EnhancedVehicleForm({
         </div>
       </div>
 
-      {/* Advanced Settings */}
-      <div>
-        <button
-          type="button"
-          onClick={() => setShowAdvanced(!showAdvanced)}
-          className="text-sm font-semibold text-gray-900 hover:text-gray-700 flex items-center gap-2"
-        >
-          <Shield className="h-4 w-4" />
-          {showAdvanced ? "Hide" : "Show"} Advanced Settings
-        </button>
-
-        {showAdvanced && (
-          <div className="mt-3 space-y-4 p-4 rounded-lg border border-gray-200 bg-gray-50">
-            <label className="grid gap-1">
-              <span className="text-xs text-gray-700">Registration Plate</span>
-              <input
-                type="text"
-                value={registration}
-                onChange={(e) => setRegistration(e.target.value.toUpperCase())}
-                placeholder="AB12 CDE"
-                className="border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              />
-            </label>
-
-            <label className="flex items-center gap-2 text-sm text-gray-700">
-              <input
-                type="checkbox"
-                checked={hideRegistration}
-                onChange={(e) => setHideRegistration(e.target.checked)}
-                className="rounded border-gray-300 text-yellow-500 focus:ring-yellow-400"
-              />
-              Hide registration from public view (auto-blur photos)
-            </label>
-
-            <label className="grid gap-1">
-              <span className="text-xs text-gray-700">Notes</span>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Personal notes about this vehicle..."
-                rows={3}
-                className="border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              />
-            </label>
-          </div>
-        )}
-      </div>
+      {/* Advanced Settings removed per request */}
 
       {/* Actions */}
       <div className="flex items-center gap-3 pt-4 border-t border-gray-200">

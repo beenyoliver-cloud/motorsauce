@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { Search as SearchIcon, Car, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { loadMyCars, vehicleLabel } from "@/lib/garage";
+import { nsKey } from "@/lib/auth";
 import { getAllMakes, getModelsForMake, getYearsForModel } from "@/data/vehicles";
 
 const CATEGORIES = ["OEM", "Aftermarket", "Tool"];
@@ -81,6 +82,19 @@ export default function HomeHero() {
       if (!res.ok) {
         throw new Error(data?.error || "Lookup failed");
       }
+
+      // Persist last successful lookup to help My Garage prefill
+      try {
+        const key = nsKey("last_dvla_lookup");
+        localStorage.setItem(key, JSON.stringify({
+          make: data.make,
+          model: data.model,
+          year: data.year,
+          trim: data.trim,
+          at: Date.now(),
+          reg,
+        }));
+      } catch {}
 
       const params = new URLSearchParams();
       if (data.make) params.set("make", data.make);
