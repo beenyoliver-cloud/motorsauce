@@ -48,8 +48,12 @@ BEGIN
   END IF;
   recipient := public.get_other_participant(p_thread_id, uid);
 
-  -- Try new schema (starter_id, recipient_id) first; fall back to legacy (starter, recipient)
-  BEGIN
+  -- Detect schema: check if starter_id column exists
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'offers' AND column_name = 'starter_id'
+  ) THEN
+    -- New schema: starter_id, recipient_id
     INSERT INTO public.offers (
       thread_id, listing_id, listing_title, listing_image,
       starter_id, recipient_id, amount_cents, currency, status
@@ -57,17 +61,16 @@ BEGIN
       p_thread_id, p_listing_id, p_listing_title, p_listing_image,
       uid, recipient, p_amount_cents, COALESCE(p_currency, 'GBP'), 'pending'
     ) RETURNING * INTO new_offer;
-  EXCEPTION
-    WHEN undefined_column THEN
-      -- Legacy schema: use starter, recipient (no _id suffix)
-      INSERT INTO public.offers (
-        thread_id, listing_id, listing_title, listing_image,
-        starter, recipient, amount_cents, currency, status
-      ) VALUES (
-        p_thread_id, p_listing_id, p_listing_title, p_listing_image,
-        uid, recipient, p_amount_cents, COALESCE(p_currency, 'GBP'), 'pending'
-      ) RETURNING * INTO new_offer;
-  END;
+  ELSE
+    -- Legacy schema: starter, recipient
+    INSERT INTO public.offers (
+      thread_id, listing_id, listing_title, listing_image,
+      starter, recipient, amount_cents, currency, status
+    ) VALUES (
+      p_thread_id, p_listing_id, p_listing_title, p_listing_image,
+      uid, recipient, p_amount_cents, COALESCE(p_currency, 'GBP'), 'pending'
+    ) RETURNING * INTO new_offer;
+  END IF;
 
   -- System message
   INSERT INTO public.messages (
@@ -157,8 +160,12 @@ BEGIN
     -- Decline old offer
     UPDATE public.offers SET status='declined', updated_at=NOW() WHERE id = p_offer_id;
 
-    -- Create counter offer from seller to buyer (handle both schemas)
-    BEGIN
+    -- Create counter offer from seller to buyer (detect schema)
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns 
+      WHERE table_schema = 'public' AND table_name = 'offers' AND column_name = 'starter_id'
+    ) THEN
+      -- New schema
       INSERT INTO public.offers (
         thread_id, listing_id, listing_title, listing_image,
         starter_id, recipient_id, amount_cents, currency, status
@@ -166,17 +173,16 @@ BEGIN
         o.thread_id, o.listing_id, o.listing_title, o.listing_image,
         uid, COALESCE(o.starter_id, o.starter), p_counter_amount_cents, COALESCE(o.currency,'GBP'), 'pending'
       ) RETURNING * INTO new_counter;
-    EXCEPTION
-      WHEN undefined_column THEN
-        -- Legacy schema
-        INSERT INTO public.offers (
-          thread_id, listing_id, listing_title, listing_image,
-          starter, recipient, amount_cents, currency, status
-        ) VALUES (
-          o.thread_id, o.listing_id, o.listing_title, o.listing_image,
-          uid, COALESCE(o.starter_id, o.starter), p_counter_amount_cents, COALESCE(o.currency,'GBP'), 'pending'
-        ) RETURNING * INTO new_counter;
-    END;
+    ELSE
+      -- Legacy schema
+      INSERT INTO public.offers (
+        thread_id, listing_id, listing_title, listing_image,
+        starter, recipient, amount_cents, currency, status
+      ) VALUES (
+        o.thread_id, o.listing_id, o.listing_title, o.listing_image,
+        uid, COALESCE(o.starter_id, o.starter), p_counter_amount_cents, COALESCE(o.currency,'GBP'), 'pending'
+      ) RETURNING * INTO new_counter;
+    END IF;
 
     -- Messages
     INSERT INTO public.messages (thread_id, from_user_id, sender, message_type, text_content, content)
