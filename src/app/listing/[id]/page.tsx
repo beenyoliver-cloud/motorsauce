@@ -334,7 +334,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
           {/* Price + Badge */}
           <div className="space-y-2">
             <div className="text-3xl font-extrabold text-gray-900">{listing.price}</div>
-            <PriceReducedBadge listingId={String(listing.id)} />
+            {/* Temporarily disabled: <PriceReducedBadge listingId={String(listing.id)} /> */}
           </div>
 
           {/* CTAs */}
