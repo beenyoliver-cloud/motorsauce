@@ -13,8 +13,8 @@ import SellerExposureTracker from "@/components/SellerExposureTracker";
 import TrackRecentlyViewed from "@/components/TrackRecentlyViewed";
 import TrustBadge from "@/components/TrustBadge";
 import Breadcrumb from "@/components/Breadcrumb";
-import PriceReducedBadge from "@/components/PriceReducedBadge";
-import PriceHistoryChart from "@/components/PriceHistoryChart";
+// Temporarily disabled: import PriceReducedBadge from "@/components/PriceReducedBadge";
+// Temporarily disabled: import PriceHistoryChart from "@/components/PriceHistoryChart";
 import { createClient } from "@supabase/supabase-js";
 
 // Ensure this page always renders dynamically at runtime on Vercel
