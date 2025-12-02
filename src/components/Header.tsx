@@ -213,7 +213,7 @@ export default function Header() {
   <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         {/* Top icons row: hides on scroll down */}
         <div
-          className={`overflow-hidden transition-all duration-300 ${hideTopBar ? "max-h-0 opacity-0" : "max-h-12 opacity-100"}`}
+          className={`overflow-hidden transition-all duration-300 ${hideTopBar ? "max-h-0 opacity-0 pointer-events-none" : "max-h-12 opacity-100"}`}
         >
           <div className="h-10 flex items-center justify-between px-4">
             <button

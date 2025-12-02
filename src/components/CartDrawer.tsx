@@ -27,12 +27,12 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black/30 transition-opacity ${open ? "opacity-100 visible" : "opacity-0 invisible"}`}
+        className={`fixed inset-0 bg-black/30 transition-opacity z-[60] ${open ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"}`}
         onClick={onClose}
       />
       <aside
         className={`fixed top-0 right-0 h-full w-[360px] max-w-[90vw] bg-white shadow-2xl border-l border-gray-200
-                    transition-transform duration-300 ${open ? "translate-x-0" : "translate-x-full"}`}
+                    transition-transform duration-300 z-[70] ${open ? "translate-x-0" : "translate-x-full"}`}
         aria-hidden={!open}
         aria-label="Mini cart"
       >
