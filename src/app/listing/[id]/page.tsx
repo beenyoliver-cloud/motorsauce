@@ -117,11 +117,12 @@ async function fetchListingFromSupabase(id: string): Promise<Listing | null> {
     const supabase = createClient(url, key, { auth: { persistSession: false } });
 
     // Try direct .eq() first
-    let { data: listing, error } = await supabase
+    const { data: listingData, error } = await supabase
       .from("listings")
       .select("*")
       .eq("id", id)
       .maybeSingle();
+    let listing = listingData as any;
 
     if (error || !listing) {
       // Fallback: fetch a batch and filter client-side
@@ -132,7 +133,7 @@ async function fetchListingFromSupabase(id: string): Promise<Listing | null> {
     if (!listing) return null;
 
     // Attach seller profile name if available
-    let seller = { name: "Seller", avatar: "/images/seller1.jpg", rating: 5 };
+  const seller = { name: "Seller", avatar: "/images/seller1.jpg", rating: 5 };
     if (listing.seller_id) {
       const { data: profile } = await supabase
         .from("profiles")

@@ -650,7 +650,7 @@ export default function BusinessSettingsPage() {
           <div className="bg-blue-50 rounded-lg border border-blue-200 p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-2">Business Address</h2>
             <p className="text-sm text-blue-800 mb-4">
-              🔒 This information is private and will never be displayed publicly. It's stored securely for verification purposes only.
+              🔒 This information is private and will never be displayed publicly. It&apos;s stored securely for verification purposes only.
             </p>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="md:col-span-2">

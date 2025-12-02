@@ -44,7 +44,7 @@ export default function HeroCarousel() {
 
   useEffect(() => {
     // Load runtime config if present
-    let cancelled = false;
+    const cancelled = false;
     (async () => {
       try {
         const res = await fetch("/hero.config.json", { cache: "no-store" });

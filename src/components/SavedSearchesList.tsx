@@ -179,7 +179,7 @@ export default function SavedSearchesList({ userId }: SavedSearchesListProps) {
             No saved searches yet
           </h3>
           <p className="mt-2 text-sm text-gray-500">
-            Save your search filters for quick access. Look for the "Save Search"
+            Save your search filters for quick access. Look for the &quot;Save Search&quot;
             button when browsing listings.
           </p>
           <Link

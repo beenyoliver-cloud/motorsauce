@@ -134,7 +134,6 @@ export default function Header() {
 
   // Server-backed unread polling so bubbles appear even if Messages page isn't open
   useEffect(() => {
-    let timer: number | undefined;
     let abort = false;
     async function fetchUnread() {
       try {
@@ -154,10 +153,10 @@ export default function Header() {
     }
     // Kick off immediately and then poll
     fetchUnread();
-    timer = window.setInterval(fetchUnread, 30000);
+    const timerId = window.setInterval(fetchUnread, 30000);
     return () => {
       abort = true;
-      if (timer) window.clearInterval(timer);
+      window.clearInterval(timerId);
     };
   }, []);
 

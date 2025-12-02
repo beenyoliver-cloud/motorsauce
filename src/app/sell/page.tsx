@@ -19,6 +19,7 @@ type Img = { id: string; file: File; url: string };
 type VehiclesMap = Record<string, string[]>;
 
 export default function SellPage() {
+  const router = useRouter();
   // Auth gate: require login to sell
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
@@ -55,6 +56,17 @@ export default function SellPage() {
       </section>
     );
   }
+  // Render auth gate states, otherwise mount the form component
+  return (
+    <section className="page-center px-4 py-10">
+      <h1 className="text-2xl font-bold text-black mb-6">Sell a Part</h1>
+
+      {isAuthed && <SellForm />}
+    </section>
+  );
+}
+
+function SellForm() {
   const router = useRouter();
 
   // ---- Form state ----
@@ -217,12 +229,8 @@ export default function SellPage() {
     }
   }
 
-  // ---- Render ----
   return (
-    <section className="page-center px-4 py-10">
-      <h1 className="text-2xl font-bold text-black mb-6">Sell a Part</h1>
-
-      <form onSubmit={onSubmit} className="space-y-8">
+    <form onSubmit={onSubmit} className="space-y-8">
         {/* Details card */}
   <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
           {/* Title */}
@@ -600,8 +608,7 @@ export default function SellPage() {
             Your listing has been created. Redirecting…
           </div>
         )}
-      </form>
-    </section>
+    </form>
   );
 }
 

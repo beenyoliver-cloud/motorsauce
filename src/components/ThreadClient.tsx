@@ -85,6 +85,30 @@ export default function ThreadClient({
     [threads, threadId]
   );
 
+  // Refs and effects that must be registered unconditionally (before any early returns)
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  // auto-scroll on new messages if near bottom
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !thread) return;
+    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 120;
+    if (atBottom) {
+      requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+    }
+  }, [thread, thread?.messages.length]);
+
+  // Group messages by day (safe even if thread is null)
+  const grouped = useMemo((): Array<{ day: string; msgs: Thread["messages"] }> => {
+    if (!thread) return [];
+    const map = new Map<string, Thread["messages"]>();
+    thread.messages.forEach((m) => {
+      const day = new Date(m.ts || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      if (!map.has(day)) map.set(day, []);
+      map.get(day)!.push(m);
+    });
+    return Array.from(map.entries()).map(([day, msgs]) => ({ day, msgs }));
+  }, [thread]);
+
   // If thread doesn't exist on first load, try to reconstruct it from threadId
   useEffect(() => {
     if (!mounted || thread || !threadId) return;
@@ -266,29 +290,6 @@ export default function ThreadClient({
   const memberSince = peerProfile?.created_at 
     ? new Date(peerProfile.created_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
     : null;
-
-  const scrollRef = useRef<HTMLDivElement | null>(null);
-  // auto-scroll on new messages if near bottom
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el || !thread) return;
-    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 120;
-    if (atBottom) {
-      requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
-    }
-  }, [thread?.messages.length]);
-
-  // Group messages by day
-  const grouped = useMemo((): Array<{ day: string; msgs: Thread["messages"] }> => {
-    if (!thread) return [];
-    const map = new Map<string, Thread["messages"]>();
-    thread.messages.forEach((m) => {
-      const day = new Date(m.ts || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-      if (!map.has(day)) map.set(day, []);
-      map.get(day)!.push(m);
-    });
-    return Array.from(map.entries()).map(([day, msgs]) => ({ day, msgs }));
-  }, [thread]);
 
   return (
     <div className="flex h-full flex-col w-full max-w-screen-sm mx-auto overflow-x-hidden">

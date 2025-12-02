@@ -200,7 +200,7 @@ export default function GaragePartsIntegration({ car }: GaragePartsIntegrationPr
           <div className="flex items-start gap-2">
             <Bell className="h-4 w-4 text-yellow-700 mt-0.5" />
             <div className="text-xs text-yellow-800">
-              <strong>Watch enabled:</strong> You'll be notified when new compatible parts are listed for your {car.year} {car.make} {car.model}.
+              <strong>Watch enabled:</strong> You&apos;ll be notified when new compatible parts are listed for your {car.year} {car.make} {car.model}.
             </div>
           </div>
         </div>

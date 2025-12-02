@@ -357,7 +357,7 @@ export default function OffersManagement({ userId }: OffersManagementProps) {
                           </p>
                           {offer.message && (
                             <p className="mt-1 text-sm text-gray-600">
-                              "{offer.message}"
+                              &quot;{offer.message}&quot;
                             </p>
                           )}
                         </div>
@@ -373,7 +373,7 @@ export default function OffersManagement({ userId }: OffersManagementProps) {
                               </p>
                               {offer.counter_message && (
                                 <p className="mt-1 text-sm text-gray-600">
-                                  "{offer.counter_message}"
+                                  &quot;{offer.counter_message}&quot;
                                 </p>
                               )}
                             </div>

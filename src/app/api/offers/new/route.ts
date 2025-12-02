@@ -128,7 +128,7 @@ export async function POST(req: Request) {
     });
 
     // Prefer a disambiguated wrapper to avoid PostgREST overload ambiguity
-    let { data: offer, error: rpcError } = await supabase.rpc("create_offer_uuid", {
+    const { data: offerData, error: rpcError } = await supabase.rpc("create_offer_uuid", {
       p_thread_id: threadId,
       p_listing_id: listingId,
       p_amount_cents: amountCents,
@@ -136,6 +136,7 @@ export async function POST(req: Request) {
       p_listing_title: listingTitle || null,
       p_listing_image: listingImage || null,
     });
+    let offer = offerData as any;
 
     if (rpcError) {
       console.error("[offers API] RPC create_offer_uuid error:", {

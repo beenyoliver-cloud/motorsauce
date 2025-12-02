@@ -183,8 +183,8 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Offer not found" }, { status: 404 });
     }
 
-    // Check permissions and valid actions (using starter=buyer, recipient=seller)
-    let updates: any = { responded_at: new Date().toISOString() };
+  // Check permissions and valid actions (using starter=buyer, recipient=seller)
+  const updates: any = { responded_at: new Date().toISOString() };
 
     if (action === "withdraw") {
       // Buyer (starter) can withdraw pending offer

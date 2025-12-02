@@ -104,7 +104,7 @@ export default function SaveSearchButton() {
               Save This Search
             </h2>
             <p className="mb-4 text-sm text-gray-600">
-              Give this search a name and we'll save your filters. You can quickly
+              Give this search a name and we&apos;ll save your filters. You can quickly
               access it later from your saved searches.
             </p>
 

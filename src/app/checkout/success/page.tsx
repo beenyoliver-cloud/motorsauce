@@ -170,7 +170,7 @@ export default function CheckoutSuccessPage() {
         )}
         
         <p className="mt-1 text-gray-600 text-sm">
-          You'll receive a confirmation email shortly (MVP: not actually sent).
+          You&apos;ll receive a confirmation email shortly (MVP: not actually sent).
         </p>
 
         {/* Items recap */}
@@ -183,7 +183,6 @@ export default function CheckoutSuccessPage() {
                 return (
                   <li key={it.id} className="py-2 flex items-center gap-3">
                     <div className="h-14 w-16 rounded-md overflow-hidden border border-gray-200 bg-gray-50">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <Image src={img} alt={it.title} width={128} height={96} className="h-full w-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
