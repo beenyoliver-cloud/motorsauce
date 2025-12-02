@@ -453,7 +453,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             </div>
             <div className="mt-3 pt-3 border-t border-gray-100">
               <Link
-                href={`/profile/${listing.sellerId || encodeURIComponent(listing.seller.name)}`}
+                href={`/profile/${encodeURIComponent(listing.seller.name)}`}
                 className="text-xs font-medium text-yellow-600 hover:text-yellow-700 hover:underline"
               >
                 View seller profile →

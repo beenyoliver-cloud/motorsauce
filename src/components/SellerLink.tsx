@@ -16,17 +16,14 @@ export default function SellerLink({ sellerName, sellerId, className, children }
   const selfName = getCurrentUserSync()?.name?.trim() || "";
   const isSelf = selfName && selfName.toLowerCase() === sellerName.trim().toLowerCase();
 
-  // Prefer stable ID route if provided, fallback to name route
-  const href = sellerId
-    ? `/profile/id/${encodeURIComponent(sellerId)}`
-    : `/profile/${encodeURIComponent(sellerName)}`;
+  // Always use username route - never expose UUIDs in URLs for security
+  const href = `/profile/${encodeURIComponent(sellerName)}`;
 
   return (
     <Link
       href={href}
       className={className}
       aria-label={isSelf ? "Go to your profile" : `View ${sellerName}'s profile`}
-      data-seller-id={sellerId || undefined}
       onClick={() => {
         try {
           const payload = JSON.stringify({ name: sellerName });

@@ -48,27 +48,13 @@ BEGIN
   END IF;
   recipient := public.get_other_participant(p_thread_id, uid);
 
-  -- Detect schema: check if starter_id column exists
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_schema = 'public' AND table_name = 'offers' AND column_name = 'starter_id'
-  ) THEN
-    -- New messaging schema: starter_id, recipient_id, thread_id, amount_cents
-    INSERT INTO public.offers (
-      thread_id, listing_id, listing_title, listing_image,
-      starter_id, recipient_id, amount_cents, currency, status
-    ) VALUES (
-      p_thread_id, p_listing_id, p_listing_title, p_listing_image,
-      uid, recipient, p_amount_cents, COALESCE(p_currency, 'GBP'), 'pending'
-    ) RETURNING * INTO new_offer;
-  ELSE
-    -- Legacy init_db schema: starter, recipient, listing_id (uuid), amount (decimal), no thread_id
-    INSERT INTO public.offers (
-      listing_id, starter, recipient, amount, status
-    ) VALUES (
-      p_listing_id::uuid, uid, recipient, (p_amount_cents::decimal / 100), 'pending'
-    ) RETURNING * INTO new_offer;
-  END IF;
+  -- Always use legacy schema since the table only has: listing_id (uuid), starter, recipient, amount (decimal)
+  -- The new messaging schema columns don't exist yet in production
+  INSERT INTO public.offers (
+    listing_id, starter, recipient, amount, status
+  ) VALUES (
+    p_listing_id::uuid, uid, recipient, (p_amount_cents::decimal / 100), 'pending'
+  ) RETURNING * INTO new_offer;
 
   -- System message
   INSERT INTO public.messages (
