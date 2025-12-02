@@ -166,8 +166,8 @@ export default function ThreadClientNew({
       }
       const headerH = headerRef.current?.offsetHeight || 0;
       const composerH = composerRef.current?.offsetHeight || 0;
-      // Mobile tab bar estimated height (from MobileTabBar ~56px)
-      const tabBarH = 56;
+  // Mobile bottom tab bar removed; no extra bottom reservation
+  const tabBarH = 0;
       const safeBottom = Number.parseInt(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-bottom)')) || 0;
       const totalOffset = headerH + composerH + tabBarH + safeBottom;
       const h = Math.max(window.innerHeight - totalOffset, 200); // clamp minimum

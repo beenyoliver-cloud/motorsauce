@@ -175,22 +175,16 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
             </div>
           </div>
 
-          {/* Actions - Mobile: Full width below profile info */}
-          <div className="mt-3 flex flex-col gap-2 md:hidden">
-            <div className="flex gap-2">
-              <ProfileActions
-                shareText={`Check out ${displayName} on Motorsource`}
-                shareUrl={baseHref}
-                toUsername={displayName}
-                toUserId={sellerMetrics.id}
-              />
-            </div>
-            <div className="flex gap-2">
-              <ReportUserButton sellerName={displayName} />
-              <div className="flex-1">
-                <EditProfileTopButton displayName={displayName} baseHref={baseHref} />
-              </div>
-            </div>
+          {/* Actions - Mobile: stack vertically full-width for clean layout */}
+          <div className="mt-3 grid grid-cols-1 gap-2 md:hidden">
+            <ProfileActions
+              shareText={`Check out ${displayName} on Motorsource`}
+              shareUrl={baseHref}
+              toUsername={displayName}
+              toUserId={sellerMetrics.id}
+            />
+            <ReportUserButton sellerName={displayName} />
+            <EditProfileTopButton displayName={displayName} baseHref={baseHref} />
           </div>
         </div>
       </div>
