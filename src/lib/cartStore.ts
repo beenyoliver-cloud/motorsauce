@@ -9,6 +9,7 @@ export type CartItem = {
   image: string;
   price: number;       // numeric £
   seller: { name: string };
+  sellerId: string;    // seller user id for order creation
   qty: number;
   maxQty: number;      // available quantity from listing
 };
@@ -79,6 +80,7 @@ export async function addToCartById(listingId: string, qty = 1) {
       image,
       price,
       seller: { name: l.seller?.name || "Seller" },
+      sellerId: l.seller_id || l.ownerId || "", // Use seller_id from DB
       qty: Math.min(qty, maxQty), // don't exceed available quantity
       maxQty,
     });

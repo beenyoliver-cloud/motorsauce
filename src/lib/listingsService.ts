@@ -21,6 +21,7 @@ export type Listing = {
   description?: string;
   createdAt?: string;
   ownerId?: string;
+  seller_id?: string; // Add seller_id from database
   seller?: { name?: string; avatar?: string; rating?: number };
 };
 

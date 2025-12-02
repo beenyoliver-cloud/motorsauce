@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { clearCart } from "@/lib/cartStore";
 import { addSoldIds } from "@/lib/soldStore";
 import { formatGBP } from "@/lib/currency";
+import { supabaseBrowser } from "@/lib/supabase";
 // listings moved to Supabase; avoid synchronous local imports here
 
 type Snapshot = {
@@ -21,6 +22,7 @@ type Snapshot = {
     price: number;
     qty: number;
     seller: { name: string };
+    sellerId?: string;
   }>;
   shipping: "standard" | "collection";
   address: {
@@ -33,8 +35,6 @@ type Snapshot = {
   };
   totals: { itemsSubtotal: number; serviceFee: number; shipping: number; total: number };
 };
-
-const ORDERS_KEY = "ms:orders:v1";
 
 /** Try hard to get an image for the item */
 function resolveImage(it: { id: string; image?: string; images?: string[] }): string {
@@ -61,30 +61,79 @@ export default function CheckoutSuccessPage() {
 
   const orderRef = snapshot?.orderRef || "MS-ORDER";
   const committed = useRef(false);
+  const [orderCreated, setOrderCreated] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (committed.current) return;
+    if (committed.current || !snapshot) return;
     committed.current = true;
 
-    try {
-      if (snapshot) {
-        const raw = localStorage.getItem(ORDERS_KEY);
-        const orders = raw ? JSON.parse(raw) : [];
-        const exists = Array.isArray(orders) && orders.some((o: unknown) => {
-          const obj = (o && typeof o === "object" ? (o as Record<string, unknown>) : {});
-          return obj.orderRef === snapshot.orderRef;
-        });
-        if (!exists) {
-          orders.unshift({ id: snapshot.orderRef, ...snapshot });
-          localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+    async function createOrder() {
+      try {
+        if (!snapshot) {
+          console.error("No snapshot found");
+          return;
         }
+
+        const supabase = supabaseBrowser();
+        const { data: session } = await supabase.auth.getSession();
+        
+        if (!session.session) {
+          console.error("No session found, cannot create order");
+          setOrderError("Authentication required");
+          return;
+        }
+
+        // Create order in database via API
+        const response = await fetch("/api/orders", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.session.access_token}`,
+          },
+          body: JSON.stringify({
+            items: snapshot.items.map((item) => ({
+              listing_id: item.id,
+              seller_id: item.sellerId || "",
+              seller_name: item.seller?.name || "Unknown",
+              title: item.title,
+              image: resolveImage(item),
+              price: item.price,
+              quantity: item.qty,
+            })),
+            shipping_method: snapshot.shipping,
+            shipping_address: snapshot.address,
+            items_subtotal: snapshot.totals.itemsSubtotal,
+            service_fee: snapshot.totals.serviceFee,
+            shipping_cost: snapshot.totals.shipping,
+            total: snapshot.totals.total,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to create order");
+        }
+
+        const { orderId, orderRef } = await response.json();
+        console.log("Order created:", orderId, orderRef);
+        
         // Mark sold & notify
         addSoldIds(snapshot.items.map((i) => i.id));
+        setOrderCreated(true);
+        
+        // Clear cart
+        clearCart();
+      } catch (error) {
+        console.error("Failed to create order:", error);
+        setOrderError(error instanceof Error ? error.message : "Failed to create order");
+        
+        // Even if order creation fails, still clear cart to avoid duplicate orders
+        clearCart();
       }
-    } catch {
-      // ignore write errors
     }
-    clearCart();
+
+    createOrder();
   }, [snapshot]);
 
   const items = snapshot?.items ?? [];
@@ -108,8 +157,20 @@ export default function CheckoutSuccessPage() {
         <p className="mt-2 text-gray-800">
           Reference: <span className="font-mono font-semibold">{orderRef}</span>
         </p>
+        
+        {/* Error message if order creation failed */}
+        {orderError && (
+          <div className="mt-4 rounded-md bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-800">
+            <p className="font-semibold">⚠️ Note:</p>
+            <p className="mt-1">
+              Your payment was successful, but there was an issue saving your order: {orderError}
+            </p>
+            <p className="mt-1">Please contact support with reference: {orderRef}</p>
+          </div>
+        )}
+        
         <p className="mt-1 text-gray-600 text-sm">
-          You’ll receive a confirmation email shortly (MVP: not actually sent).
+          You'll receive a confirmation email shortly (MVP: not actually sent).
         </p>
 
         {/* Items recap */}
