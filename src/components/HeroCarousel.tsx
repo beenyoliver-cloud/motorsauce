@@ -16,22 +16,22 @@ type Slide = {
 // If you replace these files, the carousel will show your new images automatically.
 const SLIDES: Slide[] = [
   {
-    id: "hero-1",
-    image: "/uploads/LOC-mflm4oyu-8w8qw-00.jpg",
+    id: "hero-11",
+    image: "/uploads/Hero11.png",
     title: "Find parts that fit",
     blurb: "Search by vehicle or number plate and shop trusted sellers.",
     href: "/registration",
   },
   {
-    id: "hero-2",
-    image: "/uploads/LOC-mfd0iehc-0sy2x-00.jpg",
+    id: "hero-12",
+    image: "/uploads/Hero12.png",
     title: "OEM and aftermarket",
     blurb: "Quality parts with clear fitment and price history.",
     href: "/categories/oem",
   },
   {
-    id: "hero-3",
-    image: "/uploads/LOC-metrfzhm-8wequ-00.jpg",
+    id: "hero-13",
+    image: "/uploads/Hero13.png",
     title: "Sell your parts fast",
     blurb: "Create a listing in minutes and chat with buyers.",
     href: "/sell",
