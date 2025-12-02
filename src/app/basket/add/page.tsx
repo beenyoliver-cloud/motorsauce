@@ -6,19 +6,21 @@ import { useRouter } from "next/navigation";
 import { addToCartById } from "@/lib/cartStore";
 
 export default function BasketAddPage() {
-  const [sp, setSp] = useState(() => new URLSearchParams(typeof window !== 'undefined' ? window.location.search : ""));
   const router = useRouter();
- const [error, setError] = useState(false);
+  const [error, setError] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
+  // Ensure we're on the client before reading search params
   useEffect(() => {
-    const onPop = () => setSp(new URLSearchParams(window.location.search));
-    window.addEventListener("popstate", onPop as EventListener);
-    return () => window.removeEventListener("popstate", onPop as EventListener);
+    setMounted(true);
   }, []);
 
   useEffect(() => {
-    const id = sp.get("listing");
-    const redirect = sp.get("redirect");
+    if (!mounted) return;
+    
+    const searchParams = new URLSearchParams(window.location.search);
+    const id = searchParams.get("listing");
+    const redirect = searchParams.get("redirect");
     
     console.log("BasketAddPage mounted - listing id:", id, "redirect:", redirect);
     
@@ -67,7 +69,7 @@ export default function BasketAddPage() {
     return () => {
       clearTimeout(timer);
     };
-  }, [sp, router]);
+  }, [mounted, router]);
 
  if (error) {
    return (
