@@ -194,6 +194,16 @@ export async function POST(
     }
     const message = insert.data;
 
+    // If the sender had previously soft-deleted this thread, "undelete" it now that they sent a message
+    const { error: undeleteError } = await supabase
+      .from("thread_deletions")
+      .delete()
+      .eq("thread_id", threadId)
+      .eq("user_id", user.id);
+    if (undeleteError) {
+      console.warn("[messages API] Failed to remove deletion marker on send:", undeleteError);
+    }
+
     return NextResponse.json({ message }, { status: 201 });
   } catch (error: any) {
     console.error("[messages API] POST error:", error);

@@ -71,12 +71,24 @@ export async function GET(req: Request) {
       return NextResponse.json({ threads: [] }, { status: 200 });
     }
 
+    // Defensive filter: in case legacy schema or missing RLS, remove threads the user soft-deleted
+    // This complements RLS which already hides deleted threads in the new schema.
+    const { data: deletions, error: deletionsError } = await supabase
+      .from("thread_deletions")
+      .select("thread_id")
+      .eq("user_id", user.id);
+    if (deletionsError) {
+      console.warn("[threads API] Could not fetch deletions; proceeding without client-side filter", deletionsError);
+    }
+    const deletedIds = new Set((deletions || []).map((d: { thread_id: string }) => d.thread_id));
+    const visibleThreads = (threads || []).filter((t: any) => !deletedIds.has(t.id));
+
     // Determine schema style (legacy vs new)
-    const isLegacy = threads.length > 0 && !threads[0].participant_1_id && 'a_user' in threads[0];
+    const isLegacy = visibleThreads.length > 0 && !visibleThreads[0].participant_1_id && 'a_user' in visibleThreads[0];
 
     // Enrich with peer profile data and read status
     const participantIds = new Set<string>();
-    threads.forEach((t: ThreadRow) => {
+    visibleThreads.forEach((t: ThreadRow) => {
       const p1 = t.participant_1_id || t.a_user!;
       const p2 = t.participant_2_id || t.b_user!;
       if (p1 !== user.id) participantIds.add(p1);
@@ -100,7 +112,7 @@ export async function GET(req: Request) {
     const readSet = new Set((readStatus || []).map((r: { thread_id: string }) => r.thread_id));
 
     // Build response
-    const enriched = threads.map((t: ThreadRow) => {
+    const enriched = visibleThreads.map((t: ThreadRow) => {
       const p1 = t.participant_1_id || t.a_user!;
       const p2 = t.participant_2_id || t.b_user!;
       const peerId = p1 === user.id ? p2 : p1;
@@ -238,6 +250,16 @@ export async function POST(req: Request) {
       .eq("thread_id", threadNormalized.id);
     if (!countError && (messageCount === 0 || messageCount === null)) {
       isNew = true;
+    }
+
+    // If the current user had previously soft-deleted this thread, "undelete" it by removing the deletion marker
+    const { error: undeleteError } = await supabase
+      .from("thread_deletions")
+      .delete()
+      .eq("thread_id", threadNormalized.id)
+      .eq("user_id", user.id);
+    if (undeleteError) {
+      console.warn("[threads API POST] Failed to remove deletion marker for user", undeleteError);
     }
 
     if (isNew) {
