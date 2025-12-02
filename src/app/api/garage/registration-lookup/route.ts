@@ -30,54 +30,54 @@ export async function GET(req: Request) {
       );
     }
 
-    // Call DVLA API (adjust to match your provider)
-    const url = `${DVLA_ENDPOINT}?registration=${encodeURIComponent(reg)}`;
-    const res = await fetch(url, {
-      method: "GET",
+    // Call DVLA API - uses POST with registrationNumber in body and x-api-key header
+    const res = await fetch(DVLA_ENDPOINT, {
+      method: "POST",
       headers: {
-        "Authorization": `Bearer ${DVLA_API_KEY}`,
-        "Accept": "application/json",
+        "x-api-key": DVLA_API_KEY,
+        "Content-Type": "application/json",
       },
-      // DVLA may require no caching to ensure fresh data
+      body: JSON.stringify({
+        registrationNumber: reg,
+      }),
       cache: "no-store",
     });
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
+      console.error("[DVLA Lookup] Failed:", res.status, text);
       return NextResponse.json(
-        { error: "Lookup failed", status: res.status, body: text },
-        { status: 502 }
+        { error: "Lookup failed", status: res.status, details: text },
+        { status: res.status === 404 ? 404 : 502 }
       );
     }
 
     const data = await res.json().catch(() => null);
     if (!data) {
-      return NextResponse.json({ error: "Invalid response" }, { status: 502 });
+      return NextResponse.json({ error: "Invalid response from DVLA" }, { status: 502 });
     }
 
-    // Map DVLA fields to our minimal contract; update this based on real field names
-    // Example assumptions:
-    // - data.make, data.model, data.yearOfManufacture or data.firstRegistrationDate
-    // - Optional data.trim/spec
-    const make = (data.make || data.Make || "").toString();
-    const model = (data.model || data.Model || "").toString();
+    console.log("[DVLA Lookup] Success:", { reg, data });
+
+    // Map DVLA fields to our minimal contract
+    // DVLA returns: make, model, yearOfManufacture, colour, fuelType, engineCapacity, etc.
+    const make = (data.make || "").toString();
+    const model = (data.model || "").toString();
     const year = (() => {
-      const y = data.yearOfManufacture ?? data.YearOfManufacture ?? null;
+      const y = data.yearOfManufacture;
       if (typeof y === "number") return y;
       if (typeof y === "string") {
         const n = parseInt(y, 10);
         return Number.isFinite(n) ? n : null;
       }
-      // Try date field
-      const d = data.firstRegistrationDate || data.FirstRegistrationDate;
-      if (typeof d === "string") {
-        const yyyy = d.slice(0, 4);
-        const n = parseInt(yyyy, 10);
-        return Number.isFinite(n) ? n : null;
-      }
       return null;
     })();
-    const trim = (data.trim || data.Variant || data.Spec || "").toString() || undefined;
+    
+    // Build trim from available data (fuel type, engine capacity)
+    const trimParts = [];
+    if (data.fuelType) trimParts.push(data.fuelType);
+    if (data.engineCapacity) trimParts.push(`${data.engineCapacity}cc`);
+    const trim = trimParts.length > 0 ? trimParts.join(" ") : undefined;
 
     return NextResponse.json({ make, model, year, trim });
   } catch (e: any) {
