@@ -14,7 +14,7 @@ type Slide = {
 
 // Use three latest uploaded images placed in public/uploads
 // If you replace these files, the carousel will show your new images automatically.
-const SLIDES: Slide[] = [
+const DEFAULT_SLIDES: Slide[] = [
   {
     id: "hero-11",
     image: "/uploads/Hero11.png",
@@ -40,15 +40,30 @@ const SLIDES: Slide[] = [
 
 export default function HeroCarousel() {
   const [index, setIndex] = useState(0);
+  const [slides, setSlides] = useState<Slide[]>(DEFAULT_SLIDES);
 
   useEffect(() => {
+    // Load runtime config if present
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/hero.config.json", { cache: "no-store" });
+        if (!res.ok) throw new Error("no config");
+        const data = await res.json();
+        const cfg = Array.isArray(data?.slides) ? (data.slides as Slide[]) : [];
+        if (!cancelled && cfg.length >= 1) setSlides(cfg);
+      } catch {
+        // fallback to defaults
+      }
+    })();
+
     const id = setInterval(() => {
-      setIndex((i) => (i + 1) % SLIDES.length);
+      setIndex((i) => (i + 1) % slides.length);
     }, 5000);
     return () => clearInterval(id);
-  }, []);
+  }, [slides.length]);
 
-  const slide = SLIDES[index];
+  const slide = slides[index] || slides[0];
 
   return (
     <section className="relative aspect-[4/3] sm:aspect-[16/9] md:aspect-[5/2] w-full overflow-hidden rounded-2xl border border-gray-200 bg-gray-900">
@@ -87,7 +102,7 @@ export default function HeroCarousel() {
 
       {/* Dots */}
       <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2">
-        {SLIDES.map((s, i) => (
+        {slides.map((s, i) => (
           <button
             key={s.id}
             onClick={() => setIndex(i)}

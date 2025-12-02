@@ -1,0 +1,25 @@
+{
+  "slides": [
+    {
+      "id": "hero-11",
+      "image": "/uploads/Hero11.png",
+      "title": "Find parts that fit",
+      "blurb": "Search by vehicle or number plate and shop trusted sellers.",
+      "href": "/registration"
+    },
+    {
+      "id": "hero-12",
+      "image": "/uploads/Hero12.png",
+      "title": "OEM and aftermarket",
+      "blurb": "Quality parts with clear fitment and price history.",
+      "href": "/categories/oem"
+    },
+    {
+      "id": "hero-13",
+      "image": "/uploads/Hero13.png",
+      "title": "Sell your parts fast",
+      "blurb": "Create a listing in minutes and chat with buyers.",
+      "href": "/sell"
+    }
+  ]
+}
