@@ -59,6 +59,8 @@ export async function getListings(): Promise<Listing[]> {
 
 export async function getListingById(id: string): Promise<Listing | null> {
   const supa = client();
+  console.log('[getListingById] Fetching listing:', id);
+  
   const { data, error } = await supa
     .from('listings')
     .select(`
@@ -72,10 +74,22 @@ export async function getListingById(id: string): Promise<Listing | null> {
     .single();
 
   if (error) {
+    console.error('[getListingById] Supabase error:', {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      listingId: id
+    });
     return null;
   }
 
-  if (!data) return null;
+  if (!data) {
+    console.warn('[getListingById] No data returned for listing:', id);
+    return null;
+  }
+
+  console.log('[getListingById] Successfully fetched listing:', data.id, data.title);
 
   // Handle seller data (could be object or array depending on Supabase version)
   const sellerData = Array.isArray(data.seller) ? data.seller[0] : data.seller;
