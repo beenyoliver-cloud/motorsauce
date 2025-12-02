@@ -132,6 +132,35 @@ export default function Header() {
     };
   }, []);
 
+  // Server-backed unread polling so bubbles appear even if Messages page isn't open
+  useEffect(() => {
+    let timer: number | undefined;
+    let abort = false;
+    async function fetchUnread() {
+      try {
+        const res = await fetch("/api/messages/unread-count", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        const n = Number(data?.count || 0);
+        if (!Number.isFinite(n)) return;
+        if (!abort) {
+          setUnread(n);
+          try {
+            localStorage.setItem(nsKey("unread_count"), String(n));
+            window.dispatchEvent(new Event("ms:unread"));
+          } catch {}
+        }
+      } catch {}
+    }
+    // Kick off immediately and then poll
+    fetchUnread();
+    timer = window.setInterval(fetchUnread, 30000);
+    return () => {
+      abort = true;
+      if (timer) window.clearInterval(timer);
+    };
+  }, []);
+
   // Cart
   useEffect(() => {
     const updateCart = () => setCartCount(readCartCount());

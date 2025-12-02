@@ -120,21 +120,21 @@ export default function HomeHero() {
         <p className="mt-2 text-sm md:text-base text-gray-700 animate-fadeIn" style={{ animationDelay: '100ms' }}>OEM and aftermarket parts from trusted sellers. Search by keyword or filter by your vehicle.</p>
 
         <form onSubmit={submitSearch} className="mt-4 space-y-3 animate-fadeIn" style={{ animationDelay: '200ms' }}>
-          {/* Main search bar */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center flex-1 border border-gray-300 rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-yellow-400 focus-within:border-yellow-400 bg-white shadow-sm transition-all duration-300 hover:shadow-md hover:border-yellow-300">
+          {/* Main search bar - responsive: stack on mobile to avoid overflow */}
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2">
+            <div className="flex items-center w-full border border-gray-300 rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-yellow-400 focus-within:border-yellow-400 bg-white shadow-sm transition-all duration-300 hover:shadow-md hover:border-yellow-300">
               <SearchIcon className="text-gray-400 mr-2 transition-colors duration-300" size={18} />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search parts, e.g. coilovers, exhaust…"
-                className="flex-1 border-none focus:ring-0 text-[15px] text-gray-900 placeholder:text-gray-500 bg-transparent"
+                className="w-full border-none focus:ring-0 text-[15px] text-gray-900 placeholder:text-gray-500 bg-transparent"
               />
             </div>
             <button
               type="button"
               onClick={() => setShowFilters(!showFilters)}
-              className={`shrink-0 rounded-full px-4 py-2 font-semibold transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-md flex items-center gap-2 ${
+              className={`rounded-full px-4 py-2 font-semibold transition-all duration-300 sm:transform sm:hover:scale-105 shadow-sm hover:shadow-md flex items-center gap-2 ${
                 hasActiveFilters || showFilters
                   ? 'bg-yellow-500 text-black'
                   : 'bg-white border border-gray-300 text-gray-700 hover:border-yellow-400'
@@ -144,7 +144,7 @@ export default function HomeHero() {
               <span className="hidden sm:inline">Filters</span>
               {hasActiveFilters && <span className="bg-black text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">!</span>}
             </button>
-            <button type="submit" className="shrink-0 rounded-full bg-gray-900 text-white px-4 py-2 font-semibold hover:bg-yellow-500 hover:text-black transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md">Search</button>
+            <button type="submit" className="rounded-full bg-gray-900 text-white px-4 py-2 font-semibold hover:bg-yellow-500 hover:text-black transition-all duration-300 sm:transform sm:hover:scale-105 sm:active:scale-95 shadow-sm hover:shadow-md">Search</button>
           </div>
 
           {/* Number plate search */}
