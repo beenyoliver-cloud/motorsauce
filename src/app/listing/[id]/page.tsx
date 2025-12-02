@@ -13,6 +13,7 @@ import SellerExposureTracker from "@/components/SellerExposureTracker";
 import TrackRecentlyViewed from "@/components/TrackRecentlyViewed";
 import TrustBadge from "@/components/TrustBadge";
 import Breadcrumb from "@/components/Breadcrumb";
+import SimilarProducts from "@/components/SimilarProducts";
 // Temporarily disabled: import PriceReducedBadge from "@/components/PriceReducedBadge";
 // Temporarily disabled: import PriceHistoryChart from "@/components/PriceHistoryChart";
 import { createClient } from "@supabase/supabase-js";
@@ -410,30 +411,53 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
 
           {/* Seller card */}
           <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="flex items-center gap-3">
+            <h2 className="mb-3 text-sm font-semibold text-black">Seller</h2>
+            <div className="flex items-start gap-3">
               {/* Avatar + name clickable; prefers /profile/{id} if sellerId present */}
               <SellerLink
                 sellerName={listing.seller.name}
                 sellerId={listing.sellerId}
-                className="flex items-center gap-3 group flex-1"
+                className="flex items-start gap-3 group flex-1"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={listing.seller.avatar}
                   alt={listing.seller.name}
-                  className="h-10 w-10 rounded-full object-cover"
+                  className="h-12 w-12 rounded-full object-cover flex-shrink-0"
                 />
-                <div>
-                  <div className="text-sm font-semibold text-black group-hover:underline">
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-black group-hover:underline truncate">
                     {listing.seller.name}
                   </div>
-                  <div className="text-xs text-gray-600 flex items-center gap-2">
+                  <div className="text-xs text-gray-600 flex items-center gap-2 mt-0.5">
                     <span>⭐ {Number(listing.seller.rating).toFixed(1)}</span>
                     {/* Trust badge placeholder; soldCount to be wired from metrics later */}
                     <TrustBadge soldCount={undefined} />
                   </div>
+                  <div className="mt-2 space-y-1 text-xs text-gray-600">
+                    <div className="flex items-center gap-1.5">
+                      <svg className="h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>Usually responds within 24 hours</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <svg className="h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>Active seller since {new Date(listing.createdAt).getFullYear()}</span>
+                    </div>
+                  </div>
                 </div>
               </SellerLink>
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <Link
+                href={`/profile/${listing.sellerId || encodeURIComponent(listing.seller.name)}`}
+                className="text-xs font-medium text-yellow-600 hover:text-yellow-700 hover:underline"
+              >
+                View seller profile →
+              </Link>
             </div>
           </div>
 
@@ -449,6 +473,9 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
           {/* Temporarily disabled: <PriceHistoryChart listingId={String(listing.id)} /> */}
         </div>
       </div>
+
+      {/* Similar Products */}
+      <SimilarProducts listingId={listing.id} limit={6} />
     </section>
   );
 }
