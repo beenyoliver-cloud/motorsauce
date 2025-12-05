@@ -4,31 +4,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { User, Calendar, Trash2 } from "lucide-react";
+import { User, Trash2 } from "lucide-react";
 import ActiveOfferBar from "@/components/ActiveOfferBar";
 import OfferMessage from "@/components/OfferMessage";
 import {
-  appendMessage,
-  getReadThreads,
-  setReadThreads,
-  nowClock,
-  publishUnread,
-  loadThreads,
-  deleteThread as deleteThreadStore,
-  upsertThreadForPeer,
-  Thread,
-  slugify,
-} from "@/lib/chatStore";
-import { getCurrentUserSync } from "@/lib/auth";
+  fetchMessages,
+  fetchThreads,
+  sendMessage,
+  type Message,
+  type Thread as ThreadType,
+} from "@/lib/messagesClient";
+import { getCurrentUserSync, getCurrentUser } from "@/lib/auth";
 import { displayName } from "@/lib/names";
-import { supabaseBrowser } from "@/lib/supabase";
-
-type PeerProfile = {
-  name: string;
-  email: string;
-  created_at: string;
-  avatar?: string;
-};
 
 export default function ThreadClient({
   threadId,
@@ -57,189 +44,82 @@ export default function ThreadClient({
     })();
   }, [mounted]);
 
-  // Peer profile data
-  const [peerProfile, setPeerProfile] = useState<PeerProfile | null>(null);
+  // API-based messages and thread data
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [thread, setThread] = useState<ThreadType | null>(null);
+  const [messagesLoading, setMessagesLoading] = useState(true);
+  const [messagesError, setMessagesError] = useState<string | null>(null);
+  
+  // Fetch thread metadata and messages from API
+  const fetchAndSetData = async () => {
+    if (!mounted || !threadId) return;
+    try {
+      setMessagesError(null);
+      
+      // Fetch all threads to find the specific one
+      const threads = await fetchThreads();
+      const foundThread = threads.find(t => t.id === threadId);
+      setThread(foundThread || null);
+      
+      // Fetch messages for this thread
+      const msgs = await fetchMessages(threadId);
+      setMessages(msgs);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Failed to load messages";
+      console.error("[ThreadClient] Error fetching data:", err);
+      setMessagesError(errorMsg);
+    }
+  };
 
-  // Only load threads AFTER mount (so server & client initial HTML match)
-  const [threads, setThreads] = useState<Thread[]>([]);
-  const [reconstructing, setReconstructing] = useState(false);
+  // Load data when threadId changes
   useEffect(() => {
-    if (!mounted) return;
-    setThreads(loadThreads());
-  }, [mounted]);
+    if (!mounted || !threadId) return;
+    setMessagesLoading(true);
+    (async () => {
+      await fetchAndSetData();
+      setMessagesLoading(false);
+    })();
+  }, [mounted, threadId]);
 
-  // Live updates
-  useEffect(() => {
-    if (!mounted) return;
-    const refresh = () => setThreads(loadThreads());
-    window.addEventListener("ms:threads", refresh as EventListener);
-    window.addEventListener("storage", refresh as EventListener);
-    return () => {
-      window.removeEventListener("ms:threads", refresh as EventListener);
-      window.removeEventListener("storage", refresh as EventListener);
-    };
-  }, [mounted]);
-
-  const thread = useMemo(
-    () => threads.find((t) => t.id === threadId),
-    [threads, threadId]
-  );
-
-  // Refs and effects that must be registered unconditionally (before any early returns)
+  // Auto-scroll when messages change
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  // auto-scroll on new messages if near bottom
   useEffect(() => {
     const el = scrollRef.current;
-    if (!el || !thread) return;
+    if (!el) return;
     const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 120;
     if (atBottom) {
       requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
     }
-  }, [thread, thread?.messages.length]);
+  }, [messages.length]);
 
-  // Group messages by day (safe even if thread is null)
-  const grouped = useMemo((): Array<{ day: string; msgs: Thread["messages"] }> => {
-    if (!thread) return [];
-    const map = new Map<string, Thread["messages"]>();
-    thread.messages.forEach((m) => {
-      const day = new Date(m.ts || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  // Group messages by day
+  const grouped = useMemo((): Array<{ day: string; msgs: Message[] }> => {
+    const map = new Map<string, Message[]>();
+    messages.forEach((m) => {
+      const day = new Date(m.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
       if (!map.has(day)) map.set(day, []);
       map.get(day)!.push(m);
     });
     return Array.from(map.entries()).map(([day, msgs]) => ({ day, msgs }));
-  }, [thread]);
+  }, [messages]);
 
-  // If thread doesn't exist on first load, try to reconstruct it from threadId
-  useEffect(() => {
-    if (!mounted || thread || !threadId) return;
-
-    setReconstructing(true);
-
-    // Parse threadId format: t_{name1}_{name2} or t_{name1}_{name2}_{listingRef}
-    const match = threadId.match(/^t_([^_]+)_([^_]+)(?:_(.+))?$/);
-    if (!match) { setReconstructing(false); return; }
-
-    const [, slug1, slug2, listingRef] = match;
-
-    // Determine which name is self and which is peer
-    const selfSlug = slugify(selfName);
-
-    let peerSlug: string | null = null;
-    if (slug1 === selfSlug) peerSlug = slug2;
-    else if (slug2 === selfSlug) peerSlug = slug1;
-
-    const fetchAndCreateThread = async () => {
-      try {
-        const supabase = supabaseBrowser();
-
-        // If we couldn't determine who "self" is yet (e.g., selfName not hydrated),
-        // try to hydrate and recompute once.
-        if (!peerSlug) {
-          try {
-            const { getCurrentUser } = await import("@/lib/auth");
-            const u = await getCurrentUser();
-            if (u?.name) {
-              const s2 = slugify(u.name);
-              if (slug1 === s2) peerSlug = slug2;
-              else if (slug2 === s2) peerSlug = slug1;
-            }
-          } catch {}
-        }
-
-        // If still unknown, default to assuming slug2 is peer.
-        if (!peerSlug) peerSlug = slug2;
-
-        // Try to find a profile that matches this slug pattern
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('name, email')
-          .ilike('name', `%${peerSlug.replace(/-/g, '%')}%`)
-          .limit(10);
-
-        if (!profiles || profiles.length === 0) {
-          // Fallback: create with nicer-spaced slug as name
-          const peerName = peerSlug
-            .split('-')
-            .map(w => w ? w.charAt(0).toUpperCase() + w.slice(1) : '')
-            .join(' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-
-          upsertThreadForPeer(selfName, peerName || peerSlug, {
-            preferThreadId: threadId,
-            initialLast: "New conversation",
-            listingRef: listingRef || undefined,
-          });
-          setThreads(loadThreads());
-          return;
-        }
-
-        // Find the profile whose slug matches exactly
-        const peerProfile = profiles.find(p => slugify(p.name) === peerSlug) || profiles[0];
-
-        // Create thread with proper peerId (email)
-        upsertThreadForPeer(selfName, peerProfile.name, {
-          preferThreadId: threadId,
-          initialLast: "New conversation",
-          listingRef: listingRef || undefined,
-          peerId: peerProfile.email,
-        });
-        setThreads(loadThreads());
-      } finally {
-        setReconstructing(false);
-      }
-    };
-
-    fetchAndCreateThread();
-  }, [mounted, thread, threadId, selfName]);
-
-  // Fetch peer profile when thread changes
-  useEffect(() => {
-    if (!mounted || !thread) return;
-    
-    const fetchPeerProfile = async () => {
-      const supabase = supabaseBrowser();
-      const { data } = await supabase
-        .from('profiles')
-        .select('name, email, created_at')
-        .eq('name', thread.peer)
-        .single();
-      
-      if (data) {
-        setPeerProfile(data);
-      }
-    };
-    
-    fetchPeerProfile();
-  }, [mounted, thread]);
-
-  // Mark read once we actually have the thread on the client
-  useEffect(() => {
-    if (!mounted || !thread) return;
-    const read = new Set(getReadThreads());
-    if (!read.has(thread.id)) {
-      read.add(thread.id);
-      setReadThreads([...read]);
-      publishUnread(threads, Array.from(read));
-    }
-  }, [mounted, thread, threads]);
-
-  function send(text: string) {
+  // Send message to thread
+  async function send(text: string) {
     if (!text.trim() || !thread) return;
-    appendMessage(thread.id, {
-      id: `m_${Date.now()}`,
-      from: selfName,
-      ts: nowClock(),
-      type: "text",
-      text: text.trim(),
-    });
+    try {
+      const msg = await sendMessage(thread.id, text);
+      if (msg) {
+        setMessages([...messages, msg]);
+      }
+    } catch (err) {
+      console.error("[ThreadClient] Failed to send message:", err);
+    }
   }
 
+  // Delete thread (navigate back)
   function handleDelete() {
     if (!thread) return;
-    deleteThreadStore(thread.id);       // remove from *my* buckets (v2/v1 id+name)
-    setThreads(loadThreads());          // refresh my in-memory list
-    router.push("/messages");           // and navigate back to inbox
+    router.push("/messages");
   }
 
   // --------- SKELETON (SSR + first client render) ----------
@@ -268,12 +148,12 @@ export default function ThreadClient({
   if (!thread) {
     return (
       <div className="p-6">
-        {reconstructing ? (
-          <div className="text-sm text-gray-700">Restoring conversation…</div>
+        {messagesLoading ? (
+          <div className="text-sm text-gray-700">Loading conversation…</div>
         ) : (
           <>
             <div className="text-sm text-gray-700">
-              This conversation was removed or doesn’t exist.
+              This conversation doesn't exist or was removed.
             </div>
             <Link
               href="/messages"
@@ -287,9 +167,8 @@ export default function ThreadClient({
     );
   }
 
-  const memberSince = peerProfile?.created_at 
-    ? new Date(peerProfile.created_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
-    : null;
+  const peerName = thread.peer.name;
+  const peerAvatar = thread.peer.avatar;
 
   return (
     <div className="flex h-full flex-col w-full max-w-screen-sm mx-auto overflow-x-hidden">
@@ -297,39 +176,33 @@ export default function ThreadClient({
       <div className="border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between p-4">
           <Link 
-            href={`/profile/${encodeURIComponent(thread.peer)}`}
+            href={`/profile/${encodeURIComponent(peerName)}`}
             className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80 transition"
           >
             <div className="h-12 w-12 rounded-full overflow-hidden bg-gray-100 border-2 border-yellow-500 shrink-0">
-            {thread.peerAvatar ? (
+            {peerAvatar ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img 
-                src={thread.peerAvatar} 
-                alt={displayName(thread.peer)}
+                src={peerAvatar} 
+                alt={peerName}
                 className="site-image"
               />
             ) : (
               <div className="w-full h-full bg-yellow-500 flex items-center justify-center text-black font-bold text-lg">
-                {(thread.peer || "?").slice(0, 2).toUpperCase()}
+                {(peerName || "?").slice(0, 2).toUpperCase()}
               </div>
             )}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-black truncate">
-                  {displayName(thread.peer)}
+                  {displayName(peerName)}
                 </h2>
                 <User size={14} className="text-gray-400" />
               </div>
-              {memberSince && (
-                <div className="flex items-center gap-1 text-xs text-gray-600">
-                  <Calendar size={12} />
-                  <span>Member since {memberSince}</span>
-                </div>
-              )}
-              {thread.listingRef && (
+              {thread.listing && (
                 <div className="text-xs text-gray-500 truncate mt-0.5">
-                  About: Listing #{thread.listingRef}
+                  About: {thread.listing.title || `Listing #${thread.listingRef}`}
                 </div>
               )}
             </div>
@@ -337,10 +210,10 @@ export default function ThreadClient({
           <button
             onClick={handleDelete}
             className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition"
-            title="Delete this conversation (only for you)"
+            title="Back to messages"
           >
             <Trash2 size={16} />
-            Delete
+            Back
           </button>
         </div>
       </div>
@@ -349,7 +222,7 @@ export default function ThreadClient({
       <ActiveOfferBar threadId={thread.id} />
 
       {/* Messages */}
-  <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-6 overscroll-contain">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-6 overscroll-contain">
         {grouped.map(group => (
           <div key={group.day}>
             <div className="sticky top-0 z-10 mb-2 flex justify-center">
@@ -360,33 +233,29 @@ export default function ThreadClient({
                 if (m.type === 'offer') {
                   return (
                     <OfferMessage
-                      key={m._k || m.id}
+                      key={m.id}
                       msg={{
-                        id: m.id || '',
+                        id: m.id,
                         threadId: thread.id,
                         type: 'offer',
                         offer: m.offer ? {
                           ...m.offer,
                           currency: m.offer.currency ?? 'GBP',
-                          status: (m.offer.status === 'started'
-                            ? 'pending'
-                            : m.offer.status === 'expired'
-                            ? 'withdrawn'
-                            : m.offer.status) as 'pending' | 'accepted' | 'declined' | 'countered' | 'withdrawn',
-                          listingId: (m.offer.listingId ?? '') as string | number,
+                          status: m.offer.status as 'pending' | 'accepted' | 'declined' | 'countered' | 'withdrawn',
+                          listingId: '', // Not available from API
                         } : undefined,
                       }}
                       currentUser={selfName}
                     />
                   );
                 }
-                const mineMsg = (m.from || '').trim() === selfName.trim();
-                const ts = new Date(m.ts || Date.now()).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+                const mineMsg = (m.from?.name || '').trim() === selfName.trim();
+                const ts = new Date(m.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
                 return (
-                  <div key={m._k || m.id} className={`flex ${mineMsg ? 'justify-end' : 'justify-start'} px-0`}>
+                  <div key={m.id} className={`flex ${mineMsg ? 'justify-end' : 'justify-start'} px-0`}>
                     <div className="max-w-[90vw] sm:max-w-[78%]">
                       <div className={`flex items-center gap-2 mb-0.5 ${mineMsg ? 'flex-row-reverse' : ''}`}>
-                        <span className={`text-[10px] font-medium ${mineMsg ? 'text-right text-gray-500' : 'text-left text-gray-500'} truncate`}>{displayName(m.from || 'Unknown')}</span>
+                        <span className={`text-[10px] font-medium ${mineMsg ? 'text-right text-gray-500' : 'text-left text-gray-500'} truncate`}>{displayName(m.from?.name || 'Unknown')}</span>
                         <span className="text-[10px] text-gray-400 whitespace-nowrap">{ts}</span>
                       </div>
                       <div className={`px-3 py-2 rounded-2xl border text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere] shadow-sm leading-relaxed ${mineMsg ? 'bg-yellow-500 text-black border-yellow-400 rounded-br-sm' : 'bg-white text-gray-900 border-gray-200 rounded-bl-sm'}`}>{m.text}</div>
