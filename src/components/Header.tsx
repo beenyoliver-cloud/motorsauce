@@ -159,7 +159,19 @@ export default function Header() {
     async function fetchUnread() {
       try {
         console.log("[Header] Fetching unread count...");
-        const res = await fetch("/api/messages/unread-count", { cache: "no-store" });
+        // Get auth token for API call
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          console.warn("[Header] No auth session, skipping unread count");
+          return;
+        }
+        
+        const res = await fetch("/api/messages/unread-count", { 
+          cache: "no-store",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
         if (!res.ok) {
           console.warn("[Header] Unread count fetch failed:", res.status);
           return;
