@@ -35,6 +35,15 @@ export default function MessagesIndex() {
       if (!isActive) return;
       setThreads(t);
       setLoading(false);
+      
+      // Calculate and publish unread count
+      const unreadCount = t.filter(th => !th.isRead).length;
+      try {
+        localStorage.setItem('ms:unread_count', String(unreadCount));
+        window.dispatchEvent(new Event('ms:unread'));
+      } catch (err) {
+        console.error("[MessagesPage] Failed to update unread count:", err);
+      }
     };
 
     setLoading(true);

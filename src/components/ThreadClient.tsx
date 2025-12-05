@@ -11,6 +11,7 @@ import {
   fetchMessages,
   fetchThreads,
   sendMessage,
+  markThreadRead,
   type Message,
   type Thread as ThreadType,
 } from "@/lib/messagesClient";
@@ -81,6 +82,47 @@ export default function ThreadClient({
     })();
   }, [mounted, threadId]);
 
+  // Mark thread as read when opened
+  useEffect(() => {
+    if (!mounted || !thread) return;
+    
+    (async () => {
+      try {
+        await markThreadRead(thread.id);
+        // Trigger unread count update
+        window.dispatchEvent(new Event('ms:unread'));
+      } catch (err) {
+        console.error("[ThreadClient] Failed to mark thread as read:", err);
+      }
+    })();
+  }, [mounted, thread?.id]);
+
+  // Poll for new messages every 3 seconds
+  useEffect(() => {
+    if (!mounted || !threadId) return;
+    
+    const interval = setInterval(async () => {
+      try {
+        const msgs = await fetchMessages(threadId);
+        // Update if count changed or if latest message is newer
+        const hasNewMessages = msgs.length > messages.length || 
+          (msgs.length > 0 && messages.length > 0 && 
+           new Date(msgs[msgs.length - 1]?.createdAt || 0) > 
+           new Date(messages[messages.length - 1]?.createdAt || 0));
+        
+        if (hasNewMessages) {
+          setMessages(msgs);
+          // Trigger unread count update
+          window.dispatchEvent(new Event('ms:unread'));
+        }
+      } catch (err) {
+        console.error("[ThreadClient] Polling error:", err);
+      }
+    }, 3000);
+    
+    return () => clearInterval(interval);
+  }, [mounted, threadId, messages.length]);
+
   // Auto-scroll when messages change
   const scrollRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -110,6 +152,8 @@ export default function ThreadClient({
       const msg = await sendMessage(thread.id, text);
       if (msg) {
         setMessages([...messages, msg]);
+        // Trigger unread count update in case reply comes in
+        window.dispatchEvent(new Event('ms:unread'));
       }
     } catch (err) {
       console.error("[ThreadClient] Failed to send message:", err);
