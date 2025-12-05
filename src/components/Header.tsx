@@ -320,7 +320,7 @@ export default function Header() {
                       <MessageSquare size={22} />
                   {unread > 0 && (
                     <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[10px] font-bold min-w-[16px] h-[16px] px-1">
-                      {unread}
+                      {unread > 9 ? '9+' : unread}
                     </span>
                   )}
                 </Link>
@@ -614,7 +614,7 @@ export default function Header() {
                 <MessageSquare size={20} />
             {unread > 0 && (
               <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[11px] font-bold min-w-[18px] h-[18px] px-1">
-                {unread}
+                {unread > 9 ? '9+' : unread}
               </span>
             )}
           </Link>
@@ -672,7 +672,7 @@ export default function Header() {
                     <span>{name}</span>
                     {name === "My Messages" && unread > 0 && (
                       <span className="ml-2 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-xs font-bold px-2 py-0.5">
-                        {unread}
+                        {unread > 9 ? '9+' : unread}
                       </span>
                     )}
                   </Link>
