@@ -112,6 +112,14 @@ export default function ThreadClient({
         
         if (hasNewMessages) {
           setMessages(msgs);
+          // Enable auto-scroll for new messages if user is near bottom
+          const el = scrollRef.current;
+          if (el) {
+            const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 120;
+            if (atBottom) {
+              setShouldAutoScroll(true);
+            }
+          }
           // Trigger unread count update
           window.dispatchEvent(new Event('ms:unread'));
         }
@@ -125,14 +133,51 @@ export default function ThreadClient({
 
   // Auto-scroll when messages change
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 120;
-    if (atBottom) {
-      requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+    
+    // Always auto-scroll when messages first load or when shouldAutoScroll is true
+    if (shouldAutoScroll || messages.length <= 5) {
+      requestAnimationFrame(() => { 
+        el.scrollTop = el.scrollHeight; 
+      });
+    } else {
+      // Check if user is near bottom, if so, auto-scroll
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 120;
+      if (atBottom) {
+        requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+      }
     }
-  }, [messages.length]);
+  }, [messages.length, shouldAutoScroll]);
+
+  // Scroll to bottom on initial load
+  useEffect(() => {
+    if (messagesLoading) return;
+    const el = scrollRef.current;
+    if (el && messages.length > 0) {
+      requestAnimationFrame(() => { 
+        el.scrollTop = el.scrollHeight;
+        setShouldAutoScroll(false);
+      });
+    }
+  }, [messagesLoading]);
+
+  // Track if user has scrolled up manually
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    
+    const handleScroll = () => {
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 50;
+      setShouldAutoScroll(atBottom);
+    };
+    
+    el.addEventListener('scroll', handleScroll);
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Group messages by day
   const grouped = useMemo((): Array<{ day: string; msgs: Message[] }> => {
@@ -152,6 +197,8 @@ export default function ThreadClient({
       const msg = await sendMessage(thread.id, text);
       if (msg) {
         setMessages([...messages, msg]);
+        // Enable auto-scroll for sent messages
+        setShouldAutoScroll(true);
         // Trigger unread count update in case reply comes in
         window.dispatchEvent(new Event('ms:unread'));
       }
@@ -215,9 +262,9 @@ export default function ThreadClient({
   const peerAvatar = thread.peer.avatar;
 
   return (
-    <div className="flex h-full flex-col w-full max-w-screen-sm mx-auto overflow-x-hidden">
+    <div className="flex h-full flex-col w-full max-w-screen-sm mx-auto overflow-x-hidden pb-safe">
       {/* User Profile Bar */}
-      <div className="border-b border-gray-200 bg-white">
+      <div className="border-b border-gray-200 bg-white shrink-0">
         <div className="flex items-center justify-between p-4">
           <Link 
             href={`/profile/${encodeURIComponent(peerName)}`}
@@ -266,7 +313,7 @@ export default function ThreadClient({
       <ActiveOfferBar threadId={thread.id} />
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-6 overscroll-contain">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-6 overscroll-contain min-h-0">
         {grouped.map(group => (
           <div key={group.day}>
             <div className="sticky top-0 z-10 mb-2 flex justify-center">
@@ -313,7 +360,7 @@ export default function ThreadClient({
       </div>
 
       {/* Composer */}
-      <div className="border-t border-gray-200 p-3 sticky bottom-0 bg-white">
+      <div className="border-t border-gray-200 p-3 bg-white shrink-0">
         <form
           onSubmit={(e) => {
             e.preventDefault();

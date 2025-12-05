@@ -101,8 +101,21 @@ export default function ThreadClientNew({
         }
         const msgs = await fetchMessages(threadId);
         if (!active) return;
-  setMessages(msgs);
-  if (msgs.length > 0) setHasHadMessages(true);
+        
+        // Check if we have new messages and enable auto-scroll if user is near bottom
+        const hasNewMessages = msgs.length > messages.length;
+        if (hasNewMessages && !initial) {
+          const el = scrollRef.current;
+          if (el) {
+            const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 120;
+            if (atBottom) {
+              setShouldAutoScroll(true);
+            }
+          }
+        }
+        
+        setMessages(msgs);
+        if (msgs.length > 0) setHasHadMessages(true);
 
         // Derive peer from messages if any
         let peerId = msgs.find(m => m.from.id !== currentUserId)?.from.id;
@@ -149,12 +162,34 @@ export default function ThreadClientNew({
     return () => { active = false; clearInterval(interval); };
   }, [mounted, currentUserId, threadId]);
 
-  // Auto-scroll on new messages
+  // Auto-scroll on new messages with smart detection
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || messages.length === 0) return;
-    requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
-  }, [messages.length]);
+    
+    // Always scroll on initial load or when shouldAutoScroll is enabled
+    if (shouldAutoScroll || !hasHadMessages) {
+      requestAnimationFrame(() => { 
+        el.scrollTop = el.scrollHeight; 
+      });
+    }
+  }, [messages.length, shouldAutoScroll, hasHadMessages]);
+
+  // Track if user has scrolled up manually
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    
+    const handleScroll = () => {
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 50;
+      setShouldAutoScroll(atBottom);
+    };
+    
+    el.addEventListener('scroll', handleScroll);
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Dynamic height calculation for mobile to avoid header + bottom bar overlap
   useEffect(() => {
@@ -189,6 +224,8 @@ export default function ThreadClientNew({
       if (sent) {
         setMessages(prev => [...prev, sent]);
         setDraft("");
+        // Enable auto-scroll for sent messages
+        setShouldAutoScroll(true);
         // Force immediate refresh after send to ensure message appears
         setTimeout(() => {
           isSendingRef.current = false;
