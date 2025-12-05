@@ -17,13 +17,17 @@ export default function ReportUserButton({ sellerName }: { sellerName: string })
     return () => clearTimeout(t);
   }, [toastOpen]);
 
-  function submitReport(e: React.FormEvent) {
+  async function submitReport(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: POST to /api/report in future
+    
+    // NOTE: Report API not yet implemented - this is a placeholder
+    // To implement: Create /api/reports route that stores reports in database
+    // and sends notification to admins
+    
     setOpen(false);
     setReason("fraud");
     setDetails("");
-    setToastMsg(`Thanks — your report for ${sellerName} was submitted.`);
+    setToastMsg(`Thanks — your report for ${sellerName} has been noted. (Feature pending implementation)`);
     setToastOpen(true);
   }
 
