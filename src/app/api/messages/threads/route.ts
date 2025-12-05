@@ -103,6 +103,30 @@ export async function GET(req: Request) {
     const profileMap = new Map<string, ProfileRow>();
     (profiles || []).forEach((p: ProfileRow) => profileMap.set(p.id, p));
 
+    // Fetch listing data for threads that have listing_ref
+    const listingRefs = visibleThreads
+      .filter((t: ThreadRow) => t.listing_ref)
+      .map((t: ThreadRow) => t.listing_ref!);
+    
+    let listingMap = new Map<string, any>();
+    if (listingRefs.length > 0) {
+      const { data: listings } = await supabase
+        .from("listings")
+        .select("id, title, image_urls")
+        .in("id", listingRefs);
+      
+      if (listings) {
+        listingMap = new Map(listings.map((l: any) => [
+          l.id,
+          {
+            id: l.id,
+            title: l.title,
+            image: l.image_urls && l.image_urls.length > 0 ? l.image_urls[0] : null,
+          }
+        ]));
+      }
+    }
+
     // Fetch read status
     const { data: readStatus } = await supabase
       .from("thread_read_status")
@@ -117,6 +141,7 @@ export async function GET(req: Request) {
       const p2 = t.participant_2_id || t.b_user!;
       const peerId = p1 === user.id ? p2 : p1;
       const peer = profileMap.get(peerId);
+      const listing = t.listing_ref ? listingMap.get(t.listing_ref) : null;
       return {
         id: t.id,
         peer: {
@@ -126,6 +151,7 @@ export async function GET(req: Request) {
           avatar: peer?.avatar,
         },
         listingRef: t.listing_ref || null,
+        listing: listing,
         lastMessage: t.last_message_text || null,
         lastMessageAt: t.last_message_at || t.created_at || new Date().toISOString(),
         isRead: readSet.has(t.id),

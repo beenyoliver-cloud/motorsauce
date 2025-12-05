@@ -5,8 +5,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { CheckCircle, XCircle, Clock, Ban, TrendingUp, Package } from "lucide-react";
 import { createOffer, formatGBP } from "@/lib/offersStore";
-import { updateOfferStatus as updateOfferStatusAPI } from "@/lib/messagesClient";
-import { appendMessage, nowClock, updateOfferInThread, appendOfferMessage } from "@/lib/chatStore";
+import { updateOfferStatus as updateOfferStatusAPI, sendMessage } from "@/lib/messagesClient";
+import { appendOfferMessage } from "@/lib/chatStore";
 import { displayName } from "@/lib/names";
 import { getCurrentUserSync } from "@/lib/auth";
 
@@ -59,43 +59,25 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
 
   const [counter, setCounter] = useState("");
 
-  function sysLine(text: string) {
-    appendMessage(msg.threadId, {
-      id: `sys_${Date.now()}`,
-      from: "system",
-      ts: nowClock(),
-      type: "system",
-      text,
-    });
+  async function sendSystemMessage(text: string) {
+    try {
+      await sendMessage(msg.threadId, text);
+    } catch (err) {
+      console.error("Failed to send system message:", err);
+    }
   }
 
   // Actions
     async function withdraw() {
-    if (!(o.status === "pending" && isMeBuyer && iAmStarter)) return; // only buyer withdrawing their own pending
+    if (!(o.status === "pending" && isMeBuyer && iAmStarter)) return;
       await updateOfferStatusAPI(o.id, "withdrawn");
-    updateOfferInThread(msg.threadId, {
-      id: o.id,
-      amountCents: o.amountCents,
-      currency: o.currency,
-      status: "withdrawn",
-      starterId: o.starterId,
-      recipientId: o.recipientId,
-    });
-    sysLine(`${displayName(selfName)} withdrew the offer of ${formatGBP(o.amountCents)}.`);
+    await sendSystemMessage(`🚫 ${displayName(selfName)} withdrew the offer of ${formatGBP(o.amountCents)}.`);
   }
 
     async function accept() {
-    if (!(o.status === "pending" && isMeSeller && iAmRecipient)) return; // only seller, as recipient
+    if (!(o.status === "pending" && isMeSeller && iAmRecipient)) return;
       await updateOfferStatusAPI(o.id, "accepted");
-    updateOfferInThread(msg.threadId, {
-      id: o.id,
-      amountCents: o.amountCents,
-      currency: o.currency,
-      status: "accepted",
-      starterId: o.starterId,
-      recipientId: o.recipientId,
-    });
-    sysLine(`${displayName(selfName)} accepted the offer of ${formatGBP(o.amountCents)}.`);
+    await sendSystemMessage(`✅ ${displayName(selfName)} accepted the offer of ${formatGBP(o.amountCents)}.`);
     
     // Send notification to buyer about payment
     try {
@@ -116,17 +98,9 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
   }
 
     async function decline() {
-    if (!(o.status === "pending" && isMeSeller && iAmRecipient)) return; // only seller, as recipient
+    if (!(o.status === "pending" && isMeSeller && iAmRecipient)) return;
       await updateOfferStatusAPI(o.id, "declined");
-    updateOfferInThread(msg.threadId, {
-      id: o.id,
-      amountCents: o.amountCents,
-      currency: o.currency,
-      status: "declined",
-      starterId: o.starterId,
-      recipientId: o.recipientId,
-    });
-    sysLine(`${displayName(selfName)} declined the offer of ${formatGBP(o.amountCents)}.`);
+    await sendSystemMessage(`❌ ${displayName(selfName)} declined the offer of ${formatGBP(o.amountCents)}.`);
   }
 
     async function counterSubmit() {
@@ -142,14 +116,7 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
 
     // 1) Supersede current
       await updateOfferStatusAPI(o.id, "countered");
-    updateOfferInThread(msg.threadId, {
-      id: o.id,
-      amountCents: o.amountCents,
-      currency: o.currency,
-      status: "countered",
-      starterId: o.starterId,
-      recipientId: o.recipientId,
-    });
+    await sendSystemMessage(`📊 ${displayName(selfName)} countered with ${formatGBP(Math.round(pounds * 100))}.`);
 
     // 2) New pending from me → back to the other party, keep the listing photo/title
     const newOffer = createOffer({
@@ -182,7 +149,6 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
       peerId: iAmRecipient ? o.starterId : o.recipientId,
     });
 
-    sysLine(`${displayName(selfName)} countered with ${formatGBP(newOffer.amountCents)}.`);
     setCounter("");
   }
 

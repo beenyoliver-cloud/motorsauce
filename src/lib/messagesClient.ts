@@ -15,6 +15,11 @@ export type Thread = {
     avatar?: string;
   };
   listingRef?: string | null;
+  listing?: {
+    id: string;
+    title: string;
+    image?: string | null;
+  } | null;
   lastMessage?: string | null;
   lastMessageAt: string;
   isRead: boolean;
@@ -233,6 +238,12 @@ export async function sendMessage(threadId: string, text: string): Promise<Messa
         createdAt: raw.created_at,
         updatedAt: raw.updated_at,
       };
+      
+      // Trigger unread count update in header
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("ms:unread"));
+      }
+      
       return enriched;
     } catch (enrichErr) {
       console.warn("[messagesClient] Failed to enrich sent message, falling back to raw", enrichErr);

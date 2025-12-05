@@ -4,13 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Edit3, Trash2, X } from "lucide-react";
-import {
-  loadThreads,
-  getReadThreads,
-  publishUnread,
-  Thread,
-  deleteThread as deleteThreadStore,
-} from "@/lib/chatStore";
+import { Thread } from "@/lib/messagesClient";
 import { getCurrentUser, type LocalUser } from "@/lib/auth";
 import { displayName } from "@/lib/names";
 
@@ -23,21 +17,25 @@ type PeerItem = {
   lastTs: number;
   unread: boolean;
   avatar?: string;
+  listing?: {
+    id: string;
+    title: string;
+    image?: string | null;
+  } | null;
 };
 
-function threadsToPeers(threads: Thread[], readIds: string[]): PeerItem[] {
-  const read = new Set(readIds);
+function threadsToPeers(threads: Thread[]): PeerItem[] {
   return threads
     .map((t) => {
-      const name = (t.peer || "Unknown").toString();
-      const unread = t.messages.length > 0 && !read.has(t.id);
+      const name = (t.peer?.name || "Unknown").toString();
       return {
         threadId: t.id,
         name,
-        last: t.last || "",
-        lastTs: t.lastTs || 0,
-        unread,
-        avatar: t.peerAvatar,
+        last: t.lastMessage || "",
+        lastTs: new Date(t.lastMessageAt || 0).getTime(),
+        unread: !t.isRead,
+        avatar: t.peer?.avatar,
+        listing: t.listing || null,
       };
     })
     .sort((a, b) => b.lastTs - a.lastTs);
@@ -75,18 +73,22 @@ export default function MessagesLayout({ children }: Props) {
 
   useEffect(() => {
     if (!mounted) return;
-    const refresh = () => {
-      const ts = loadThreads();
-      const r = getReadThreads();
-      setPeers(threadsToPeers(ts, r));
-      publishUnread(ts, r);
+    const refresh = async () => {
+      try {
+        const res = await fetch("/api/messages/threads");
+        if (!res.ok) throw new Error("Failed to fetch threads");
+        const data = await res.json();
+        setPeers(threadsToPeers(data));
+      } catch (err) {
+        console.error("Failed to refresh threads:", err);
+      }
     };
     refresh();
     window.addEventListener("ms:threads", refresh as EventListener);
-    window.addEventListener("storage", refresh as EventListener);
+    window.addEventListener("ms:unread", refresh as EventListener);
     return () => {
       window.removeEventListener("ms:threads", refresh as EventListener);
-      window.removeEventListener("storage", refresh as EventListener);
+      window.removeEventListener("ms:unread", refresh as EventListener);
     };
   }, [mounted]);
 
@@ -111,12 +113,28 @@ export default function MessagesLayout({ children }: Props) {
     
     if (!confirmed) return;
 
-    selectedThreads.forEach(threadId => {
-      deleteThreadStore(threadId);
+    // Delete threads via API
+    selectedThreads.forEach(async (threadId) => {
+      try {
+        await fetch(`/api/messages/${threadId}`, { method: "DELETE" });
+      } catch (err) {
+        console.error("Failed to delete thread:", err);
+      }
     });
 
     setSelectedThreads(new Set());
-    setPeers(threadsToPeers(loadThreads(), getReadThreads()));
+    // Refresh threads from API
+    (async () => {
+      try {
+        const res = await fetch("/api/messages/threads");
+        if (res.ok) {
+          const data = await res.json();
+          setPeers(threadsToPeers(data));
+        }
+      } catch (err) {
+        console.error("Failed to refresh threads:", err);
+      }
+    })();
     setEditMode(false);
     
     // If current thread was deleted, navigate to messages home
@@ -266,6 +284,18 @@ export default function MessagesLayout({ children }: Props) {
                       </div>
                       {p.unread && !isActive && <span className="ml-2 h-2 w-2 rounded-full bg-yellow-500" />}
                     </div>
+                    {p.listing && p.listing.image && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <img
+                          src={p.listing.image}
+                          alt={p.listing.title}
+                          className="h-6 w-6 rounded object-cover bg-gray-100"
+                        />
+                        <div className={`truncate text-xs ${isActive ? "text-gray-400" : "text-gray-500"}`}>
+                          {p.listing.title}
+                        </div>
+                      </div>
+                    )}
                     <div className={`truncate text-xs ${isActive ? "text-gray-300" : "text-gray-600"}`}>
                       {p.last || "\u00A0"}
                     </div>
