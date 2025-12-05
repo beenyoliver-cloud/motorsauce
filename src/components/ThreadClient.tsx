@@ -273,7 +273,7 @@ export default function ThreadClient({
   const peerAvatar = thread.peer.avatar;
 
   return (
-    <div className="flex h-full flex-col w-full max-w-screen-sm mx-auto overflow-x-hidden pb-safe">
+    <div className="flex h-full flex-col w-full max-w-screen-sm mx-auto overflow-x-hidden">
       {/* User Profile Bar */}
       <div className="border-b border-gray-200 bg-white shrink-0">
         <div className="flex items-center justify-between p-4">
