@@ -120,7 +120,25 @@ export default function Header() {
 
   // Unread
   useEffect(() => {
-    const update = () => setUnread(readUnreadCount());
+    const update = async () => {
+      // First try to fetch from server for real-time updates
+      try {
+        const res = await fetch("/api/messages/unread-count", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          const n = Number(data?.count || 0);
+          if (Number.isFinite(n)) {
+            setUnread(n);
+            localStorage.setItem(nsKey("unread_count"), String(n));
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("[Header] Failed to fetch unread count:", err);
+      }
+      // Fall back to localStorage
+      setUnread(readUnreadCount());
+    };
     update();
     window.addEventListener("storage", update);
     window.addEventListener("ms:unread", update as EventListener);
