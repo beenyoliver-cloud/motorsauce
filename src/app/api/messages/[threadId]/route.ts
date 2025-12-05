@@ -78,10 +78,14 @@ export async function GET(
     
     let offerMap = new Map();
     if (offerIds.length > 0) {
-      const { data: offers } = await supabase
+      const { data: offers, error: offersError } = await supabase
         .from("offers")
-        .select("id, listing_id, listing_title, listing_image, amount_cents, currency, status, listings!inner(price)")
+        .select("id, listing_id, listing_title, listing_image, amount_cents, currency, status, listings(price)")
         .in("id", offerIds);
+      
+      if (offersError) {
+        console.error("[messages API] Error fetching offers:", offersError);
+      }
       
       offerMap = new Map((offers || []).map((o: any) => [o.id, o]));
       console.log("[messages API] Fetched offers with listing data:", offers?.length || 0);
