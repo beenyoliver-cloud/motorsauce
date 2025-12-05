@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 
 export async function POST(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies: await cookies });
+    const supabase = createRouteHandlerClient({ cookies });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();

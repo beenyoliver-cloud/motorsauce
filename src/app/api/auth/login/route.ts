@@ -1,6 +1,8 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -17,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     const beforeAuth = Date.now();
-    const supabase = createRouteHandlerClient({ cookies: await cookies });
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -61,6 +63,7 @@ export async function POST(request: NextRequest) {
         email: profile?.email || data.user.email,
         name: profile?.name || data.user.user_metadata.name || email.split('@')[0],
       },
+      session: data.session,
     });
   } catch (err) {
     const totalDuration = Date.now() - startTime;
