@@ -300,9 +300,9 @@ export default function Header() {
     <>
       {/* Mobile header (md:hidden) */}
   <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        {/* Top icons row: hides on scroll down */}
+        {/* Top icons row: hides on scroll down OR when menu is open */}
         <div
-          className={`overflow-hidden transition-all duration-300 ${hideTopBar ? "max-h-0 opacity-0 pointer-events-none" : "max-h-12 opacity-100"}`}
+          className={`overflow-hidden transition-all duration-300 ${(hideTopBar || mobileMenuOpen) ? "max-h-0 opacity-0 pointer-events-none" : "max-h-12 opacity-100"}`}
         >
           <div className="h-10 flex items-center justify-between px-4">
             <button
@@ -365,11 +365,11 @@ export default function Header() {
           <>
             {/* Backdrop - covers entire viewport, fully opaque */}
             <div
-              className="md:hidden fixed inset-0 bg-white z-30"
+              className="md:hidden fixed inset-0 bg-white z-[60]"
               onClick={() => setMobileMenuOpen(false)}
             />
             {/* Menu panel - fullscreen overlay */}
-            <div className="md:hidden fixed inset-0 bg-white z-40 overflow-y-auto flex flex-col">
+            <div className="md:hidden fixed inset-0 bg-white z-[70] overflow-y-auto flex flex-col">
               {/* Menu Header with Logo and Close */}
               <div className="px-4 py-4 border-b border-gray-200 flex items-center justify-between shrink-0">
                 <Link href="/" className="text-2xl font-extrabold text-yellow-500 tracking-tight" aria-label="Motorsource home">
