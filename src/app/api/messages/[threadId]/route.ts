@@ -106,9 +106,9 @@ export async function GET(
         offer: m.message_type === "offer" ? {
           id: m.offer_id,
           listingId: offer?.listing_id || "",
-          amountCents: m.offer_amount_cents || offer?.amount_cents,
-          currency: m.offer_currency || offer?.currency || "GBP",
-          status: m.offer_status || offer?.status,
+          amountCents: offer?.amount_cents || m.offer_amount_cents,
+          currency: offer?.currency || m.offer_currency || "GBP",
+          status: offer?.status || m.offer_status,
           listingTitle: offer?.listing_title,
           listingImage: offer?.listing_image,
         } : undefined,
