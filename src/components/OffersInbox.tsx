@@ -38,7 +38,21 @@ export default function OffersInbox() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // Get offers on listings owned by current user
+        // First, get listing IDs owned by current user
+        const { data: userListings } = await supabase
+          .from("listings")
+          .select("id")
+          .eq("user_id", user.id);
+
+        if (!userListings || userListings.length === 0) {
+          setOffers([]);
+          setLoading(false);
+          return;
+        }
+
+        const listingIds = userListings.map(l => l.id);
+
+        // Get offers on those listings
         const { data: offersData, error: offersError } = await supabase
           .from("offers")
           .select(`
@@ -51,16 +65,9 @@ export default function OffersInbox() {
             created_at,
             expires_at,
             listing_id,
-            starter,
-            listings!inner (
-              id,
-              title,
-              price,
-              images,
-              user_id
-            )
+            starter
           `)
-          .eq("listings.user_id", user.id)
+          .in("listing_id", listingIds)
           .order("created_at", { ascending: false });
 
         if (offersError) {
@@ -73,6 +80,17 @@ export default function OffersInbox() {
           setLoading(false);
           return;
         }
+
+        // Get listing details for these offers
+        const offerListingIds = [...new Set(offersData.map((o: any) => o.listing_id))];
+        const { data: listingsData } = await supabase
+          .from("listings")
+          .select("id, title, price, images")
+          .in("id", offerListingIds);
+
+        const listingsMap = new Map(
+          (listingsData || []).map(l => [l.id, l])
+        );
 
         // Get buyer profiles
         const buyerIds = [...new Set(offersData.map((o: any) => o.starter))];
@@ -102,9 +120,10 @@ export default function OffersInbox() {
         // Combine data
         const enrichedOffers: OfferWithThread[] = offersData.map((offer: any) => {
           const buyer = profilesMap.get(offer.starter);
+          const listing = listingsMap.get(offer.listing_id);
           const threadKey = `${offer.starter}-${offer.listing_id}`;
           const threadId = threadsMap.get(threadKey);
-          const images = offer.listings?.images;
+          const images = listing?.images;
           const firstImage = Array.isArray(images) && images.length > 0 ? images[0] : null;
           
           return {
@@ -121,8 +140,8 @@ export default function OffersInbox() {
             buyer_name: buyer?.name || "Unknown",
             buyer_avatar: buyer?.avatar || null,
             thread_id: threadId || null,
-            listing_title: offer.listings?.title || null,
-            listing_price: offer.listings?.price || null,
+            listing_title: listing?.title || null,
+            listing_price: listing?.price || null,
             listing_image: firstImage,
           };
         });
