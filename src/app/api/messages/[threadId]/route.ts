@@ -80,10 +80,11 @@ export async function GET(
     if (offerIds.length > 0) {
       const { data: offers } = await supabase
         .from("offers")
-        .select("id, listing_title, listing_image")
+        .select("id, listing_id, listing_title, listing_image, amount_cents, currency, status")
         .in("id", offerIds);
       
       offerMap = new Map((offers || []).map((o: any) => [o.id, o]));
+      console.log("[messages API] Fetched offers with listing data:", offers?.length || 0);
     }
 
     // Enrich messages
@@ -104,9 +105,10 @@ export async function GET(
         text: m.text_content || m.text,
         offer: m.message_type === "offer" ? {
           id: m.offer_id,
-          amountCents: m.offer_amount_cents,
-          currency: m.offer_currency,
-          status: m.offer_status,
+          listingId: offer?.listing_id || "",
+          amountCents: m.offer_amount_cents || offer?.amount_cents,
+          currency: m.offer_currency || offer?.currency || "GBP",
+          status: m.offer_status || offer?.status,
           listingTitle: offer?.listing_title,
           listingImage: offer?.listing_image,
         } : undefined,

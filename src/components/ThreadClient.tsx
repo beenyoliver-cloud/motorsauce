@@ -344,7 +344,7 @@ export default function ThreadClient({
                           ...m.offer,
                           currency: m.offer.currency ?? 'GBP',
                           status: m.offer.status as 'pending' | 'accepted' | 'declined' | 'countered' | 'withdrawn',
-                          listingId: '', // Not available from API
+                          listingId: m.offer.listingId || '',
                         } : undefined,
                       }}
                       currentUser={selfName}

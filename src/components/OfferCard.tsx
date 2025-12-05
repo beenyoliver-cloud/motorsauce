@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { TrendingUp, Check, X, DollarSign } from "lucide-react";
+import Link from "next/link";
+import { TrendingUp, Check, X, DollarSign, ExternalLink } from "lucide-react";
 import { updateOfferStatus } from "@/lib/messagesClient";
 
 type OfferCardProps = {
@@ -9,6 +10,7 @@ type OfferCardProps = {
   amount: number;
   currency: string;
   status: string;
+  listingId?: string;
   listingTitle?: string;
   listingImage?: string;
   isCurrentUserSeller: boolean;
@@ -20,6 +22,7 @@ export default function OfferCard({
   amount,
   currency,
   status,
+  listingId,
   listingTitle,
   listingImage,
   isCurrentUserSeller,
@@ -34,12 +37,15 @@ export default function OfferCard({
   const canRespond = isCurrentUserSeller && isPending;
 
   async function handleAccept() {
+    console.log(`[OfferCard] Accepting offer ${offerId}`);
     setUpdating(true);
     try {
-      await updateOfferStatus(offerId, "accepted");
+      const result = await updateOfferStatus(offerId, "accepted");
+      console.log(`[OfferCard] Offer accepted, result:`, result);
       onUpdate?.();
+      console.log(`[OfferCard] onUpdate callback called, UI should refresh`);
     } catch (err) {
-      console.error("Failed to accept offer:", err);
+      console.error("[OfferCard] Failed to accept offer:", err);
       alert("Failed to accept offer");
     } finally {
       setUpdating(false);
@@ -47,12 +53,15 @@ export default function OfferCard({
   }
 
   async function handleDecline() {
+    console.log(`[OfferCard] Declining offer ${offerId}`);
     setUpdating(true);
     try {
-      await updateOfferStatus(offerId, "declined");
+      const result = await updateOfferStatus(offerId, "declined");
+      console.log(`[OfferCard] Offer declined, result:`, result);
       onUpdate?.();
+      console.log(`[OfferCard] onUpdate callback called, UI should refresh`);
     } catch (err) {
-      console.error("Failed to decline offer:", err);
+      console.error("[OfferCard] Failed to decline offer:", err);
       alert("Failed to decline offer");
     } finally {
       setUpdating(false);
@@ -66,14 +75,17 @@ export default function OfferCard({
       return;
     }
 
+    console.log(`[OfferCard] Countering offer ${offerId} with £${pounds}`);
     setUpdating(true);
     try {
-      await updateOfferStatus(offerId, "countered", Math.round(pounds * 100));
+      const result = await updateOfferStatus(offerId, "countered", Math.round(pounds * 100));
+      console.log(`[OfferCard] Offer countered, result:`, result);
       setShowCounter(false);
       setCounterAmount("");
       onUpdate?.();
+      console.log(`[OfferCard] onUpdate callback called, UI should refresh`);
     } catch (err) {
-      console.error("Failed to counter offer:", err);
+      console.error("[OfferCard] Failed to counter offer:", err);
       alert("Failed to send counter offer");
     } finally {
       setUpdating(false);
@@ -114,14 +126,37 @@ export default function OfferCard({
   return (
     <div className={`rounded-lg border-2 p-4 ${getStatusColor()}`}>
       {/* Listing info if available */}
-      {(listingTitle || listingImage) && (
+      {(listingTitle || listingImage) && listingId && (
+        <Link 
+          href={`/listing/${listingId}`}
+          className="flex items-center gap-3 mb-3 pb-3 border-b border-current border-opacity-20 hover:bg-white hover:bg-opacity-30 transition-colors rounded-lg -m-2 p-2"
+        >
+          {listingImage && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={listingImage}
+              alt={listingTitle || "Listing"}
+              className="w-16 h-16 object-cover rounded border-2 border-current border-opacity-30"
+            />
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium opacity-75 mb-0.5">About listing:</p>
+            <p className="text-sm font-semibold truncate">{listingTitle}</p>
+            <div className="flex items-center gap-1 mt-1 text-xs font-medium opacity-75">
+              <span>View listing</span>
+              <ExternalLink size={12} />
+            </div>
+          </div>
+        </Link>
+      )}
+      {(listingTitle || listingImage) && !listingId && (
         <div className="flex items-center gap-3 mb-3 pb-3 border-b border-current border-opacity-20">
           {listingImage && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={listingImage}
               alt={listingTitle || "Listing"}
-              className="w-12 h-12 object-cover rounded border-2 border-current border-opacity-30"
+              className="w-16 h-16 object-cover rounded border-2 border-current border-opacity-30"
             />
           )}
           {listingTitle && (

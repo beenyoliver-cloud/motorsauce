@@ -38,6 +38,7 @@ export type Message = {
   text?: string;
   offer?: {
     id: string;
+    listingId?: string;
     amountCents: number;
     currency: string;
     status: string;
