@@ -58,50 +58,84 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
   const iAmRecipient = (o.recipientId && o.recipientId === selfId) || (!o.recipientId && !iAmStarter);
 
   const [counter, setCounter] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function sendSystemMessage(text: string) {
     try {
-      await sendMessage(msg.threadId, text);
+      console.log(`[OfferMessage] Sending system message: ${text}`);
+      const result = await sendMessage(msg.threadId, text);
+      console.log(`[OfferMessage] System message sent successfully:`, result);
     } catch (err) {
-      console.error("Failed to send system message:", err);
+      console.error(`[OfferMessage] Failed to send system message:`, err);
+      alert("Failed to send message");
     }
   }
 
-  // Actions
-    async function withdraw() {
+  // Actions with proper error handling and logging
+  const withdraw = async () => {
     if (!(o.status === "pending" && isMeBuyer && iAmStarter)) return;
-      await updateOfferStatusAPI(o.id, "withdrawn");
-    await sendSystemMessage(`🚫 ${displayName(selfName)} withdrew the offer of ${formatGBP(o.amountCents)}.`);
-  }
-
-    async function accept() {
-    if (!(o.status === "pending" && isMeSeller && iAmRecipient)) return;
-      await updateOfferStatusAPI(o.id, "accepted");
-    await sendSystemMessage(`✅ ${displayName(selfName)} accepted the offer of ${formatGBP(o.amountCents)}.`);
-    
-    // Send notification to buyer about payment
+    setLoading(true);
     try {
-      await fetch("/api/notifications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: o.starterId,
-          type: "payment_required",
-          title: "Payment Required",
-          message: `Your offer of ${formatGBP(o.amountCents)} was accepted! Please proceed with payment.`,
-          link: `/checkout?offer=${o.id}`,
-        }),
-      });
+      console.log(`[OfferMessage] Withdrawing offer ${o.id}`);
+      const result = await updateOfferStatusAPI(o.id, "withdrawn");
+      console.log(`[OfferMessage] Offer withdrawn:`, result);
+      await sendSystemMessage(`🚫 ${displayName(selfName)} withdrew the offer of ${formatGBP(o.amountCents)}.`);
     } catch (err) {
-      console.error("Failed to send payment notification:", err);
+      console.error(`[OfferMessage] Error withdrawing offer:`, err);
+      alert("Failed to withdraw offer");
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
-    async function decline() {
+  const accept = async () => {
     if (!(o.status === "pending" && isMeSeller && iAmRecipient)) return;
-      await updateOfferStatusAPI(o.id, "declined");
-    await sendSystemMessage(`❌ ${displayName(selfName)} declined the offer of ${formatGBP(o.amountCents)}.`);
-  }
+    setLoading(true);
+    try {
+      console.log(`[OfferMessage] Accepting offer ${o.id}`);
+      const result = await updateOfferStatusAPI(o.id, "accepted");
+      console.log(`[OfferMessage] Offer accepted:`, result);
+      await sendSystemMessage(`✅ ${displayName(selfName)} accepted the offer of ${formatGBP(o.amountCents)}.`);
+      
+      // Send notification to buyer about payment
+      try {
+        await fetch("/api/notifications", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: o.starterId,
+            type: "payment_required",
+            title: "Payment Required",
+            message: `Your offer of ${formatGBP(o.amountCents)} was accepted! Please proceed with payment.`,
+            link: `/checkout?offer=${o.id}`,
+          }),
+        });
+      } catch (err) {
+        console.error("Failed to send payment notification:", err);
+      }
+    } catch (err) {
+      console.error(`[OfferMessage] Error accepting offer:`, err);
+      alert("Failed to accept offer");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const decline = async () => {
+    if (!(o.status === "pending" && isMeSeller && iAmRecipient)) return;
+    setLoading(true);
+    try {
+      console.log(`[OfferMessage] Declining offer ${o.id}`);
+      const result = await updateOfferStatusAPI(o.id, "declined");
+      console.log(`[OfferMessage] Offer declined:`, result);
+      await sendSystemMessage(`❌ ${displayName(selfName)} declined the offer of ${formatGBP(o.amountCents)}.`);
+    } catch (err) {
+      console.error(`[OfferMessage] Error declining offer:`, err);
+      alert("Failed to decline offer");
+    } finally {
+      setLoading(false);
+    }
+  };
 
     async function counterSubmit() {
     // Seller can counter when they are the recipient of buyer's pending offer
@@ -112,10 +146,13 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
     if (!(canSellerCounter || canBuyerCounter)) return;
 
     const pounds = parseFloat(counter.replace(/[^\d.]/g, ""));
-    if (!Number.isFinite(pounds) || pounds <= 0) return;
+    if (!Number.isFinite(pounds) || pounds <= 0) {
+      alert("Please enter a valid amount");
+      return;
+    }
 
-    // 1) Supersede current
-      await updateOfferStatusAPI(o.id, "countered");
+    setLoading(true);
+    try {
     await sendSystemMessage(`📊 ${displayName(selfName)} countered with ${formatGBP(Math.round(pounds * 100))}.`);
 
     // 2) New pending from me → back to the other party, keep the listing photo/title
@@ -149,7 +186,13 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
       peerId: iAmRecipient ? o.starterId : o.recipientId,
     });
 
-    setCounter("");
+      setCounter("");
+    } catch (err) {
+      console.error(`[OfferMessage] Error countering offer:`, err);
+      alert("Failed to send counter offer");
+    } finally {
+      setLoading(false);
+    }
   }
 
   // UI state with icons
@@ -271,18 +314,20 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
                 {/* Accept/Decline buttons for seller */}
                 <div className="grid grid-cols-2 gap-2">
                   <button 
-                    onClick={accept} 
-                    className="rounded-lg bg-green-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-green-700 transition-colors shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                    onClick={accept}
+                    disabled={loading}
+                    className="rounded-lg bg-green-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-green-700 transition-colors shadow-sm hover:shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <CheckCircle size={16} />
-                    <span>Accept</span>
+                    <span>{loading ? "..." : "Accept"}</span>
                   </button>
                   <button 
-                    onClick={decline} 
-                    className="rounded-lg bg-red-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-red-700 transition-colors shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                    onClick={decline}
+                    disabled={loading}
+                    className="rounded-lg bg-red-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-red-700 transition-colors shadow-sm hover:shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <XCircle size={16} />
-                    <span>Decline</span>
+                    <span>{loading ? "..." : "Decline"}</span>
                   </button>
                 </div>
                 
@@ -301,12 +346,12 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
                       />
                     </div>
                     <button 
-                      onClick={counterSubmit} 
-                      disabled={!counter} 
+                      onClick={counterSubmit}
+                      disabled={!counter || loading}
                       className="px-3 py-2.5 rounded-lg bg-yellow-500 text-white font-semibold text-sm hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm hover:shadow-md flex items-center gap-1.5"
                     >
                       <TrendingUp size={16} />
-                      <span>Counter</span>
+                      <span>{loading ? "..." : "Counter"}</span>
                     </button>
                   </div>
                 </div>
@@ -315,11 +360,12 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
 
             {showWithdraw && (
               <button 
-                onClick={withdraw} 
-                className="w-full rounded-lg border-2 border-gray-300 bg-white px-3 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                onClick={withdraw}
+                disabled={loading}
+                className="w-full rounded-lg border-2 border-gray-300 bg-white px-3 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Ban size={16} />
-                Withdraw Offer
+                {loading ? "..." : "Withdraw Offer"}
               </button>
             )}
 
