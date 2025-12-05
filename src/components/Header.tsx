@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { getCurrentUser, LocalUser, nsKey } from "@/lib/auth";
 import { isAdmin } from "@/lib/admin";
+import { supabaseBrowser } from "@/lib/supabase";
 import CartDrawer from "@/components/CartDrawer";
 import SearchBar from "@/components/SearchBar";
 import { NotificationsDropdown } from "@/components/NotificationsDropdown";
