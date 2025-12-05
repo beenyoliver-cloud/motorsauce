@@ -10,12 +10,14 @@ import { useRouter } from "next/navigation";
 export default function ListingActions({
   listingId,
   sellerName,
+  sellerId,
   buyHref,
   shareUrl,
   listingTitle,
 }: {
   listingId: string | number;
   sellerName: string;
+  sellerId?: string;     // optional: seller user ID for reports
   buyHref: string;
   shareUrl: string;      // can be relative (e.g., "/listings/123")
   listingTitle?: string; // optional: used in the offer body
@@ -118,8 +120,8 @@ export default function ListingActions({
           Share
         </button>
 
-        {/* Report user */}
-        <ReportUserButton sellerName={sellerName} />
+        {/* Report user - only show if we have sellerId */}
+        {sellerId && <ReportUserButton sellerName={sellerName} sellerId={sellerId} />}
       </div>
 
       {/* ---- Offer Modal ---- */}

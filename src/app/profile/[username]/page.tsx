@@ -170,7 +170,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
                 toUsername={displayName}
                 toUserId={sellerMetrics.id}
               />
-              <ReportUserButton sellerName={displayName} />
+              {sellerMetrics.id && <ReportUserButton sellerName={displayName} sellerId={sellerMetrics.id} />}
             </div>
           </div>
 
@@ -182,7 +182,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
               toUsername={displayName}
               toUserId={sellerMetrics.id}
             />
-            <ReportUserButton sellerName={displayName} />
+            {sellerMetrics.id && <ReportUserButton sellerName={displayName} sellerId={sellerMetrics.id} />}
             <EditProfileTopButton displayName={displayName} baseHref={baseHref} />
           </div>
         </div>

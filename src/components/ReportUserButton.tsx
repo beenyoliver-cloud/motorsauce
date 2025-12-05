@@ -2,33 +2,86 @@
 
 import { useEffect, useState } from "react";
 import { Flag, X } from "lucide-react";
+import { supabaseBrowser } from "@/lib/supabase";
 
-export default function ReportUserButton({ sellerName }: { sellerName: string }) {
+interface ReportUserButtonProps {
+  sellerName: string;
+  sellerId: string;
+}
+
+export default function ReportUserButton({ sellerName, sellerId }: ReportUserButtonProps) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("fraud");
   const [details, setDetails] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const [toastOpen, setToastOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
+  const [toastType, setToastType] = useState<"success" | "error">("success");
 
   useEffect(() => {
     if (!toastOpen) return;
-    const t = setTimeout(() => setToastOpen(false), 3000);
+    const t = setTimeout(() => setToastOpen(false), 4000);
     return () => clearTimeout(t);
   }, [toastOpen]);
 
   async function submitReport(e: React.FormEvent) {
     e.preventDefault();
     
-    // NOTE: Report API not yet implemented - this is a placeholder
-    // To implement: Create /api/reports route that stores reports in database
-    // and sends notification to admins
-    
-    setOpen(false);
-    setReason("fraud");
-    setDetails("");
-    setToastMsg(`Thanks — your report for ${sellerName} has been noted. (Feature pending implementation)`);
-    setToastOpen(true);
+    if (!details.trim() || details.trim().length < 10) {
+      setToastMsg("Please provide more details (at least 10 characters)");
+      setToastType("error");
+      setToastOpen(true);
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const supabase = supabaseBrowser();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        setToastMsg("Please sign in to submit a report");
+        setToastType("error");
+        setToastOpen(true);
+        setSubmitting(false);
+        return;
+      }
+
+      const res = await fetch("/api/reports", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          reported_user_id: sellerId,
+          reported_user_name: sellerName,
+          reason,
+          details: details.trim(),
+        }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to submit report");
+      }
+
+      setOpen(false);
+      setReason("fraud");
+      setDetails("");
+      setToastMsg(`Thank you. Your report about ${sellerName} has been submitted to our team for review.`);
+      setToastType("success");
+      setToastOpen(true);
+    } catch (err) {
+      console.error("Failed to submit report:", err);
+      setToastMsg(err instanceof Error ? err.message : "Failed to submit report");
+      setToastType("error");
+      setToastOpen(true);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -97,9 +150,10 @@ export default function ReportUserButton({ sellerName }: { sellerName: string })
                 </button>
                 <button
                   type="submit"
-                  className="px-3 py-2 rounded-md bg-red-600 text-white text-sm font-medium hover:bg-red-700 shadow-sm"
+                  disabled={submitting}
+                  className="px-3 py-2 rounded-md bg-red-600 text-white text-sm font-medium hover:bg-red-700 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  Submit report
+                  {submitting ? "Submitting..." : "Submit report"}
                 </button>
               </div>
             </form>
@@ -115,7 +169,11 @@ export default function ReportUserButton({ sellerName }: { sellerName: string })
         role="status"
         aria-live="polite"
       >
-        <div className="rounded-full bg-black text-white px-4 py-2 shadow-lg border border-white/10">
+        <div className={`rounded-full px-4 py-2 shadow-lg border ${
+          toastType === "error" 
+            ? "bg-red-600 text-white border-red-400"
+            : "bg-black text-white border-white/10"
+        }`}>
           {toastMsg || "Action completed."}
         </div>
       </div>
