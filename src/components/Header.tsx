@@ -179,6 +179,18 @@ export default function Header() {
      return () => window.removeEventListener("ms:opencart", handleOpenCart as EventListener);
    }, []);
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
+
   const displayName = useMemo(() => getDisplayName(user), [user]);
   const initials = useMemo(() => getInitials(displayName), [displayName]);
   const profileHref = user ? `/profile/${encodeURIComponent(user.name)}` : "/auth/login";
@@ -271,20 +283,28 @@ export default function Header() {
           <SearchBar placeholder="Search parts or sellers…" />
         </div>
 
-        {/* Mobile menu panel */}
+        {/* Mobile menu backdrop and panel */}
         {mobileMenuOpen && (
-          <div className="md:hidden fixed left-0 right-0 top-[128px] bg-white border-b border-gray-200 shadow-md z-40">
-            {categories.map(([name, href]) => (
-              <Link
-                key={href}
-                href={href}
-                className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {name}
-              </Link>
-            ))}
-            <div className="border-t border-gray-100" />
+          <>
+            {/* Backdrop - covers entire viewport */}
+            <div
+              className="md:hidden fixed inset-0 bg-black/30 z-30"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            {/* Menu panel - full height below header */}
+            <div className="md:hidden fixed left-0 right-0 top-[128px] bottom-0 bg-white shadow-md z-40 overflow-y-auto">
+              <nav className="flex flex-col">
+                {categories.map(([name, href]) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="block px-4 py-3 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600 border-b border-gray-100"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {name}
+                  </Link>
+                ))}
+                <div className="border-t border-gray-200" />
             {isUserLoaded && user ? (
               <>
                 <Link
@@ -391,7 +411,9 @@ export default function Header() {
                 </Link>
               </>
             )}
-          </div>
+              </nav>
+            </div>
+          </>
         )}
       </div>
 
