@@ -27,8 +27,8 @@ export default function MessagesThreadPage({ params }: PageProps) {
   }
 
   return (
-    <section className="fixed inset-x-0 top-[128px] bottom-0 md:fixed md:inset-x-0 md:top-[128px] md:bottom-0 md:px-4 md:py-4 md:overflow-auto">
-      <div className="h-full md:h-[calc(100vh-180px)] md:max-w-3xl md:mx-auto border-0 md:border md:border-gray-200 md:rounded-xl bg-white md:shadow-sm overflow-hidden flex flex-col">
+    <section className="w-full h-[calc(100vh-128px)] md:h-auto md:py-4 md:px-4">
+      <div className="h-full md:h-[calc(100vh-200px)] md:max-w-3xl md:mx-auto border-0 md:border md:border-gray-200 md:rounded-xl bg-white md:shadow-sm overflow-hidden flex flex-col">
         {/* Top bar with back button */}
         <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200 bg-white shrink-0">
           <Link href="/messages" aria-label="Back to messages" className="p-2 -ml-2 rounded-md hover:bg-gray-100 transition text-gray-700">

@@ -61,6 +61,7 @@ export async function GET(req: Request) {
       return acc + (hasAny && !isRead ? 1 : 0);
     }, 0);
 
+    console.log("[unread-count] Total threads:", threads?.length, "Read threads:", readSet.size, "Unread:", count);
     return NextResponse.json({ count }, { status: 200 });
   } catch (error: any) {
     console.error("[unread-count] Unexpected error:", error);

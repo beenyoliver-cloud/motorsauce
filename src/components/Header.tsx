@@ -158,19 +158,27 @@ export default function Header() {
 
     async function fetchUnread() {
       try {
+        console.log("[Header] Fetching unread count...");
         const res = await fetch("/api/messages/unread-count", { cache: "no-store" });
-        if (!res.ok) return;
+        if (!res.ok) {
+          console.warn("[Header] Unread count fetch failed:", res.status);
+          return;
+        }
         const data = await res.json();
         const n = Number(data?.count || 0);
+        console.log("[Header] Unread count received:", n);
         if (!Number.isFinite(n)) return;
         if (!abort) {
           setUnread(n);
+          console.log("[Header] Badge updated to:", n);
           try {
             localStorage.setItem(nsKey("unread_count"), String(n));
             window.dispatchEvent(new Event("ms:unread"));
           } catch {}
         }
-      } catch {}
+      } catch (err) {
+        console.error("[Header] Error fetching unread:", err);
+      }
     }
 
     // Fetch immediately on mount
@@ -181,21 +189,31 @@ export default function Header() {
       .channel("header-unread")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "thread_read_status" },
-        () => {
-          console.log("[Header] Real-time update: thread_read_status changed");
+        { event: "DELETE", schema: "public", table: "thread_read_status" },
+        (payload) => {
+          console.log("[Header] Real-time: thread marked UNREAD (DELETE)", payload);
+          fetchUnread();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "thread_read_status" },
+        (payload) => {
+          console.log("[Header] Real-time: thread marked READ (INSERT)", payload);
           fetchUnread();
         }
       )
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
-        () => {
-          console.log("[Header] Real-time update: new message inserted");
+        (payload) => {
+          console.log("[Header] Real-time: new message inserted", payload);
           fetchUnread();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("[Header] Subscription status:", status);
+      });
 
     // Fallback polling every 10 seconds (faster than before)
     const timerId = window.setInterval(fetchUnread, 10000);
