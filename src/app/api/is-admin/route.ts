@@ -26,20 +26,40 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check admin status using SERVICE ROLE (bypasses RLS)
-    const serviceSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    // Try to use SERVICE ROLE key if available
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE;
+    
+    if (serviceRoleKey) {
+      const serviceSupabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        serviceRoleKey
+      );
 
-    const { data, error } = await serviceSupabase
+      const { data, error } = await serviceSupabase
+        .from("admins")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("[is-admin API] Service role query error:", error);
+        return NextResponse.json({ isAdmin: false });
+      }
+
+      return NextResponse.json({ isAdmin: !!data });
+    }
+
+    // Fallback: Use auth header with RLS (user can only see themselves)
+    // This should work now that we have RLS policies
+    const { data, error } = await supabase
       .from("admins")
       .select("id")
       .eq("id", user.id)
       .maybeSingle();
 
     if (error) {
-      console.error("[is-admin API] Query error:", error);
+      console.error("[is-admin API] RLS query error:", error);
+      console.error("[is-admin API] Hint: Make sure SUPABASE_SERVICE_ROLE_KEY is set");
       return NextResponse.json({ isAdmin: false });
     }
 
