@@ -423,10 +423,25 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
 
         {/* Resolved State */}
         {o.status !== "pending" && (
-          <div className="mt-3 px-3 py-2.5 bg-gray-100 rounded-lg border border-gray-200">
-            <p className="text-xs text-gray-700 text-center font-medium">
-              Offer <span className="font-semibold text-gray-900">{statusBadge.label.toLowerCase()}</span>
-            </p>
+          <div className="mt-3 space-y-3">
+            <div className="px-3 py-2.5 bg-gray-100 rounded-lg border border-gray-200">
+              <p className="text-xs text-gray-700 text-center font-medium">
+                Offer <span className="font-semibold text-gray-900">{statusBadge.label.toLowerCase()}</span>
+              </p>
+            </div>
+            
+            {/* Checkout button for buyer when offer is accepted */}
+            {o.status === "accepted" && isMeBuyer && (
+              <Link
+                href={`/checkout?offer=${o.id}&listing=${o.listingId}`}
+                className="w-full block text-center rounded-lg bg-yellow-500 px-3 py-2.5 text-sm font-semibold text-white hover:bg-yellow-600 transition-colors shadow-sm hover:shadow-md"
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <Package size={16} />
+                  <span>Proceed to Payment</span>
+                </div>
+              </Link>
+            )}
           </div>
         )}
 

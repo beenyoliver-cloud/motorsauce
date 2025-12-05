@@ -43,6 +43,9 @@ CREATE TRIGGER trigger_mark_thread_unread_for_recipient
 
 -- ==================== FUNCTION 2: Handle offer responses ====================
 -- This RPC responds to an offer (accept, decline, counter) and sends a message
+-- Drop existing function if it has different signature
+DROP FUNCTION IF EXISTS respond_offer(UUID, TEXT, INTEGER);
+
 CREATE OR REPLACE FUNCTION respond_offer(
   p_offer_id UUID,
   p_status TEXT,
@@ -138,13 +141,25 @@ BEGIN
   -- Generate system message based on action
   v_system_text := CASE 
     WHEN p_status IN ('accept', 'accepted') THEN 
-      '✅ Seller accepted the offer of £' || (v_offer.amount_cents::float / 100)::text || '.'
+      CASE 
+        WHEN v_current_user_id = v_offer.recipient_id THEN '✅ Seller accepted the offer of £' || (v_offer.amount_cents::float / 100)::text || '.'
+        ELSE '✅ Your offer of £' || (v_offer.amount_cents::float / 100)::text || ' has been accepted!'
+      END
     WHEN p_status IN ('reject', 'declined') THEN 
-      '❌ Seller declined the offer of £' || (v_offer.amount_cents::float / 100)::text || '.'
+      CASE 
+        WHEN v_current_user_id = v_offer.recipient_id THEN '❌ Seller declined the offer of £' || (v_offer.amount_cents::float / 100)::text || '.'
+        ELSE '❌ Your offer of £' || (v_offer.amount_cents::float / 100)::text || ' has been declined.'
+      END
     WHEN p_status IN ('counter', 'countered') THEN 
-      '📊 Seller countered with £' || (COALESCE(p_counter_amount_cents, v_offer.counter_amount * 100)::float / 100)::text || '.'
+      CASE 
+        WHEN v_current_user_id = v_offer.recipient_id THEN '📊 Seller countered with £' || (COALESCE(p_counter_amount_cents, v_offer.counter_amount * 100)::float / 100)::text || '.'
+        ELSE '📊 You have countered with £' || (COALESCE(p_counter_amount_cents, v_offer.counter_amount * 100)::float / 100)::text || '.'
+      END
     WHEN p_status = 'withdrawn' THEN 
-      '⚠️ Buyer withdrew the offer of £' || (v_offer.amount_cents::float / 100)::text || '.'
+      CASE 
+        WHEN v_current_user_id = v_offer.starter_id THEN '⚠️ You withdrew your offer of £' || (v_offer.amount_cents::float / 100)::text || '.'
+        ELSE '⚠️ The buyer withdrew their offer of £' || (v_offer.amount_cents::float / 100)::text || '.'
+      END
     ELSE 'Offer status changed to ' || p_status
   END;
 
