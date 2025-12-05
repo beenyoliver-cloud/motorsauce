@@ -1,49 +1,7 @@
--- Complete fix for messaging and offers system
--- This handles:
--- 1. Marking threads as unread when new message arrives
--- 2. Handling offer responses and sending messages back to buyer
+-- Quick fix for "Unauthorized" error in respond_offer RPC
+-- This changes SECURITY DEFINER to SECURITY INVOKER so auth.uid() works correctly
 
--- ==================== FUNCTION 1: Mark thread unread for recipient ====================
-CREATE OR REPLACE FUNCTION mark_thread_unread_for_recipient()
-RETURNS TRIGGER AS $$
-DECLARE
-  v_recipient_id UUID;
-  v_participant_1 UUID;
-  v_participant_2 UUID;
-BEGIN
-  -- Get the thread's two participants
-  SELECT participant_1_id, participant_2_id INTO v_participant_1, v_participant_2
-  FROM public.threads
-  WHERE id = NEW.thread_id;
-
-  -- Determine the recipient (the participant who did NOT send the message)
-  IF v_participant_1 = NEW.from_user_id THEN
-    v_recipient_id := v_participant_2;
-  ELSIF v_participant_2 = NEW.from_user_id THEN
-    v_recipient_id := v_participant_1;
-  ELSE
-    RETURN NEW;
-  END IF;
-
-  -- Delete the read status for the recipient to mark the thread as unread
-  DELETE FROM public.thread_read_status
-  WHERE thread_id = NEW.thread_id
-    AND user_id = v_recipient_id;
-
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Create trigger for marking unread
-DROP TRIGGER IF EXISTS trigger_mark_thread_unread_for_recipient ON public.messages;
-CREATE TRIGGER trigger_mark_thread_unread_for_recipient
-  AFTER INSERT ON public.messages
-  FOR EACH ROW
-  EXECUTE FUNCTION mark_thread_unread_for_recipient();
-
--- ==================== FUNCTION 2: Handle offer responses ====================
--- This RPC responds to an offer (accept, decline, counter) and sends a message
--- Drop existing function if it has different signature
+-- Drop and recreate with SECURITY INVOKER
 DROP FUNCTION IF EXISTS respond_offer(UUID, TEXT, INTEGER);
 
 CREATE OR REPLACE FUNCTION respond_offer(
@@ -59,7 +17,7 @@ DECLARE
   v_thread_id UUID;
   v_current_user_id UUID;
 BEGIN
-  -- Get current user
+  -- Get current user (THIS WILL NOW WORK because of SECURITY INVOKER)
   v_current_user_id := auth.uid();
   
   IF v_current_user_id IS NULL THEN
@@ -195,19 +153,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY INVOKER;
 
--- ==================== VERIFICATION ====================
--- Verify both functions exist
+-- Verify the function was created with correct security
 SELECT 
-  n.nspname,
-  p.proname
+  p.proname as function_name,
+  CASE p.prosecdef 
+    WHEN true THEN 'SECURITY DEFINER' 
+    ELSE 'SECURITY INVOKER' 
+  END as security_type
 FROM pg_proc p
 JOIN pg_namespace n ON p.pronamespace = n.oid
-WHERE p.proname IN ('mark_thread_unread_for_recipient', 'respond_offer')
-ORDER BY p.proname;
-
--- Verify trigger exists
-SELECT 
-  tgname,
-  tgenabled
-FROM pg_trigger
-WHERE tgname = 'trigger_mark_thread_unread_for_recipient';
+WHERE p.proname = 'respond_offer'
+  AND n.nspname = 'public';
