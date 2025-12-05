@@ -42,6 +42,7 @@ export async function POST(req: Request) {
     }
 
     // Upsert read status
+    console.log(`[read API] Marking thread ${threadId} as read for user ${user.id}`);
     const { error: upsertError } = await supabase
       .from("thread_read_status")
       .upsert(
@@ -58,6 +59,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: upsertError.message }, { status: 500 });
     }
 
+    console.log(`[read API] Successfully marked thread ${threadId} as read`);
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: any) {
     console.error("[read API] Error:", error);

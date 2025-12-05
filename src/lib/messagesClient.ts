@@ -271,8 +271,12 @@ export async function sendMessage(threadId: string, text: string): Promise<Messa
  */
 export async function markThreadRead(threadId: string): Promise<boolean> {
   try {
+    console.log("[messagesClient] Marking thread as read:", threadId);
     const authHeader = await getAuthHeader();
-    if (!authHeader) return false;
+    if (!authHeader) {
+      console.warn("[messagesClient] No auth header, cannot mark thread read");
+      return false;
+    }
 
     const res = await fetch("/api/messages/read", {
       method: "POST",
@@ -282,6 +286,14 @@ export async function markThreadRead(threadId: string): Promise<boolean> {
       },
       body: JSON.stringify({ threadId }),
     });
+
+    if (res.ok) {
+      console.log("[messagesClient] Thread marked as read successfully");
+      // Dispatch event to trigger header badge update
+      window.dispatchEvent(new Event("ms:unread"));
+    } else {
+      console.error("[messagesClient] Failed to mark thread read:", res.status, await res.text());
+    }
 
     return res.ok;
   } catch (error) {
