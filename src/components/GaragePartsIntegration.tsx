@@ -80,15 +80,61 @@ export default function GaragePartsIntegration({ car }: GaragePartsIntegrationPr
 
   const toggleWatch = async () => {
     const newValue = !watchEnabled;
-    setWatchEnabled(newValue);
     
-    // TODO: Update in localStorage/database
-    // For now, just update local state
-    car.watchParts = newValue;
-    
-    if (newValue) {
-      // TODO: Subscribe to email/push notifications
-      alert(`Watch enabled for ${car.make} ${car.model} ${car.year}. You'll be notified when compatible parts are listed.`);
+    try {
+      // Get auth token
+      const { data: { session } } = await (await import("@/lib/supabase")).supabaseBrowser().auth.getSession();
+      
+      if (!session) {
+        alert("Please sign in to enable watch alerts");
+        return;
+      }
+
+      if (newValue) {
+        // Add watch
+        const res = await fetch("/api/watched-parts", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            make: car.make,
+            model: car.model,
+            year: car.year,
+          }),
+        });
+
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || "Failed to enable watch");
+        }
+
+        setWatchEnabled(true);
+        car.watchParts = true;
+        alert(`✓ Watch enabled for ${car.make} ${car.model} ${car.year}. You'll be notified when compatible parts are listed.`);
+      } else {
+        // Remove watch
+        const res = await fetch(
+          `/api/watched-parts?make=${encodeURIComponent(car.make)}&model=${encodeURIComponent(car.model)}&year=${car.year}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error("Failed to disable watch");
+        }
+
+        setWatchEnabled(false);
+        car.watchParts = false;
+      }
+    } catch (err) {
+      console.error("Failed to toggle watch:", err);
+      alert(err instanceof Error ? err.message : "Failed to update watch status");
     }
   };
 

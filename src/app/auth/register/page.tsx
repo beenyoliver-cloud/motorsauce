@@ -4,6 +4,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { registerUser } from "@/lib/auth";
 import CenteredCard from "@/components/layout/CenteredCard";
+import { 
+  validatePasswordStrength, 
+  getPasswordStrengthLabel, 
+  getPasswordStrengthColor 
+} from "@/lib/passwordValidation";
+import { Shield, Check, X } from "lucide-react";
 
 type AccountType = 'individual' | 'business';
 
@@ -29,6 +35,10 @@ export default function RegisterPage() {
   
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showPasswordHints, setShowPasswordHints] = useState(false);
+
+  // Password strength validation
+  const passwordStrength = validatePasswordStrength(pw);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,7 +46,11 @@ export default function RegisterPage() {
 
     if (!name.trim()) return setErr("Please enter a display name.");
     if (!email.trim() || !email.includes("@")) return setErr("Please enter a valid email.");
-    if (pw.length < 6) return setErr("Password must be at least 6 characters.");
+    
+    // Enhanced password validation
+    if (!passwordStrength.isValid) {
+      return setErr(passwordStrength.errors[0] || "Password does not meet security requirements.");
+    }
     if (pw !== pw2) return setErr("Passwords do not match.");
     
     // Business validation
@@ -200,16 +214,79 @@ export default function RegisterPage() {
             placeholder="you@example.com"
           />
         </label>
-        <label className="grid gap-1">
-          <span className="text-sm text-gray-700">Password</span>
-          <input
-            type="password"
-            className={inputBase}
-            value={pw}
-            onChange={(e) => setPw(e.target.value)}
-            placeholder="At least 6 characters"
-          />
-        </label>
+        <div className="space-y-2">
+          <label className="grid gap-1">
+            <span className="text-sm text-gray-700 flex items-center gap-2">
+              Password
+              <Shield className="h-4 w-4 text-gray-400" />
+            </span>
+            <input
+              type="password"
+              className={inputBase}
+              value={pw}
+              onChange={(e) => setPw(e.target.value)}
+              onFocus={() => setShowPasswordHints(true)}
+              placeholder="Create a strong password"
+            />
+          </label>
+
+          {/* Password Strength Indicator */}
+          {pw.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-300 ${getPasswordStrengthColor(passwordStrength.score)}`}
+                    style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                  />
+                </div>
+                <span className={`text-xs font-medium ${
+                  passwordStrength.score <= 2 ? 'text-red-600' : 
+                  passwordStrength.score === 3 ? 'text-yellow-600' : 
+                  'text-green-600'
+                }`}>
+                  {getPasswordStrengthLabel(passwordStrength.score)}
+                </span>
+              </div>
+
+              {/* Password Requirements */}
+              {showPasswordHints && (
+                <div className="bg-gray-50 border border-gray-200 rounded-md p-3 space-y-1.5">
+                  <div className="text-xs font-semibold text-gray-700 mb-2">Password must contain:</div>
+                  <div className={`flex items-center gap-2 text-xs ${pw.length >= 8 ? 'text-green-600' : 'text-gray-600'}`}>
+                    {pw.length >= 8 ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    At least 8 characters
+                  </div>
+                  <div className={`flex items-center gap-2 text-xs ${/[A-Z]/.test(pw) ? 'text-green-600' : 'text-gray-600'}`}>
+                    {/[A-Z]/.test(pw) ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    One uppercase letter
+                  </div>
+                  <div className={`flex items-center gap-2 text-xs ${/[a-z]/.test(pw) ? 'text-green-600' : 'text-gray-600'}`}>
+                    {/[a-z]/.test(pw) ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    One lowercase letter
+                  </div>
+                  <div className={`flex items-center gap-2 text-xs ${/[0-9]/.test(pw) ? 'text-green-600' : 'text-gray-600'}`}>
+                    {/[0-9]/.test(pw) ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    One number
+                  </div>
+                  <div className={`flex items-center gap-2 text-xs ${/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(pw) ? 'text-green-600' : 'text-gray-600'}`}>
+                    {/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(pw) ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    One special character (!@#$%^&*)
+                  </div>
+                  
+                  {passwordStrength.suggestions.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-gray-200">
+                      <div className="text-xs text-amber-600">
+                        💡 {passwordStrength.suggestions[0]}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         <label className="grid gap-1">
           <span className="text-sm text-gray-700">Confirm password</span>
           <input
