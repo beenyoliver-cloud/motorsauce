@@ -38,8 +38,8 @@ export async function GET(req: Request) {
     const { data: admin } = await supabase
       .from("admins")
       .select("*")
-      .eq("user_id", user.id)
-      .single();
+      .eq("id", user.id)
+      .maybeSingle();
 
     if (!admin) {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 });
@@ -47,16 +47,69 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
+    const userId = searchParams.get("userId");
     const limit = parseInt(searchParams.get("limit") || "50");
     const offset = parseInt(searchParams.get("offset") || "0");
 
-    // Use RPC function to get reports with details
-    const { data: reports, error: reportsError } = await supabase
-      .rpc("get_reports_with_details", {
-        p_status: status,
-        p_limit: limit,
-        p_offset: offset,
-      });
+    // If filtering by user, use direct query, otherwise use RPC function
+    let reports, reportsError;
+    
+    if (userId) {
+      const query = supabase
+        .from("user_reports")
+        .select(`
+          id,
+          reporter_id,
+          reported_user_id,
+          reported_user_name,
+          reason,
+          details,
+          status,
+          admin_notes,
+          reviewed_by,
+          reviewed_at,
+          created_at,
+          updated_at,
+          reporter:profiles!user_reports_reporter_id_fkey(name, email)
+        `)
+        .eq("reported_user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      
+      if (status) {
+        query.eq("status", status);
+      }
+      
+      const result = await query;
+      reports = result.data?.map((r: any) => ({
+        report_id: r.id,
+        reporter_id: r.reporter_id,
+        reporter_name: r.reporter?.name || "Unknown",
+        reporter_email: r.reporter?.email || "Unknown",
+        reported_user_id: r.reported_user_id,
+        reported_user_name: r.reported_user_name,
+        reported_user_email: "",
+        reason: r.reason,
+        details: r.details,
+        status: r.status,
+        admin_notes: r.admin_notes,
+        reviewed_by: r.reviewed_by,
+        reviewed_at: r.reviewed_at,
+        created_at: r.created_at,
+        updated_at: r.updated_at,
+      }));
+      reportsError = result.error;
+    } else {
+      // Use RPC function to get reports with details
+      const result = await supabase
+        .rpc("get_reports_with_details", {
+          p_status: status,
+          p_limit: limit,
+          p_offset: offset,
+        });
+      reports = result.data;
+      reportsError = result.error;
+    }
 
     if (reportsError) {
       console.error("[reports API] Error fetching reports:", reportsError);
@@ -167,8 +220,8 @@ export async function PATCH(req: Request) {
     const { data: admin } = await supabase
       .from("admins")
       .select("*")
-      .eq("user_id", user.id)
-      .single();
+      .eq("id", user.id)
+      .maybeSingle();
 
     if (!admin) {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 });

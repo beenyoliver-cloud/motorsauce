@@ -1,10 +1,10 @@
 // src/app/admin/reports/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase";
-import { Flag, Eye, CheckCircle, XCircle, AlertCircle, Clock } from "lucide-react";
+import { Flag, Eye, CheckCircle, XCircle, AlertCircle, Clock, Users, ArrowLeft } from "lucide-react";
 
 interface Report {
   report_id: string;
@@ -24,8 +24,10 @@ interface Report {
   updated_at: string;
 }
 
-export default function AdminReportsPage() {
+function AdminReportsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const userIdFilter = searchParams.get("user");
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [reports, setReports] = useState<Report[]>([]);
@@ -38,7 +40,7 @@ export default function AdminReportsPage() {
 
   useEffect(() => {
     checkAdminAndLoadReports();
-  }, [filter]);
+  }, [filter, userIdFilter]);
 
   async function checkAdminAndLoadReports() {
     try {
@@ -69,6 +71,7 @@ export default function AdminReportsPage() {
       // Load reports
       const params = new URLSearchParams();
       if (filter) params.append("status", filter);
+      if (userIdFilter) params.append("userId", userIdFilter);
 
       const res = await fetch(`/api/reports?${params}`, {
         headers: {
@@ -182,11 +185,36 @@ export default function AdminReportsPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4">
+        {/* Navigation */}
+        <div className="mb-4 flex gap-2">
+          <button
+            onClick={() => router.push("/admin/users")}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+          >
+            <Users size={16} />
+            User Management
+          </button>
+          {userIdFilter && (
+            <button
+              onClick={() => router.push("/admin/reports")}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+            >
+              <ArrowLeft size={16} />
+              Clear Filter
+            </button>
+          )}
+        </div>
+
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
             <Flag className="h-8 w-8 text-red-600" />
             User Reports
+            {userIdFilter && (
+              <span className="text-base font-normal text-gray-600">
+                (Filtered by user)
+              </span>
+            )}
           </h1>
           <p className="text-gray-600 mt-2">
             Review and manage user reports • {pendingCount} pending • {investigatingCount} investigating
@@ -387,5 +415,18 @@ export default function AdminReportsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+// Wrap in Suspense to handle useSearchParams
+export default function AdminReportsPageWrapper() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    }>
+      <AdminReportsPage />
+    </Suspense>
   );
 }
