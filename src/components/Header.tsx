@@ -150,9 +150,11 @@ export default function Header() {
     };
   }, []);
 
-  // Server-backed unread polling so bubbles appear even if Messages page isn't open
+  // Real-time unread updates via Supabase + fallback polling
   useEffect(() => {
     let abort = false;
+    const supabase = supabaseBrowser();
+
     async function fetchUnread() {
       try {
         const res = await fetch("/api/messages/unread-count", { cache: "no-store" });
@@ -169,12 +171,38 @@ export default function Header() {
         }
       } catch {}
     }
-    // Kick off immediately and then poll
+
+    // Fetch immediately on mount
     fetchUnread();
-    const timerId = window.setInterval(fetchUnread, 30000);
+
+    // Subscribe to real-time changes for immediate updates
+    const channel = supabase
+      .channel("header-unread")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "thread_read_status" },
+        () => {
+          console.log("[Header] Real-time update: thread_read_status changed");
+          fetchUnread();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        () => {
+          console.log("[Header] Real-time update: new message inserted");
+          fetchUnread();
+        }
+      )
+      .subscribe();
+
+    // Fallback polling every 10 seconds (faster than before)
+    const timerId = window.setInterval(fetchUnread, 10000);
+
     return () => {
       abort = true;
       window.clearInterval(timerId);
+      try { supabase.removeChannel(channel); } catch {}
     };
   }, []);
 
