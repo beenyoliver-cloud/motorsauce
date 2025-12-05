@@ -119,38 +119,6 @@ export default function Header() {
     };
   }, [user]);
 
-  // Unread
-  useEffect(() => {
-    const update = async () => {
-      // First try to fetch from server for real-time updates
-      try {
-        const res = await fetch("/api/messages/unread-count", { cache: "no-store" });
-        if (res.ok) {
-          const data = await res.json();
-          const n = Number(data?.count || 0);
-          if (Number.isFinite(n)) {
-            setUnread(n);
-            localStorage.setItem(nsKey("unread_count"), String(n));
-            return;
-          }
-        }
-      } catch (err) {
-        console.warn("[Header] Failed to fetch unread count:", err);
-      }
-      // Fall back to localStorage
-      setUnread(readUnreadCount());
-    };
-    update();
-    window.addEventListener("storage", update);
-    window.addEventListener("ms:unread", update as EventListener);
-    window.addEventListener("ms:auth", update as EventListener);
-    return () => {
-      window.removeEventListener("storage", update);
-      window.removeEventListener("ms:unread", update as EventListener);
-      window.removeEventListener("ms:auth", update as EventListener);
-    };
-  }, []);
-
   // Real-time unread updates via Supabase + fallback polling
   useEffect(() => {
     let abort = false;
@@ -196,6 +164,10 @@ export default function Header() {
     // Fetch immediately on mount
     fetchUnread();
 
+    // Listen for manual event dispatches (from markThreadRead, etc.)
+    window.addEventListener("ms:unread", fetchUnread as EventListener);
+    window.addEventListener("ms:auth", fetchUnread as EventListener);
+
     // Subscribe to real-time changes for immediate updates
     const channel = supabase
       .channel("header-unread")
@@ -217,6 +189,14 @@ export default function Header() {
       )
       .on(
         "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "thread_read_status" },
+        (payload) => {
+          console.log("[Header] Real-time: thread read status UPDATED (UPDATE)", payload);
+          fetchUnread();
+        }
+      )
+      .on(
+        "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
         (payload) => {
           console.log("[Header] Real-time: new message inserted", payload);
@@ -233,6 +213,8 @@ export default function Header() {
     return () => {
       abort = true;
       window.clearInterval(timerId);
+      window.removeEventListener("ms:unread", fetchUnread as EventListener);
+      window.removeEventListener("ms:auth", fetchUnread as EventListener);
       try { supabase.removeChannel(channel); } catch {}
     };
   }, []);
