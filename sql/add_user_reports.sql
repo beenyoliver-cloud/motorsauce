@@ -47,7 +47,7 @@ CREATE POLICY "Admins can view all reports"
   USING (
     EXISTS (
       SELECT 1 FROM public.admins
-      WHERE admins.user_id = auth.uid()
+      WHERE admins.id = auth.uid()
     )
   );
 
@@ -58,13 +58,13 @@ CREATE POLICY "Admins can update reports"
   USING (
     EXISTS (
       SELECT 1 FROM public.admins
-      WHERE admins.user_id = auth.uid()
+      WHERE admins.id = auth.uid()
     )
   )
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM public.admins
-      WHERE admins.user_id = auth.uid()
+      WHERE admins.id = auth.uid()
     )
   );
 
@@ -75,7 +75,7 @@ CREATE POLICY "Admins can delete reports"
   USING (
     EXISTS (
       SELECT 1 FROM public.admins
-      WHERE admins.user_id = auth.uid()
+      WHERE admins.id = auth.uid()
     )
   );
 
@@ -109,7 +109,7 @@ SECURITY DEFINER
 AS $$
 BEGIN
   -- Check if user is admin
-  IF NOT EXISTS (SELECT 1 FROM public.admins WHERE user_id = auth.uid()) THEN
+  IF NOT EXISTS (SELECT 1 FROM public.admins WHERE id = auth.uid()) THEN
     RAISE EXCEPTION 'Unauthorized: Admin access required';
   END IF;
 
@@ -154,7 +154,7 @@ SECURITY DEFINER
 AS $$
 BEGIN
   -- Check if user is admin
-  IF NOT EXISTS (SELECT 1 FROM public.admins WHERE user_id = auth.uid()) THEN
+  IF NOT EXISTS (SELECT 1 FROM public.admins WHERE id = auth.uid()) THEN
     RAISE EXCEPTION 'Unauthorized: Admin access required';
   END IF;
 
