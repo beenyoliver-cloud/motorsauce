@@ -412,10 +412,18 @@ export async function updateOfferStatus(
 
     if (!res.ok) {
       console.error("[messagesClient] Failed to update offer:", res.status);
+      // Try to get error details from response
+      try {
+        const errorData = await res.json();
+        console.error("[messagesClient] Error details:", errorData);
+      } catch (e) {
+        console.error("[messagesClient] Could not parse error response");
+      }
       return null;
     }
 
     const data = await res.json();
+    console.log("[messagesClient] Update offer success:", data);
     return data.offer;
   } catch (error) {
     console.error("[messagesClient] Error updating offer:", error);
