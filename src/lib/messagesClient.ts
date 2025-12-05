@@ -36,6 +36,8 @@ export type Message = {
     amountCents: number;
     currency: string;
     status: string;
+    listingTitle?: string;
+    listingImage?: string;
   };
   review?: {
     id: string;

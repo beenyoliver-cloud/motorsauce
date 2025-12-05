@@ -63,7 +63,7 @@ export async function GET(
     }
 
     // Fetch profiles for message senders
-  const senderIds = [...new Set((messages || []).map((m: any) => m.from_user_id || m.sender) || [])];
+    const senderIds = [...new Set((messages || []).map((m: any) => m.from_user_id || m.sender) || [])];
     const { data: profiles } = await supabase
       .from("profiles")
       .select("id, name, avatar")
@@ -71,10 +71,27 @@ export async function GET(
 
     const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
 
+    // Fetch offers for messages that reference offers
+    const offerIds = (messages || [])
+      .filter((m: any) => m.offer_id)
+      .map((m: any) => m.offer_id);
+    
+    let offerMap = new Map();
+    if (offerIds.length > 0) {
+      const { data: offers } = await supabase
+        .from("offers")
+        .select("id, listing_title, listing_image")
+        .in("id", offerIds);
+      
+      offerMap = new Map((offers || []).map((o: any) => [o.id, o]));
+    }
+
     // Enrich messages
     const enriched = (messages || []).map((m: any) => {
       const senderId = m.from_user_id || m.sender;
       const sender = profileMap.get(senderId);
+      const offer = m.offer_id ? offerMap.get(m.offer_id) : null;
+      
       return {
         id: m.id,
         threadId: m.thread_id,
@@ -90,6 +107,8 @@ export async function GET(
           amountCents: m.offer_amount_cents,
           currency: m.offer_currency,
           status: m.offer_status,
+          listingTitle: offer?.listing_title,
+          listingImage: offer?.listing_image,
         } : undefined,
         createdAt: m.created_at,
         updatedAt: m.updated_at,

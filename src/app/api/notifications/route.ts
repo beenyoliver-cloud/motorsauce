@@ -62,6 +62,59 @@ export async function GET(request: NextRequest) {
 }
 
 /**
+ * POST /api/notifications
+ * Create a new notification for a user
+ * Body:
+ *  - userId: string (target user for notification)
+ *  - type: string (notification type, e.g., "payment_required", "offer_accepted", "message")
+ *  - title: string (notification title)
+ *  - message: string (notification message)
+ *  - link: string (optional, link to navigate to)
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { userId, type, title, message, link } = body;
+
+    if (!userId || !type || !title || !message) {
+      return NextResponse.json(
+        { error: "Missing required fields: userId, type, title, message" },
+        { status: 400 }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Create notification in database
+    const { data: notification, error } = await supabase
+      .from("notifications")
+      .insert([
+        {
+          user_id: userId,
+          type,
+          title,
+          message,
+          link: link || null,
+          read: false,
+          created_at: new Date().toISOString(),
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("[notifications] Error creating notification:", error);
+      return NextResponse.json({ error: "Failed to create notification" }, { status: 500 });
+    }
+
+    return NextResponse.json({ notification }, { status: 201 });
+  } catch (error) {
+    console.error("[notifications] Unexpected error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+/**
  * PATCH /api/notifications
  * Mark notification(s) as read
  * Body:

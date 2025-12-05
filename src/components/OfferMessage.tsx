@@ -96,6 +96,23 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
       recipientId: o.recipientId,
     });
     sysLine(`${displayName(selfName)} accepted the offer of ${formatGBP(o.amountCents)}.`);
+    
+    // Send notification to buyer about payment
+    try {
+      await fetch("/api/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: o.starterId,
+          type: "payment_required",
+          title: "Payment Required",
+          message: `Your offer of ${formatGBP(o.amountCents)} was accepted! Please proceed with payment.`,
+          link: `/checkout?offer=${o.id}`,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to send payment notification:", err);
+    }
   }
 
     async function decline() {

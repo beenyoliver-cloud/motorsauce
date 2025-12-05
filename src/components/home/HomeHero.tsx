@@ -134,15 +134,15 @@ export default function HomeHero() {
             <button
               type="button"
               onClick={() => setShowFilters(!showFilters)}
-              className={`rounded-full px-2 sm:px-4 py-2 font-semibold transition-all duration-300 sm:transform sm:hover:scale-105 shadow-sm hover:shadow-md flex items-center gap-2 ${
+              className={`rounded-full px-3 sm:px-4 py-2 font-semibold transition-all duration-300 sm:transform sm:hover:scale-105 shadow-sm hover:shadow-md flex items-center gap-1 sm:gap-2 text-sm sm:text-base ${
                 hasActiveFilters || showFilters
-                  ? 'bg-yellow-500 text-black'
-                  : 'bg-white border border-gray-300 text-gray-700 hover:border-yellow-400'
+                  ? 'bg-yellow-500 text-black hover:bg-yellow-600'
+                  : 'bg-white border border-gray-300 text-gray-700 hover:border-yellow-400 hover:bg-gray-50'
               }`}
             >
-              <SlidersHorizontal size={18} />
+              <SlidersHorizontal size={16} className="sm:size-[18px]" />
               <span className="hidden sm:inline">Filters</span>
-              {hasActiveFilters && <span className="bg-black text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">!</span>}
+              {hasActiveFilters && <span className="bg-black text-white text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[10px] sm:text-xs flex-shrink-0">!</span>}
             </button>
             <button type="submit" className="rounded-full bg-gray-900 text-white px-4 py-2 font-semibold hover:bg-yellow-500 hover:text-black transition-all duration-300 sm:transform sm:hover:scale-105 sm:active:scale-95 shadow-sm hover:shadow-md">Search</button>
           </div>

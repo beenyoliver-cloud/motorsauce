@@ -286,14 +286,29 @@ export default function Header() {
         {/* Mobile menu backdrop and panel */}
         {mobileMenuOpen && (
           <>
-            {/* Backdrop - covers entire viewport */}
+            {/* Backdrop - covers entire viewport, fully opaque */}
             <div
-              className="md:hidden fixed inset-0 bg-black/30 z-30"
+              className="md:hidden fixed inset-0 bg-white z-30"
               onClick={() => setMobileMenuOpen(false)}
             />
-            {/* Menu panel - full height below header */}
-            <div className="md:hidden fixed left-0 right-0 top-[128px] bottom-0 bg-white shadow-md z-40 overflow-y-auto">
-              <nav className="flex flex-col">
+            {/* Menu panel - fullscreen overlay */}
+            <div className="md:hidden fixed inset-0 bg-white z-40 overflow-y-auto flex flex-col">
+              {/* Menu Header with Logo and Close */}
+              <div className="px-4 py-4 border-b border-gray-200 flex items-center justify-between shrink-0">
+                <Link href="/" className="text-2xl font-extrabold text-yellow-500 tracking-tight" aria-label="Motorsource home">
+                  Motorsource
+                </Link>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2 -mr-2 rounded-md hover:bg-gray-100 transition text-black"
+                  aria-label="Close menu"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Menu Content */}
+              <nav className="flex flex-col flex-1">
                 {categories.map(([name, href]) => (
                   <Link
                     key={href}
