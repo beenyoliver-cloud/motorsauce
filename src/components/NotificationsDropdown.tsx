@@ -135,8 +135,11 @@ export function NotificationsDropdown() {
     <div className="relative">
       {/* Bell Icon Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative text-black hover:text-yellow-500"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+        className="relative text-black hover:text-yellow-500 z-50"
         aria-label="Notifications"
       >
         <Bell size={22} />
@@ -150,9 +153,9 @@ export function NotificationsDropdown() {
       {/* Dropdown */}
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop - positioned behind but doesn't block button */}
           <div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-30"
             onClick={() => setIsOpen(false)}
           />
           

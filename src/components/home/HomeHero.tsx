@@ -134,7 +134,7 @@ export default function HomeHero() {
             <button
               type="button"
               onClick={() => setShowFilters(!showFilters)}
-              className={`rounded-full px-4 py-2 font-semibold transition-all duration-300 sm:transform sm:hover:scale-105 shadow-sm hover:shadow-md flex items-center gap-2 ${
+              className={`rounded-full px-2 sm:px-4 py-2 font-semibold transition-all duration-300 sm:transform sm:hover:scale-105 shadow-sm hover:shadow-md flex items-center gap-2 ${
                 hasActiveFilters || showFilters
                   ? 'bg-yellow-500 text-black'
                   : 'bg-white border border-gray-300 text-gray-700 hover:border-yellow-400'

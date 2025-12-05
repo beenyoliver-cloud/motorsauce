@@ -241,9 +241,12 @@ export default function Header() {
                 <User size={22} />
               </Link>
               <button
-                onClick={() => setCartOpen(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCartOpen(true);
+                }}
                 aria-label="Open basket"
-                className="relative text-black hover:text-yellow-500"
+                className="relative text-black hover:text-yellow-500 z-50"
               >
                 <ShoppingCart size={22} />
                 {cartCount > 0 && (
