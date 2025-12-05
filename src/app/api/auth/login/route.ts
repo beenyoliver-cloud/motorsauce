@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE!;
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     const beforeAuth = Date.now();
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient(supabaseUrl, supabaseKey);
     
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
