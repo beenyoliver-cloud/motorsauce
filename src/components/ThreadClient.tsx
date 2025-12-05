@@ -112,12 +112,14 @@ export default function ThreadClient({
         
         if (hasNewMessages) {
           setMessages(msgs);
+          console.log("[ThreadClient] New messages detected, count now:", msgs.length);
           // Enable auto-scroll for new messages if user is near bottom
           const el = scrollRef.current;
           if (el) {
             const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 120;
             if (atBottom) {
               setShouldAutoScroll(true);
+              console.log("[ThreadClient] User at bottom, enabling auto-scroll for new messages");
             }
           }
           // Trigger unread count update
@@ -142,13 +144,15 @@ export default function ThreadClient({
     // Always auto-scroll when messages first load or when shouldAutoScroll is true
     if (shouldAutoScroll || messages.length <= 5) {
       requestAnimationFrame(() => { 
-        el.scrollTop = el.scrollHeight; 
+        el.scrollTop = el.scrollHeight;
+        console.log("[ThreadClient] Auto-scrolling to bottom (count:", messages.length, "should:", shouldAutoScroll, ")");
       });
     } else {
       // Check if user is near bottom, if so, auto-scroll
       const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 120;
       if (atBottom) {
         requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+        console.log("[ThreadClient] User at bottom, scrolling to latest");
       }
     }
   }, [messages.length, shouldAutoScroll]);
@@ -161,6 +165,7 @@ export default function ThreadClient({
       requestAnimationFrame(() => { 
         el.scrollTop = el.scrollHeight;
         setShouldAutoScroll(false);
+        console.log("[ThreadClient] Initial load complete, scrolled to bottom");
       });
     }
   }, [messagesLoading]);
@@ -173,6 +178,11 @@ export default function ThreadClient({
     const handleScroll = () => {
       const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 50;
       setShouldAutoScroll(atBottom);
+      if (atBottom) {
+        console.log("[ThreadClient] User scrolled to bottom, auto-scroll enabled");
+      } else {
+        console.log("[ThreadClient] User scrolled up, auto-scroll disabled");
+      }
     };
     
     el.addEventListener('scroll', handleScroll);
@@ -199,6 +209,7 @@ export default function ThreadClient({
         setMessages([...messages, msg]);
         // Enable auto-scroll for sent messages
         setShouldAutoScroll(true);
+        console.log("[ThreadClient] Message sent, enabling auto-scroll");
         // Trigger unread count update in case reply comes in
         window.dispatchEvent(new Event('ms:unread'));
       }

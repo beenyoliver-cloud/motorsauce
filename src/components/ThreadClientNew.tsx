@@ -105,11 +105,13 @@ export default function ThreadClientNew({
         // Check if we have new messages and enable auto-scroll if user is near bottom
         const hasNewMessages = msgs.length > messages.length;
         if (hasNewMessages && !initial) {
+          console.log("[ThreadClientNew] New messages detected, count now:", msgs.length);
           const el = scrollRef.current;
           if (el) {
             const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 120;
             if (atBottom) {
               setShouldAutoScroll(true);
+              console.log("[ThreadClientNew] User at bottom, enabling auto-scroll for new messages");
             }
           }
         }
@@ -172,7 +174,8 @@ export default function ThreadClientNew({
     // Always scroll on initial load or when shouldAutoScroll is enabled
     if (shouldAutoScroll || !hasHadMessages) {
       requestAnimationFrame(() => { 
-        el.scrollTop = el.scrollHeight; 
+        el.scrollTop = el.scrollHeight;
+        console.log("[ThreadClientNew] Auto-scrolling to bottom (count:", messages.length, "had:", hasHadMessages, ")");
       });
     }
   }, [messages.length, shouldAutoScroll, hasHadMessages]);
@@ -185,6 +188,7 @@ export default function ThreadClientNew({
     const handleScroll = () => {
       const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 50;
       setShouldAutoScroll(atBottom);
+      console.log("[ThreadClientNew] Scroll position updated - at bottom:", atBottom);
     };
     
     el.addEventListener('scroll', handleScroll);
@@ -226,6 +230,7 @@ export default function ThreadClientNew({
         setDraft("");
         // Enable auto-scroll for sent messages
         setShouldAutoScroll(true);
+        console.log("[ThreadClientNew] Message sent, enabling auto-scroll");
         // Force immediate refresh after send to ensure message appears
         setTimeout(() => {
           isSendingRef.current = false;
