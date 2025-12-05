@@ -227,6 +227,7 @@ export async function PATCH(req: Request) {
       p_offer_id: offerId,
       p_status: status,
       p_counter_amount_cents: counterAmountCents || null,
+      offer_details: offer,
     });
 
     const { data: responded, error: respErr } = await supabase.rpc("respond_offer", {
@@ -241,12 +242,24 @@ export async function PATCH(req: Request) {
         code: respErr.code,
         details: respErr.details,
         hint: respErr.hint,
+        fullError: JSON.stringify(respErr),
       });
+      
+      // Return more detailed error to client for debugging
       return NextResponse.json({ 
         error: respErr.message || "RPC call failed",
         code: respErr.code,
         details: respErr.details,
         hint: respErr.hint,
+        debugInfo: {
+          offerId,
+          status,
+          counterAmountCents,
+          offerStatus: offer.status,
+          offerStarterId: offer.starter_id,
+          offerRecipientId: offer.recipient_id,
+          currentUserId: user.id,
+        }
       }, { status: 500 });
     }
 
