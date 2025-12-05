@@ -279,6 +279,12 @@ export default function RegistrationPage() {
 
     if (v) {
       setVehicle(v);
+      // If we got make and year but no model, pre-populate the manual fields
+      if (v.make && v.year && !v.model) {
+        setMMake(v.make);
+        setMYear(v.year);
+        setShowManual(true);
+      }
     } else {
       // No API result ⇒ manual select
       setVehicle(null);
@@ -313,7 +319,7 @@ export default function RegistrationPage() {
           Search by Registration
         </h1>
         <p className="mt-2 text-gray-700 max-w-2xl">
-          Enter your UK number plate to find parts that fit. We’ll match make, model and year when possible.
+          Enter your UK number plate to find parts that fit. We'll auto-fill your make and year, then you can add your model for the best results.
         </p>
 
         <form onSubmit={onSubmit} className="mt-5 flex flex-wrap items-center gap-3">
@@ -353,9 +359,13 @@ export default function RegistrationPage() {
             <div className="flex items-start gap-3">
               <AlertTriangle className="h-5 w-5 mt-0.5" />
               <div className="flex-1">
-                <p className="font-semibold">We couldn’t auto-identify that reg (yet).</p>
+                <p className="font-semibold">
+                  {vehicle?.make && vehicle?.year ? "Add your vehicle model for better results" : "We couldn't auto-identify that reg (yet)."}
+                </p>
                 <p className="text-sm mt-1">
-                  Pick your vehicle below and we’ll filter compatible parts. We’ll remember this for next time.
+                  {vehicle?.make && vehicle?.year 
+                    ? "We found your make and year, but need the model to show the most accurate compatible parts." 
+                    : "Pick your vehicle below and we'll filter compatible parts. We'll remember this for next time."}
                 </p>
 
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
