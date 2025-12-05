@@ -28,10 +28,11 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch threads (ids and last_message_at) visible to user
+    // Fetch threads where user is a participant (either participant_1 or participant_2)
     const { data: threads, error: threadsError } = await supabase
       .from("threads")
       .select("id, last_message_at, created_at")
+      .or(`participant_1_id.eq.${user.id},participant_2_id.eq.${user.id}`)
       .order("last_message_at", { ascending: false });
 
     if (threadsError) {
@@ -61,7 +62,7 @@ export async function GET(req: Request) {
       return acc + (hasAny && !isRead ? 1 : 0);
     }, 0);
 
-    console.log("[unread-count] Total threads:", threads?.length, "Read threads:", readSet.size, "Unread:", count);
+    console.log(`[unread-count] User ${user.id}: ${threads?.length} participating threads, ${readSet.size} marked read, ${count} unread`);
     return NextResponse.json({ count }, { status: 200 });
   } catch (error: any) {
     console.error("[unread-count] Unexpected error:", error);
