@@ -399,10 +399,44 @@ export default function ThreadClientNew({
 
                 // System messages
                 if (m.type === "system") {
+                  // Parse system message to add icons and formatting
+                  let icon = "ℹ️";
+                  let bgColor = "bg-blue-50";
+                  let textColor = "text-blue-700";
+                  let borderColor = "border-blue-200";
+                  
+                  if (m.text?.includes("accepted")) {
+                    icon = "✅";
+                    bgColor = "bg-green-50";
+                    textColor = "text-green-700";
+                    borderColor = "border-green-200";
+                  } else if (m.text?.includes("declined")) {
+                    icon = "❌";
+                    bgColor = "bg-red-50";
+                    textColor = "text-red-700";
+                    borderColor = "border-red-200";
+                  } else if (m.text?.includes("countered")) {
+                    icon = "📊";
+                    bgColor = "bg-yellow-50";
+                    textColor = "text-yellow-700";
+                    borderColor = "border-yellow-200";
+                  } else if (m.text?.includes("withdrawn")) {
+                    icon = "🚫";
+                    bgColor = "bg-gray-100";
+                    textColor = "text-gray-700";
+                    borderColor = "border-gray-300";
+                  } else if (m.text?.includes("Conversation started")) {
+                    icon = "💬";
+                    bgColor = "bg-purple-50";
+                    textColor = "text-purple-700";
+                    borderColor = "border-purple-200";
+                  }
+                  
                   return (
-                    <div key={m.id} className="flex justify-center px-0">
-                      <div className="text-[11px] text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-200">
-                        {m.text}
+                    <div key={m.id} className="flex justify-center px-0 my-2">
+                      <div className={`text-[12px] font-medium ${textColor} ${bgColor} px-3 py-2 rounded-full border ${borderColor} flex items-center gap-2 shadow-sm`}>
+                        <span className="text-base">{icon}</span>
+                        <span>{m.text}</span>
                       </div>
                     </div>
                   );

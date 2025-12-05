@@ -227,103 +227,130 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
   const showBuyerCounter = o.status === "pending" && isMeBuyer  && iAmRecipient; // only after seller counter
 
   return (
-    <div className={`my-3 rounded-xl border-2 ${
-      o.status === "pending" ? "border-yellow-500 bg-yellow-50" : "border-gray-200 bg-white"
-    } shadow-md overflow-hidden ${resolvedClasses}`}>
-      {/* Status Banner */}
-      <div className={`px-4 py-2 flex items-center justify-between ${statusBadge.classes} border-b-2`}>
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          {statusBadge.icon}
-          <span>{statusBadge.label}</span>
+    <div className={`my-3 rounded-lg border-l-4 ${
+      o.status === "pending" ? "border-l-yellow-500 bg-yellow-50/50" : "border-l-gray-300 bg-gray-50/30"
+    } shadow-sm hover:shadow-md transition-shadow overflow-hidden`}>
+      {/* Header with Status Badge */}
+      <div className="px-4 py-3 flex items-start justify-between border-b border-gray-200/50">
+        <div className="flex-1">
+          <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+            {headerLabel}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadge.classes}`}>
+              {statusBadge.icon}
+              {statusBadge.label}
+            </span>
+          </div>
         </div>
-        <Package size={16} />
       </div>
 
+      {/* Main Content */}
       <div className="p-4">
         <Link 
           href={`/listing/${o.listingId}`}
-          className="block hover:opacity-80 transition"
+          className="block group hover:opacity-90 transition mb-4"
         >
-          <div className="flex gap-4">
-            {/* Listing Image */}
-            {img ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img 
-                src={img} 
-                alt="" 
-                className="site-image h-20 w-28 rounded-lg bg-gray-100 border border-gray-200 object-cover"
-              />
-            ) : (
-              <div className="h-20 w-28 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center">
-                <Package size={24} className="text-gray-400" />
-              </div>
-            )}
+          <div className="flex gap-3 items-start">
+            {/* Listing Image - Larger and more prominent */}
+            <div className="flex-shrink-0">
+              {img ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img 
+                  src={img} 
+                  alt="" 
+                  className="h-24 w-32 rounded-lg bg-gray-100 border border-gray-200 object-cover shadow-sm group-hover:shadow-md transition-shadow"
+                />
+              ) : (
+                <div className="h-24 w-32 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center shadow-sm">
+                  <Package size={28} className="text-gray-300" />
+                </div>
+              )}
+            </div>
 
             {/* Offer Details */}
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-                {headerLabel}
-              </div>
+              {/* Listing Title */}
               {!!o.listingTitle && (
-                <div className="text-sm font-semibold text-black line-clamp-2 mt-0.5">
+                <h4 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-2 group-hover:text-yellow-700 transition">
                   {o.listingTitle}
-                </div>
+                </h4>
               )}
-              <div className="mt-2 text-2xl font-bold text-black">
-                {formatGBP(o.amountCents)}
+              
+              {/* Offer Amount - Prominent */}
+              <div className="mb-2">
+                <div className="text-2xl font-bold text-gray-900">
+                  {formatGBP(o.amountCents)}
+                </div>
+              </div>
+
+              {/* Seller/Buyer info */}
+              <div className="text-xs text-gray-600 space-y-0.5">
+                {iAmStarter && (
+                  <p>📤 <span className="font-medium">Sent to seller</span> on {new Date().toLocaleDateString()}</p>
+                )}
+                {iAmRecipient && !iAmStarter && (
+                  <p>📥 <span className="font-medium">Offer from buyer</span> on {new Date().toLocaleDateString()}</p>
+                )}
               </div>
             </div>
           </div>
         </Link>
 
-        {/* Actions */}
-        {o.status === "pending" ? (
-          <div className="mt-4 space-y-3">
+        {/* Action Buttons - Improved Layout */}
+        {o.status === "pending" && (showSellerActions || showWithdraw || showBuyerCounter) && (
+          <div className="mt-4 pt-4 border-t border-gray-200/50 space-y-3">
             {showSellerActions && (
-              <div className="space-y-2">
-                <div className="flex gap-2">
+              <>
+                {/* Accept/Decline buttons for seller */}
+                <div className="grid grid-cols-2 gap-2">
                   <button 
                     onClick={accept} 
-                    className="flex-1 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 transition flex items-center justify-center gap-2"
+                    className="rounded-lg bg-green-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-green-700 transition-colors shadow-sm hover:shadow-md flex items-center justify-center gap-2"
                   >
                     <CheckCircle size={16} />
-                    Accept Offer
+                    <span>Accept</span>
                   </button>
                   <button 
                     onClick={decline} 
-                    className="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 transition flex items-center justify-center gap-2"
+                    className="rounded-lg bg-red-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-red-700 transition-colors shadow-sm hover:shadow-md flex items-center justify-center gap-2"
                   >
                     <XCircle size={16} />
-                    Decline
+                    <span>Decline</span>
                   </button>
                 </div>
-                <div className="flex gap-2 items-center">
-                  <div className="flex-1 relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">£</span>
-                    <input
-                      value={counter}
-                      onChange={(e) => setCounter(e.target.value)}
-                      inputMode="decimal"
-                      placeholder="0.00"
-                      className="w-full pl-7 pr-3 py-2.5 rounded-lg border-2 border-gray-300 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                    />
+                
+                {/* Counter offer for seller */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-gray-700">Counter Offer</label>
+                  <div className="flex gap-2">
+                    <div className="flex-1 relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">£</span>
+                      <input
+                        value={counter}
+                        onChange={(e) => setCounter(e.target.value)}
+                        inputMode="decimal"
+                        placeholder="0.00"
+                        className="w-full pl-7 pr-3 py-2.5 rounded-lg border-2 border-gray-300 text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all"
+                      />
+                    </div>
+                    <button 
+                      onClick={counterSubmit} 
+                      disabled={!counter} 
+                      className="px-3 py-2.5 rounded-lg bg-yellow-500 text-white font-semibold text-sm hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm hover:shadow-md flex items-center gap-1.5"
+                    >
+                      <TrendingUp size={16} />
+                      <span>Counter</span>
+                    </button>
                   </div>
-                  <button 
-                    onClick={counterSubmit} 
-                    disabled={!counter} 
-                    className="px-4 py-2.5 rounded-lg border-2 border-yellow-500 bg-white text-yellow-700 font-semibold text-sm hover:bg-yellow-50 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-1.5"
-                  >
-                    <TrendingUp size={16} />
-                    Send Counter
-                  </button>
                 </div>
-              </div>
+              </>
             )}
 
             {showWithdraw && (
               <button 
                 onClick={withdraw} 
-                className="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-2"
+                className="w-full rounded-lg border-2 border-gray-300 bg-white px-3 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
               >
                 <Ban size={16} />
                 Withdraw Offer
@@ -331,40 +358,47 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
             )}
 
             {showBuyerCounter && (
-              <div className="flex gap-2 items-center">
-                <div className="flex-1 relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">£</span>
-                  <input
-                    value={counter}
-                    onChange={(e) => setCounter(e.target.value)}
-                    inputMode="decimal"
-                    placeholder="0.00"
-                    className="w-full pl-7 pr-3 py-2.5 rounded-lg border-2 border-gray-300 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                  />
+              <div className="space-y-2 p-3 bg-white rounded-lg border border-gray-200">
+                <label className="text-xs font-semibold text-gray-700">Send Counter Offer</label>
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">£</span>
+                    <input
+                      value={counter}
+                      onChange={(e) => setCounter(e.target.value)}
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      className="w-full pl-7 pr-3 py-2.5 rounded-lg border-2 border-gray-300 text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all"
+                    />
+                  </div>
+                  <button 
+                    onClick={counterSubmit} 
+                    disabled={!counter} 
+                    className="px-3 py-2.5 rounded-lg bg-yellow-500 text-white font-semibold text-sm hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm hover:shadow-md flex items-center gap-1.5"
+                  >
+                    <TrendingUp size={16} />
+                    <span>Counter</span>
+                  </button>
                 </div>
-                <button 
-                  onClick={counterSubmit} 
-                  disabled={!counter} 
-                  className="px-4 py-2.5 rounded-lg border-2 border-yellow-500 bg-white text-yellow-700 font-semibold text-sm hover:bg-yellow-50 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-1.5"
-                >
-                  <TrendingUp size={16} />
-                  Send Counter
-                </button>
-              </div>
-            )}
-
-            {!showSellerActions && !showWithdraw && !showBuyerCounter && (
-              <div className="text-center py-2 text-sm text-gray-600 flex items-center justify-center gap-2">
-                <Clock size={16} />
-                <span>Waiting for response...</span>
               </div>
             )}
           </div>
-        ) : (
-          <div className="mt-4 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-            <p className="text-sm text-gray-700 text-center">
-              This offer has been <span className="font-semibold">{statusBadge.label.toLowerCase()}</span>.
+        )}
+
+        {/* Resolved State */}
+        {o.status !== "pending" && (
+          <div className="mt-3 px-3 py-2.5 bg-gray-100 rounded-lg border border-gray-200">
+            <p className="text-xs text-gray-700 text-center font-medium">
+              Offer <span className="font-semibold text-gray-900">{statusBadge.label.toLowerCase()}</span>
             </p>
+          </div>
+        )}
+
+        {/* No actions available */}
+        {o.status === "pending" && !showSellerActions && !showWithdraw && !showBuyerCounter && (
+          <div className="mt-3 px-3 py-2.5 bg-blue-50 rounded-lg border border-blue-200 flex items-center justify-center gap-2">
+            <Clock size={14} className="text-blue-600" />
+            <span className="text-xs text-blue-700 font-medium">Waiting for response...</span>
           </div>
         )}
       </div>
