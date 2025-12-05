@@ -80,6 +80,11 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
       const result = await updateOfferStatusAPI(o.id, "withdrawn");
       console.log(`[OfferMessage] Offer withdrawn:`, result);
       await sendSystemMessage(`🚫 ${displayName(selfName)} withdrew the offer of ${formatGBP(o.amountCents)}.`);
+      
+      // Notify UI to refresh threads and messages
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("ms:threads"));
+      }
     } catch (err) {
       console.error(`[OfferMessage] Error withdrawing offer:`, err);
       alert("Failed to withdraw offer");
@@ -96,6 +101,11 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
       const result = await updateOfferStatusAPI(o.id, "accepted");
       console.log(`[OfferMessage] Offer accepted:`, result);
       await sendSystemMessage(`✅ ${displayName(selfName)} accepted the offer of ${formatGBP(o.amountCents)}.`);
+      
+      // Notify UI to refresh threads and messages
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("ms:threads"));
+      }
       
       // Send notification to buyer about payment
       try {
@@ -129,6 +139,11 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
       const result = await updateOfferStatusAPI(o.id, "declined");
       console.log(`[OfferMessage] Offer declined:`, result);
       await sendSystemMessage(`❌ ${displayName(selfName)} declined the offer of ${formatGBP(o.amountCents)}.`);
+      
+      // Notify UI to refresh threads and messages
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("ms:threads"));
+      }
     } catch (err) {
       console.error(`[OfferMessage] Error declining offer:`, err);
       alert("Failed to decline offer");
@@ -153,9 +168,18 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
 
     setLoading(true);
     try {
-    await sendSystemMessage(`📊 ${displayName(selfName)} countered with ${formatGBP(Math.round(pounds * 100))}.`);
+      // 1) Supersede current
+      console.log(`[OfferMessage] Countering offer ${o.id} with £${pounds}`);
+      const result = await updateOfferStatusAPI(o.id, "countered");
+      console.log(`[OfferMessage] Offer countered:`, result);
+      await sendSystemMessage(`📊 ${displayName(selfName)} countered with ${formatGBP(Math.round(pounds * 100))}.`);
 
-    // 2) New pending from me → back to the other party, keep the listing photo/title
+      // Notify UI to refresh threads and messages
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("ms:threads"));
+      }
+
+      // 2) New pending from me → back to the other party, keep the listing photo/title
     const newOffer = createOffer({
       threadId: msg.threadId,
       from: "You",
