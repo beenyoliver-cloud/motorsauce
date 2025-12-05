@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     const beforeAuth = Date.now();
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = createRouteHandlerClient({ cookies: await cookies });
     
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
