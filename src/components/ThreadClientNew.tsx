@@ -17,6 +17,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { displayName } from "@/lib/names";
 import { supabaseBrowser } from "@/lib/supabase";
 import OfferCard from "@/components/OfferCard";
+import { ReviewMessage } from "@/components/ReviewMessage";
 
 type PeerProfile = {
   id: string;
@@ -402,6 +403,17 @@ export default function ThreadClientNew({
                     <div key={m.id} className="flex justify-center px-0">
                       <div className="text-[11px] text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-200">
                         {m.text}
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Review messages
+                if (m.type === "review" && m.review) {
+                  return (
+                    <div key={m.id} className="px-0 py-1">
+                      <div className="max-w-[90vw] sm:max-w-md mx-auto">
+                        <ReviewMessage review={m.review} isMe={isMe} />
                       </div>
                     </div>
                   );

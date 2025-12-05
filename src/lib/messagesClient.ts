@@ -29,13 +29,22 @@ export type Message = {
     name: string;
     avatar?: string;
   };
-  type: "text" | "offer" | "system";
+  type: "text" | "offer" | "system" | "review";
   text?: string;
   offer?: {
     id: string;
     amountCents: number;
     currency: string;
     status: string;
+  };
+  review?: {
+    id: string;
+    rating: number;
+    title?: string;
+    text?: string;
+    listingId?: string;
+    listingTitle?: string;
+    listingImage?: string;
   };
   createdAt: string;
   updatedAt: string;

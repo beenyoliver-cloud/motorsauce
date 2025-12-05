@@ -2,6 +2,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { CheckCircle, XCircle, Clock, Ban, TrendingUp, Package } from "lucide-react";
 import { createOffer, formatGBP } from "@/lib/offersStore";
 import { updateOfferStatus as updateOfferStatusAPI } from "@/lib/messagesClient";
@@ -222,36 +223,41 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
       </div>
 
       <div className="p-4">
-        <div className="flex gap-4">
-          {/* Listing Image */}
-          {img ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img 
-              src={img} 
-              alt="" 
-              className="site-image h-20 w-28 rounded-lg bg-gray-100 border border-gray-200 object-cover"
-            />
-          ) : (
-            <div className="h-20 w-28 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center">
-              <Package size={24} className="text-gray-400" />
-            </div>
-          )}
-
-          {/* Offer Details */}
-          <div className="flex-1 min-w-0">
-            <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-              {headerLabel}
-            </div>
-            {!!o.listingTitle && (
-              <div className="text-sm font-semibold text-black line-clamp-2 mt-0.5">
-                {o.listingTitle}
+        <Link 
+          href={`/listing/${o.listingId}`}
+          className="block hover:opacity-80 transition"
+        >
+          <div className="flex gap-4">
+            {/* Listing Image */}
+            {img ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img 
+                src={img} 
+                alt="" 
+                className="site-image h-20 w-28 rounded-lg bg-gray-100 border border-gray-200 object-cover"
+              />
+            ) : (
+              <div className="h-20 w-28 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center">
+                <Package size={24} className="text-gray-400" />
               </div>
             )}
-            <div className="mt-2 text-2xl font-bold text-black">
-              {formatGBP(o.amountCents)}
+
+            {/* Offer Details */}
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                {headerLabel}
+              </div>
+              {!!o.listingTitle && (
+                <div className="text-sm font-semibold text-black line-clamp-2 mt-0.5">
+                  {o.listingTitle}
+                </div>
+              )}
+              <div className="mt-2 text-2xl font-bold text-black">
+                {formatGBP(o.amountCents)}
+              </div>
             </div>
           </div>
-        </div>
+        </Link>
 
         {/* Actions */}
         {o.status === "pending" ? (
