@@ -13,6 +13,7 @@ type OfferCardProps = {
   listingId?: string;
   listingTitle?: string;
   listingImage?: string;
+  listingPrice?: number;
   isCurrentUserSeller: boolean;
   onUpdate?: () => void;
 };
@@ -25,6 +26,7 @@ export default function OfferCard({
   listingId,
   listingTitle,
   listingImage,
+  listingPrice,
   isCurrentUserSeller,
   onUpdate,
 }: OfferCardProps) {
@@ -141,7 +143,13 @@ export default function OfferCard({
           )}
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium opacity-75 mb-0.5">About listing:</p>
-            <p className="text-sm font-semibold truncate">{listingTitle}</p>
+            <p className="text-sm font-semibold truncate mb-1">{listingTitle}</p>
+            {listingPrice && (
+              <div className="flex items-center gap-2 text-xs">
+                <span className="line-through opacity-60">£{(listingPrice / 100).toFixed(2)}</span>
+                <span className="font-bold text-sm">£{displayAmount.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex items-center gap-1 mt-1 text-xs font-medium opacity-75">
               <span>View listing</span>
               <ExternalLink size={12} />

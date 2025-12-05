@@ -430,6 +430,7 @@ export default function ThreadClientNew({
                           listingId={m.offer.listingId}
                           listingTitle={m.offer.listingTitle}
                           listingImage={m.offer.listingImage}
+                          listingPrice={m.offer.listingPrice}
                           isCurrentUserSeller={isCurrentUserSeller}
                           onUpdate={async () => {
                             // Refresh messages after offer update

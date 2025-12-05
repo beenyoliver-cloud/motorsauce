@@ -80,7 +80,7 @@ export async function GET(
     if (offerIds.length > 0) {
       const { data: offers } = await supabase
         .from("offers")
-        .select("id, listing_id, listing_title, listing_image, amount_cents, currency, status")
+        .select("id, listing_id, listing_title, listing_image, amount_cents, currency, status, listings!inner(price)")
         .in("id", offerIds);
       
       offerMap = new Map((offers || []).map((o: any) => [o.id, o]));
@@ -111,6 +111,7 @@ export async function GET(
           status: offer?.status || m.offer_status,
           listingTitle: offer?.listing_title,
           listingImage: offer?.listing_image,
+          listingPrice: offer?.listings?.price,
         } : undefined,
         createdAt: m.created_at,
         updatedAt: m.updated_at,

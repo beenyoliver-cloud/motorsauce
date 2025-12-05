@@ -44,6 +44,7 @@ export type Message = {
     status: string;
     listingTitle?: string;
     listingImage?: string;
+    listingPrice?: number;
   };
   review?: {
     id: string;
