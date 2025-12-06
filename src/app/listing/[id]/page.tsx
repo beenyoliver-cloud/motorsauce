@@ -14,6 +14,7 @@ import TrackRecentlyViewed from "@/components/TrackRecentlyViewed";
 import TrustBadge from "@/components/TrustBadge";
 import Breadcrumb from "@/components/Breadcrumb";
 import SimilarProducts from "@/components/SimilarProducts";
+import VehicleCompatibilityChecker from "@/components/VehicleCompatibilityChecker";
 // Temporarily disabled: import PriceReducedBadge from "@/components/PriceReducedBadge";
 // Temporarily disabled: import PriceHistoryChart from "@/components/PriceHistoryChart";
 import { createClient } from "@supabase/supabase-js";
@@ -24,6 +25,13 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 /* ========== Types ========== */
+type Vehicle = {
+  make: string;
+  model: string;
+  year?: number;
+  universal?: boolean;
+};
+
 type Listing = {
   id: string | number;
   title: string;
@@ -45,6 +53,7 @@ type Listing = {
   vin?: string;
   yearFrom?: number;
   yearTo?: number;
+  vehicles?: Vehicle[];
 };
 
 /* ========== Utils ========== */
@@ -468,6 +477,14 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               <h2 className="mb-2 text-sm font-semibold text-black">Description</h2>
               <p className="whitespace-pre-line text-sm text-gray-800">{listing.description}</p>
             </div>
+          )}
+
+          {/* Vehicle Compatibility Checker */}
+          {(listing.vehicles?.length || listing.make || listing.model) && (
+            <VehicleCompatibilityChecker
+              vehicles={listing.vehicles}
+              universal={listing.vehicles?.some(v => v.universal)}
+            />
           )}
 
           {/* Price History Chart */}

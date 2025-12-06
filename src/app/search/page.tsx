@@ -38,6 +38,8 @@ type Listing = {
   vin?: string;
   yearFrom?: number;
   yearTo?: number;
+  // Multi-vehicle support
+  vehicles?: Array<{ make: string; model: string; year?: number; universal?: boolean }>;
 };
 
 function arrify(v: string | string[] | null | undefined): string[] {
@@ -225,8 +227,26 @@ function SearchPageInner() {
     () =>
       all.filter((l) => {
         if (categories.length && !categories.includes(l.category)) return false;
-        if (makes.length && (!l.make || !makes.includes(l.make))) return false;
-        if (models.length && (!l.model || !models.includes(l.model))) return false;
+        
+        // Multi-vehicle filtering with backward compatibility
+        if (makes.length) {
+          const hasMatch = 
+            // Check new vehicles array (multi-vehicle)
+            (Array.isArray(l.vehicles) && l.vehicles.some(v => makes.includes(v.make))) ||
+            // Fallback to old make field (single vehicle, backward compatibility)
+            (l.make && makes.includes(l.make));
+          if (!hasMatch) return false;
+        }
+        
+        if (models.length) {
+          const hasMatch = 
+            // Check new vehicles array (multi-vehicle)
+            (Array.isArray(l.vehicles) && l.vehicles.some(v => models.includes(v.model))) ||
+            // Fallback to old model field (single vehicle, backward compatibility)
+            (l.model && models.includes(l.model));
+          if (!hasMatch) return false;
+        }
+        
         if (genCodes.length && (!l.genCode || !genCodes.includes(l.genCode))) return false;
         if (engines.length && (!l.engine || !engines.includes(l.engine))) return false;
 

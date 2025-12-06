@@ -1,5 +1,12 @@
 import { supabaseBrowser } from './supabase';
 
+export type Vehicle = {
+  make: string;
+  model: string;
+  year?: number;
+  universal?: boolean; // true for generic/tool parts that fit all vehicles
+};
+
 export type Listing = {
   id: string;
   title: string;
@@ -10,6 +17,9 @@ export type Listing = {
   category?: string;
   part_type?: string;
   condition?: string;
+  // Multi-vehicle support (new)
+  vehicles?: Vehicle[];
+  // Backward compatibility (keep old fields)
   make?: string;
   model?: string;
   year?: number;

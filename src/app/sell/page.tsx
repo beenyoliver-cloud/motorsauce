@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Upload, X, ChevronDown } from "lucide-react";
+import { Upload, X, ChevronDown, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { uploadImage } from '@/lib/storage';
 import { createListing } from '@/lib/listingsService';
 import { validateFileSize, validateTotalSize, MAX_FILE_SIZE, MAX_TOTAL_SIZE } from '@/lib/storage';
 import { VEHICLES as VEHICLES_FALLBACK } from '@/data/vehicles';
+import { addVehicle, removeVehicle, vehiclesToArray, type SelectedVehicle } from '@/lib/vehicleHelpers';
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -72,12 +73,12 @@ function SellForm() {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<Category>("");
   const [partType, setPartType] = useState<PartType>("");
-  const [make, setMake] = useState("");
-  const [model, setModel] = useState("");
-  const [genCode, setGenCode] = useState("");
-  const [engine, setEngine] = useState("");
-  const [yearFrom, setYearFrom] = useState<number | undefined>();
-  const [yearTo, setYearTo] = useState<number | undefined>();
+  const [isUniversal, setIsUniversal] = useState(false);
+  const [selectedVehicles, setSelectedVehicles] = useState<SelectedVehicle[]>([]);
+  // Temporary state for adding vehicles
+  const [tempMake, setTempMake] = useState("");
+  const [tempModel, setTempModel] = useState("");
+  const [tempYear, setTempYear] = useState<number | undefined>();
   const [oem, setOem] = useState("");
   const [condition, setCondition] = useState<Condition>("Used - Good");
   const [price, setPrice] = useState<string>("");
@@ -104,10 +105,17 @@ function SellForm() {
     if (!category) return false;
     if (!price || Number.isNaN(Number(price))) return false;
     if (images.length === 0) return false;
-    if (isVehicleSpecific && !make.trim() && !model.trim() && !oem.trim()) return false;
-    if (model && (!make || !(vehicles[make] || []).includes(model))) return false;
+    // OEM/Aftermarket require vehicles (either multiple vehicles OR universal flag)
+    if (isVehicleSpecific && selectedVehicles.length === 0 && !isUniversal && !oem.trim()) return false;
+    // Validate selected vehicles
+    if (selectedVehicles.length > 0) {
+      for (const v of selectedVehicles) {
+        if (!v.make.trim() || !v.model.trim()) return false;
+        if (v.model && (!v.make || !(vehicles[v.make] || []).includes(v.model))) return false;
+      }
+    }
     return true;
-  }, [title, category, price, images.length, isVehicleSpecific, make, model, oem, vehicles]);
+  }, [title, category, price, images.length, isVehicleSpecific, selectedVehicles, isUniversal, oem, vehicles]);
 
   useEffect(() => {
     let active = true;
@@ -197,11 +205,20 @@ function SellForm() {
     setErrorMsg(null);
 
     if (!canSubmit) {
-      if (model && (!make || !(vehicles[make] || []).includes(model))) {
-        setErrorMsg("Selected model is not valid for the chosen make.");
-      } else {
-        setErrorMsg("Please fill in required fields and add at least one photo.");
+      if (selectedVehicles.length > 0) {
+        const invalidVehicle = selectedVehicles.find(
+          v => v.model && (!v.make || !(vehicles[v.make] || []).includes(v.model))
+        );
+        if (invalidVehicle) {
+          setErrorMsg("One or more selected vehicles have invalid make/model combinations.");
+          return;
+        }
       }
+      if (isVehicleSpecific && selectedVehicles.length === 0 && !isUniversal) {
+        setErrorMsg("Please select at least one vehicle or mark as universal/generic part.");
+        return;
+      }
+      setErrorMsg("Please fill in required fields and add at least one photo.");
       return;
     }
 
@@ -211,13 +228,19 @@ function SellForm() {
         images.map((img: Img) => uploadImage(img.file))
       );
 
+      // Convert selected vehicles to database format
+      const vehiclesArray = vehiclesToArray(selectedVehicles, isUniversal);
+      // For backward compatibility, also set make/model from first vehicle
+      const firstVehicle = selectedVehicles[0];
+
       const listing = await createListing({
         title: title.trim(),
         category,
         part_type: partType || undefined,
-        make: make.trim(),
-        model: model.trim(),
-        year: yearFrom,
+        make: firstVehicle?.make.trim() || undefined,
+        model: firstVehicle?.model.trim() || undefined,
+        year: firstVehicle?.year,
+        vehicles: vehiclesArray,
         price: parseFloat(price),
         quantity,
         postcode: postcode.trim() || undefined,
@@ -364,7 +387,7 @@ function SellForm() {
         </div>
       </div>
 
-      {/* Vehicle Details - Collapsible */}
+      {/* Vehicle Details - Collapsible Multi-Vehicle */}
       <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
         <button
           type="button"
@@ -373,96 +396,147 @@ function SellForm() {
         >
           <div className="flex items-center gap-3">
             <span className="font-medium text-gray-900">
-              {isVehicleSpecific ? "📍 Vehicle Details" : "📍 Vehicle Details (Optional)"}
+              📍 Vehicle Compatibility {isVehicleSpecific ? "*" : "(Optional)"}
             </span>
-            {isVehicleSpecific && <span className="inline-block bg-gold-100 text-gold-700 text-xs px-2 py-1 rounded">Recommended</span>}
+            {isVehicleSpecific && selectedVehicles.length > 0 && (
+              <span className="inline-block bg-green-100 text-green-700 text-xs px-2 py-1 rounded">{selectedVehicles.length} selected</span>
+            )}
+            {isUniversal && (
+              <span className="inline-block bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">Universal</span>
+            )}
           </div>
           <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${vehiclesExpanded ? "rotate-180" : ""}`} />
         </button>
         
         {vehiclesExpanded && (
           <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 space-y-4">
-            <p className="text-xs text-gray-600">Adding vehicle details helps buyers find compatible parts</p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Make</label>
-                <select
-                  value={make}
-                  onChange={(e) => { setMake(e.target.value); setModel(""); }}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-400 disabled:bg-gray-100"
-                  disabled={!isVehicleSpecific}
-                >
-                  <option value="">Select a make</option>
-                  {Object.keys(vehicles).sort().map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-              </div>
+            {isVehicleSpecific ? (
+              <>
+                <p className="text-xs text-gray-600">This part type requires vehicle compatibility information</p>
+                
+                {/* Universal Parts Checkbox */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="universal"
+                    checked={isUniversal}
+                    onChange={(e) => {
+                      setIsUniversal(e.target.checked);
+                      if (e.target.checked) setSelectedVehicles([]);
+                    }}
+                    className="h-4 w-4 border border-gray-300 rounded cursor-pointer"
+                  />
+                  <label htmlFor="universal" className="text-sm font-medium text-gray-700 cursor-pointer">
+                    Universal/Generic Part (fits all vehicles)
+                  </label>
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Model</label>
-                <select
-                  value={model}
-                  onChange={(e) => setModel(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-400 disabled:bg-gray-100"
-                  disabled={!isVehicleSpecific}
-                >
-                  <option value="">{make ? "Select a model" : "Select make first"}</option>
-                  {(vehicles[make] || []).map((mdl) => (
-                    <option key={mdl} value={mdl}>{mdl}</option>
-                  ))}
-                </select>
-              </div>
+                {!isUniversal && (
+                  <div className="space-y-4">
+                    {/* Add Vehicle Form */}
+                    <div className="rounded-lg bg-white p-4 border border-gray-300">
+                      <h3 className="text-sm font-semibold text-gray-900 mb-3">Add Vehicles</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Make *</label>
+                          <select
+                            value={tempMake}
+                            onChange={(e) => { setTempMake(e.target.value); setTempModel(""); }}
+                            className="w-full border border-gray-300 rounded-md px-2.5 py-2 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-400"
+                          >
+                            <option value="">Select make</option>
+                            {Object.keys(vehicles).sort().map((m) => (
+                              <option key={m} value={m}>{m}</option>
+                            ))}
+                          </select>
+                        </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Year From</label>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  value={yearFrom ?? ""}
-                  onChange={(e) => setYearFrom(e.target.value ? Number(e.target.value) : undefined)}
-                  placeholder="2012"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-gold-400 disabled:bg-gray-100"
-                  disabled={!isVehicleSpecific}
-                />
-              </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Model *</label>
+                          <select
+                            value={tempModel}
+                            onChange={(e) => setTempModel(e.target.value)}
+                            className="w-full border border-gray-300 rounded-md px-2.5 py-2 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-400"
+                            disabled={!tempMake}
+                          >
+                            <option value="">{tempMake ? "Select model" : "Select make first"}</option>
+                            {(vehicles[tempMake] || []).map((mdl) => (
+                              <option key={mdl} value={mdl}>{mdl}</option>
+                            ))}
+                          </select>
+                        </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Year To</label>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  value={yearTo ?? ""}
-                  onChange={(e) => setYearTo(e.target.value ? Number(e.target.value) : undefined)}
-                  placeholder="2018"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-gold-400 disabled:bg-gray-100"
-                  disabled={!isVehicleSpecific}
-                />
-              </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Year (Optional)</label>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            value={tempYear ?? ""}
+                            onChange={(e) => setTempYear(e.target.value ? Number(e.target.value) : undefined)}
+                            placeholder="2020"
+                            min="1990"
+                            max={new Date().getFullYear()}
+                            className="w-full border border-gray-300 rounded-md px-2.5 py-2 bg-white text-sm text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-gold-400"
+                          />
+                        </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Engine</label>
-                <input
-                  type="text"
-                  value={engine}
-                  onChange={(e) => setEngine(e.target.value)}
-                  placeholder="e.g., 1.4T"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-gold-400 disabled:bg-gray-100"
-                  disabled={!isVehicleSpecific}
-                />
-              </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (tempMake.trim() && tempModel.trim()) {
+                              setSelectedVehicles(addVehicle(selectedVehicles, tempMake, tempModel, tempYear));
+                              setTempMake("");
+                              setTempModel("");
+                              setTempYear(undefined);
+                            }
+                          }}
+                          disabled={!tempMake.trim() || !tempModel.trim()}
+                          className="flex items-center justify-center gap-2 rounded-md bg-gold-600 px-3 py-2 text-sm font-medium text-black hover:bg-gold-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition mt-auto"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add
+                        </button>
+                      </div>
+                    </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">OEM/Part Number</label>
-                <input
-                  type="text"
-                  value={oem}
-                  onChange={(e) => setOem(e.target.value)}
-                  placeholder="e.g., 13310065"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-gold-400"
-                />
-              </div>
+                    {/* Selected Vehicles List */}
+                    {selectedVehicles.length > 0 && (
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-900">Selected Vehicles ({selectedVehicles.length})</label>
+                        {selectedVehicles.map((v) => (
+                          <div key={v.id} className="flex items-center justify-between bg-white p-3 rounded-md border border-gray-300">
+                            <div className="text-sm text-gray-900">
+                              <strong>{v.make}</strong> {v.model}
+                              {v.year && <span className="text-gray-600"> ({v.year})</span>}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedVehicles(removeVehicle(selectedVehicles, v.id))}
+                              className="p-1 hover:bg-red-100 text-red-600 rounded transition"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-xs text-gray-600">Vehicle details are optional for tools</p>
+            )}
+
+            {/* OEM/Part Number - always available */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">OEM/Part Number</label>
+              <input
+                type="text"
+                value={oem}
+                onChange={(e) => setOem(e.target.value)}
+                placeholder="e.g., 13310065"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-gold-400"
+              />
             </div>
           </div>
         )}
