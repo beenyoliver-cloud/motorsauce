@@ -8,10 +8,15 @@ import { LoadingAnimation } from "./LoadingAnimation";
 export function LayoutClient({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(false);
+  const [previousPathname, setPreviousPathname] = useState(pathname);
 
   useEffect(() => {
+    // Only trigger loading animation on actual route changes, not on initial load
+    if (pathname === previousPathname) {
+      return;
+    }
+
     // Timer to show loading animation only if page takes >2 seconds
-    // 2 seconds is industry standard - fast enough to not annoy, slow enough to reassure
     let loadingTimer: NodeJS.Timeout;
     let pageLoadTimer: NodeJS.Timeout;
     
@@ -25,13 +30,11 @@ export function LayoutClient({ children }: { children: ReactNode }) {
     showLoadingAfter2s();
 
     // Auto-hide loader after page content renders (max 3.5 seconds from route change)
-    // This ensures we never show the loader if page already loaded
     pageLoadTimer = setTimeout(() => {
       setIsLoading(false);
     }, 3500);
 
     return () => {
-      // Clear both timers when route changes or component unmounts
       if (loadingTimer) {
         clearTimeout(loadingTimer);
       }
@@ -40,6 +43,10 @@ export function LayoutClient({ children }: { children: ReactNode }) {
       }
       setIsLoading(false);
     };
+  }, [pathname, previousPathname]);
+
+  useEffect(() => {
+    setPreviousPathname(pathname);
   }, [pathname]);
 
   return (
