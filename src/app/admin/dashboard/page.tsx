@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
 import { Package, Users, DollarSign, BarChart3, Shield } from "lucide-react";
+import { supabaseBrowser } from "@/lib/supabase";
 
 export default function AdminDashboard() {
   const [metrics, setMetrics] = useState<{
@@ -14,7 +14,7 @@ export default function AdminDashboard() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const supabase = supabaseBrowser();
 
   useEffect(() => {
     const checkAdminAndFetchMetrics = async () => {

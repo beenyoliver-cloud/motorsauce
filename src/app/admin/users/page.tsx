@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
 import { Search, User, Mail, Calendar, AlertCircle, MessageSquare, ShoppingBag, Flag, Eye, Ban, CheckCircle } from "lucide-react";
+import { supabaseBrowser } from "@/lib/supabase";
 
 interface UserRecord {
   id: string;
@@ -31,7 +31,7 @@ export default function AdminUsersPage() {
   const [userReports, setUserReports] = useState<any[]>([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const supabase = supabaseBrowser();
 
   useEffect(() => {
     checkAdminAndFetchUsers();

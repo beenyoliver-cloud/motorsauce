@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
+import { supabaseBrowser } from "@/lib/supabase";
 
 export default function AdminDashboardSimple() {
   const [step, setStep] = useState("Starting...");
@@ -9,7 +9,7 @@ export default function AdminDashboardSimple() {
   const [session, setSession] = useState<any>(null);
   const [adminCheckResult, setAdminCheckResult] = useState<any>(null);
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const supabase = supabaseBrowser();
 
   useEffect(() => {
     const runCheck = async () => {
