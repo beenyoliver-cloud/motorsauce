@@ -74,12 +74,23 @@ export default function AdminDashboard() {
         console.log('[AdminDashboard] Admin check passed! Loading dashboard...');
         setIsAdmin(true);
 
-        // Fetch metrics
-        const res = await fetch("/api/admin-metrics");
-        if (res.ok) {
-          const data = await res.json();
+        // Fetch metrics with auth header
+        console.log('[AdminDashboard] Fetching metrics...');
+        const metricsRes = await fetch("/api/admin-metrics", {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+        
+        console.log('[AdminDashboard] Metrics response status:', metricsRes.status);
+        
+        if (metricsRes.ok) {
+          const data = await metricsRes.json();
+          console.log('[AdminDashboard] Metrics loaded:', data);
           setMetrics(data);
         } else {
+          const errorText = await metricsRes.text();
+          console.error('[AdminDashboard] Metrics error:', errorText);
           setError("Failed to load metrics");
         }
       } catch (err) {
