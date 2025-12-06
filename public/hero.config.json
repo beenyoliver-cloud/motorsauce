@@ -15,8 +15,8 @@
       "href": "/categories/oem"
     },
     {
-      "id": "hero-13",
-  "image": "/uploads/Hero13.jpg",
+      "id": "hero-custom",
+      "image": "/uploads/hero_image_5_2.jpg",
       "title": "Sell your parts fast",
       "blurb": "Create a listing in minutes and chat with buyers.",
       "href": "/sell"
