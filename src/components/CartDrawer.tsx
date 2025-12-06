@@ -22,6 +22,21 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
     };
   }, []);
 
+  // Lock body scroll when drawer is open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+  }, [open]);
+
   const totals = useMemo(() => calcTotals(cart), [cart]);
 
   return (
@@ -29,13 +44,17 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
       <div
         className={`fixed inset-0 bg-black/30 transition-opacity z-[80] ${open ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"}`}
         onClick={onClose}
-        onTouchEnd={onClose}
+        onTouchStart={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
       />
       <aside
-        className={`fixed top-0 right-0 h-full w-full md:w-[360px] md:max-w-[90vw] bg-white shadow-2xl md:border-l border-gray-200
+        className={`fixed top-0 right-0 h-full w-full sm:w-[400px] sm:max-w-[90vw] bg-white shadow-2xl sm:border-l border-gray-200
                     transition-transform duration-300 z-[90] ${open ? "translate-x-0" : "translate-x-full"}`}
         aria-hidden={!open}
         aria-label="Mini cart"
+        onClick={(e) => e.stopPropagation()}
       >
         <header className="h-14 px-4 flex items-center justify-between border-b border-gray-200">
           <h2 className="text-sm font-semibold text-gray-900">Your basket</h2>

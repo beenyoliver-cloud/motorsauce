@@ -320,13 +320,8 @@ export default function Header() {
                   e.stopPropagation();
                   setCartOpen(true);
                 }}
-                onTouchEnd={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setCartOpen(true);
-                }}
                 aria-label="Open basket"
-                className="relative text-black hover:text-yellow-500 z-[85] touch-manipulation"
+                className="relative text-black hover:text-yellow-500 z-10 touch-manipulation"
               >
                 <ShoppingCart size={22} />
                 {cartCount > 0 && (
