@@ -316,11 +316,17 @@ export default function Header() {
               </Link>
               <button
                 onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setCartOpen(true);
+                }}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   setCartOpen(true);
                 }}
                 aria-label="Open basket"
-                className="relative text-black hover:text-yellow-500 z-50"
+                className="relative text-black hover:text-yellow-500 z-[85] touch-manipulation"
               >
                 <ShoppingCart size={22} />
                 {cartCount > 0 && (
@@ -344,155 +350,155 @@ export default function Header() {
         <div className="px-4 pb-2">
           <SearchBar placeholder="Search parts or sellers…" />
         </div>
+      </div>
 
-        {/* Mobile menu backdrop and panel */}
-        {mobileMenuOpen && (
-          <>
-            {/* Backdrop - covers entire viewport, fully opaque */}
-            <div
-              className="md:hidden fixed inset-0 bg-white z-[60]"
-              onClick={() => setMobileMenuOpen(false)}
-            />
-            {/* Menu panel - fullscreen overlay */}
-            <div className="md:hidden fixed inset-0 bg-white z-[70] overflow-y-auto flex flex-col">
-              {/* Menu Header with Logo and Close */}
-              <div className="px-4 py-4 border-b border-gray-200 flex items-center justify-between shrink-0">
-                <Link href="/" className="text-2xl font-extrabold text-yellow-500 tracking-tight" aria-label="Motorsource home">
-                  Motorsource
-                </Link>
-                <button
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="p-2 -mr-2 rounded-md hover:bg-gray-100 transition text-black"
-                  aria-label="Close menu"
-                >
-                  <X size={24} />
-                </button>
-              </div>
+      {/* Mobile menu backdrop and panel - OUTSIDE the header div to fix stacking context */}
+      {mobileMenuOpen && (
+        <div className="md:hidden">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/30 z-[100]"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          {/* Menu panel */}
+          <div className="fixed inset-0 bg-white z-[110] overflow-y-auto flex flex-col">
+            {/* Menu Header with Logo and Close */}
+            <div className="px-4 py-4 border-b border-gray-200 flex items-center justify-between shrink-0">
+              <Link href="/" className="text-2xl font-extrabold text-yellow-500 tracking-tight" aria-label="Motorsource home">
+                Motorsource
+              </Link>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2 -mr-2 rounded-md hover:bg-gray-100 transition text-black"
+                aria-label="Close menu"
+              >
+                <X size={24} />
+              </button>
+            </div>
 
-              {/* Menu Content */}
-              <nav className="flex flex-col flex-1">
-                {categories.map(([name, href]) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    className="block px-4 py-3 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600 border-b border-gray-100"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    {name}
-                  </Link>
-                ))}
-                <div className="border-t border-gray-200" />
-            {isUserLoaded && user ? (
-              <>
+            {/* Menu Content */}
+            <nav className="flex flex-col flex-1">
+              {categories.map(([name, href]) => (
                 <Link
-                  href="/sell"
-                  className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                  key={href}
+                  href={href}
+                  className="block px-4 py-3 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600 border-b border-gray-100"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <span className="inline-flex items-center gap-1">
-                    <PlusCircle size={16} /> Sell
-                  </span>
+                  {name}
                 </Link>
-                {isAdminUser && (
+              ))}
+              <div className="border-t border-gray-200" />
+              {isUserLoaded && user ? (
+                <>
                   <Link
-                    href="/admin/dashboard"
+                    href="/sell"
                     className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <span className="inline-flex items-center gap-1">
-                      <User size={16} /> Admin
+                      <PlusCircle size={16} /> Sell
                     </span>
                   </Link>
-                )}
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setCartOpen(true);
-                  }}
-                  className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                >
-                  <span className="inline-flex items-center gap-1">
-                    <ShoppingCart size={16} /> Basket {cartCount > 0 ? `(${cartCount})` : ""}
-                  </span>
-                </button>
-                <Link
-                  href={profileHref}
-                  className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  My Profile
-                </Link>
-                <Link
-                  href="/messages"
-                  className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  My Messages {unread > 0 ? `(${unread})` : ""}
-                </Link>
-                <Link
-                  href="/sales"
-                  className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Previous Sales
-                </Link>
-                <Link
-                  href="/reviews"
-                  className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  My Reviews
-                </Link>
-                <Link
-                  href="/settings"
-                  className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Account Settings
-                </Link>
-                <Link
-                  href="/auth/logout"
-                  className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Log out
-                </Link>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setCartOpen(true);
-                  }}
-                  className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                >
-                  <span className="inline-flex items-center gap-1">
-                    <ShoppingCart size={16} /> Basket {cartCount > 0 ? `(${cartCount})` : ""}
-                  </span>
-                </button>
-                <div className="border-t border-gray-100" />
-                <Link
-                  href="/auth/login"
-                  className="block px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-50 hover:text-yellow-600"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Sign in
-                </Link>
-                <Link
-                  href="/auth/register"
-                  className="block px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-50 hover:text-yellow-600"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Register
-                </Link>
-              </>
-            )}
-              </nav>
-            </div>
-          </>
-        )}
-      </div>
+                  {isAdminUser && (
+                    <Link
+                      href="/admin/dashboard"
+                      className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        <User size={16} /> Admin
+                      </span>
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setCartOpen(true);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      <ShoppingCart size={16} /> Basket {cartCount > 0 ? `(${cartCount})` : ""}
+                    </span>
+                  </button>
+                  <Link
+                    href={profileHref}
+                    className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    My Profile
+                  </Link>
+                  <Link
+                    href="/messages"
+                    className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    My Messages {unread > 0 ? `(${unread})` : ""}
+                  </Link>
+                  <Link
+                    href="/sales"
+                    className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Previous Sales
+                  </Link>
+                  <Link
+                    href="/reviews"
+                    className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    My Reviews
+                  </Link>
+                  <Link
+                    href="/settings"
+                    className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Account Settings
+                  </Link>
+                  <Link
+                    href="/auth/logout"
+                    className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Log out
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setCartOpen(true);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      <ShoppingCart size={16} /> Basket {cartCount > 0 ? `(${cartCount})` : ""}
+                    </span>
+                  </button>
+                  <div className="border-t border-gray-100" />
+                  <Link
+                    href="/auth/login"
+                    className="block px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-50 hover:text-yellow-600"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/auth/register"
+                    className="block px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-50 hover:text-yellow-600"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Register
+                  </Link>
+                </>
+              )}
+            </nav>
+          </div>
+        </div>
+      )}
 
       {/* Desktop header (>= md) */}
       <nav className="hidden md:flex w-full h-[55px] bg-white border-b border-gray-200 items-center justify-between px-6 shadow-sm fixed top-0 z-40">

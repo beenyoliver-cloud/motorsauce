@@ -132,14 +132,20 @@ export function NotificationsDropdown() {
   }
 
   return (
-    <div className="relative">
+    <div className="relative z-[85]">
       {/* Bell Icon Button */}
       <button
         onClick={(e) => {
+          e.preventDefault();
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
-        className="relative text-black hover:text-yellow-500 z-50"
+        onTouchEnd={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+        className="relative text-black hover:text-yellow-500 touch-manipulation"
         aria-label="Notifications"
       >
         <Bell size={22} />
@@ -153,14 +159,15 @@ export function NotificationsDropdown() {
       {/* Dropdown */}
       {isOpen && (
         <>
-          {/* Backdrop - positioned behind but doesn't block button */}
+          {/* Backdrop - covers entire screen, high z-index to be above mobile header */}
           <div
-            className="fixed inset-0 z-30"
+            className="fixed inset-0 z-[80]"
             onClick={() => setIsOpen(false)}
+            onTouchEnd={() => setIsOpen(false)}
           />
           
-          {/* Dropdown Panel - responsive positioning */}
-          <div className="absolute right-0 md:right-0 mt-2 w-[calc(100vw-2rem)] md:w-80 max-w-sm bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[70vh] md:max-h-[500px] overflow-hidden flex flex-col">
+          {/* Dropdown Panel - responsive positioning, above backdrop */}
+          <div className="absolute right-0 md:right-0 mt-2 w-[calc(100vw-2rem)] md:w-80 max-w-sm bg-white rounded-lg shadow-lg border border-gray-200 z-[90] max-h-[70vh] md:max-h-[500px] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">Notifications</h3>
