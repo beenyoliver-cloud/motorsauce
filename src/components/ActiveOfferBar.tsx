@@ -19,7 +19,9 @@ import { getCurrentUserSync } from "@/lib/auth";
 import { displayName } from "@/lib/names";
 
 /**
- * Canonical control for the current pending offer in this thread.
+ * Elegant dark-themed offer card for making and responding to offers.
+ * Integrates with the existing offer system (offersStore + chatStore).
+ * 
  * RULES:
  *  - Only the RECIPIENT of the active (pending) offer can Act (Accept / Decline / Counter).
  *  - The SENDER of the active pending offer gets no actions (waiting state).
@@ -40,6 +42,9 @@ export default function ActiveOfferBar({
 
   // Keep offers in sync
   const [offers, setOffers] = useState(() => listOffers(threadId));
+  const [showCounterInput, setShowCounterInput] = useState(false);
+  const [counterAmount, setCounterAmount] = useState("");
+
   useEffect(() => {
     const onOffers = (e: Event) => {
       const detail = (e as CustomEvent).detail as { threadId?: string } | undefined;
@@ -56,6 +61,13 @@ export default function ActiveOfferBar({
     return o && o.status === "pending" ? o : undefined;
   }, [offers, threadId]);
 
+  useEffect(() => {
+    if (!active) {
+      setShowCounterInput(false);
+      setCounterAmount("");
+    }
+  }, [active]);
+
   if (!active) return null;
 
   // Determine whether current user is the sender or the recipient of the active offer
@@ -65,7 +77,7 @@ export default function ActiveOfferBar({
 
   const iAmRecipient =
     (!!active.recipientId && active.recipientId === selfId) ||
-    (!active.recipientId && active.from !== "You"); // fallback: if not from me, it's “to me”
+    (!active.recipientId && active.from !== "You"); // fallback: if not from me, it's "to me"
 
   const title = isFromMe
     ? "Offer sent (pending)"
@@ -81,7 +93,7 @@ export default function ActiveOfferBar({
     });
   }
 
-  function accept() {
+  function onAccept() {
     // Only recipient can accept
     if (!iAmRecipient) return;
     if (!active) return;
@@ -96,12 +108,10 @@ export default function ActiveOfferBar({
         recipientId: active.recipientId,
       });
       sys(`${displayName(selfName)} accepted the offer of ${formatGBP(active.amountCents)}.`);
-      // optional: navigate to checkout
-      // router.push(`/checkout?offer=${active.id}`)
     }
   }
 
-  function decline() {
+  function onDecline() {
     if (!iAmRecipient) return;
     if (!active) return;
     const upd = updateOfferStatus(threadId, active.id, "declined");
@@ -118,114 +128,179 @@ export default function ActiveOfferBar({
     }
   }
 
-  function quickCounter(mult: number) {
-    if (!iAmRecipient) return;
-    if (!active) return;
+  function onCounter() {
+    if (showCounterInput) {
+      // Submit counter offer
+      if (!iAmRecipient) return;
+      if (!active) return;
 
-    const next = Math.max(1, Math.round(active.amountCents * mult));
+      const amountInPounds = parseFloat(counterAmount);
+      if (!amountInPounds || amountInPounds <= 0) {
+        alert("Please enter a valid amount");
+        return;
+      }
 
-    // 1) Supersede current
-    updateOfferStatus(threadId, active.id, "countered");
-    updateOfferInThread(threadId, {
-      id: active.id,
-      amountCents: active.amountCents,
-      currency: active.currency,
-      status: "countered",
-      starterId: active.starterId,
-      recipientId: active.recipientId,
-    });
+      const nextAmount = Math.round(amountInPounds * 100); // Convert to cents
 
-    // 2) Create a NEW pending from me → back to the other party
-    const newOffer = createOffer({
-      threadId,
-      from: "You",
-      amountCents: next,
-      currency: "GBP",
-      listingId: active.listingId,
-      listingTitle: active.listingTitle,
-      listingImage: active.listingImage, // propagate image so it never becomes a “?”
-      peerName: active.peerName,         // offersStore uses name; chatStore enriches IDs
-    });
+      // 1) Supersede current
+      updateOfferStatus(threadId, active.id, "countered");
+      updateOfferInThread(threadId, {
+        id: active.id,
+        amountCents: active.amountCents,
+        currency: active.currency,
+        status: "countered",
+        starterId: active.starterId,
+        recipientId: active.recipientId,
+      });
 
-    // 3) Append as a new offer card (idempotent)
-    appendOfferMessage(threadId, {
-      id: newOffer.id,
-      amountCents: newOffer.amountCents,
-      currency: newOffer.currency ?? "GBP",
-      status: "pending",
-      starter: selfName,
-      recipient: active.peerName,
-      listingId: active.listingId,
-      listingTitle: active.listingTitle,
-      listingImage: active.listingImage,
-    });
+      // 2) Create a NEW pending from me → back to the other party
+      const newOffer = createOffer({
+        threadId,
+        from: "You",
+        amountCents: nextAmount,
+        currency: "GBP",
+        listingId: active.listingId,
+        listingTitle: active.listingTitle,
+        listingImage: active.listingImage,
+        peerName: active.peerName,
+      });
 
-    sys(`${displayName(selfName)} countered with ${formatGBP(newOffer.amountCents)}.`);
-    setOffers(listOffers(threadId));
+      // 3) Append as a new offer card (idempotent)
+      appendOfferMessage(threadId, {
+        id: newOffer.id,
+        amountCents: newOffer.amountCents,
+        currency: newOffer.currency ?? "GBP",
+        status: "pending",
+        starter: selfName,
+        recipient: active.peerName,
+        listingId: active.listingId,
+        listingTitle: active.listingTitle,
+        listingImage: active.listingImage,
+      });
+
+      sys(`${displayName(selfName)} countered with ${formatGBP(newOffer.amountCents)}.`);
+      setOffers(listOffers(threadId));
+      setShowCounterInput(false);
+      setCounterAmount("");
+    } else {
+      // Show counter input
+      setShowCounterInput(true);
+      // Pre-fill with 5% less
+      if (active) {
+        const suggested = (active.amountCents * 0.95) / 100;
+        setCounterAmount(suggested.toFixed(2));
+      }
+    }
   }
 
+  // Extract original price (if available, otherwise show offered price as original)
+  const originalPrice = active.amountCents;
+  const offeredPrice = active.amountCents;
+
   return (
-    <div className="border-b border-gray-200 bg-yellow-50 p-3">
-      <div className="flex items-start gap-3">
+    <div className="bg-[#050608] rounded-lg p-4 shadow-lg border border-gray-800 mb-3">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-3">
         {showImage ? (
           active.listingImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={active.listingImage}
-              alt=""
-              className="h-14 w-20 rounded-md object-cover bg-gray-100"
+              alt={active.listingTitle || "Item"}
+              className="w-12 h-12 rounded-md object-cover bg-gray-800"
             />
           ) : (
-            <div className="h-14 w-20 rounded-md bg-gray-100" />
+            <div className="w-12 h-12 rounded-md bg-gray-800 flex items-center justify-center text-gray-500 text-xs">
+              No image
+            </div>
           )
         ) : null}
 
-        <div className="flex-1">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="text-sm font-semibold text-black">{title}</div>
-              {active.listingTitle && (
-                <div className="text-xs text-gray-700 line-clamp-1">{active.listingTitle}</div>
-              )}
-            </div>
-
-            <div className="text-lg font-bold text-gray-900">{formatGBP(active.amountCents)}</div>
-          </div>
-
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            {iAmRecipient ? (
-              <>
-                <button
-                  onClick={accept}
-                  className="rounded-md bg-black px-3 py-1.5 text-sm font-semibold text-white hover:bg-gray-900"
-                >
-                  Accept
-                </button>
-                <button
-                  onClick={decline}
-                  className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700"
-                >
-                  Decline
-                </button>
-                <button
-                  onClick={() => quickCounter(0.95)}
-                  className="rounded-md bg-white px-3 py-1.5 text-sm border border-gray-300 hover:bg-gray-50"
-                >
-                  Counter −5%
-                </button>
-                <button
-                  onClick={() => quickCounter(0.9)}
-                  className="rounded-md bg-white px-3 py-1.5 text-sm border border-gray-300 hover:bg-gray-50"
-                >
-                  Counter −10%
-                </button>
-              </>
-            ) : (
-              <div className="text-xs text-gray-700">Waiting for the other party…</div>
-            )}
-          </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-white font-semibold text-sm truncate">
+            {active.listingTitle || "Item"}
+          </h3>
+          <p className="text-gray-400 text-xs mt-0.5">{title}</p>
         </div>
       </div>
+
+      {/* Price comparison */}
+      <div className="flex items-center justify-between mb-4 bg-[#0a0d10] rounded-md p-3">
+        <div>
+          <p className="text-gray-400 text-xs mb-1">Original Price</p>
+          <p className="text-gray-500 line-through text-sm">
+            {formatGBP(originalPrice)}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-[#D4AF37] text-xs mb-1">Offered Price</p>
+          <p className="text-[#D4AF37] font-bold text-lg">
+            {formatGBP(offeredPrice)}
+          </p>
+        </div>
+      </div>
+
+      {/* Counter input (if shown) */}
+      {showCounterInput && iAmRecipient && (
+        <div className="mb-3">
+          <label className="text-gray-400 text-xs mb-1.5 block">
+            Your counter offer (£)
+          </label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={counterAmount}
+            onChange={(e) => setCounterAmount(e.target.value)}
+            className="w-full bg-[#0a0d10] border border-gray-700 rounded-md px-3 py-2 text-white text-sm focus:outline-none focus:border-[#D4AF37] transition-colors"
+            placeholder="Enter amount"
+            autoFocus
+          />
+        </div>
+      )}
+
+      {/* Action buttons */}
+      <div className="flex gap-2">
+        {iAmRecipient ? (
+          <>
+            <button
+              onClick={onAccept}
+              className="flex-1 bg-[#D4AF37] text-black font-semibold py-2.5 rounded-md hover:bg-[#c49f2f] transition-colors text-sm"
+            >
+              Accept
+            </button>
+            <button
+              onClick={onDecline}
+              className="flex-1 bg-gray-800 text-white font-semibold py-2.5 rounded-md hover:bg-gray-700 transition-colors text-sm border border-gray-700"
+            >
+              Decline
+            </button>
+            <button
+              onClick={onCounter}
+              className="flex-1 bg-transparent text-[#D4AF37] font-semibold py-2.5 rounded-md hover:bg-[#D4AF37] hover:bg-opacity-10 transition-colors text-sm border border-[#D4AF37]"
+            >
+              {showCounterInput ? "Submit" : "Counter"}
+            </button>
+          </>
+        ) : (
+          <div className="w-full text-center py-2.5 text-gray-400 text-sm">
+            Waiting for response...
+          </div>
+        )}
+      </div>
+
+      {/* Cancel counter (if shown) */}
+      {showCounterInput && iAmRecipient && (
+        <button
+          onClick={() => {
+            setShowCounterInput(false);
+            setCounterAmount("");
+          }}
+          className="w-full text-gray-500 text-xs mt-2 hover:text-gray-400 transition-colors"
+        >
+          Cancel
+        </button>
+      )}
     </div>
   );
 }
