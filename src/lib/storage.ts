@@ -4,8 +4,39 @@ import { supabaseBrowser } from './supabase';
 
 const BUCKET_NAME = 'parts-images';
 
+// File size constants (in bytes)
+export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB per image
+export const MAX_TOTAL_SIZE = 25 * 1024 * 1024; // 25MB total (5 images)
+
+export function validateFileSize(file: File): { valid: boolean; error?: string } {
+  if (file.size > MAX_FILE_SIZE) {
+    return {
+      valid: false,
+      error: `Image too large. Max ${Math.round(MAX_FILE_SIZE / 1024 / 1024)}MB per image.`,
+    };
+  }
+  return { valid: true };
+}
+
+export function validateTotalSize(files: File[]): { valid: boolean; error?: string } {
+  const totalSize = files.reduce((sum, f) => sum + f.size, 0);
+  if (totalSize > MAX_TOTAL_SIZE) {
+    return {
+      valid: false,
+      error: `Total size exceeds ${Math.round(MAX_TOTAL_SIZE / 1024 / 1024)}MB. Remove some images or use smaller files.`,
+    };
+  }
+  return { valid: true };
+}
+
 export async function uploadImage(file: File): Promise<string> {
   const supabase = supabaseBrowser();
+  
+  // Validate file size
+  const sizeCheck = validateFileSize(file);
+  if (!sizeCheck.valid) {
+    throw new Error(sizeCheck.error);
+  }
   
   // Generate a unique filename
   const ext = file.name.split('.').pop();
