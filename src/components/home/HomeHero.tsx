@@ -114,15 +114,17 @@ export default function HomeHero() {
   const hasActiveFilters = category || condition || make || model || yearMin || yearMax || priceMax;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-4 md:p-8 transition-all duration-300 hover:shadow-lg hover:border-yellow-300">
-      <div className="max-w-4xl">
-        <h1 className="text-2xl md:text-4xl font-extrabold text-black tracking-tight animate-fadeIn">Find the right part for your ride</h1>
-        <p className="mt-2 text-sm md:text-base text-gray-700 animate-fadeIn" style={{ animationDelay: '100ms' }}>OEM and aftermarket parts from trusted sellers. Search by keyword or filter by your vehicle.</p>
+    <div className="relative overflow-hidden rounded-2xl border border-gray-200 p-4 md:p-8 transition-all duration-300 hover:shadow-lg hover:border-gold-300 min-h-[300px] md:min-h-[400px] flex items-center" style={{backgroundImage: 'url(/images/hero-bmw.jpg)', backgroundSize: 'cover', backgroundPosition: 'center right'}}>
+      {/* Dark overlay for text readability */}
+      <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent rounded-2xl"></div>
+      <div className="max-w-4xl relative z-10">
+        <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight animate-fadeIn drop-shadow-lg">Find the right part for your ride</h1>
+        <p className="mt-3 text-base md:text-lg text-gray-100 animate-fadeIn drop-shadow-md" style={{ animationDelay: '100ms' }}>OEM and aftermarket parts from trusted sellers. Search by keyword or filter by your vehicle.</p>
 
-        <form onSubmit={submitSearch} className="mt-4 space-y-3 animate-fadeIn" style={{ animationDelay: '200ms' }}>
+        <form onSubmit={submitSearch} className="mt-6 space-y-3 animate-fadeIn" style={{ animationDelay: '200ms' }}>
           {/* Main search bar - responsive: stack on mobile to avoid overflow */}
           <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2">
-            <div className="flex items-center w-full border border-gray-300 rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-yellow-400 focus-within:border-yellow-400 bg-white shadow-sm transition-all duration-300 hover:shadow-md hover:border-yellow-300">
+            <div className="flex items-center w-full border border-gray-300 rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-gold-400 focus-within:border-gold-400 bg-white shadow-md transition-all duration-300 hover:shadow-lg hover:border-gold-300">
               <SearchIcon className="text-gray-400 mr-2 transition-colors duration-300" size={18} />
               <input
                 value={query}
@@ -134,35 +136,35 @@ export default function HomeHero() {
             <button
               type="button"
               onClick={() => setShowFilters(!showFilters)}
-              className={`rounded-full px-3 sm:px-4 py-2 font-semibold transition-all duration-300 sm:transform sm:hover:scale-105 shadow-sm hover:shadow-md flex items-center gap-1 sm:gap-2 text-sm sm:text-base ${
+              className={`rounded-full px-3 sm:px-4 py-2 font-semibold transition-all duration-300 sm:transform sm:hover:scale-105 shadow-md hover:shadow-lg flex items-center gap-1 sm:gap-2 text-sm sm:text-base ${
                 hasActiveFilters || showFilters
-                  ? 'bg-yellow-500 text-black hover:bg-yellow-600'
-                  : 'bg-white border border-gray-300 text-gray-700 hover:border-yellow-400 hover:bg-gray-50'
+                  ? 'bg-gold-500 text-black hover:bg-gold-600'
+                  : 'bg-white border border-gray-300 text-gray-700 hover:border-gold-400 hover:bg-gray-50'
               }`}
             >
               <SlidersHorizontal size={16} className="sm:size-[18px]" />
               <span className="hidden sm:inline">Filters</span>
               {hasActiveFilters && <span className="bg-black text-white text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[10px] sm:text-xs flex-shrink-0">!</span>}
             </button>
-            <button type="submit" className="rounded-full bg-gray-900 text-white px-4 py-2 font-semibold hover:bg-yellow-500 hover:text-black transition-all duration-300 sm:transform sm:hover:scale-105 sm:active:scale-95 shadow-sm hover:shadow-md">Search</button>
+            <button type="submit" className="rounded-full bg-gold-500 hover:bg-gold-600 text-black px-4 py-2 font-semibold transition-all duration-300 sm:transform sm:hover:scale-105 sm:active:scale-95 shadow-md hover:shadow-lg">Search</button>
           </div>
 
           {/* Number plate search */}
-          <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_auto] items-center gap-2 rounded-xl border border-gray-200 bg-white p-3 md:p-4 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_auto] items-center gap-2 rounded-xl border border-gray-200 bg-white/95 backdrop-blur-sm p-3 md:p-4 shadow-md">
             <label className="text-xs font-semibold text-gray-700 md:pr-2">Search by registration</label>
             <div className="flex items-center gap-2">
               <input
                 value={plate}
                 onChange={(e) => setPlate(e.target.value.toUpperCase())}
                 placeholder="AB12 CDE"
-                className="flex-1 rounded-md border border-gray-300 bg-[#FFF7CC] text-gray-900 placeholder:text-gray-500 px-3 py-2 font-mono uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                className="flex-1 rounded-md border border-gray-300 bg-gold-50 text-gray-900 placeholder:text-gray-500 px-3 py-2 font-mono uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-gold-400"
               />
             </div>
             <button
               type="button"
               onClick={submitPlateSearch}
               disabled={plateLoading}
-              className="justify-self-start md:justify-self-end inline-flex items-center gap-2 rounded-md bg-yellow-500 text-black font-semibold px-4 py-2 hover:bg-yellow-600 disabled:opacity-50"
+              className="justify-self-start md:justify-self-end inline-flex items-center gap-2 rounded-md bg-gold-500 hover:bg-gold-600 text-black font-semibold px-4 py-2 disabled:opacity-50 transition-all"
             >
               {plateLoading ? (
                 <>
@@ -183,7 +185,7 @@ export default function HomeHero() {
 
           {/* Advanced filters */}
           {showFilters && (
-            <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3 animate-fadeIn shadow-sm">
+            <div className="bg-white/95 backdrop-blur-sm rounded-xl border border-gray-200 p-4 space-y-3 animate-fadeIn shadow-md">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {/* Category */}
                 <div>
@@ -191,7 +193,7 @@ export default function HomeHero() {
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all"
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-gold-400 transition-all"
                   >
                     <option value="">All categories</option>
                     {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
@@ -204,7 +206,7 @@ export default function HomeHero() {
                   <select
                     value={condition}
                     onChange={(e) => setCondition(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all"
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-gold-400 transition-all"
                   >
                     <option value="">Any condition</option>
                     {CONDITIONS.map(cond => <option key={cond} value={cond}>{cond}</option>)}
@@ -219,7 +221,7 @@ export default function HomeHero() {
                     value={priceMax}
                     onChange={(e) => setPriceMax(e.target.value)}
                     placeholder="No limit"
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all"
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-gold-400 transition-all"
                   />
                 </div>
 
@@ -230,12 +232,11 @@ export default function HomeHero() {
                     value={make}
                     onChange={(e) => {
                       setMake(e.target.value);
-                      // Reset model and years when make changes
                       setModel('');
                       setYearMin('');
                       setYearMax('');
                     }}
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all"
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-gold-400 transition-all"
                   >
                     <option value="">All makes</option>
                     {getAllMakes().map(m => <option key={m} value={m}>{m}</option>)}
@@ -249,12 +250,11 @@ export default function HomeHero() {
                     value={model}
                     onChange={(e) => {
                       setModel(e.target.value);
-                      // Reset years when model changes
                       setYearMin('');
                       setYearMax('');
                     }}
                     disabled={!make}
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-gold-400 transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="">All models</option>
                     {make && getModelsForMake(make).map(m => <option key={m} value={m}>{m}</option>)}
@@ -268,7 +268,7 @@ export default function HomeHero() {
                     <select
                       value={yearMin}
                       onChange={(e) => setYearMin(e.target.value)}
-                      className="w-full rounded-md border border-gray-300 bg-white px-2 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all"
+                      className="w-full rounded-md border border-gray-300 bg-white px-2 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-gold-400 transition-all"
                     >
                       <option value="">From</option>
                       {availableYears.map((year) => (
@@ -279,7 +279,7 @@ export default function HomeHero() {
                     <select
                       value={yearMax}
                       onChange={(e) => setYearMax(e.target.value)}
-                      className="w-full rounded-md border border-gray-300 bg-white px-2 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all"
+                      className="w-full rounded-md border border-gray-300 bg-white px-2 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-gold-400 transition-all"
                     >
                       <option value="">To</option>
                       {availableYears.map((year) => (
@@ -303,7 +303,7 @@ export default function HomeHero() {
                     setYearMax('');
                     setPriceMax('');
                   }}
-                  className="text-xs text-gray-600 hover:text-yellow-600 underline transition-colors"
+                  className="text-xs text-gray-600 hover:text-gold-600 underline transition-colors"
                 >
                   Clear all filters
                 </button>
@@ -313,10 +313,10 @@ export default function HomeHero() {
         </form>
 
         {active && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm animate-fadeIn" style={{ animationDelay: '300ms' }}>
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-sm animate-fadeIn" style={{ animationDelay: '300ms' }}>
             <button
               onClick={(e) => submitSearch(e as unknown as React.FormEvent)}
-              className="inline-flex items-center gap-1 rounded-full border border-yellow-500 bg-yellow-50 text-yellow-700 px-3 py-1 hover:bg-yellow-500 hover:text-black transition-all duration-300 transform hover:scale-105 hover:shadow-md"
+              className="inline-flex items-center gap-1 rounded-full border border-gold-500 bg-gold-500/20 text-white px-3 py-1 hover:bg-gold-500 hover:text-black transition-all duration-300 transform hover:scale-105 hover:shadow-md backdrop-blur-sm"
             >
               <Car size={14} /> {vehicleLabel(active)}
             </button>
