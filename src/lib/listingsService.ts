@@ -3,7 +3,7 @@ import { supabaseBrowser } from './supabase';
 export type Vehicle = {
   make: string;
   model: string;
-  year?: number;
+  year?: number | null;
   universal?: boolean; // true for generic/tool parts that fit all vehicles
 };
 

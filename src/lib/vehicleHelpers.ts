@@ -45,7 +45,7 @@ export function vehiclesToArray(vehicles: SelectedVehicle[], universal: boolean)
       {
         make: "",
         model: "",
-        year: null,
+        year: undefined,
         universal: true,
       },
     ];
@@ -54,7 +54,7 @@ export function vehiclesToArray(vehicles: SelectedVehicle[], universal: boolean)
   return vehicles.map((v) => ({
     make: v.make,
     model: v.model,
-    year: v.year || null,
+    year: v.year || undefined,
     universal: false,
   }));
 }
