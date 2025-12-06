@@ -7,8 +7,42 @@ html, body {
   background-color: white;
 }
 
+/* Elegant Gold Color Palette - #D4AF37 based */
+:root {
+  --gold-50: #fdfbf3;
+  --gold-100: #f9f3dc;
+  --gold-200: #f2e5b8;
+  --gold-300: #e8d28a;
+  --gold-400: #ddc05c;
+  --gold-500: #D4AF37;
+  --gold-600: #b8942d;
+  --gold-700: #967724;
+  --gold-800: #735c1c;
+  --gold-900: #524215;
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  
+  /* Override Tailwind yellow with elegant gold */
+  --color-yellow-50: var(--gold-50);
+  --color-yellow-100: var(--gold-100);
+  --color-yellow-200: var(--gold-200);
+  --color-yellow-300: var(--gold-300);
+  --color-yellow-400: var(--gold-400);
+  --color-yellow-500: var(--gold-500);
+  --color-yellow-600: var(--gold-600);
+  --color-yellow-700: var(--gold-700);
+  --color-yellow-800: var(--gold-800);
+  --color-yellow-900: var(--gold-900);
+}
+
 /* Media should scale responsively without constraining layout containers */
-/* But don't override explicit Tailwind utility classes like w-full, h-full */
 svg, video, canvas, iframe {
   max-width: 100%;
   height: auto;
@@ -37,25 +71,6 @@ img:not([class]) {
   margin-left: auto;
   margin-right: auto;
   width: 100%;
-}
-
-:root {
-  --background: #ffffff;
-  --foreground: #ffffff; /* Dark text for light mode */
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #ffffff;
-    --foreground: #ededed; /* Light text for dark mode */
-  }
 }
 
 body {

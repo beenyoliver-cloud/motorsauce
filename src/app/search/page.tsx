@@ -573,7 +573,7 @@ function SearchPageInner() {
                           onClick={() => goToPage(page)}
                           className={`w-10 h-10 rounded-lg border transition-colors ${
                             page === currentPage
-                              ? "border-yellow-500 bg-yellow-500 text-white font-semibold"
+                              ? "border-yellow-500 bg-yellow-500 text-black font-semibold"
                               : "border-gray-300 bg-white text-gray-900 hover:bg-gray-50"
                           }`}
                         >

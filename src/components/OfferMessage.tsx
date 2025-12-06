@@ -384,7 +384,7 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
                     <button 
                       onClick={counterSubmit}
                       disabled={!counter || loading}
-                      className="px-3 py-2.5 rounded-lg bg-yellow-500 text-white font-semibold text-sm hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm hover:shadow-md flex items-center gap-1.5"
+                      className="px-3 py-2.5 rounded-lg bg-yellow-500 text-black font-semibold text-sm hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm hover:shadow-md flex items-center gap-1.5"
                     >
                       <TrendingUp size={16} />
                       <span>{loading ? "..." : "Counter"}</span>
@@ -422,7 +422,7 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
                   <button 
                     onClick={counterSubmit} 
                     disabled={!counter} 
-                    className="px-3 py-2.5 rounded-lg bg-yellow-500 text-white font-semibold text-sm hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm hover:shadow-md flex items-center gap-1.5"
+                    className="px-3 py-2.5 rounded-lg bg-yellow-500 text-black font-semibold text-sm hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm hover:shadow-md flex items-center gap-1.5"
                   >
                     <TrendingUp size={16} />
                     <span>Counter</span>

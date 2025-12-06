@@ -316,7 +316,7 @@ export default function HomeHero() {
           <div className="mt-3 flex flex-wrap items-center gap-2 text-sm animate-fadeIn" style={{ animationDelay: '300ms' }}>
             <button
               onClick={(e) => submitSearch(e as unknown as React.FormEvent)}
-              className="inline-flex items-center gap-1 rounded-full border border-yellow-500 bg-yellow-50 text-yellow-700 px-3 py-1 hover:bg-yellow-500 hover:text-white transition-all duration-300 transform hover:scale-105 hover:shadow-md"
+              className="inline-flex items-center gap-1 rounded-full border border-yellow-500 bg-yellow-50 text-yellow-700 px-3 py-1 hover:bg-yellow-500 hover:text-black transition-all duration-300 transform hover:scale-105 hover:shadow-md"
             >
               <Car size={14} /> {vehicleLabel(active)}
             </button>

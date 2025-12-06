@@ -5,6 +5,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase";
 import { Flag, Eye, CheckCircle, XCircle, AlertCircle, Clock, Users, ArrowLeft } from "lucide-react";
+import { AdminNav, AdminBreadcrumb } from "@/components/AdminNav";
 
 interface Report {
   report_id: string;
@@ -169,15 +170,17 @@ function AdminReportsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+      <div className="max-w-7xl mx-auto py-8 px-4">
+        <AdminBreadcrumb current="Reports" />
+        <AdminNav />
+        <div className="text-center py-8 text-gray-600">Loading...</div>
       </div>
     );
   }
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="max-w-7xl mx-auto py-8 px-4">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-2">Access Denied</h1>
           <p className="text-gray-600">{error || "Admin privileges required"}</p>
@@ -192,25 +195,20 @@ function AdminReportsPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4">
-        {/* Navigation */}
-        <div className="mb-4 flex gap-2">
-          <button
-            onClick={() => router.push("/admin/users")}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
-          >
-            <Users size={16} />
-            User Management
-          </button>
-          {userIdFilter && (
+        <AdminBreadcrumb current="Reports" />
+        <AdminNav />
+        
+        {userIdFilter && (
+          <div className="mb-4">
             <button
               onClick={() => router.push("/admin/reports")}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 text-sm font-medium"
             >
               <ArrowLeft size={16} />
-              Clear Filter
+              Clear User Filter
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Header */}
         <div className="mb-6">

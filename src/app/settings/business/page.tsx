@@ -767,8 +767,8 @@ export default function BusinessSettingsPage() {
                 </div>
               </div>
               <div className="p-4 border-t flex items-center justify-end gap-2">
-                <button className="px-4 py-2 rounded-lg border hover:bg-gray-50" onClick={() => setCropOpen(null)}>Cancel</button>
-                <button className="px-4 py-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 inline-flex items-center gap-2" onClick={confirmCrop}>
+                <button className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50" onClick={() => setCropOpen(null)}>Cancel</button>
+                <button className="px-4 py-2 rounded-lg bg-yellow-500 text-black font-medium hover:bg-yellow-600 inline-flex items-center gap-2" onClick={confirmCrop}>
                   <Check className="w-4 h-4" /> Apply
                 </button>
               </div>

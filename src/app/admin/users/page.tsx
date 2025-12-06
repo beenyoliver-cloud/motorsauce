@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, User, Mail, Calendar, AlertCircle, MessageSquare, ShoppingBag, Flag, Eye, Ban, CheckCircle } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase";
+import { AdminNav, AdminBreadcrumb } from "@/components/AdminNav";
 
 interface UserRecord {
   id: string;
@@ -216,15 +217,20 @@ export default function AdminUsersPage() {
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto p-8">
-        <div className="text-center">Loading users...</div>
+        <AdminBreadcrumb current="Users" />
+        <AdminNav />
+        <div className="text-center py-8 text-gray-600">Loading users...</div>
       </div>
     );
   }
 
   return (
     <div className="max-w-7xl mx-auto p-8">
+      <AdminBreadcrumb current="Users" />
+      <AdminNav />
+      
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">User Management</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">User Management</h1>
         <p className="text-gray-600">Search and manage all platform users</p>
       </div>
 
@@ -236,7 +242,7 @@ export default function AdminUsersPage() {
           placeholder="Search by name, email, or user ID..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900"
         />
       </div>
 

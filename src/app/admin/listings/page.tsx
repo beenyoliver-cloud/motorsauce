@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { AdminNav, AdminBreadcrumb } from "@/components/AdminNav";
 
 type Listing = {
   id: string;
@@ -69,50 +70,55 @@ export default function AdminListingsPage() {
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Admin — Listings</h1>
-      <section className="mb-6">
-        <form onSubmit={handleCreate} className="space-y-2 max-w-lg">
+    <div className="max-w-7xl mx-auto p-8">
+      <AdminBreadcrumb current="Listings" />
+      <AdminNav />
+      
+      <h1 className="text-3xl font-bold text-gray-900 mb-6">Manage Listings</h1>
+      
+      <section className="mb-8 bg-white rounded-xl border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Create New Listing</h2>
+        <form onSubmit={handleCreate} className="space-y-4 max-w-lg">
           <div>
-            <label className="block text-sm">Title</label>
-            <input className="w-full border p-2" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+            <input className="w-full border border-gray-300 rounded-lg p-3 text-gray-900 focus:ring-2 focus:ring-yellow-500 focus:border-transparent" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
           </div>
           <div>
-            <label className="block text-sm">Price</label>
-            <input className="w-full border p-2" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
+            <input className="w-full border border-gray-300 rounded-lg p-3 text-gray-900 focus:ring-2 focus:ring-yellow-500 focus:border-transparent" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
           </div>
           <div>
-            <label className="block text-sm">Image URL</label>
-            <input className="w-full border p-2" value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+            <input className="w-full border border-gray-300 rounded-lg p-3 text-gray-900 focus:ring-2 focus:ring-yellow-500 focus:border-transparent" value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} />
           </div>
-          <div className="flex gap-2">
-            <input className="w-1/2 border p-2" placeholder="Make" value={form.make} onChange={(e) => setForm({ ...form, make: e.target.value })} />
-            <input className="w-1/2 border p-2" placeholder="Model" value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} />
+          <div className="flex gap-3">
+            <input className="w-1/2 border border-gray-300 rounded-lg p-3 text-gray-900 focus:ring-2 focus:ring-yellow-500 focus:border-transparent" placeholder="Make" value={form.make} onChange={(e) => setForm({ ...form, make: e.target.value })} />
+            <input className="w-1/2 border border-gray-300 rounded-lg p-3 text-gray-900 focus:ring-2 focus:ring-yellow-500 focus:border-transparent" placeholder="Model" value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} />
           </div>
           <div>
-            <button className="bg-yellow-500 px-4 py-2 rounded text-black">Create / Upsert</button>
+            <button className="bg-yellow-500 hover:bg-yellow-600 px-6 py-3 rounded-lg text-black font-semibold transition">Create / Upsert</button>
           </div>
         </form>
       </section>
 
-      <section>
-        <h2 className="text-lg font-semibold mb-2">Listings</h2>
+      <section className="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">All Listings</h2>
         {loading ? (
-          <div>Loading…</div>
+          <div className="text-gray-600 py-4">Loading…</div>
         ) : (
           <ul className="space-y-3">
             {items.map((it) => (
-              <li key={it.id} className="p-3 border rounded flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {it.image ? <img src={it.image} alt="" className="w-16 h-16 object-cover" /> : <div className="w-16 h-16 bg-gray-100" />}
+              <li key={it.id} className="p-4 border border-gray-200 rounded-lg flex items-center justify-between hover:shadow-sm transition">
+                <div className="flex items-center gap-4">
+                  {it.image ? <img src={it.image} alt="" className="w-16 h-16 object-cover rounded-lg" /> : <div className="w-16 h-16 bg-gray-100 rounded-lg" />}
                   <div>
-                    <div className="font-medium">{it.title}</div>
+                    <div className="font-medium text-gray-900">{it.title}</div>
                     <div className="text-sm text-gray-600">{it.make} {it.model}</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="text-sm">{typeof it.price === 'number' ? `£${it.price}` : it.price}</div>
-                  <button className="text-red-600 text-sm" onClick={() => handleDelete(it.id)}>Delete</button>
+                <div className="flex items-center gap-4">
+                  <div className="text-sm font-medium text-gray-900">{typeof it.price === 'number' ? `£${it.price}` : it.price}</div>
+                  <button className="text-red-600 hover:text-red-700 text-sm font-medium" onClick={() => handleDelete(it.id)}>Delete</button>
                 </div>
               </li>
             ))}

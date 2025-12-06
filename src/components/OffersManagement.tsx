@@ -286,7 +286,7 @@ export default function OffersManagement({ userId }: OffersManagementProps) {
           {activeTab === "sent" && (
             <Link
               href="/search"
-              className="mt-4 inline-block rounded-lg bg-yellow-500 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-600"
+              className="mt-4 inline-block rounded-lg bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-600"
             >
               Browse Listings
             </Link>
