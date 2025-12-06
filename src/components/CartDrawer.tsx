@@ -32,7 +32,7 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
         onTouchEnd={onClose}
       />
       <aside
-        className={`fixed top-0 right-0 h-full w-[360px] max-w-[90vw] bg-white shadow-2xl border-l border-gray-200
+        className={`fixed top-0 right-0 h-full w-full md:w-[360px] md:max-w-[90vw] bg-white shadow-2xl md:border-l border-gray-200
                     transition-transform duration-300 z-[90] ${open ? "translate-x-0" : "translate-x-full"}`}
         aria-hidden={!open}
         aria-label="Mini cart"

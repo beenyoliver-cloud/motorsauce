@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bell, Check, CheckCheck } from "lucide-react";
+import { Bell, Check, CheckCheck, X } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase";
 
 type Notification = {
@@ -166,21 +166,26 @@ export function NotificationsDropdown() {
             onTouchEnd={() => setIsOpen(false)}
           />
           
-          {/* Dropdown Panel - responsive positioning, above backdrop */}
-          <div className="absolute right-0 md:right-0 mt-2 w-[calc(100vw-2rem)] md:w-80 max-w-sm bg-white rounded-lg shadow-lg border border-gray-200 z-[90] max-h-[70vh] md:max-h-[500px] overflow-hidden flex flex-col">
+          {/* Dropdown Panel - full screen on mobile, dropdown on desktop */}
+          <div className="fixed md:absolute left-0 md:left-auto right-0 md:right-0 top-0 md:top-auto mt-0 md:mt-2 w-full md:w-80 md:max-w-sm h-screen md:h-auto bg-white rounded-0 md:rounded-lg shadow-lg border-0 md:border border-gray-200 z-[90] max-h-screen md:max-h-[500px] overflow-hidden flex flex-col">
             {/* Header */}
-            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+            <div className="px-4 py-3 md:py-3 border-b border-gray-200 flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">Notifications</h3>
-              {unreadCount > 0 && (
-                <button
-                  onClick={markAllAsRead}
-                  disabled={loading}
-                  className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-                >
-                  <CheckCheck size={14} />
-                  Mark all read
+              <div className="flex items-center gap-2">
+                {unreadCount > 0 && (
+                  <button
+                    onClick={markAllAsRead}
+                    disabled={loading}
+                    className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                  >
+                    <CheckCheck size={14} />
+                    Mark all read
+                  </button>
+                )}
+                <button onClick={() => setIsOpen(false)} className="md:hidden p-1 rounded hover:bg-gray-100">
+                  <X size={20} className="text-gray-600" />
                 </button>
-              )}
+              </div>
             </div>
 
             {/* Notifications List */}
