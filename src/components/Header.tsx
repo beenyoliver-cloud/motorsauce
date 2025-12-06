@@ -87,12 +87,15 @@ export default function Header() {
   useEffect(() => {
     const refreshUser = async () => {
       const currentUser = await getCurrentUser();
+      console.log('[Header] User loaded:', currentUser?.email);
       setUser(currentUser);
       setIsUserLoaded(true);
       if (currentUser) {
         // Check admin status
         const admin = await isAdmin();
+        console.log('[Header] Admin status result:', admin);
         setIsAdminUser(admin);
+        console.log('[Header] isAdminUser state set to:', admin);
       } else {
         setIsAdminUser(false);
       }
@@ -578,12 +581,15 @@ export default function Header() {
           </Link>
         )}
         {isUserLoaded && isAdminUser && (
-          <Link
-            href="/admin/dashboard"
-            className="flex items-center gap-1 text-sm font-medium text-black hover:text-yellow-500 transition-colors"
-          >
-            <User size={16} /> Admin
-          </Link>
+          <>
+            {console.log('[Header] Rendering admin link - isUserLoaded:', isUserLoaded, 'isAdminUser:', isAdminUser)}
+            <Link
+              href="/admin/dashboard"
+              className="flex items-center gap-1 text-sm font-medium text-black hover:text-yellow-500 transition-colors"
+            >
+              <User size={16} /> Admin
+            </Link>
+          </>
         )}
         {isUserLoaded && user && (
             <>

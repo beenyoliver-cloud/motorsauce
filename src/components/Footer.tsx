@@ -10,7 +10,9 @@ export default function Footer() {
   useEffect(() => {
     const checkAdmin = async () => {
       const admin = await isAdmin();
+      console.log('[Footer] Admin check result:', admin);
       setIsAdminUser(admin);
+      console.log('[Footer] isAdminUser state set to:', admin);
     };
     checkAdmin();
     
@@ -55,14 +57,17 @@ export default function Footer() {
             <li><Link href="/privacy" className="hover:text-yellow-500">Privacy Policy</Link></li>
             <li><Link href="/terms" className="hover:text-yellow-500">Terms of Service</Link></li>
             {isAdminUser && (
-              <li>
-                <Link 
-                  href="/admin/dashboard" 
-                  className="hover:text-yellow-500 font-semibold text-yellow-600"
-                >
-                  🛠️ Admin Tools
-                </Link>
-              </li>
+              <>
+                {console.log('[Footer] Rendering admin link - isAdminUser:', isAdminUser)}
+                <li>
+                  <Link 
+                    href="/admin/dashboard" 
+                    className="hover:text-yellow-500 font-semibold text-yellow-600"
+                  >
+                    🛠️ Admin Tools
+                  </Link>
+                </li>
+              </>
             )}
           </ul>
         </div>
