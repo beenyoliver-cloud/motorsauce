@@ -105,8 +105,8 @@ function SellForm() {
     if (!category) return false;
     if (!price || Number.isNaN(Number(price))) return false;
     if (images.length === 0) return false;
-    // OEM/Aftermarket require vehicles (either multiple vehicles OR universal flag)
-    if (isVehicleSpecific && selectedVehicles.length === 0 && !isUniversal && !oem.trim()) return false;
+    // OEM/Aftermarket REQUIRE vehicles (either multiple vehicles OR universal flag) - MANDATORY
+    if (isVehicleSpecific && selectedVehicles.length === 0 && !isUniversal) return false;
     // Validate selected vehicles
     if (selectedVehicles.length > 0) {
       for (const v of selectedVehicles) {
@@ -115,7 +115,7 @@ function SellForm() {
       }
     }
     return true;
-  }, [title, category, price, images.length, isVehicleSpecific, selectedVehicles, isUniversal, oem, vehicles]);
+  }, [title, category, price, images.length, isVehicleSpecific, selectedVehicles, isUniversal, vehicles]);
 
   useEffect(() => {
     let active = true;

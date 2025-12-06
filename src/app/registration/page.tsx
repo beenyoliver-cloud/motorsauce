@@ -322,55 +322,63 @@ export default function RegistrationPage() {
           Enter your UK number plate to find parts that fit. We'll auto-fill your make and year, then you can add your model for the best results.
         </p>
 
-        <form onSubmit={onSubmit} className="mt-5 flex flex-wrap items-center gap-3">
-          <div className="flex items-center border border-gray-300 rounded-md bg-white px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-yellow-400">
-            <Search size={18} className="text-gray-500 mr-2" aria-hidden />
-            <input
-              type="text"
-              inputMode="text"
-              autoCapitalize="characters"
-              autoCorrect="off"
-              placeholder="AB12 CDE"
-              value={reg}
-              onChange={(e) => setReg(normalizeRegInput(e.target.value))}
-              className="w-40 sm:w-56 md:w-64 border-none focus:ring-0 text-[15px] text-[#111] placeholder-gray-500 bg-transparent tracking-wider"
-              aria-label="Vehicle registration"
-            />
+        <form onSubmit={onSubmit} className="mt-5 space-y-3">
+          {/* Registration input and search button */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 flex items-center border border-gray-300 rounded-md bg-white px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-yellow-400">
+              <Search size={18} className="text-gray-500 mr-2" aria-hidden />
+              <input
+                type="text"
+                inputMode="text"
+                autoCapitalize="characters"
+                autoCorrect="off"
+                placeholder="AB12 CDE"
+                value={reg}
+                onChange={(e) => setReg(normalizeRegInput(e.target.value))}
+                className="flex-1 border-none focus:ring-0 text-[15px] text-[#111] placeholder-gray-500 bg-transparent tracking-wider"
+                aria-label="Vehicle registration"
+              />
+            </div>
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center rounded-md bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-4 py-2.5 whitespace-nowrap"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Find my parts
+            </button>
           </div>
-          <button
-            type="submit"
-            className="inline-flex items-center rounded-md bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-4 py-2"
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            Find my parts
-          </button>
 
-          <Link
-            href="/search"
-            className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-black hover:border-yellow-400"
-          >
-            <Filter className="h-4 w-4" /> Open full search
-          </Link>
+          {/* Filter link - more subtle on mobile */}
+          <div className="flex justify-center sm:justify-start">
+            <Link
+              href="/search"
+              className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:border-yellow-400 hover:text-black transition"
+            >
+              <Filter className="h-3.5 w-3.5" /> 
+              <span className="hidden sm:inline">Open full search with filters</span>
+              <span className="sm:hidden">Advanced search</span>
+            </Link>
+          </div>
         </form>
 
-        {/* Manual fallback prompt */}
+        {/* Manual fallback prompt - positioned below the search form */}
         {showManual && (
-          <div className="mt-6 rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-yellow-900">
+          <div className="mt-6 rounded-xl border border-yellow-200 bg-yellow-50 p-5 md:p-6 text-yellow-900 shadow-sm">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 mt-0.5" />
-              <div className="flex-1">
-                <p className="font-semibold">
+              <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-base">
                   {vehicle?.make && vehicle?.year ? "Add your vehicle model for better results" : "We couldn't auto-identify that reg (yet)."}
                 </p>
-                <p className="text-sm mt-1">
+                <p className="text-sm mt-1.5 text-yellow-800">
                   {vehicle?.make && vehicle?.year 
                     ? "We found your make and year, but need the model to show the most accurate compatible parts." 
                     : "Pick your vehicle below and we'll filter compatible parts. We'll remember this for next time."}
                 </p>
 
-                <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <select
-                    className="border border-gray-300 rounded-md px-2 py-2 text-sm"
+                    className="border border-yellow-300 rounded-md px-3 py-2.5 text-sm bg-white text-gray-900 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
                     value={mMake}
                     onChange={(e) => { setMMake(e.target.value); setMModel(""); }}
                   >
@@ -379,7 +387,7 @@ export default function RegistrationPage() {
                   </select>
 
                   <select
-                    className="border border-gray-300 rounded-md px-2 py-2 text-sm"
+                    className="border border-yellow-300 rounded-md px-3 py-2.5 text-sm bg-white text-gray-900 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 disabled:bg-gray-100"
                     value={mModel}
                     onChange={(e) => setMModel(e.target.value)}
                     disabled={!mMake}
@@ -389,11 +397,11 @@ export default function RegistrationPage() {
                   </select>
 
                   <select
-                    className="border border-gray-300 rounded-md px-2 py-2 text-sm"
+                    className="border border-yellow-300 rounded-md px-3 py-2.5 text-sm bg-white text-gray-900 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
                     value={mYear ?? ""}
                     onChange={(e) => setMYear(e.target.value ? parseInt(e.target.value, 10) : undefined)}
                   >
-                    <option value="">Year</option>
+                    <option value="">Year (optional)</option>
                     {Array.from({ length: 40 }).map((_, i) => {
                       const y = 2025 - i; // recent 40 years
                       return <option key={y} value={y}>{y}</option>;
@@ -403,7 +411,7 @@ export default function RegistrationPage() {
 
                 <button
                   onClick={applyManual}
-                  className="mt-3 inline-flex items-center rounded-md bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-4 py-2"
+                  className="mt-4 inline-flex items-center justify-center rounded-md bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-5 py-2.5 transition w-full sm:w-auto"
                 >
                   <Wrench className="h-4 w-4 mr-2" />
                   Use these details
