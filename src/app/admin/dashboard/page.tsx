@@ -101,7 +101,8 @@ export default function AdminDashboard() {
       }
     };
     checkAdminAndFetchMetrics();
-  }, [router, supabase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   if (loading) {
     return (
