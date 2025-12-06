@@ -22,20 +22,34 @@ export default function AdminDashboard() {
       setError(null);
       try {
         // Check if user is logged in
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
           router.push("/auth/login?next=/admin/dashboard");
           return;
         }
 
-        // Check if user is admin
-        const { data: admin, error: adminError } = await supabase
-          .from("admins")
-          .select("id")
-          .eq("id", user.id)
-          .maybeSingle();
+        // Check if user is admin using API endpoint (bypasses RLS)
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          setError("No access token. Please log in again.");
+          setTimeout(() => router.push("/auth/login"), 2000);
+          return;
+        }
 
-        if (adminError || !admin) {
+        const adminRes = await fetch("/api/is-admin", {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (!adminRes.ok) {
+          setError("Failed to verify admin status.");
+          setTimeout(() => router.push("/"), 2000);
+          return;
+        }
+
+        const { isAdmin: userIsAdmin } = await adminRes.json();
+        if (!userIsAdmin) {
           setError("Access denied. Admin privileges required.");
           setTimeout(() => router.push("/"), 2000);
           return;

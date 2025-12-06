@@ -63,14 +63,26 @@ export default function AdminUsersPage() {
         return;
       }
 
-      // Check admin status
-      const { data: admin } = await supabase
-        .from("admins")
-        .select("id")
-        .eq("id", user.id)
-        .maybeSingle();
+      // Check admin status using API endpoint (bypasses RLS)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        router.push("/auth/login");
+        return;
+      }
 
-      if (!admin) {
+      const adminRes = await fetch("/api/is-admin", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!adminRes.ok) {
+        router.push("/");
+        return;
+      }
+
+      const { isAdmin } = await adminRes.json();
+      if (!isAdmin) {
         router.push("/");
         return;
       }

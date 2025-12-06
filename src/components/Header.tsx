@@ -581,15 +581,12 @@ export default function Header() {
           </Link>
         )}
         {isUserLoaded && isAdminUser && (
-          <>
-            {console.log('[Header] Rendering admin link - isUserLoaded:', isUserLoaded, 'isAdminUser:', isAdminUser)}
-            <Link
-              href="/admin/dashboard"
-              className="flex items-center gap-1 text-sm font-medium text-black hover:text-yellow-500 transition-colors"
-            >
-              <User size={16} /> Admin
-            </Link>
-          </>
+          <Link
+            href="/admin/dashboard"
+            className="flex items-center gap-1 text-sm font-medium text-black hover:text-yellow-500 transition-colors bg-yellow-100 px-2 py-1 rounded"
+          >
+            🛠️ Admin
+          </Link>
         )}
         {isUserLoaded && user && (
             <>

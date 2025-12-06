@@ -53,14 +53,21 @@ function AdminReportsPage() {
         return;
       }
 
-      // Check if user is admin
-      const { data: admin } = await supabase
-        .from("admins")
-        .select("*")
-        .eq("user_id", session.user.id)
-        .single();
+      // Check if user is admin using API endpoint (bypasses RLS)
+      const adminRes = await fetch("/api/is-admin", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
 
-      if (!admin) {
+      if (!adminRes.ok) {
+        setError("Access denied. Admin privileges required.");
+        setLoading(false);
+        return;
+      }
+
+      const { isAdmin: userIsAdmin } = await adminRes.json();
+      if (!userIsAdmin) {
         setError("Access denied. Admin privileges required.");
         setLoading(false);
         return;
