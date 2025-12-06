@@ -21,40 +21,57 @@ export default function AdminDashboard() {
       setLoading(true);
       setError(null);
       try {
+        console.log('[AdminDashboard] Starting admin check...');
+        
         // Check if user is logged in
         const { data: { user }, error: userError } = await supabase.auth.getUser();
+        console.log('[AdminDashboard] User check result:', { user: user?.email, error: userError?.message });
+        
         if (userError || !user) {
+          console.log('[AdminDashboard] No user found, redirecting to login');
           router.push("/auth/login?next=/admin/dashboard");
           return;
         }
 
         // Check if user is admin using API endpoint (bypasses RLS)
         const { data: { session } } = await supabase.auth.getSession();
+        console.log('[AdminDashboard] Session check:', { hasSession: !!session, hasToken: !!session?.access_token });
+        
         if (!session?.access_token) {
+          console.log('[AdminDashboard] No access token');
           setError("No access token. Please log in again.");
           setTimeout(() => router.push("/auth/login"), 2000);
           return;
         }
 
+        console.log('[AdminDashboard] Calling /api/is-admin...');
         const adminRes = await fetch("/api/is-admin", {
           headers: {
             Authorization: `Bearer ${session.access_token}`,
           },
         });
 
+        console.log('[AdminDashboard] API response status:', adminRes.status);
+
         if (!adminRes.ok) {
+          const errorText = await adminRes.text();
+          console.error('[AdminDashboard] API error:', errorText);
           setError("Failed to verify admin status.");
           setTimeout(() => router.push("/"), 2000);
           return;
         }
 
-        const { isAdmin: userIsAdmin } = await adminRes.json();
-        if (!userIsAdmin) {
+        const adminData = await adminRes.json();
+        console.log('[AdminDashboard] API response data:', adminData);
+        
+        if (!adminData.isAdmin) {
+          console.log('[AdminDashboard] User is not admin, redirecting home');
           setError("Access denied. Admin privileges required.");
           setTimeout(() => router.push("/"), 2000);
           return;
         }
 
+        console.log('[AdminDashboard] Admin check passed! Loading dashboard...');
         setIsAdmin(true);
 
         // Fetch metrics
