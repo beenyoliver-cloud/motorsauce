@@ -17,6 +17,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { displayName } from "@/lib/names";
 import { supabaseBrowser } from "@/lib/supabase";
 import OfferCard from "@/components/OfferCard";
+import ActiveOfferBar from "@/components/ActiveOfferBar";
 import { ReviewMessage } from "@/components/ReviewMessage";
 
 type PeerProfile = {
@@ -379,6 +380,9 @@ export default function ThreadClientNew({
           </div>
         </div>
       </div>
+
+      {/* Active Offer Bar - Shows pending offers */}
+      <ActiveOfferBar threadId={threadId} />
 
       {/* Messages / Empty state */}
       <div
