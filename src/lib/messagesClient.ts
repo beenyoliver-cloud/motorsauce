@@ -412,7 +412,12 @@ export async function updateOfferStatus(
 ): Promise<Offer | null> {
   try {
     const authHeader = await getAuthHeader();
-    if (!authHeader) return null;
+    if (!authHeader) {
+      console.error("[messagesClient] No auth header available");
+      return null;
+    }
+
+    console.log("[messagesClient] Calling /api/offers/new PATCH with:", { offerId, status, counterAmountCents });
 
     const res = await fetch("/api/offers/new", {
       method: "PATCH",
@@ -423,24 +428,27 @@ export async function updateOfferStatus(
       body: JSON.stringify({ offerId, status, counterAmountCents }),
     });
 
+    console.log("[messagesClient] Response status:", res.status);
+
     if (!res.ok) {
-      console.error("[messagesClient] Failed to update offer:", res.status);
-      // Try to get error details from response
+      console.error("[messagesClient] Failed to update offer, status:", res.status);
       try {
         const errorData = await res.json();
-        console.error("[messagesClient] Error details:", errorData);
-      } catch (e) {
-        console.error("[messagesClient] Could not parse error response");
+        console.error("[messagesClient] Error response body:", errorData);
+        throw new Error(errorData.error || `HTTP ${res.status}: ${res.statusText}`);
+      } catch (parseErr) {
+        const text = await res.text();
+        console.error("[messagesClient] Error response text:", text);
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       }
-      return null;
     }
 
     const data = await res.json();
-    console.log("[messagesClient] Update offer success:", data);
+    console.log("[messagesClient] Update offer success, response:", data);
     return data.offer;
   } catch (error) {
     console.error("[messagesClient] Error updating offer:", error);
-    return null;
+    throw error;
   }
 }
 

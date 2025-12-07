@@ -43,11 +43,18 @@ export default function OfferCard({
     if (!confirm("Accept this offer? The buyer will be able to proceed to checkout.")) return;
     setUpdating(true);
     try {
-      await updateOfferStatus(offerId, "accepted");
+      console.log("[OfferCard] Calling updateOfferStatus with:", { offerId, status: "accepted" });
+      const result = await updateOfferStatus(offerId, "accepted");
+      console.log("[OfferCard] updateOfferStatus result:", result);
+      if (!result) {
+        throw new Error("Failed to update offer - no result returned");
+      }
+      console.log("[OfferCard] Calling onUpdate callback");
       onUpdate?.();
+      console.log("[OfferCard] onUpdate callback completed");
     } catch (err) {
-      console.error("Failed to accept offer:", err);
-      alert("Failed to accept offer. Please try again.");
+      console.error("[OfferCard] Failed to accept offer:", err);
+      alert(`Failed to accept offer: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setUpdating(false);
     }
@@ -57,11 +64,18 @@ export default function OfferCard({
     if (!confirm("Decline this offer? The buyer will be notified.")) return;
     setUpdating(true);
     try {
-      await updateOfferStatus(offerId, "declined");
+      console.log("[OfferCard] Calling updateOfferStatus with:", { offerId, status: "declined" });
+      const result = await updateOfferStatus(offerId, "declined");
+      console.log("[OfferCard] updateOfferStatus result:", result);
+      if (!result) {
+        throw new Error("Failed to update offer - no result returned");
+      }
+      console.log("[OfferCard] Calling onUpdate callback");
       onUpdate?.();
+      console.log("[OfferCard] onUpdate callback completed");
     } catch (err) {
-      console.error("Failed to decline offer:", err);
-      alert("Failed to decline offer. Please try again.");
+      console.error("[OfferCard] Failed to decline offer:", err);
+      alert(`Failed to decline offer: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setUpdating(false);
     }
@@ -84,13 +98,20 @@ export default function OfferCard({
 
     setUpdating(true);
     try {
-      await updateOfferStatus(offerId, "countered", Math.round(pounds * 100));
+      console.log("[OfferCard] Calling updateOfferStatus with:", { offerId, status: "countered", counterAmountCents: Math.round(pounds * 100) });
+      const result = await updateOfferStatus(offerId, "countered", Math.round(pounds * 100));
+      console.log("[OfferCard] updateOfferStatus result:", result);
+      if (!result) {
+        throw new Error("Failed to update offer - no result returned");
+      }
       setShowCounterInput(false);
       setCounterAmount("");
+      console.log("[OfferCard] Calling onUpdate callback");
       onUpdate?.();
+      console.log("[OfferCard] onUpdate callback completed");
     } catch (err) {
-      console.error("Failed to counter offer:", err);
-      alert("Failed to send counter offer. Please try again.");
+      console.error("[OfferCard] Failed to counter offer:", err);
+      alert(`Failed to send counter offer: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setUpdating(false);
     }
@@ -108,12 +129,21 @@ export default function OfferCard({
     : "Your offer";
 
   return (
-    <div className="w-full max-w-lg mx-auto bg-gradient-to-br from-[#0a0a0c] to-[#050608] rounded-[32px] shadow-2xl p-8 border border-[#D4AF37]/10 relative overflow-hidden group">
-      {/* Elegant gradient background effect */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[32px]" />
+    <div className="w-full max-w-lg mx-auto relative">
+      {/* Yellow pinstripe border */}
+      <div className="absolute inset-0 rounded-[32px] p-[3px] bg-gradient-to-r from-[#D4AF37] via-[#D4AF37] to-[#D4AF37] pointer-events-none" style={{
+        WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+        maskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+      }} />
       
-      {/* Content wrapper */}
-      <div className="relative z-10 space-y-6">
+      {/* Main card with frosted glass effect */}
+      <div className="relative z-10 bg-gradient-to-br from-[#0a0a0c]/90 to-[#050608]/95 rounded-[32px] p-8 border border-white/10 backdrop-blur-xl shadow-2xl">
+        {/* Frosted glass overlay effect */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/8 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[32px]" />
+        <div className="absolute inset-0 rounded-[32px] bg-white/[0.02] pointer-events-none" />
+        
+        {/* Content wrapper */}
+        <div className="relative z-10 space-y-6">
       {/* Header */}
       <h2 className="text-center text-white text-2xl font-bold mb-6">
         {headerText}
@@ -270,6 +300,7 @@ export default function OfferCard({
           </Link>
         </div>
       )}
+        </div>
       </div>
     </div>
   );
