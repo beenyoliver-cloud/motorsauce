@@ -34,6 +34,17 @@ export default function OfferCard({
   const [counterAmount, setCounterAmount] = useState("");
   const [showCounterInput, setShowCounterInput] = useState(false);
 
+  // Debug: Log what data we're receiving
+  console.log("[OfferCard] Received props:", {
+    offerId,
+    amount,
+    listingId,
+    listingTitle,
+    listingImage,
+    listingPrice,
+    status,
+  });
+
   const offeredPrice = amount / 100;
   const originalPrice = listingPrice ? listingPrice / 100 : offeredPrice;
   const isPending = status === "pending";
