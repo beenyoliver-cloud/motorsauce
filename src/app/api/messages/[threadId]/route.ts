@@ -109,6 +109,8 @@ export async function GET(
       }
       
       console.log("[messages API] Fetched offers:", offers?.length || 0);
+      console.log("[messages API] Offers data:", JSON.stringify(offers, null, 2));
+      console.log("[messages API] Listings data:", JSON.stringify(Array.from(listingsMap.entries()), null, 2));
     }
 
     // Enrich messages
@@ -158,6 +160,13 @@ export async function GET(
         updatedAt: m.updated_at,
       };
     });
+
+    console.log("[messages API] Returning enriched messages:", enriched.length);
+    // Log offer messages specifically
+    const offerMessages = enriched.filter(m => m.offer);
+    if (offerMessages.length > 0) {
+      console.log("[messages API] Offer messages being returned:", JSON.stringify(offerMessages, null, 2));
+    }
 
     return NextResponse.json({ messages: enriched }, { status: 200 });
   } catch (error: any) {
