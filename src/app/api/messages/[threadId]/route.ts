@@ -89,6 +89,10 @@ export async function GET(
       
       offerMap = new Map((offers || []).map((o: any) => [o.id, o]));
       console.log("[messages API] Fetched offers with listing data:", offers?.length || 0);
+      // Debug: log first offer to see structure
+      if (offers && offers.length > 0) {
+        console.log("[messages API] Sample offer data:", JSON.stringify(offers[0], null, 2));
+      }
     }
 
     // Enrich messages
@@ -96,6 +100,19 @@ export async function GET(
       const senderId = m.from_user_id || m.sender;
       const sender = profileMap.get(senderId);
       const offer = m.offer_id ? offerMap.get(m.offer_id) : null;
+      
+      // Debug: log offer data if present
+      if (offer && m.message_type === "offer") {
+        console.log("[messages API] Enriching offer message:", {
+          offerId: m.offer_id,
+          hasOffer: !!offer,
+          listingId: offer?.listing_id,
+          listingTitle: offer?.listing_title,
+          listingImage: offer?.listing_image,
+          listingsImage: offer?.listings?.image,
+          listingsPrice: offer?.listings?.price,
+        });
+      }
       
       return {
         id: m.id,
