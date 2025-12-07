@@ -137,9 +137,8 @@ export async function POST(req: Request) {
       p_listing_image: listingImage || null,
     });
     
-    console.log("[offers API] RPC Response - Type:", typeof offerData, "Value:", offerData);
-    let offer = offerData as any;
-
+    console.log("[offers API] RPC Response - Type:", typeof offerData, "Value:", JSON.stringify(offerData));
+    
     if (rpcError) {
       console.error("[offers API] RPC create_offer_uuid error:", {
         message: rpcError.message,
@@ -147,40 +146,23 @@ export async function POST(req: Request) {
         details: rpcError.details,
         hint: rpcError.hint,
       });
-      // Only try fallback if it's an ambiguity error (function overload issue)
-      // Otherwise return the error immediately to avoid duplicate creation
-      const isAmbiguityError = (rpcError.message || "").includes("Could not choose") || 
-                               (rpcError.code === "42883"); // Function not found error
-      
-      if (isAmbiguityError) {
-        console.log("[offers API] Trying fallback to create_offer function");
-        const fallback = await supabase.rpc("create_offer", {
-          p_thread_id: threadId,
-          p_listing_id: listingId,
-          p_amount_cents: amountCents,
-          p_currency: currency || "GBP",
-          p_listing_title: listingTitle || null,
-          p_listing_image: listingImage || null,
-        });
-        offer = fallback.data as any;
-        if (fallback.error) {
-          console.error("[offers API] RPC create_offer (fallback) error:", fallback.error);
-          return NextResponse.json({
-            error: fallback.error.message || "RPC call failed",
-            code: fallback.error.code,
-            details: fallback.error.details,
-            hint: fallback.error.hint,
-          }, { status: 500 });
-        }
-      } else {
-        // Not an ambiguity error, return immediately
-        return NextResponse.json({ 
-          error: rpcError.message || "Failed to create offer",
-          code: rpcError.code,
-          details: rpcError.details,
-          hint: rpcError.hint,
-        }, { status: 500 });
-      }
+      return NextResponse.json({ 
+        error: rpcError.message || "Failed to create offer",
+        code: rpcError.code,
+        details: rpcError.details,
+        hint: rpcError.hint,
+      }, { status: 500 });
+    }
+
+    // offerData is already the JSON object returned by the RPC
+    const offer = offerData as any;
+    
+    if (!offer || !offer.id) {
+      console.error("[offers API] RPC returned invalid offer:", offer);
+      return NextResponse.json({ 
+        error: "RPC returned invalid offer data",
+        received: offer,
+      }, { status: 500 });
     }
 
     console.log("[offers API] Offer created successfully:", offer);
