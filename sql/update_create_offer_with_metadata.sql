@@ -80,15 +80,17 @@ BEGIN
   -- Create associated message
   INSERT INTO public.messages (
     thread_id,
-    sender_id,
-    content,
-    type,
+    from_user_id,
+    sender,
+    message_type,
+    text_content,
     offer_id
   ) VALUES (
     p_thread_id,
     v_sender_id,
-    'New offer: ' || p_currency || ' ' || (p_amount_cents::NUMERIC / 100)::TEXT,
+    v_sender_id,
     'offer',
+    'New offer: ' || p_currency || ' ' || (p_amount_cents::NUMERIC / 100)::TEXT,
     v_offer_id
   )
   RETURNING id INTO v_message_id;

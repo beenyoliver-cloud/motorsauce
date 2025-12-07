@@ -136,6 +136,8 @@ export async function POST(req: Request) {
       p_listing_title: listingTitle || null,
       p_listing_image: listingImage || null,
     });
+    
+    console.log("[offers API] RPC Response - Type:", typeof offerData, "Value:", offerData);
     let offer = offerData as any;
 
     if (rpcError) {
@@ -145,9 +147,13 @@ export async function POST(req: Request) {
         details: rpcError.details,
         hint: rpcError.hint,
       });
-      // Fallback to old name if wrapper not yet deployed
-      const ambiguous = (rpcError.details || "").includes("Could not choose the best candidate function");
-      if (!ambiguous) {
+      // Only try fallback if it's an ambiguity error (function overload issue)
+      // Otherwise return the error immediately to avoid duplicate creation
+      const isAmbiguityError = (rpcError.message || "").includes("Could not choose") || 
+                               (rpcError.code === "42883"); // Function not found error
+      
+      if (isAmbiguityError) {
+        console.log("[offers API] Trying fallback to create_offer function");
         const fallback = await supabase.rpc("create_offer", {
           p_thread_id: threadId,
           p_listing_id: listingId,
@@ -167,8 +173,9 @@ export async function POST(req: Request) {
           }, { status: 500 });
         }
       } else {
+        // Not an ambiguity error, return immediately
         return NextResponse.json({ 
-          error: rpcError.message || "RPC overload ambiguity; deploy fix_offers_rpc.sql",
+          error: rpcError.message || "Failed to create offer",
           code: rpcError.code,
           details: rpcError.details,
           hint: rpcError.hint,
