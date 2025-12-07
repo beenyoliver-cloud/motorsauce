@@ -97,7 +97,7 @@ export async function GET(
       if (listingIds.length > 0) {
         const { data: listings, error: listingsError } = await supabase
           .from("listings")
-          .select("id, title, price, image")
+          .select("id, title, price, images")
           .in("id", listingIds);
         
         if (listingsError) {
@@ -153,7 +153,11 @@ export async function GET(
           status: offer?.status || m.offer_status,
           // Use listings table data as primary source, fallback to offer columns
           listingTitle: listing?.title || offer?.listing_title || null,
-          listingImage: listing?.image || offer?.listing_image || null,
+          listingImage: (
+            listing?.images && Array.isArray(listing.images) && listing.images.length > 0
+              ? (listing.images[0]?.url || listing.images[0])
+              : (offer?.listing_image || null)
+          ),
           listingPrice: listing?.price ? Math.round(Number(listing.price) * 100) : undefined,
         } : undefined,
         createdAt: m.created_at,
