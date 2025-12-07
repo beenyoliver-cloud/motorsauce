@@ -47,6 +47,7 @@ export default function OfferCard({
 
   const offeredPrice = amount / 100;
   const originalPrice = listingPrice ? listingPrice / 100 : offeredPrice;
+  console.log("[OfferCard] Price calculation:", { amount, listingPrice, offeredPrice, originalPrice });
   const isPending = status === "pending";
   const canRespond = isCurrentUserSeller && isPending;
 
