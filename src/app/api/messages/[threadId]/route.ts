@@ -77,10 +77,13 @@ export async function GET(
       .map((m: any) => m.offer_id);
     
     let offerMap = new Map();
+    let listingsMap = new Map();
+    
     if (offerIds.length > 0) {
+      // Fetch offers
       const { data: offers, error: offersError } = await supabase
         .from("offers")
-        .select("id, listing_id, listing_title, listing_image, amount_cents, currency, status, listings(id, title, price, image)")
+        .select("id, listing_id, listing_title, listing_image, amount_cents, currency, status")
         .in("id", offerIds);
       
       if (offersError) {
@@ -88,11 +91,24 @@ export async function GET(
       }
       
       offerMap = new Map((offers || []).map((o: any) => [o.id, o]));
-      console.log("[messages API] Fetched offers with listing data:", offers?.length || 0);
-      // Debug: log first offer to see structure
-      if (offers && offers.length > 0) {
-        console.log("[messages API] Sample offer data:", JSON.stringify(offers[0], null, 2));
+      
+      // Get unique listing IDs and fetch their details
+      const listingIds = Array.from(new Set((offers || []).map((o: any) => o.listing_id).filter(Boolean)));
+      if (listingIds.length > 0) {
+        const { data: listings, error: listingsError } = await supabase
+          .from("listings")
+          .select("id, title, price, image")
+          .in("id", listingIds);
+        
+        if (listingsError) {
+          console.error("[messages API] Error fetching listings:", listingsError);
+        }
+        
+        listingsMap = new Map((listings || []).map((l: any) => [l.id, l]));
+        console.log("[messages API] Fetched listings:", listings?.length || 0);
       }
+      
+      console.log("[messages API] Fetched offers:", offers?.length || 0);
     }
 
     // Enrich messages
@@ -100,17 +116,20 @@ export async function GET(
       const senderId = m.from_user_id || m.sender;
       const sender = profileMap.get(senderId);
       const offer = m.offer_id ? offerMap.get(m.offer_id) : null;
+      const listing = offer?.listing_id ? listingsMap.get(offer.listing_id) : null;
       
       // Debug: log offer data if present
       if (offer && m.message_type === "offer") {
         console.log("[messages API] Enriching offer message:", {
           offerId: m.offer_id,
           hasOffer: !!offer,
+          hasListing: !!listing,
           listingId: offer?.listing_id,
-          listingTitle: offer?.listing_title,
-          listingImage: offer?.listing_image,
-          listingsImage: offer?.listings?.image,
-          listingsPrice: offer?.listings?.price,
+          listingTitle: listing?.title,
+          offerListingTitle: offer?.listing_title,
+          listingImage: listing?.image,
+          offerListingImage: offer?.listing_image,
+          listingPrice: listing?.price,
         });
       }
       
@@ -131,9 +150,9 @@ export async function GET(
           currency: offer?.currency || m.offer_currency || "GBP",
           status: offer?.status || m.offer_status,
           // Use listings table data as primary source, fallback to offer columns
-          listingTitle: offer?.listings?.title || offer?.listing_title || null,
-          listingImage: offer?.listings?.image || offer?.listing_image || null,
-          listingPrice: offer?.listings?.price ? Math.round(Number(offer.listings.price) * 100) : undefined,
+          listingTitle: listing?.title || offer?.listing_title || null,
+          listingImage: listing?.image || offer?.listing_image || null,
+          listingPrice: listing?.price ? Math.round(Number(listing.price) * 100) : undefined,
         } : undefined,
         createdAt: m.created_at,
         updatedAt: m.updated_at,
