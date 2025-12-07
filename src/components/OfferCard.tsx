@@ -108,7 +108,12 @@ export default function OfferCard({
     : "Your offer";
 
   return (
-    <div className="w-full max-w-lg mx-auto bg-[#050608] rounded-[32px] shadow-2xl p-8 border border-[#D4AF37]/20">
+    <div className="w-full max-w-lg mx-auto bg-gradient-to-br from-[#0a0a0c] to-[#050608] rounded-[32px] shadow-2xl p-8 border border-[#D4AF37]/10 relative overflow-hidden group">
+      {/* Elegant gradient background effect */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[32px]" />
+      
+      {/* Content wrapper */}
+      <div className="relative z-10 space-y-6">
       {/* Header */}
       <h2 className="text-center text-white text-2xl font-bold mb-6">
         {headerText}
@@ -120,23 +125,23 @@ export default function OfferCard({
           <img
             src={listingImage}
             alt={listingTitle || "Product"}
-            className="w-full h-64 object-cover rounded-2xl"
+            className="w-full h-64 object-cover rounded-2xl shadow-lg ring-1 ring-[#D4AF37]/20"
           />
         </div>
       )}
 
       {/* Product Name */}
       {listingTitle && (
-        <h3 className="text-center text-[#D4AF37] text-xl font-bold mb-6">
+        <h3 className="text-center text-[#D4AF37] text-xl font-bold mb-6 tracking-wide">
           {listingTitle}
         </h3>
       )}
 
       {/* Price Comparison Row */}
-      <div className="grid grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-2 gap-6 mb-8 p-6 bg-white/5 rounded-2xl border border-[#D4AF37]/10 backdrop-blur-sm">
         {/* Original Price */}
         <div className="text-center">
-          <p className="text-gray-400 text-sm mb-2">Original price</p>
+          <p className="text-gray-500 text-xs uppercase tracking-widest mb-3 font-medium">Original price</p>
           <p className="text-white text-2xl font-bold">
             £{originalPrice.toFixed(2)}
           </p>
@@ -144,7 +149,7 @@ export default function OfferCard({
         
         {/* Offered Price */}
         <div className="text-center">
-          <p className="text-gray-400 text-sm mb-2">Offered price</p>
+          <p className="text-gray-500 text-xs uppercase tracking-widest mb-3 font-medium">Offered price</p>
           <p className="text-[#D4AF37] text-3xl font-bold">
             £{offeredPrice.toFixed(2)}
           </p>
@@ -157,7 +162,7 @@ export default function OfferCard({
           <button
             onClick={handleAccept}
             disabled={updating}
-            className="px-6 py-3 bg-[#1a1a1a] border-2 border-[#D4AF37] text-[#D4AF37] rounded-xl font-semibold hover:bg-[#D4AF37]/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-3 bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border-2 border-[#D4AF37] text-[#D4AF37] rounded-xl font-semibold hover:from-[#2a2a2a] hover:to-[#1f1f1f] hover:shadow-lg hover:shadow-[#D4AF37]/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
           >
             <Check size={20} className="mx-auto mb-1" />
             Accept
@@ -166,7 +171,7 @@ export default function OfferCard({
           <button
             onClick={() => setShowCounterInput(true)}
             disabled={updating}
-            className="px-6 py-3 bg-[#1a1a1a] border-2 border-[#D4AF37] text-[#D4AF37] rounded-xl font-semibold hover:bg-[#D4AF37]/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-3 bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border-2 border-[#D4AF37] text-[#D4AF37] rounded-xl font-semibold hover:from-[#2a2a2a] hover:to-[#1f1f1f] hover:shadow-lg hover:shadow-[#D4AF37]/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
           >
             <TrendingUp size={20} className="mx-auto mb-1" />
             Counter
@@ -175,7 +180,7 @@ export default function OfferCard({
           <button
             onClick={handleDecline}
             disabled={updating}
-            className="px-6 py-3 bg-[#1a1a1a] border-2 border-[#D4AF37] text-[#D4AF37] rounded-xl font-semibold hover:bg-[#D4AF37]/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-3 bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border-2 border-[#D4AF37] text-[#D4AF37] rounded-xl font-semibold hover:from-[#2a2a2a] hover:to-[#1f1f1f] hover:shadow-lg hover:shadow-[#D4AF37]/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
           >
             <X size={20} className="mx-auto mb-1" />
             Decline
@@ -185,9 +190,9 @@ export default function OfferCard({
 
       {/* Counter Offer Input */}
       {canRespond && showCounterInput && (
-        <div className="space-y-4">
+        <div className="space-y-4 p-6 bg-white/5 rounded-2xl border border-[#D4AF37]/10 backdrop-blur-sm">
           <div>
-            <label className="block text-gray-400 text-sm mb-2">
+            <label className="block text-gray-400 text-sm mb-3 uppercase tracking-widest font-medium">
               Your counter offer (£)
             </label>
             <input
@@ -197,19 +202,19 @@ export default function OfferCard({
               value={counterAmount}
               onChange={(e) => setCounterAmount(e.target.value)}
               placeholder={(offeredPrice * 1.1).toFixed(2)}
-              className="w-full px-4 py-3 bg-white/5 border-2 border-[#D4AF37]/30 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
+              className="w-full px-4 py-3 bg-white/5 border-2 border-[#D4AF37]/30 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-[#D4AF37] transition-all"
               disabled={updating}
             />
-            <p className="text-gray-500 text-xs mt-1">
+            <p className="text-gray-500 text-xs mt-2 leading-relaxed">
               Must be between £{offeredPrice.toFixed(2)} and £{originalPrice.toFixed(2)}
             </p>
           </div>
           
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 pt-2">
             <button
               onClick={handleCounter}
               disabled={updating}
-              className="px-6 py-3 bg-[#D4AF37] text-[#050608] rounded-xl font-semibold hover:bg-[#E5BF47] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-6 py-3 bg-gradient-to-br from-[#D4AF37] to-[#c9a844] text-[#050608] rounded-xl font-semibold hover:from-[#E5BF47] hover:to-[#d4b547] hover:shadow-lg hover:shadow-[#D4AF37]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
             >
               Send Counter
             </button>
@@ -219,7 +224,7 @@ export default function OfferCard({
                 setCounterAmount("");
               }}
               disabled={updating}
-              className="px-6 py-3 bg-white/10 text-white rounded-xl font-semibold hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-6 py-3 bg-white/5 border-2 border-white/10 text-white rounded-xl font-semibold hover:bg-white/10 hover:border-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               Cancel
             </button>
@@ -230,7 +235,7 @@ export default function OfferCard({
       {/* Status Messages - Non-interactive States */}
       {!canRespond && status === "accepted" && (
         <div className="text-center">
-          <div className="inline-flex items-center gap-2 px-6 py-3 bg-green-500/10 border-2 border-green-500 text-green-400 rounded-xl font-semibold">
+          <div className="inline-flex items-center gap-2 px-6 py-3 bg-green-500/10 border-2 border-green-500/50 text-green-400 rounded-xl font-semibold shadow-lg shadow-green-500/10">
             <Check size={20} />
             {isCurrentUserSeller ? "Accepted - Waiting for payment" : "Accepted - Proceed to checkout"}
           </div>
@@ -239,7 +244,7 @@ export default function OfferCard({
       
       {!canRespond && status === "declined" && (
         <div className="text-center">
-          <div className="inline-flex items-center gap-2 px-6 py-3 bg-red-500/10 border-2 border-red-500 text-red-400 rounded-xl font-semibold">
+          <div className="inline-flex items-center gap-2 px-6 py-3 bg-red-500/10 border-2 border-red-500/50 text-red-400 rounded-xl font-semibold shadow-lg shadow-red-500/10">
             <X size={20} />
             Offer Declined
           </div>
@@ -248,7 +253,7 @@ export default function OfferCard({
       
       {!canRespond && !isCurrentUserSeller && isPending && (
         <div className="text-center">
-          <div className="inline-flex items-center gap-2 px-6 py-3 bg-[#D4AF37]/10 border-2 border-[#D4AF37] text-[#D4AF37] rounded-xl font-semibold">
+          <div className="inline-flex items-center gap-2 px-6 py-3 bg-[#D4AF37]/10 border-2 border-[#D4AF37]/30 text-[#D4AF37] rounded-xl font-semibold shadow-lg shadow-[#D4AF37]/10">
             Waiting for seller response...
           </div>
         </div>
@@ -256,15 +261,16 @@ export default function OfferCard({
 
       {/* View Listing Link */}
       {listingId && (
-        <div className="mt-6 text-center">
+        <div className="text-center pt-4 border-t border-white/5">
           <Link 
             href={`/listing/${listingId}`}
-            className="text-[#D4AF37] text-sm hover:underline inline-flex items-center gap-1"
+            className="text-[#D4AF37] text-sm hover:text-[#E5BF47] hover:underline inline-flex items-center gap-1 font-medium transition-colors"
           >
             View listing details →
           </Link>
         </div>
       )}
+      </div>
     </div>
   );
 }
