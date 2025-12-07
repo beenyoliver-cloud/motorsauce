@@ -115,7 +115,7 @@ export async function GET(
           status: offer?.status || m.offer_status,
           listingTitle: offer?.listing_title,
           listingImage: offer?.listing_image || offer?.listings?.image,
-          listingPrice: offer?.listings?.price,
+          listingPrice: offer?.listings?.price ? Math.round(Number(offer.listings.price) * 100) : undefined,
         } : undefined,
         createdAt: m.created_at,
         updatedAt: m.updated_at,

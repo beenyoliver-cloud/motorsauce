@@ -247,9 +247,9 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ error: "Can only accept pending or countered offers" }, { status: 400 });
       }
     } else if (status === "declined") {
-      // Allow recipient to decline pending offers
+      // Only the recipient (person who receives the offer) can decline
       if (offer.recipient_id !== user.id) {
-        return NextResponse.json({ error: "Only recipient can decline" }, { status: 403 });
+        return NextResponse.json({ error: "Only the recipient of this offer can decline it" }, { status: 403 });
       }
       if (offer.status !== "pending") {
         return NextResponse.json({ error: "Can only decline pending offers" }, { status: 400 });
