@@ -247,15 +247,17 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ error: "Can only accept pending or countered offers" }, { status: 400 });
       }
     } else if (status === "declined") {
+      // Allow recipient to decline pending offers
       if (offer.recipient_id !== user.id) {
-        return NextResponse.json({ error: "Only seller can decline" }, { status: 403 });
+        return NextResponse.json({ error: "Only recipient can decline" }, { status: 403 });
       }
       if (offer.status !== "pending") {
         return NextResponse.json({ error: "Can only decline pending offers" }, { status: 400 });
       }
     } else if (status === "countered") {
+      // Allow recipient to counter pending offers
       if (offer.recipient_id !== user.id) {
-        return NextResponse.json({ error: "Only seller can counter" }, { status: 403 });
+        return NextResponse.json({ error: "Only recipient can counter" }, { status: 403 });
       }
       if (offer.status !== "pending") {
         return NextResponse.json({ error: "Can only counter pending offers" }, { status: 400 });

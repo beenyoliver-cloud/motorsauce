@@ -87,14 +87,6 @@ export default function OfferCard({
       alert("Please enter a valid counter offer amount");
       return;
     }
-    if (pounds >= originalPrice) {
-      alert("Counter offer must be less than the original price");
-      return;
-    }
-    if (pounds <= offeredPrice) {
-      alert("Counter offer must be higher than the buyer's offer");
-      return;
-    }
 
     setUpdating(true);
     try {

@@ -80,7 +80,7 @@ export async function GET(
     if (offerIds.length > 0) {
       const { data: offers, error: offersError } = await supabase
         .from("offers")
-        .select("id, listing_id, listing_title, listing_image, amount_cents, currency, status, listings(price)")
+        .select("id, listing_id, listing_title, listing_image, amount_cents, currency, status, listings(price, image)")
         .in("id", offerIds);
       
       if (offersError) {
@@ -114,7 +114,7 @@ export async function GET(
           currency: offer?.currency || m.offer_currency || "GBP",
           status: offer?.status || m.offer_status,
           listingTitle: offer?.listing_title,
-          listingImage: offer?.listing_image,
+          listingImage: offer?.listing_image || offer?.listings?.image,
           listingPrice: offer?.listings?.price,
         } : undefined,
         createdAt: m.created_at,
