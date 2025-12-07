@@ -59,6 +59,7 @@ BEGIN
     starter_id,
     recipient,
     recipient_id,
+    amount,
     amount_cents,
     currency,
     status
@@ -71,6 +72,7 @@ BEGIN
     v_sender_id,
     v_recipient_id,
     v_recipient_id,
+    (p_amount_cents::NUMERIC / 100),
     p_amount_cents,
     p_currency,
     'pending'
@@ -116,7 +118,7 @@ BEGIN
     'listing_image', p_listing_image,
     'starter', v_sender_id,
     'recipient', v_recipient_id,
-    'amount', p_amount_cents,
+    'amount_cents', p_amount_cents,
     'currency', p_currency,
     'status', 'pending',
     'message_id', v_message_id
