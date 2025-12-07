@@ -97,31 +97,31 @@ export default function OfferCard({
   const getStatusColor = () => {
     switch (status) {
       case "accepted":
-        return "bg-green-50 border-green-400 text-green-900";
+        return "bg-[#050608] border-green-500 text-white";
       case "declined":
       case "rejected":
       case "withdrawn":
-        return "bg-red-50 border-red-400 text-red-900";
+        return "bg-[#050608] border-red-500 text-white";
       case "countered":
-        return "bg-blue-50 border-blue-400 text-blue-900";
+        return "bg-[#050608] border-blue-500 text-white";
       case "pending":
       default:
-        return "bg-yellow-50 border-yellow-400 text-yellow-900";
+        return "bg-[#050608] border-[#D4AF37] text-white";
     }
   };
 
   const getStatusIcon = () => {
     switch (status) {
       case "accepted":
-        return <Check size={16} className="text-green-600" />;
+        return <Check size={16} className="text-green-500" />;
       case "declined":
       case "rejected":
       case "withdrawn":
-        return <X size={16} className="text-red-600" />;
+        return <X size={16} className="text-red-500" />;
       case "countered":
       case "pending":
       default:
-        return <TrendingUp size={16} className="text-yellow-600" />;
+        return <TrendingUp size={16} className="text-[#D4AF37]" />;
     }
   };
 
@@ -131,26 +131,26 @@ export default function OfferCard({
       {(listingTitle || listingImage) && listingId && (
         <Link 
           href={`/listing/${listingId}`}
-          className="flex items-center gap-3 mb-3 pb-3 border-b border-current border-opacity-20 hover:bg-white hover:bg-opacity-30 transition-colors rounded-lg -m-2 p-2"
+          className="flex items-center gap-3 mb-3 pb-3 border-b border-white/10 hover:bg-white/5 transition-colors rounded-lg -m-2 p-2"
         >
           {listingImage && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={listingImage}
               alt={listingTitle || "Listing"}
-              className="w-16 h-16 object-cover rounded border-2 border-current border-opacity-30"
+              className="w-16 h-16 object-cover rounded border-2 border-[#D4AF37]/30"
             />
           )}
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium opacity-75 mb-0.5">About listing:</p>
-            <p className="text-sm font-semibold truncate mb-1">{listingTitle}</p>
+            <p className="text-xs font-medium text-gray-400 mb-0.5">About listing:</p>
+            <p className="text-sm font-semibold truncate mb-1 text-white">{listingTitle}</p>
             {listingPrice && (
               <div className="flex items-center gap-2 text-xs">
-                <span className="line-through opacity-60">£{(listingPrice / 100).toFixed(2)}</span>
-                <span className="font-bold text-sm">£{displayAmount.toFixed(2)}</span>
+                <span className="line-through text-gray-500">£{(listingPrice / 100).toFixed(2)}</span>
+                <span className="font-bold text-sm text-[#D4AF37]">£{displayAmount.toFixed(2)}</span>
               </div>
             )}
-            <div className="flex items-center gap-1 mt-1 text-xs font-medium opacity-75">
+            <div className="flex items-center gap-1 mt-1 text-xs font-medium text-[#D4AF37]">
               <span>View listing</span>
               <ExternalLink size={12} />
             </div>
@@ -158,19 +158,19 @@ export default function OfferCard({
         </Link>
       )}
       {(listingTitle || listingImage) && !listingId && (
-        <div className="flex items-center gap-3 mb-3 pb-3 border-b border-current border-opacity-20">
+        <div className="flex items-center gap-3 mb-3 pb-3 border-b border-white/10">
           {listingImage && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={listingImage}
               alt={listingTitle || "Listing"}
-              className="w-16 h-16 object-cover rounded border-2 border-current border-opacity-30"
+              className="w-16 h-16 object-cover rounded border-2 border-[#D4AF37]/30"
             />
           )}
           {listingTitle && (
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium opacity-75 mb-0.5">About listing:</p>
-              <p className="text-sm font-semibold truncate">{listingTitle}</p>
+              <p className="text-xs font-medium text-gray-400 mb-0.5">About listing:</p>
+              <p className="text-sm font-semibold truncate text-white">{listingTitle}</p>
             </div>
           )}
         </div>
@@ -179,17 +179,17 @@ export default function OfferCard({
       {/* Offer amount and status */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <DollarSign size={20} />
+          <DollarSign size={20} className="text-[#D4AF37]" />
           <div>
-            <p className="text-xs font-medium opacity-75">Offer Amount</p>
-            <p className="text-2xl font-bold">
+            <p className="text-xs font-medium text-gray-400">Offer Amount</p>
+            <p className="text-2xl font-bold text-white">
               {currency === "GBP" ? "£" : currency} {displayAmount.toFixed(2)}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white bg-opacity-50 border border-current border-opacity-30">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-[#D4AF37]/30">
           {getStatusIcon()}
-          <span className="text-xs font-bold uppercase tracking-wide">{status}</span>
+          <span className="text-xs font-bold uppercase tracking-wide text-[#D4AF37]">{status}</span>
         </div>
       </div>
 
@@ -199,7 +199,7 @@ export default function OfferCard({
           <button
             onClick={handleAccept}
             disabled={updating}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Check size={18} />
             Accept
@@ -207,7 +207,7 @@ export default function OfferCard({
           <button
             onClick={() => setShowCounter(true)}
             disabled={updating}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[#D4AF37] text-[#050608] rounded-lg font-semibold hover:bg-[#E5BF47] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <TrendingUp size={18} />
             Counter
@@ -215,7 +215,7 @@ export default function OfferCard({
           <button
             onClick={handleDecline}
             disabled={updating}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <X size={18} />
           </button>
@@ -226,13 +226,13 @@ export default function OfferCard({
       {canRespond && showCounter && (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">£</span>
+            <span className="text-sm font-medium text-[#D4AF37]">£</span>
             <input
               type="text"
               value={counterAmount}
               onChange={(e) => setCounterAmount(e.target.value)}
               placeholder="Enter counter offer"
-              className="flex-1 px-3 py-2 border-2 border-current border-opacity-30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-3 py-2 border-2 border-[#D4AF37]/30 rounded-lg bg-white/5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
               disabled={updating}
             />
           </div>
@@ -240,7 +240,7 @@ export default function OfferCard({
             <button
               onClick={handleCounter}
               disabled={updating}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="flex-1 px-4 py-2 bg-[#D4AF37] text-[#050608] rounded-lg font-semibold hover:bg-[#E5BF47] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Send Counter
             </button>
@@ -250,7 +250,7 @@ export default function OfferCard({
                 setCounterAmount("");
               }}
               disabled={updating}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="px-4 py-2 bg-white/10 text-white rounded-lg font-semibold hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Cancel
             </button>
@@ -260,17 +260,17 @@ export default function OfferCard({
 
       {/* Status message for non-interactive states */}
       {!canRespond && status === "accepted" && (
-        <div className="text-sm font-medium text-center py-2">
+        <div className="text-sm font-medium text-center py-2 text-green-400">
           ✓ Offer accepted! Arrange payment and delivery details.
         </div>
       )}
       {!canRespond && (status === "declined" || status === "rejected") && (
-        <div className="text-sm font-medium text-center py-2">
+        <div className="text-sm font-medium text-center py-2 text-red-400">
           This offer was declined.
         </div>
       )}
       {!canRespond && !isCurrentUserSeller && isPending && (
-        <div className="text-sm font-medium text-center py-2">
+        <div className="text-sm font-medium text-center py-2 text-gray-400">
           Waiting for seller to respond...
         </div>
       )}

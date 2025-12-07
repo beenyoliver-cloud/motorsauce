@@ -17,7 +17,6 @@ import { getCurrentUser } from "@/lib/auth";
 import { displayName } from "@/lib/names";
 import { supabaseBrowser } from "@/lib/supabase";
 import OfferCard from "@/components/OfferCard";
-import ActiveOfferBar from "@/components/ActiveOfferBar";
 import { ReviewMessage } from "@/components/ReviewMessage";
 
 type PeerProfile = {
@@ -381,9 +380,6 @@ export default function ThreadClientNew({
         </div>
       </div>
 
-      {/* Active Offer Bar - Shows pending offers */}
-      <ActiveOfferBar threadId={threadId} />
-
       {/* Messages / Empty state */}
       <div
         ref={scrollRef}
@@ -419,14 +415,7 @@ export default function ThreadClientNew({
                 });
 
                 // Handle offer messages with interactive card
-                // Skip pending offers - they're shown in ActiveOfferBar at the top
                 if (m.type === "offer" && m.offer) {
-                  // Don't show pending offers in timeline - ActiveOfferBar handles them
-                  if (m.offer.status === "pending") {
-                    return null;
-                  }
-                  
-                  // Show historical offers (accepted/declined/countered/withdrawn/expired)
                   // Determine if current user is the seller (recipient of offer)
                   const isCurrentUserSeller = m.from.id !== currentUserId;
                   
