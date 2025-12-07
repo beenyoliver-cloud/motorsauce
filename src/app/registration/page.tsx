@@ -188,7 +188,22 @@ async function lookupByReg(reg: string): Promise<Vehicle | null> {
       const data = (await res.json()) as Vehicle;
       return data || null;
     }
-  } catch {}
+    // If error response, try to get error message and show it
+    if (!res.ok) {
+      try {
+        const errorData = await res.json();
+        if (errorData.error) {
+          // Show error in console for debugging
+          console.warn("[Registration Lookup]", errorData.error);
+          // We still return null to trigger manual input, but the error is logged
+        }
+      } catch {
+        // Failed to parse error, just continue
+      }
+    }
+  } catch (e) {
+    console.warn("[Registration Lookup] Network error:", e);
+  }
   return null;
 }
 

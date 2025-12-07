@@ -30,6 +30,15 @@ export async function GET(req: Request) {
       );
     }
 
+    // Validate UK registration format before calling DVLA
+    // UK plates: 2-8 chars, alphanumeric only
+    if (!/^[A-Z0-9]{2,8}$/.test(reg)) {
+      return NextResponse.json(
+        { error: "Invalid UK registration format" },
+        { status: 400 }
+      );
+    }
+
     // Call DVLA API - uses POST with registrationNumber in body and x-api-key header
     const res = await fetch(DVLA_ENDPOINT, {
       method: "POST",
@@ -46,8 +55,27 @@ export async function GET(req: Request) {
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       console.error("[DVLA Lookup] Failed:", res.status, text);
+      
+      // Try to parse error response to get specific error message
+      let errorMessage = "Registration not found";
+      try {
+        const errorData = JSON.parse(text);
+        if (errorData.errors && Array.isArray(errorData.errors) && errorData.errors[0]?.detail) {
+          errorMessage = errorData.errors[0].detail;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+      } catch {
+        // If we can't parse, use the raw text or a default message
+        if (text && text.length < 200) {
+          errorMessage = text;
+        }
+      }
+      
       return NextResponse.json(
-        { error: "Lookup failed", status: res.status, details: text },
+        { error: errorMessage, status: res.status },
         { status: res.status === 404 ? 404 : 502 }
       );
     }
