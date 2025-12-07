@@ -432,15 +432,24 @@ export async function updateOfferStatus(
 
     if (!res.ok) {
       console.error("[messagesClient] Failed to update offer, status:", res.status);
+      let errorMessage = `HTTP ${res.status}: ${res.statusText}`;
       try {
-        const errorData = await res.json();
-        console.error("[messagesClient] Error response body:", errorData);
-        throw new Error(errorData.error || `HTTP ${res.status}: ${res.statusText}`);
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await res.json();
+          console.error("[messagesClient] Error response body:", errorData);
+          errorMessage = errorData.error || errorMessage;
+        } else {
+          const text = await res.text();
+          console.error("[messagesClient] Error response text:", text);
+          if (text.includes('Body is disturbed or locked')) {
+            errorMessage = "Request conflict - please try again";
+          }
+        }
       } catch (parseErr) {
-        const text = await res.text();
-        console.error("[messagesClient] Error response text:", text);
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        console.error("[messagesClient] Failed to parse error response:", parseErr);
       }
+      throw new Error(errorMessage);
     }
 
     const data = await res.json();
