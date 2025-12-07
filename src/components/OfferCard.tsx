@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { TrendingUp, Check, X, DollarSign, ExternalLink } from "lucide-react";
+import { Check, X, TrendingUp } from "lucide-react";
 import { updateOfferStatus } from "@/lib/messagesClient";
 
 type OfferCardProps = {
@@ -32,225 +32,194 @@ export default function OfferCard({
 }: OfferCardProps) {
   const [updating, setUpdating] = useState(false);
   const [counterAmount, setCounterAmount] = useState("");
-  const [showCounter, setShowCounter] = useState(false);
+  const [showCounterInput, setShowCounterInput] = useState(false);
 
-  const displayAmount = amount / 100;
-  const isPending = status === "pending" || status === "countered";
+  const offeredPrice = amount / 100;
+  const originalPrice = listingPrice ? listingPrice / 100 : offeredPrice;
+  const isPending = status === "pending";
   const canRespond = isCurrentUserSeller && isPending;
 
   async function handleAccept() {
-    console.log(`[OfferCard] Accepting offer ${offerId}`);
+    if (!confirm("Accept this offer? The buyer will be able to proceed to checkout.")) return;
     setUpdating(true);
     try {
-      const result = await updateOfferStatus(offerId, "accepted");
-      console.log(`[OfferCard] Offer accepted, result:`, result);
+      await updateOfferStatus(offerId, "accepted");
       onUpdate?.();
-      console.log(`[OfferCard] onUpdate callback called, UI should refresh`);
     } catch (err) {
-      console.error("[OfferCard] Failed to accept offer:", err);
-      alert("Failed to accept offer");
+      console.error("Failed to accept offer:", err);
+      alert("Failed to accept offer. Please try again.");
     } finally {
       setUpdating(false);
     }
   }
 
   async function handleDecline() {
-    console.log(`[OfferCard] Declining offer ${offerId}`);
+    if (!confirm("Decline this offer? The buyer will be notified.")) return;
     setUpdating(true);
     try {
-      const result = await updateOfferStatus(offerId, "declined");
-      console.log(`[OfferCard] Offer declined, result:`, result);
+      await updateOfferStatus(offerId, "declined");
       onUpdate?.();
-      console.log(`[OfferCard] onUpdate callback called, UI should refresh`);
     } catch (err) {
-      console.error("[OfferCard] Failed to decline offer:", err);
-      alert("Failed to decline offer");
+      console.error("Failed to decline offer:", err);
+      alert("Failed to decline offer. Please try again.");
     } finally {
       setUpdating(false);
     }
   }
 
   async function handleCounter() {
-    const pounds = parseFloat(counterAmount.replace(/[^\d.]/g, ""));
-    if (!Number.isFinite(pounds) || pounds <= 0) {
+    const pounds = parseFloat(counterAmount);
+    if (!pounds || pounds <= 0) {
       alert("Please enter a valid counter offer amount");
       return;
     }
+    if (pounds >= originalPrice) {
+      alert("Counter offer must be less than the original price");
+      return;
+    }
+    if (pounds <= offeredPrice) {
+      alert("Counter offer must be higher than the buyer's offer");
+      return;
+    }
 
-    console.log(`[OfferCard] Countering offer ${offerId} with £${pounds}`);
     setUpdating(true);
     try {
-      const result = await updateOfferStatus(offerId, "countered", Math.round(pounds * 100));
-      console.log(`[OfferCard] Offer countered, result:`, result);
-      setShowCounter(false);
+      await updateOfferStatus(offerId, "countered", Math.round(pounds * 100));
+      setShowCounterInput(false);
       setCounterAmount("");
       onUpdate?.();
-      console.log(`[OfferCard] onUpdate callback called, UI should refresh`);
     } catch (err) {
-      console.error("[OfferCard] Failed to counter offer:", err);
-      alert("Failed to send counter offer");
+      console.error("Failed to counter offer:", err);
+      alert("Failed to send counter offer. Please try again.");
     } finally {
       setUpdating(false);
     }
   }
 
-  const getStatusColor = () => {
-    switch (status) {
-      case "accepted":
-        return "bg-[#050608] border-green-500 text-white";
-      case "declined":
-      case "rejected":
-      case "withdrawn":
-        return "bg-[#050608] border-red-500 text-white";
-      case "countered":
-        return "bg-[#050608] border-blue-500 text-white";
-      case "pending":
-      default:
-        return "bg-[#050608] border-[#D4AF37] text-white";
-    }
-  };
-
-  const getStatusIcon = () => {
-    switch (status) {
-      case "accepted":
-        return <Check size={16} className="text-green-500" />;
-      case "declined":
-      case "rejected":
-      case "withdrawn":
-        return <X size={16} className="text-red-500" />;
-      case "countered":
-      case "pending":
-      default:
-        return <TrendingUp size={16} className="text-[#D4AF37]" />;
-    }
-  };
+  // Premium dark card design - seller view or buyer view
+  const headerText = isCurrentUserSeller 
+    ? "You've received an offer" 
+    : status === "accepted"
+    ? "Offer accepted!"
+    : status === "declined"
+    ? "Offer declined"
+    : status === "countered"
+    ? "Counter offer received"
+    : "Your offer";
 
   return (
-    <div className={`rounded-lg border-2 p-4 ${getStatusColor()}`}>
-      {/* Listing info if available */}
-      {(listingTitle || listingImage) && listingId && (
-        <Link 
-          href={`/listing/${listingId}`}
-          className="flex items-center gap-3 mb-3 pb-3 border-b border-white/10 hover:bg-white/5 transition-colors rounded-lg -m-2 p-2"
-        >
-          {listingImage && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={listingImage}
-              alt={listingTitle || "Listing"}
-              className="w-16 h-16 object-cover rounded border-2 border-[#D4AF37]/30"
-            />
-          )}
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-gray-400 mb-0.5">About listing:</p>
-            <p className="text-sm font-semibold truncate mb-1 text-white">{listingTitle}</p>
-            {listingPrice && (
-              <div className="flex items-center gap-2 text-xs">
-                <span className="line-through text-gray-500">£{(listingPrice / 100).toFixed(2)}</span>
-                <span className="font-bold text-sm text-[#D4AF37]">£{displayAmount.toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-1 mt-1 text-xs font-medium text-[#D4AF37]">
-              <span>View listing</span>
-              <ExternalLink size={12} />
-            </div>
-          </div>
-        </Link>
-      )}
-      {(listingTitle || listingImage) && !listingId && (
-        <div className="flex items-center gap-3 mb-3 pb-3 border-b border-white/10">
-          {listingImage && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={listingImage}
-              alt={listingTitle || "Listing"}
-              className="w-16 h-16 object-cover rounded border-2 border-[#D4AF37]/30"
-            />
-          )}
-          {listingTitle && (
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-gray-400 mb-0.5">About listing:</p>
-              <p className="text-sm font-semibold truncate text-white">{listingTitle}</p>
-            </div>
-          )}
+    <div className="w-full max-w-lg mx-auto bg-[#050608] rounded-[32px] shadow-2xl p-8 border border-[#D4AF37]/20">
+      {/* Header */}
+      <h2 className="text-center text-white text-2xl font-bold mb-6">
+        {headerText}
+      </h2>
+
+      {/* Listing Image */}
+      {listingImage && (
+        <div className="mb-6">
+          <img
+            src={listingImage}
+            alt={listingTitle || "Product"}
+            className="w-full h-64 object-cover rounded-2xl"
+          />
         </div>
       )}
 
-      {/* Offer amount and status */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <DollarSign size={20} className="text-[#D4AF37]" />
-          <div>
-            <p className="text-xs font-medium text-gray-400">Offer Amount</p>
-            <p className="text-2xl font-bold text-white">
-              {currency === "GBP" ? "£" : currency} {displayAmount.toFixed(2)}
-            </p>
-          </div>
+      {/* Product Name */}
+      {listingTitle && (
+        <h3 className="text-center text-[#D4AF37] text-xl font-bold mb-6">
+          {listingTitle}
+        </h3>
+      )}
+
+      {/* Price Comparison Row */}
+      <div className="grid grid-cols-2 gap-6 mb-8">
+        {/* Original Price */}
+        <div className="text-center">
+          <p className="text-gray-400 text-sm mb-2">Original price</p>
+          <p className="text-white text-2xl font-bold">
+            £{originalPrice.toFixed(2)}
+          </p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-[#D4AF37]/30">
-          {getStatusIcon()}
-          <span className="text-xs font-bold uppercase tracking-wide text-[#D4AF37]">{status}</span>
+        
+        {/* Offered Price */}
+        <div className="text-center">
+          <p className="text-gray-400 text-sm mb-2">Offered price</p>
+          <p className="text-[#D4AF37] text-3xl font-bold">
+            £{offeredPrice.toFixed(2)}
+          </p>
         </div>
       </div>
 
-      {/* Action buttons for seller */}
-      {canRespond && !showCounter && (
-        <div className="flex gap-2">
+      {/* Action Buttons - Seller View (Pending) */}
+      {canRespond && !showCounterInput && (
+        <div className="grid grid-cols-3 gap-3">
           <button
             onClick={handleAccept}
             disabled={updating}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-3 bg-[#1a1a1a] border-2 border-[#D4AF37] text-[#D4AF37] rounded-xl font-semibold hover:bg-[#D4AF37]/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            <Check size={18} />
+            <Check size={20} className="mx-auto mb-1" />
             Accept
           </button>
+          
           <button
-            onClick={() => setShowCounter(true)}
+            onClick={() => setShowCounterInput(true)}
             disabled={updating}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[#D4AF37] text-[#050608] rounded-lg font-semibold hover:bg-[#E5BF47] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-3 bg-[#1a1a1a] border-2 border-[#D4AF37] text-[#D4AF37] rounded-xl font-semibold hover:bg-[#D4AF37]/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            <TrendingUp size={18} />
+            <TrendingUp size={20} className="mx-auto mb-1" />
             Counter
           </button>
+          
           <button
             onClick={handleDecline}
             disabled={updating}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-3 bg-[#1a1a1a] border-2 border-[#D4AF37] text-[#D4AF37] rounded-xl font-semibold hover:bg-[#D4AF37]/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            <X size={18} />
+            <X size={20} className="mx-auto mb-1" />
+            Decline
           </button>
         </div>
       )}
 
-      {/* Counter offer form */}
-      {canRespond && showCounter && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-[#D4AF37]">£</span>
+      {/* Counter Offer Input */}
+      {canRespond && showCounterInput && (
+        <div className="space-y-4">
+          <div>
+            <label className="block text-gray-400 text-sm mb-2">
+              Your counter offer (£)
+            </label>
             <input
-              type="text"
+              type="number"
+              step="0.01"
+              min="0"
               value={counterAmount}
               onChange={(e) => setCounterAmount(e.target.value)}
-              placeholder="Enter counter offer"
-              className="flex-1 px-3 py-2 border-2 border-[#D4AF37]/30 rounded-lg bg-white/5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
+              placeholder={(offeredPrice * 1.1).toFixed(2)}
+              className="w-full px-4 py-3 bg-white/5 border-2 border-[#D4AF37]/30 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
               disabled={updating}
             />
+            <p className="text-gray-500 text-xs mt-1">
+              Must be between £{offeredPrice.toFixed(2)} and £{originalPrice.toFixed(2)}
+            </p>
           </div>
-          <div className="flex gap-2">
+          
+          <div className="grid grid-cols-2 gap-3">
             <button
               onClick={handleCounter}
               disabled={updating}
-              className="flex-1 px-4 py-2 bg-[#D4AF37] text-[#050608] rounded-lg font-semibold hover:bg-[#E5BF47] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-6 py-3 bg-[#D4AF37] text-[#050608] rounded-xl font-semibold hover:bg-[#E5BF47] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Send Counter
             </button>
             <button
               onClick={() => {
-                setShowCounter(false);
+                setShowCounterInput(false);
                 setCounterAmount("");
               }}
               disabled={updating}
-              className="px-4 py-2 bg-white/10 text-white rounded-lg font-semibold hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-6 py-3 bg-white/10 text-white rounded-xl font-semibold hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Cancel
             </button>
@@ -258,20 +227,42 @@ export default function OfferCard({
         </div>
       )}
 
-      {/* Status message for non-interactive states */}
+      {/* Status Messages - Non-interactive States */}
       {!canRespond && status === "accepted" && (
-        <div className="text-sm font-medium text-center py-2 text-green-400">
-          ✓ Offer accepted! Arrange payment and delivery details.
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 px-6 py-3 bg-green-500/10 border-2 border-green-500 text-green-400 rounded-xl font-semibold">
+            <Check size={20} />
+            {isCurrentUserSeller ? "Accepted - Waiting for payment" : "Accepted - Proceed to checkout"}
+          </div>
         </div>
       )}
-      {!canRespond && (status === "declined" || status === "rejected") && (
-        <div className="text-sm font-medium text-center py-2 text-red-400">
-          This offer was declined.
+      
+      {!canRespond && status === "declined" && (
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 px-6 py-3 bg-red-500/10 border-2 border-red-500 text-red-400 rounded-xl font-semibold">
+            <X size={20} />
+            Offer Declined
+          </div>
         </div>
       )}
+      
       {!canRespond && !isCurrentUserSeller && isPending && (
-        <div className="text-sm font-medium text-center py-2 text-gray-400">
-          Waiting for seller to respond...
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 px-6 py-3 bg-[#D4AF37]/10 border-2 border-[#D4AF37] text-[#D4AF37] rounded-xl font-semibold">
+            Waiting for seller response...
+          </div>
+        </div>
+      )}
+
+      {/* View Listing Link */}
+      {listingId && (
+        <div className="mt-6 text-center">
+          <Link 
+            href={`/listing/${listingId}`}
+            className="text-[#D4AF37] text-sm hover:underline inline-flex items-center gap-1"
+          >
+            View listing details →
+          </Link>
         </div>
       )}
     </div>
