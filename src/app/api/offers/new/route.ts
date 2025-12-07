@@ -184,7 +184,7 @@ export async function POST(req: Request) {
   }
 }
 
-// PATCH /api/offers - Update offer status
+// PATCH /api/offers - Update offer status (direct approach, bypassing problematic RPC)
 export async function PATCH(req: Request) {
   try {
     const authHeader = req.headers.get("authorization");
@@ -199,8 +199,8 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-  const body = await req.json();
-  const { offerId, status, counterAmountCents } = body;
+    const body = await req.json();
+    const { offerId, status, counterAmountCents } = body;
 
     if (!offerId || !status) {
       return NextResponse.json({ error: "offerId and status are required" }, { status: 400 });
@@ -211,7 +211,7 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
-    // Fetch offer to verify access
+    // Fetch offer to verify access and current state
     const { data: offer, error: fetchError } = await supabase
       .from("offers")
       .select("*")
@@ -219,52 +219,114 @@ export async function PATCH(req: Request) {
       .single();
 
     if (fetchError || !offer) {
+      console.error("[offers API] Offer fetch error:", fetchError);
       return NextResponse.json({ error: "Offer not found" }, { status: 404 });
     }
 
-    // Use RPC to respond (accept/decline/counter)
-    console.log("[offers API] Calling RPC respond_offer with params:", {
-      p_offer_id: offerId,
-      p_status: status,
-      p_counter_amount_cents: counterAmountCents || null,
-      offer_details: offer,
+    console.log("[offers API] Updating offer:", {
+      offerId,
+      currentStatus: offer.status,
+      newStatus: status,
+      userId: user.id,
+      offer
     });
 
-    const { data: responded, error: respErr } = await supabase.rpc("respond_offer", {
-      p_offer_id: offerId,
-      p_status: status,
-      p_counter_amount_cents: counterAmountCents || null,
-    });
+    // Validate authorization and status transitions
+    if (status === "withdrawn") {
+      if (offer.starter_id !== user.id) {
+        return NextResponse.json({ error: "Only buyer can withdraw" }, { status: 403 });
+      }
+      if (offer.status !== "pending") {
+        return NextResponse.json({ error: "Can only withdraw pending offers" }, { status: 400 });
+      }
+    } else if (status === "accepted") {
+      if (offer.recipient_id !== user.id) {
+        return NextResponse.json({ error: "Only seller can accept" }, { status: 403 });
+      }
+      if (!["pending", "countered"].includes(offer.status)) {
+        return NextResponse.json({ error: "Can only accept pending or countered offers" }, { status: 400 });
+      }
+    } else if (status === "declined") {
+      if (offer.recipient_id !== user.id) {
+        return NextResponse.json({ error: "Only seller can decline" }, { status: 403 });
+      }
+      if (offer.status !== "pending") {
+        return NextResponse.json({ error: "Can only decline pending offers" }, { status: 400 });
+      }
+    } else if (status === "countered") {
+      if (offer.recipient_id !== user.id) {
+        return NextResponse.json({ error: "Only seller can counter" }, { status: 403 });
+      }
+      if (offer.status !== "pending") {
+        return NextResponse.json({ error: "Can only counter pending offers" }, { status: 400 });
+      }
+      if (!counterAmountCents || counterAmountCents <= 0) {
+        return NextResponse.json({ error: "Invalid counter amount" }, { status: 400 });
+      }
+    }
 
-    if (respErr) {
-      console.error("[offers API] RPC respond_offer error:", {
-        message: respErr.message,
-        code: respErr.code,
-        details: respErr.details,
-        hint: respErr.hint,
-        fullError: JSON.stringify(respErr),
-      });
-      
-      // Return more detailed error to client for debugging
+    // Update offer directly (simpler than RPC to avoid RLS issues)
+    const updateData: any = {
+      status,
+      responded_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    if (counterAmountCents) {
+      updateData.counter_amount = counterAmountCents / 100;
+    }
+
+    console.log("[offers API] Updating with data:", updateData);
+
+    const { data: updatedOffer, error: updateError } = await supabase
+      .from("offers")
+      .update(updateData)
+      .eq("id", offerId)
+      .select("*")
+      .single();
+
+    if (updateError) {
+      console.error("[offers API] Update error:", updateError);
       return NextResponse.json({ 
-        error: respErr.message || "RPC call failed",
-        code: respErr.code,
-        details: respErr.details,
-        hint: respErr.hint,
-        debugInfo: {
-          offerId,
-          status,
-          counterAmountCents,
-          offerStatus: offer.status,
-          offerStarterId: offer.starter_id,
-          offerRecipientId: offer.recipient_id,
-          currentUserId: user.id,
-        }
+        error: updateError.message || "Failed to update offer",
+        code: updateError.code,
+        details: updateError.details,
       }, { status: 500 });
     }
 
-    console.log("[offers API] Offer response processed:", responded);
-    return NextResponse.json({ offer: responded }, { status: 200 });
+    console.log("[offers API] Offer updated successfully:", updatedOffer);
+
+    // Create system message to notify parties
+    const systemText = (() => {
+      if (status === "accepted") {
+        return `✅ Seller accepted the offer of £${(offer.amount_cents / 100).toFixed(2)}.`;
+      } else if (status === "declined") {
+        return `❌ Seller declined the offer of £${(offer.amount_cents / 100).toFixed(2)}.`;
+      } else if (status === "countered") {
+        const counterPrice = (counterAmountCents! / 100).toFixed(2);
+        return `📊 Seller countered with £${counterPrice}.`;
+      } else if (status === "withdrawn") {
+        return `⚠️ Buyer withdrew their offer of £${(offer.amount_cents / 100).toFixed(2)}.`;
+      }
+      return `Offer status changed to ${status}`;
+    })();
+
+    // Insert system message
+    const { error: msgError } = await supabase
+      .from("messages")
+      .insert({
+        thread_id: offer.thread_id,
+        from_user_id: user.id,
+        message_type: "system",
+        text_content: systemText,
+      });
+
+    if (msgError) {
+      console.error("[offers API] Message insert error:", msgError);
+      // Non-fatal - offer was updated successfully
+    }
+
+    return NextResponse.json({ offer: updatedOffer }, { status: 200 });
   } catch (error: any) {
     console.error("[offers API] PATCH error:", error);
     return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
