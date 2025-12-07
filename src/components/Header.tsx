@@ -373,6 +373,13 @@ export default function Header() {
 
             {/* Menu Content */}
             <nav className="flex flex-col flex-1">
+              <Link
+                href="/"
+                className="block px-4 py-3 text-sm font-semibold text-yellow-600 hover:bg-yellow-50 border-b border-gray-200"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                🏠 Home
+              </Link>
               {categories.map(([name, href]) => (
                 <Link
                   key={href}
