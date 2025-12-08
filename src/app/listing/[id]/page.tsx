@@ -16,6 +16,8 @@ import Breadcrumb from "@/components/Breadcrumb";
 import SimilarProducts from "@/components/SimilarProducts";
 import VehicleCompatibilityChecker from "@/components/VehicleCompatibilityChecker";
 import ListingImageGallery from "@/components/ListingImageGallery";
+import MarkAsSoldButton from "@/components/MarkAsSoldButton";
+import { getCurrentUser } from "@/lib/auth";
 // Temporarily disabled: import PriceReducedBadge from "@/components/PriceReducedBadge";
 // Temporarily disabled: import PriceHistoryChart from "@/components/PriceHistoryChart";
 import { createClient } from "@supabase/supabase-js";
@@ -51,6 +53,8 @@ type Listing = {
   createdAt: string;
   sellerId?: string;
   seller: { name: string; avatar: string; rating: number };
+  status?: "active" | "draft" | "sold";
+  markedSoldAt?: string;
   vin?: string;
   yearFrom?: number;
   yearTo?: number;
@@ -264,6 +268,10 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
   }
   if (!listing) notFound();
 
+  // Check if current user is the owner
+  const currentUser = await getCurrentUser();
+  const isOwner = currentUser?.id === listing.sellerId;
+
   const gallery = listing.images?.length ? listing.images : [listing.image];
 
   return (
@@ -359,6 +367,44 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             {/* Report listing (Trust & Safety MVP) */}
             <ReportListingButton listingId={listing.id} />
           </div>
+
+          {/* Mark as Sold (owner only) */}
+          {isOwner && (
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <h2 className="mb-3 text-sm font-semibold text-black">Manage Listing</h2>
+              <div className="flex flex-wrap items-center gap-3">
+                <Link
+                  href={`/listing/${listing.id}/edit`}
+                  className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Edit Listing
+                </Link>
+                {/* @ts-ignore Server -> Client component */}
+                <MarkAsSoldButton
+                  listingId={listing.id}
+                  currentStatus={listing.status}
+                  isOwner={isOwner}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Sold badge if listing is sold */}
+          {listing.status === "sold" && (
+            <div className="rounded-xl border-2 border-red-500 bg-red-50 p-4">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-red-600">SOLD</span>
+                {listing.markedSoldAt && (
+                  <span className="text-sm text-red-600">
+                    on {new Date(listing.markedSoldAt).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+              <p className="mt-2 text-sm text-red-700">
+                This item has been sold and is no longer available.
+              </p>
+            </div>
+          )}
 
           {/* Shipping & returns */}
           <div className="rounded-xl border border-gray-200 bg-white p-4">

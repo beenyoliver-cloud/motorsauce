@@ -34,7 +34,10 @@ type Listing = {
   description?: string;
   createdAt: string;
   sellerId?: string;
-  seller: { name: string; avatar: string; rating: number };
+  seller: { name: string; avatar: string; rating: number; county?: string };
+  sellerLat?: number;
+  sellerLng?: number;
+  distanceKm?: number;
   vin?: string;
   yearFrom?: number;
   yearTo?: number;
@@ -64,10 +67,13 @@ type RawListingRow = {
   seller_name?: string | null;
   seller_avatar?: string | null;
   seller_rating?: number | string | null;
+  seller_lat?: number | null;
+  seller_lng?: number | null;
   vin?: string | null;
   year_from?: number | string | null;
   year_to?: number | string | null;
   seller?: unknown; // joined profile result
+  seller_county?: string | null;
 };
 
 // Format £ from cents or accept preformatted string
@@ -108,12 +114,14 @@ function mapDbRow(row: RawListingRow): Listing {
       name: typeof s.name === "string" && s.name ? s.name : "Seller",
       avatar: typeof s.avatar === "string" && s.avatar ? s.avatar : "/images/seller1.jpg",
       rating: typeof s.rating === "number" ? s.rating : Number(s.rating ?? 5),
+      county: typeof s.county === "string" ? s.county : undefined,
     };
   } else if (row.seller_name || row.seller_avatar || row.seller_rating) {
     seller = {
       name: row.seller_name || "Seller",
       avatar: row.seller_avatar || "/images/seller1.jpg",
       rating: Number(row.seller_rating ?? 5),
+      county: row.seller_county ?? undefined,
     };
   }
 
@@ -135,6 +143,8 @@ function mapDbRow(row: RawListingRow): Listing {
     createdAt: row.created_at || new Date().toISOString(),
     sellerId: row.seller_id ?? undefined,
     seller,
+    sellerLat: typeof row.seller_lat === "number" ? row.seller_lat : undefined,
+    sellerLng: typeof row.seller_lng === "number" ? row.seller_lng : undefined,
     vin: row.vin ?? undefined,
     yearFrom: typeof row.year_from === "number" ? row.year_from : row.year_from ? Number(row.year_from) : undefined,
     yearTo: typeof row.year_to === "number" ? row.year_to : row.year_to ? Number(row.year_to) : undefined,
@@ -235,7 +245,7 @@ export async function GET(req: Request) {
   console.log("[listings API] Fetching from Supabase...", { sellerId });
   let query = supabase
     .from("listings")
-    .select("*");
+    .select("*, seller_lat, seller_lng, seller_id");
   
   // Only show active listings in public search (unless requesting specific seller's view)
   if (!sellerId) {
@@ -259,13 +269,13 @@ export async function GET(req: Request) {
     errorDetails: error
   });
 
-  // If we got listings, enrich with seller info separately (only name exists in profiles)
+  // If we got listings, enrich with seller info and location separately
   if (data && Array.isArray(data) && data.length > 0) {
     const sellerIds = [...new Set(data.map((l: any) => l.seller_id).filter(Boolean))];
     if (sellerIds.length > 0) {
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, name")
+        .select("id, name, county, postcode")
         .in("id", sellerIds);
       
       const profileMap = new Map((profiles || []).map((p: any) => [
@@ -273,7 +283,8 @@ export async function GET(req: Request) {
         { 
           name: p.name, 
           avatar: "/images/seller1.jpg", 
-          rating: 5 
+          rating: 5,
+          county: p.county
         }
       ]));
       

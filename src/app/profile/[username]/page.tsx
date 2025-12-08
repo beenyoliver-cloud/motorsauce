@@ -5,6 +5,7 @@ import ProfileActions from "@/components/ProfileActions";
 import ReportUserButton from "@/components/ReportUserButton";
 import MyListingsTab from "@/components/MyListingsTab";
 import MyDraftsTab from "@/components/MyDraftsTab";
+import MySoldTab from "@/components/MySoldTab";
 import SavedTabGate from "@/components/SavedTabGate";
 import SellerListingCount from "@/components/SellerListingCount";
 import EditableAvatar from "@/components/EditableAvatar";
@@ -50,7 +51,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
   const { username } = await params;
   const sp = await searchParams;
   const displayName = decodeURIComponent(username);
-  const activeTab = (sp?.tab ?? "my") as "saved" | "my" | "drafts" | "about" | "reviews" | "garage";
+  const activeTab = (sp?.tab ?? "my") as "saved" | "my" | "drafts" | "sold" | "about" | "reviews" | "garage";
   const autoEdit = sp?.edit === "1";
   const baseHref = `/profile/${encodeURIComponent(displayName)}`;
 
@@ -210,6 +211,8 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
         {activeTab === "my" && <MyListingsTab sellerName={displayName} />}
 
         {activeTab === "drafts" && <MyDraftsTab sellerName={displayName} />}
+
+        {activeTab === "sold" && <MySoldTab sellerName={displayName} />}
 
         {activeTab === "about" && (
           <ProfileAboutCard 

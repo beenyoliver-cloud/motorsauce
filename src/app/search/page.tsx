@@ -34,7 +34,10 @@ type Listing = {
   oem?: string;
   description?: string;
   createdAt: string;
-  seller: { name: string; avatar: string; rating: number };
+  seller: { name: string; avatar: string; rating: number; county?: string };
+  sellerLat?: number;
+  sellerLng?: number;
+  distanceKm?: number;
   vin?: string;
   yearFrom?: number;
   yearTo?: number;
@@ -142,22 +145,56 @@ function SearchPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once
 
-  /* Fetch all listings (base + local) */
+  /* Fetch all listings (base + local) and calculate distances */
   useEffect(() => {
     let alive = true;
     setLoading(true);
     setErr(null);
-    fetch("/api/listings", { cache: "no-store" })
-      .then(async (r) => {
-        if (!r.ok) throw new Error((await r.json())?.error || "Failed to load listings");
-        return r.json();
-      })
-      .then((data: Listing[]) => {
+    
+    async function loadListingsWithDistance() {
+      try {
+        // Fetch listings
+        const response = await fetch("/api/listings", { cache: "no-store" });
+        if (!response.ok) throw new Error("Failed to load listings");
+        const data: Listing[] = await response.json();
+        
         if (!alive) return;
-        setAll(Array.isArray(data) ? data : []);
-      })
-      .catch((e) => alive && setErr(e.message || "Failed to load"))
-      .finally(() => alive && setLoading(false));
+        
+        // Calculate distances if user has location
+        try {
+          const { getUserLocation, calculateDistance } = await import("@/lib/distance");
+          const userLocation = await getUserLocation();
+          
+          if (userLocation) {
+            const withDistances = data.map(listing => {
+              if (listing.sellerLat && listing.sellerLng) {
+                const distanceKm = calculateDistance(
+                  userLocation.lat,
+                  userLocation.lng,
+                  listing.sellerLat,
+                  listing.sellerLng
+                );
+                return { ...listing, distanceKm };
+              }
+              return listing;
+            });
+            setAll(withDistances);
+          } else {
+            setAll(data);
+          }
+        } catch {
+          // If distance calculation fails, just show listings without distance
+          setAll(data);
+        }
+      } catch (e: any) {
+        if (alive) setErr(e.message || "Failed to load");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    }
+    
+    loadListingsWithDistance();
+    
     return () => {
       alive = false;
     };
@@ -560,6 +597,11 @@ function SearchPageInner() {
                     >
                       {l.category}
                     </span>
+                    {l.distanceKm !== undefined && (
+                      <span className="absolute top-1.5 right-1.5 text-[10px] px-2 py-0.5 rounded z-10 bg-blue-500 text-white sm:top-2 sm:right-2">
+                        {l.distanceKm < 1 ? '<1 km' : l.distanceKm < 10 ? `~${l.distanceKm} km` : `~${Math.round(l.distanceKm / 5) * 5} km`}
+                      </span>
+                    )}
                     <SafeImage
                       src={l.image}
                       alt={l.title}
@@ -583,7 +625,12 @@ function SearchPageInner() {
                           className="h-6 w-6 rounded-full object-cover"
                           loading="lazy"
                         />
-                        <span className="text-xs text-gray-900">{l.seller.name}</span>
+                        <div className="flex flex-col">
+                          <span className="text-xs text-gray-900">{l.seller.name}</span>
+                          {l.seller.county && (
+                            <span className="text-[10px] text-gray-500">{l.seller.county}</span>
+                          )}
+                        </div>
                         {/* Trust badge placeholder (data to be wired) */}
                         <TrustBadge soldCount={undefined} />
                       </div>

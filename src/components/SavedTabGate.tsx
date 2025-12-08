@@ -30,12 +30,13 @@ export default function SavedTabGate({
 }: {
   sellerName: string;
   baseHref: string;
-  activeTab: "saved" | "my" | "drafts" | "about" | "reviews" | "garage";
+  activeTab: "saved" | "my" | "drafts" | "sold" | "about" | "reviews" | "garage";
   isBusinessAccount?: boolean;
 }) {
   const [me, setMe] = useState(false);
   const [garageCount, setGarageCount] = useState(0);
   const [draftCount, setDraftCount] = useState(0);
+  const [soldCount, setSoldCount] = useState(0);
 
   useEffect(() => {
     isMe(sellerName).then(setMe);
@@ -51,9 +52,10 @@ export default function SavedTabGate({
       }
     }
 
-    // Load draft count if owner
+    // Load draft count and sold count if owner
     if (currentUser?.id) {
       loadDraftCount(currentUser.id);
+      loadSoldCount(currentUser.id);
     }
   }, [sellerName, isBusinessAccount]);
 
@@ -72,6 +74,21 @@ export default function SavedTabGate({
     }
   }
 
+  async function loadSoldCount(userId: string) {
+    try {
+      const { supabaseBrowser } = await import("@/lib/supabase");
+      const supabase = supabaseBrowser();
+      const { count } = await supabase
+        .from("listings")
+        .select("*", { count: "exact", head: true })
+        .eq("seller_id", userId)
+        .eq("status", "sold");
+      setSoldCount(count || 0);
+    } catch {
+      setSoldCount(0);
+    }
+  }
+
   const listingsLabel = useMemo(
     () => (me ? "My Listings" : `${sellerName}'s listings`),
     [me, sellerName]
@@ -84,6 +101,7 @@ export default function SavedTabGate({
         {me && <TabLink href={`${baseHref}?tab=saved`} label="Saved" isActive={activeTab === "saved"} />}
         <TabLink href={`${baseHref}?tab=my`} label={listingsLabel} isActive={activeTab === "my"} />
         {me && <TabLink href={`${baseHref}?tab=drafts`} label={`Drafts${draftCount > 0 ? ` (${draftCount})` : ''}`} isActive={activeTab === "drafts"} />}
+        {me && <TabLink href={`${baseHref}?tab=sold`} label={`Sold${soldCount > 0 ? ` (${soldCount})` : ''}`} isActive={activeTab === "sold"} />}
         <TabLink href={`${baseHref}?tab=about`} label="About" isActive={activeTab === "about"} />
         <TabLink href={`${baseHref}?tab=reviews`} label="Reviews (0)" isActive={activeTab === "reviews"} />
         {!isBusinessAccount && (
