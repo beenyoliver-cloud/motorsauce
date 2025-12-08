@@ -118,11 +118,11 @@ export async function POST(req: Request) {
       {
         p_listing_id: listingId,
         p_seller_id: sellerId,
-        p_offered_amount: offeredAmount,
-        p_currency: currency,
         p_listing_title: listingTitle,
-        p_listing_image: listingImage || null,
         p_listing_price: listingPrice,
+        p_offered_amount: offeredAmount,
+        p_listing_image: listingImage || null,
+        p_currency: currency,
         p_notes: notes || null,
       }
     );

@@ -4,11 +4,11 @@
 CREATE OR REPLACE FUNCTION public.create_offer_standalone(
   p_listing_id UUID,
   p_seller_id UUID,
-  p_offered_amount NUMERIC,
-  p_currency TEXT DEFAULT 'GBP',
   p_listing_title TEXT,
-  p_listing_image TEXT,
   p_listing_price NUMERIC,
+  p_offered_amount NUMERIC,
+  p_listing_image TEXT DEFAULT NULL,
+  p_currency TEXT DEFAULT 'GBP',
   p_notes TEXT DEFAULT NULL
 )
 RETURNS JSON

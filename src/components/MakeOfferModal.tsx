@@ -60,10 +60,10 @@ export default function MakeOfferModal({
         body: JSON.stringify({
           listingId: listing.id,
           sellerId,
-          offeredAmount: amount,
           listingTitle: listing.title,
-          listingImage,
           listingPrice: listing.price,
+          offeredAmount: amount,
+          listingImage: listingImage || null,
           currency: "GBP",
           notes: notes || null,
         }),
@@ -112,9 +112,10 @@ export default function MakeOfferModal({
           <div className="pb-4 border-b border-gray-200">
             <p className="text-sm text-gray-600">Listing</p>
             <p className="font-semibold text-gray-900 line-clamp-2">{listing.title}</p>
-            <p className="text-sm text-gray-600 mt-1">
-              Asking: £{listing.price.toFixed(2)}
-            </p>
+            <div className="flex justify-between items-center mt-2">
+              <span className="text-sm text-gray-600">Asking Price:</span>
+              <span className="text-sm font-semibold text-gray-900">£{listing.price.toFixed(2)}</span>
+            </div>
           </div>
 
           {/* Form */}
