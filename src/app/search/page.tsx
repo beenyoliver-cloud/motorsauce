@@ -212,6 +212,7 @@ function SearchPageInner() {
   const seller = sp.get("seller") || "";
 
   const categories = arrify(sp.getAll("category"));
+  const conditions = arrify(sp.getAll("condition"));
   const makes = arrify(sp.getAll("make"));
   const models = arrify(sp.getAll("model"));
   const genCodes = arrify(sp.getAll("gen").concat(sp.getAll("genCode")));
@@ -398,6 +399,67 @@ function SearchPageInner() {
             sellersCount={sellers.length}
             onChange={setActiveTab}
           />
+
+          {/* Horizontal scrollable filter bubbles - Mobile only */}
+          <div className="md:hidden -mx-3 sm:-mx-4">
+            <div className="flex gap-2 overflow-x-auto px-3 sm:px-4 py-1 scrollbar-hide snap-x snap-mandatory">
+              {/* Category filters */}
+              {["OEM", "Aftermarket", "Tool"].map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => {
+                    const params = new URLSearchParams(sp.toString());
+                    if (categories.includes(cat)) {
+                      params.delete("category");
+                    } else {
+                      params.set("category", cat);
+                    }
+                    router.push(`${pathname}?${params.toString()}`);
+                  }}
+                  className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors snap-start ${
+                    categories.includes(cat)
+                      ? "bg-yellow-500 text-black"
+                      : "bg-white border border-gray-300 text-gray-700 hover:border-yellow-400"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+
+              {/* Condition filters */}
+              {["New", "Used - Like New", "Used - Good"].map((cond) => (
+                <button
+                  key={cond}
+                  onClick={() => {
+                    const params = new URLSearchParams(sp.toString());
+                    if (conditions.includes(cond)) {
+                      const updated = conditions.filter((c) => c !== cond);
+                      params.delete("condition");
+                      updated.forEach((c) => params.append("condition", c));
+                    } else {
+                      params.append("condition", cond);
+                    }
+                    router.push(`${pathname}?${params.toString()}`);
+                  }}
+                  className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap snap-start ${
+                    conditions.includes(cond)
+                      ? "bg-blue-500 text-white"
+                      : "bg-white border border-gray-300 text-gray-700 hover:border-blue-400"
+                  }`}
+                >
+                  {cond}
+                </button>
+              ))}
+
+              {/* More filters button */}
+              <button
+                onClick={() => setMobileFiltersOpen(true)}
+                className="flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium bg-gray-100 border border-gray-300 text-gray-900 hover:bg-gray-200 snap-start"
+              >
+                More Filters
+              </button>
+            </div>
+          </div>
 
           {/* Active Filters */}
           <ActiveFilters />

@@ -15,6 +15,7 @@ import TrustBadge from "@/components/TrustBadge";
 import Breadcrumb from "@/components/Breadcrumb";
 import SimilarProducts from "@/components/SimilarProducts";
 import VehicleCompatibilityChecker from "@/components/VehicleCompatibilityChecker";
+import ListingImageGallery from "@/components/ListingImageGallery";
 // Temporarily disabled: import PriceReducedBadge from "@/components/PriceReducedBadge";
 // Temporarily disabled: import PriceHistoryChart from "@/components/PriceHistoryChart";
 import { createClient } from "@supabase/supabase-js";
@@ -296,33 +297,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
 
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-2">
         {/* ---------- Gallery ---------- */}
-        <div>
-          <div className="aspect-[4/3] w-full overflow-hidden rounded-lg sm:rounded-xl border border-gray-200 bg-gray-50">
-            <SafeImage
-              src={gallery[0]}
-              alt={listing.title}
-              className="h-full w-full object-contain"
-              loading="eager"
-            />
-          </div>
-          {gallery.length > 1 && (
-            <div className="mt-3 grid grid-cols-5 gap-2">
-              {gallery.slice(1, 6).map((img, i) => (
-                <div
-                  key={`${img}-${i}`}
-                  className="aspect-square overflow-hidden rounded-lg border border-gray-200 bg-white"
-                >
-                  <SafeImage
-                    src={img}
-                    alt={`${listing.title} thumbnail ${i + 2}`}
-                    className="h-full w-full object-cover"
-                    loading="lazy"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <ListingImageGallery images={gallery} title={listing.title} />
 
         {/* ---------- Details ---------- */}
         <div className="space-y-3 sm:space-y-4">
