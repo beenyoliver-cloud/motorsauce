@@ -335,15 +335,15 @@ export default function Header() {
         </div>
 
         {/* Logo */}
-        <div className="px-4 py-1 flex justify-center">
-          <Link href="/" className="text-xl font-extrabold text-yellow-500 tracking-tight" aria-label="Motorsource home">
+        <div className="px-4 py-2 flex justify-center">
+          <Link href="/" className="text-2xl font-extrabold text-yellow-500 tracking-tight" aria-label="Motorsource home">
             Motorsource
           </Link>
         </div>
 
         {/* Search bar across the top */}
         <div className="px-3 pb-2">
-          <SearchBar placeholder="Search parts or sellers…" />
+          <SearchBar placeholder="Search parts or sellers…" compact />
         </div>
       </div>
 

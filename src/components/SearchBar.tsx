@@ -16,9 +16,10 @@ type Props = {
   initialQuery?: string;
   placeholder?: string;
   autoFocus?: boolean;
+  compact?: boolean;
 };
 
-export default function SearchBar({ initialQuery = "", placeholder = "Search parts or sellers…", autoFocus }: Props) {
+export default function SearchBar({ initialQuery = "", placeholder = "Search parts or sellers…", autoFocus, compact = false }: Props) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
@@ -123,8 +124,8 @@ export default function SearchBar({ initialQuery = "", placeholder = "Search par
   return (
     <div ref={wrapperRef} className="relative w-full">
       <form onSubmit={handleSubmit} className="relative">
-        <div className="flex items-center w-full border border-gray-300 rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-yellow-400 bg-white shadow-sm">
-          <Search className="text-gray-400 mr-2 flex-shrink-0" size={18} aria-hidden="true" />
+        <div className={`flex items-center w-full border border-gray-300 rounded-full focus-within:ring-2 focus-within:ring-yellow-400 bg-white shadow-sm ${compact ? "px-3 py-1.5" : "px-4 py-2"}`}>
+          <Search className="text-gray-400 mr-2 flex-shrink-0" size={compact ? 16 : 18} aria-hidden="true" />
           <input
             ref={inputRef}
             type="text"
@@ -133,7 +134,7 @@ export default function SearchBar({ initialQuery = "", placeholder = "Search par
             onFocus={() => setShowSuggestions(true)}
             placeholder={placeholder}
             autoFocus={autoFocus}
-            className="flex-1 border-none focus:ring-0 text-[15px] text-gray-900 placeholder-gray-500 bg-transparent outline-none"
+            className={`flex-1 border-none focus:ring-0 text-gray-900 placeholder-gray-500 bg-transparent outline-none ${compact ? "text-sm" : "text-[15px]"}`}
             aria-label="Search"
           />
           {query && (
@@ -143,7 +144,7 @@ export default function SearchBar({ initialQuery = "", placeholder = "Search par
               className="ml-2 p-1 hover:bg-gray-100 rounded-full transition"
               aria-label="Clear search"
             >
-              <X size={16} className="text-gray-400" />
+              <X size={compact ? 14 : 16} className="text-gray-400" />
             </button>
           )}
         </div>

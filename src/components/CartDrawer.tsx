@@ -42,7 +42,7 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black/30 transition-opacity z-[80] ${open ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"}`}
+        className={`fixed inset-0 bg-black/30 transition-opacity z-[120] ${open ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"}`}
         onClick={onClose}
         onTouchStart={(e) => {
           e.stopPropagation();
@@ -51,7 +51,7 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
       />
       <aside
         className={`fixed top-0 right-0 h-full w-full sm:w-[400px] sm:max-w-[90vw] bg-white shadow-2xl sm:border-l border-gray-200
-                    transition-transform duration-300 z-[90] ${open ? "translate-x-0" : "translate-x-full"}`}
+                    transition-transform duration-300 z-[130] ${open ? "translate-x-0" : "translate-x-full"}`}
         aria-hidden={!open}
         aria-label="Mini cart"
         onClick={(e) => e.stopPropagation()}
