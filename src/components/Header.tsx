@@ -287,9 +287,9 @@ export default function Header() {
   <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         {/* Top icons row: hides on scroll down OR when menu is open */}
         <div
-          className={`overflow-hidden transition-all duration-300 ${(hideTopBar || mobileMenuOpen) ? "max-h-0 opacity-0 pointer-events-none" : "max-h-12 opacity-100"}`}
+          className={`overflow-hidden transition-all duration-300 ${(hideTopBar || mobileMenuOpen) ? "max-h-0 opacity-0 pointer-events-none" : "max-h-10 opacity-100"}`}
         >
-          <div className="h-10 flex items-center justify-between px-4">
+          <div className="h-10 flex items-center justify-between px-3">
             <button
               className="flex items-center justify-center text-black hover:text-yellow-500 w-10"
               aria-label="Toggle menu"
@@ -297,7 +297,7 @@ export default function Header() {
             >
               {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               {isUserLoaded && user && (
                   <>
                     <NotificationsDropdown />
@@ -331,8 +331,8 @@ export default function Header() {
         </div>
 
         {/* Logo */}
-        <div className="px-4 py-2 flex justify-center">
-          <Link href="/" className="text-2xl font-extrabold text-yellow-500 tracking-tight" aria-label="Motorsource home">
+        <div className="px-3 py-1.5 flex justify-center">
+          <Link href="/" className="text-xl font-extrabold text-yellow-500 tracking-tight" aria-label="Motorsource home">
             Motorsource
           </Link>
         </div>

@@ -145,12 +145,12 @@ export function NotificationsDropdown() {
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
-        className="relative text-black hover:text-yellow-500 touch-manipulation"
+        className="relative flex items-center justify-center text-black hover:text-yellow-500 touch-manipulation w-10"
         aria-label="Notifications"
       >
-        <Bell size={22} />
+        <Bell size={20} />
         {unreadCount > 0 && (
-          <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[10px] font-bold min-w-[16px] h-[16px] px-1">
+          <span className="absolute -top-1.5 -right-2 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[10px] font-bold min-w-[16px] h-[16px] px-1">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
