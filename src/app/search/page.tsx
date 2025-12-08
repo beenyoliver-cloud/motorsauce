@@ -486,16 +486,16 @@ function SearchPageInner() {
             </div>
           ) : activeTab === "parts" && sortedResults.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 lg:gap-6">
                 {paginatedResults.map((l) => (
                   <div
                     key={l.id}
-                    className="group relative border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg transition-all"
+                    className="group relative border border-gray-200 rounded-md overflow-hidden bg-white hover:shadow-lg transition-all sm:rounded-xl"
                   >
-                  <Link href={`/listing/${l.id}`} className="block">
-                    <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
+                  <Link href={`/listing/${l.id}`} className="flex items-center gap-2 sm:block">
+                    <div className="relative w-[60px] h-[60px] flex-shrink-0 bg-gray-50 overflow-hidden sm:aspect-[4/3] sm:w-full sm:h-auto">
                     <span
-                      className={`absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded z-10 ${
+                      className={`absolute top-1 left-1 text-[9px] px-1.5 py-0.5 rounded z-10 sm:top-2 sm:left-2 sm:text-[10px] sm:px-2 ${
                         l.category === "OEM"
                           ? "bg-yellow-500 text-black"
                           : l.category === "Aftermarket"
@@ -508,20 +508,20 @@ function SearchPageInner() {
                     <SafeImage
                       src={l.image}
                       alt={l.title}
-                      className="absolute inset-0 h-full w-full object-cover object-center"
+                      className="w-full h-full object-cover object-center"
                       loading="lazy"
                     />
                   </div>
-                  <div className="p-3">
-                    <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">{l.title}</h3>
+                  <div className="flex-1 py-1.5 pr-1.5 sm:p-3">
+                    <h3 className="text-[11px] leading-[1.3] sm:text-sm font-semibold text-gray-900 line-clamp-2">{l.title}</h3>
                     {l.category !== "Tool" && (
-                      <p className="mt-1 text-[11px] text-gray-700 truncate">
+                      <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-[11px] text-gray-700 truncate">
                         {l.make} {l.model} {l.genCode} •{" "}
                         {l.year ?? `${l.yearFrom ?? ""}${l.yearFrom || l.yearTo ? "–" : ""}${l.yearTo ?? ""}`} • {l.engine}
                       </p>
                     )}
-                    <div className="mt-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                    <div className="mt-1 sm:mt-3 flex items-center justify-between">
+                      <div className="hidden sm:flex items-center gap-2">
                         <SafeImage
                           src={l.seller.avatar}
                           alt={l.seller.name}
@@ -532,18 +532,18 @@ function SearchPageInner() {
                         {/* Trust badge placeholder (data to be wired) */}
                         <TrustBadge soldCount={undefined} />
                       </div>
-                      <div className="font-bold text-gray-900">{l.price}</div>
+                      <div className="text-xs sm:text-base font-bold text-gray-900">{l.price}</div>
                     </div>
                   </div>
                 </Link>
                 
-                {/* Quick View Button */}
+                {/* Quick View Button - hidden on mobile */}
                 <button
                   onClick={(e) => {
                     e.preventDefault();
                     setQuickViewListingId(l.id);
                   }}
-                  className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-2 bg-white/90 hover:bg-white rounded-lg shadow-lg"
+                  className="hidden sm:block absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-2 bg-white/90 hover:bg-white rounded-lg shadow-lg"
                   aria-label="Quick view"
                 >
                   <Eye className="h-4 w-4 text-gray-900" />
