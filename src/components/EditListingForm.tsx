@@ -54,6 +54,11 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
   const [returnDays, setReturnDays] = useState<number>(listing.return_days ?? 14);
   const [description, setDescription] = useState<string>(listing.description ?? "");
 
+  // New: Location for distance calculation
+  const [sellerLat, setSellerLat] = useState<number | null>((listing as any).seller_lat ?? null);
+  const [sellerLng, setSellerLng] = useState<number | null>((listing as any).seller_lng ?? null);
+  const [geocoding, setGeocoding] = useState(false);
+
   // Images
   const [existingImages, setExistingImages] = useState<string[]>(Array.isArray(listing.images) ? listing.images : []);
   const [newFiles, setNewFiles] = useState<File[]>([]);
@@ -61,6 +66,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
   // UI
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const dropRef = useRef<HTMLLabelElement>(null);
   const [vehicles, setVehicles] = useState<Record<string, string[]>>(VEHICLES_FALLBACK);
   const [detailed, setDetailed] = useState<DetailedVehicles | null>(null);
@@ -125,6 +131,26 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
     return () => { active = false; };
   }, []);
 
+  async function handleGeocodePostcode() {
+    if (!postcode.trim()) return;
+    setGeocoding(true);
+    try {
+      const response = await fetch(`/api/geocode/postcode?postcode=${encodeURIComponent(postcode)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSellerLat(data.lat_rounded);
+        setSellerLng(data.lng_rounded);
+      } else {
+        setError("Invalid postcode");
+      }
+    } catch (err) {
+      console.error("Geocoding error:", err);
+      setError("Failed to geocode postcode");
+    } finally {
+      setGeocoding(false);
+    }
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -152,7 +178,11 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
         accepts_returns: acceptsReturns,
         return_days: acceptsReturns ? returnDays : undefined,
         description: description.trim(),
-        images: nextImages
+        images: nextImages,
+        seller_postcode: postcode.trim() || undefined,
+        seller_lat: sellerLat,
+        seller_lng: sellerLng,
+        status: 'active'
       });
 
       router.replace(`/listing/${listing.id}`);
@@ -160,6 +190,76 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
       setError(err instanceof Error ? err.message : "Failed to save changes");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSaveAsDraft() {
+    setError(null);
+    setSaving(true);
+    try {
+      let uploaded: string[] = [];
+      if (newFiles.length) {
+        uploaded = await Promise.all(newFiles.map(f => uploadImage(f)));
+      }
+      const nextImages = [...existingImages, ...uploaded].slice(0, 10);
+
+      await updateListing(String(listing.id), {
+        title: title.trim(),
+        category,
+        part_type: partType || undefined,
+        make: make.trim(),
+        model: model.trim(),
+        year: year ?? undefined,
+        condition,
+        price: price ? parseFloat(String(price)) : 0,
+        quantity: Number.isFinite(quantity) ? Math.max(1, quantity) : 1,
+        postcode: postcode.trim() || undefined,
+        shipping_option: shippingOption,
+        accepts_returns: acceptsReturns,
+        return_days: acceptsReturns ? returnDays : undefined,
+        description: description.trim(),
+        images: nextImages,
+        seller_postcode: postcode.trim() || undefined,
+        seller_lat: sellerLat,
+        seller_lng: sellerLng,
+        status: 'draft'
+      });
+
+      router.push('/profile/' + (window as any).currentUser?.name || '');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save draft");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleMarkAsSold() {
+    if (!confirm("Mark this listing as sold? It will no longer be visible to buyers.")) return;
+    setSaving(true);
+    try {
+      await updateListing(String(listing.id), {
+        status: 'sold'
+      });
+      router.push('/profile/' + (window as any).currentUser?.name || '');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to mark as sold");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!confirm("Are you sure you want to delete this listing? This cannot be undone.")) return;
+    setDeleting(true);
+    try {
+      await fetch(`/api/listings/${listing.id}`, {
+        method: 'DELETE',
+      });
+      router.push('/profile/' + (window as any).currentUser?.name || '');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete listing");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -355,16 +455,30 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Location (Postcode)
             </label>
-            <input
-              type="text"
-              name="postcode"
-              value={postcode}
-              onChange={(e) => setPostcode(e.target.value.toUpperCase())}
-              placeholder="e.g., SW1A 1AA"
-              maxLength={8}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-            />
-            <p className="mt-1 text-xs text-gray-600">Helps buyers estimate shipping costs</p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                name="postcode"
+                value={postcode}
+                onChange={(e) => setPostcode(e.target.value.toUpperCase())}
+                placeholder="e.g., SW1A 1AA"
+                maxLength={8}
+                className="flex-1 border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              />
+              <button
+                type="button"
+                onClick={handleGeocodePostcode}
+                disabled={geocoding || !postcode.trim()}
+                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-sm font-medium disabled:opacity-50"
+              >
+                {geocoding ? "..." : "Validate"}
+              </button>
+            </div>
+            {sellerLat && sellerLng ? (
+              <p className="mt-1 text-xs text-green-600">✓ Location validated (approximate, for distance calc)</p>
+            ) : (
+              <p className="mt-1 text-xs text-gray-600">Helps buyers see distance from their location</p>
+            )}
           </div>
 
           <div>
@@ -497,24 +611,48 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         <button
           type="submit"
           disabled={!canSave || saving}
-          className={`px-5 py-2.5 rounded-md font-semibold ${
+          className={`flex-1 sm:flex-none px-5 py-2.5 rounded-md font-semibold ${
             !canSave || saving
               ? "bg-yellow-300 text-black cursor-not-allowed"
               : "bg-yellow-500 hover:bg-yellow-600 text-black"
           }`}
         >
-          {saving ? "Saving…" : "Save Changes"}
+          {saving ? "Saving…" : "Save & Publish"}
+        </button>
+        <button
+          type="button"
+          onClick={handleSaveAsDraft}
+          disabled={saving}
+          className="flex-1 sm:flex-none px-5 py-2.5 rounded-md font-semibold border border-gray-300 text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+        >
+          Save as Draft
+        </button>
+        <button
+          type="button"
+          onClick={handleMarkAsSold}
+          disabled={saving}
+          className="flex-1 sm:flex-none px-5 py-2.5 rounded-md font-semibold border border-green-300 bg-green-50 text-green-900 hover:bg-green-100 disabled:opacity-50"
+        >
+          Mark as Sold
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="px-5 py-2.5 rounded-md font-semibold border border-gray-300 text-gray-800 hover:bg-gray-50"
+          className="flex-1 sm:flex-none px-5 py-2.5 rounded-md font-semibold border border-gray-300 text-gray-800 hover:bg-gray-50"
         >
           Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleDelete}
+          disabled={deleting}
+          className="flex-1 sm:flex-none px-5 py-2.5 rounded-md font-semibold border border-red-300 bg-red-50 text-red-900 hover:bg-red-100 disabled:opacity-50"
+        >
+          {deleting ? "Deleting..." : "Delete"}
         </button>
       </div>
     </form>

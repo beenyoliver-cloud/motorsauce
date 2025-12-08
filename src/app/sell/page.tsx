@@ -652,12 +652,12 @@ function SellForm() {
         </div>
       )}
 
-      {/* Submit Button */}
-      <div className="flex items-center gap-3">
+      {/* Submit Buttons */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         <button
           type="submit"
           disabled={!canSubmit || submitting}
-          className={`px-8 py-4 rounded-lg font-bold text-base transition-all shadow-md ${
+          className={`flex-1 sm:flex-none px-8 py-4 rounded-lg font-bold text-base transition-all shadow-md ${
             !canSubmit || submitting
               ? "bg-gray-200 text-gray-400 cursor-not-allowed border-2 border-gray-300"
               : "bg-yellow-500 hover:bg-yellow-600 text-black border-2 border-yellow-600 hover:border-yellow-700 hover:shadow-lg hover:scale-105"
@@ -665,8 +665,15 @@ function SellForm() {
         >
           {submitting ? "Creating Listing…" : "Create Listing"}
         </button>
+        <button
+          type="button"
+          onClick={() => router.push("/")}
+          className="flex-1 sm:flex-none px-8 py-4 rounded-lg font-medium text-base border-2 border-gray-300 bg-white hover:bg-gray-50 text-black transition"
+        >
+          Cancel
+        </button>
         {!canSubmit && !submitting && (
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-gray-500 sm:ml-3">
             Complete all required fields to enable
           </span>
         )}

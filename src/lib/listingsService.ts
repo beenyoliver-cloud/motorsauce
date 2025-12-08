@@ -33,6 +33,15 @@ export type Listing = {
   ownerId?: string;
   seller_id?: string; // Add seller_id from database
   seller?: { name?: string; avatar?: string; rating?: number };
+  // New listing management fields
+  status?: 'active' | 'draft' | 'sold';
+  draft_reason?: string;
+  marked_sold_at?: string;
+  seller_postcode?: string;
+  seller_lat?: number | null;
+  seller_lng?: number | null;
+  images_validated_at?: string;
+  images_validation_failed?: boolean;
 };
 
 const client = () => supabaseBrowser();
