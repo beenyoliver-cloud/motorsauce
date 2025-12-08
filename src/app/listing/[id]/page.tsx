@@ -266,7 +266,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
   const gallery = listing.images?.length ? listing.images : [listing.image];
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-8">
+    <section className="mx-auto max-w-6xl px-3 sm:px-4 py-4 sm:py-8">
       {/* Track recently viewed (client side) */}
       {/* @ts-ignore Server -> Client component mount */}
       <TrackRecentlyViewed id={listing.id} />
@@ -294,10 +294,10 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
         className="mb-4"
       />
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-2">
         {/* ---------- Gallery ---------- */}
         <div>
-          <div className="aspect-[4/3] w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+          <div className="aspect-[4/3] w-full overflow-hidden rounded-lg sm:rounded-xl border border-gray-200 bg-gray-50">
             <SafeImage
               src={gallery[0]}
               alt={listing.title}
@@ -325,12 +325,12 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
         </div>
 
         {/* ---------- Details ---------- */}
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {/* Title + Save */}
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-2 sm:gap-3">
             <div>
-              <h1 className="text-2xl font-bold text-black">{listing.title}</h1>
-              <div className="mt-1 text-sm text-gray-700">
+              <h1 className="text-xl sm:text-2xl font-bold text-black leading-tight">{listing.title}</h1>
+              <div className="mt-1 text-xs sm:text-sm text-gray-700">
                 {listing.category} • {listing.condition}
                 {listing.year ? ` • ${listing.year}` : ""}
                 {listing.oem ? ` • OEM ${listing.oem}` : ""}
@@ -344,7 +344,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
 
           {/* Price + Badge */}
           <div className="space-y-2">
-            <div className="text-3xl font-extrabold text-gray-900">{listing.price}</div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-gray-900">{listing.price}</div>
             {/* Temporarily disabled: <PriceReducedBadge listingId={String(listing.id)} /> */}
           </div>
 

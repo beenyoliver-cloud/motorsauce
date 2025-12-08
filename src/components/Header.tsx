@@ -336,13 +336,13 @@ export default function Header() {
 
         {/* Logo */}
         <div className="px-4 py-1 flex justify-center">
-          <Link href="/" className="text-2xl font-extrabold text-yellow-500 tracking-tight" aria-label="Motorsource home">
+          <Link href="/" className="text-xl font-extrabold text-yellow-500 tracking-tight" aria-label="Motorsource home">
             Motorsource
           </Link>
         </div>
 
         {/* Search bar across the top */}
-        <div className="px-4 pb-2">
+        <div className="px-3 pb-2">
           <SearchBar placeholder="Search parts or sellers…" />
         </div>
       </div>
@@ -358,8 +358,8 @@ export default function Header() {
           {/* Menu panel */}
           <div className="fixed inset-0 bg-white z-[110] overflow-y-auto flex flex-col">
             {/* Menu Header with Logo and Close */}
-            <div className="px-4 py-4 border-b border-gray-200 flex items-center justify-between shrink-0">
-              <Link href="/" className="text-2xl font-extrabold text-yellow-500 tracking-tight" aria-label="Motorsource home">
+            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between shrink-0">
+              <Link href="/" className="text-xl font-extrabold text-yellow-500 tracking-tight" aria-label="Motorsource home">
                 Motorsource
               </Link>
               <button
@@ -367,7 +367,7 @@ export default function Header() {
                 className="p-2 -mr-2 rounded-md hover:bg-gray-100 transition text-black"
                 aria-label="Close menu"
               >
-                <X size={24} />
+                <X size={22} />
               </button>
             </div>
 

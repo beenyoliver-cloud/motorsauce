@@ -13,12 +13,12 @@ import SEOJsonLd from "@/components/SEOJsonLd";
 
 export default function Home() {
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6 space-y-8">
+    <main className="mx-auto max-w-6xl px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 md:space-y-8">
       {/* SEO structured data */}
       {/* @ts-ignore */}
       <SEOJsonLd />
       {/* Hero + inline search */}
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         <HeroCarousel />
         {/* @ts-ignore Server -> Client import allowed */}
         <HomeHero />
@@ -38,9 +38,9 @@ export default function Home() {
 
       {/* Suggested parts (personalized via API) */}
       <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xl font-bold text-black">Suggested for you</h2>
-          <Link href="/search" className="text-sm text-gray-600 hover:underline">View all</Link>
+        <div className="flex items-center justify-between mb-2 sm:mb-3">
+          <h2 className="text-lg sm:text-xl font-bold text-black">Suggested for you</h2>
+          <Link href="/search" className="text-xs sm:text-sm text-gray-600 hover:underline">View all</Link>
         </div>
         <SuggestedParts limit={8} />
       </section>
