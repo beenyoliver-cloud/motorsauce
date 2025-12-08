@@ -14,6 +14,37 @@ function getSupabase(authHeader?: string | null) {
   });
 }
 
+// Simple in-memory cache with 5-second TTL to reduce database load
+const cache = new Map<string, { count: number; timestamp: number }>();
+const CACHE_TTL = 5000; // 5 seconds
+
+function getCachedCount(userId: string): number | null {
+  const cached = cache.get(userId);
+  if (!cached) return null;
+  
+  const age = Date.now() - cached.timestamp;
+  if (age > CACHE_TTL) {
+    cache.delete(userId);
+    return null;
+  }
+  
+  return cached.count;
+}
+
+function setCachedCount(userId: string, count: number): void {
+  cache.set(userId, { count, timestamp: Date.now() });
+  
+  // Cleanup old entries (keep cache size reasonable)
+  if (cache.size > 1000) {
+    const now = Date.now();
+    for (const [key, value] of cache.entries()) {
+      if (now - value.timestamp > CACHE_TTL) {
+        cache.delete(key);
+      }
+    }
+  }
+}
+
 // GET /api/messages/unread-count - Number of threads with at least one message and not marked read
 export async function GET(req: Request) {
   try {
@@ -26,6 +57,13 @@ export async function GET(req: Request) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check cache first
+    const cachedCount = getCachedCount(user.id);
+    if (cachedCount !== null) {
+      console.log(`[unread-count] Cache HIT for user ${user.id}: ${cachedCount}`);
+      return NextResponse.json({ count: cachedCount }, { status: 200 });
     }
 
     // Fetch threads where user is a participant (either participant_1 or participant_2)
@@ -41,6 +79,7 @@ export async function GET(req: Request) {
     }
 
     if (!threads || threads.length === 0) {
+      setCachedCount(user.id, 0);
       return NextResponse.json({ count: 0 }, { status: 200 });
     }
 
@@ -74,7 +113,10 @@ export async function GET(req: Request) {
       return acc + (hasAny && !isRead && !isDeleted ? 1 : 0);
     }, 0);
 
-    console.log(`[unread-count] User ${user.id}: ${threads?.length} participating threads, ${readSet.size} marked read, ${deletedSet.size} deleted, ${count} unread`);
+    // Cache the result
+    setCachedCount(user.id, count);
+
+    console.log(`[unread-count] User ${user.id}: ${threads?.length} participating threads, ${readSet.size} marked read, ${deletedSet.size} deleted, ${count} unread (cached)`);
     return NextResponse.json({ count }, { status: 200 });
   } catch (error: any) {
     console.error("[unread-count] Unexpected error:", error);

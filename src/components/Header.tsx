@@ -125,9 +125,10 @@ export default function Header() {
   // Real-time unread updates via Supabase + fallback polling
   useEffect(() => {
     let abort = false;
+    let debounceTimer: NodeJS.Timeout | null = null;
     const supabase = supabaseBrowser();
 
-    async function fetchUnread() {
+    async function fetchUnreadImmediate() {
       try {
         console.log("[Header] Fetching unread count...");
         // Get auth token for API call
@@ -162,6 +163,14 @@ export default function Header() {
       } catch (err) {
         console.error("[Header] Error fetching unread:", err);
       }
+    }
+
+    // Debounced version to prevent rapid consecutive calls
+    function fetchUnread() {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        fetchUnreadImmediate();
+      }, 500); // 500ms debounce
     }
 
     // Fetch immediately on mount
@@ -210,11 +219,12 @@ export default function Header() {
         console.log("[Header] Subscription status:", status);
       });
 
-    // Fallback polling every 10 seconds (faster than before)
-    const timerId = window.setInterval(fetchUnread, 10000);
+    // Fallback polling every 30 seconds (real-time handles most updates)
+    const timerId = window.setInterval(fetchUnread, 30000);
 
     return () => {
       abort = true;
+      if (debounceTimer) clearTimeout(debounceTimer);
       window.clearInterval(timerId);
       window.removeEventListener("ms:unread", fetchUnread as EventListener);
       window.removeEventListener("ms:auth", fetchUnread as EventListener);
