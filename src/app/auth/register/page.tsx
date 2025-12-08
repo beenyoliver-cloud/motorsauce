@@ -65,7 +65,8 @@ export default function RegisterPage() {
         businessName: businessName.trim(),
         businessType
       } : undefined);
-      router.replace(next || `/profile/${encodeURIComponent(user.name)}`);
+      // Redirect to address collection page after successful registration
+      router.replace(`/auth/address-setup?next=${encodeURIComponent(next || `/profile/${encodeURIComponent(user.name)}`)}`);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not register.");
     } finally {
