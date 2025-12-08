@@ -69,7 +69,7 @@ export default function HomeHero() {
   }
 
   async function submitPlateSearch() {
-    const reg = plate.trim().toUpperCase();
+    const reg = plate.trim().toUpperCase().replace(/\s/g, ''); // Remove all spaces
     setPlateError(null);
     if (!reg) {
       setPlateError("Enter a registration");
