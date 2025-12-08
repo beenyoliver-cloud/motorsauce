@@ -314,12 +314,8 @@ export default function Header() {
               <Link href={profileHref} aria-label="Profile" className="text-black hover:text-yellow-500">
                 <User size={22} />
               </Link>
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setCartOpen(true);
-                }}
+              <Link
+                href="/basket"
                 aria-label="Open basket"
                 className="relative text-black hover:text-yellow-500 z-10 touch-manipulation"
               >
@@ -329,7 +325,7 @@ export default function Header() {
                     {cartCount}
                   </span>
                 )}
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -476,17 +472,15 @@ export default function Header() {
                 </>
               ) : (
                 <>
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      setCartOpen(true);
-                    }}
+                  <Link
+                    href="/basket"
                     className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                    onClick={() => setMobileMenuOpen(false)}
                   >
                     <span className="inline-flex items-center gap-1">
                       <ShoppingCart size={16} /> Basket {cartCount > 0 ? `(${cartCount})` : ""}
                     </span>
-                  </button>
+                  </Link>
                   <div className="border-t border-gray-100" />
                   <Link
                     href="/auth/login"
@@ -707,7 +701,10 @@ export default function Header() {
         </div>
       </div>
 
-      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
+      {/* Cart drawer - desktop only (mobile navigates to /basket page) */}
+      <div className="hidden md:block">
+        <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
+      </div>
     </nav>
     </>
   );
