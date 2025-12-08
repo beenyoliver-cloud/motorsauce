@@ -98,14 +98,16 @@ export default function ResultsGrid() {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-4 md:gap-6">
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="animate-pulse border border-gray-200 rounded-md overflow-hidden">
-            <div className="aspect-[3/2.5] sm:aspect-[4/3] bg-gray-100" />
-            <div className="p-1.5 sm:p-3 space-y-1.5">
-              <div className="h-3 sm:h-4 bg-gray-100 rounded" />
-              <div className="h-2 sm:h-3 bg-gray-100 rounded w-2/3" />
-              <div className="h-3 sm:h-5 bg-gray-100 rounded w-1/3" />
+            {/* Mobile: rectangular row (image left) -> use flex, switch to block on sm+ */}
+            <div className="flex items-center gap-3 p-1.5 sm:block">
+              <div className="w-1/5 min-w-[56px] h-16 bg-gray-100 rounded sm:aspect-[3/2.5] sm:h-auto sm:w-full sm:min-w-0" />
+              <div className="flex-1 space-y-1.5 sm:mt-2">
+                <div className="h-3 bg-gray-100 rounded w-3/4" />
+                <div className="h-2 bg-gray-100 rounded w-1/2" />
+              </div>
             </div>
           </div>
         ))}
@@ -132,17 +134,20 @@ export default function ResultsGrid() {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-4 md:gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-4 md:gap-6">
       {visible.map((l) => (
         <Link
           key={String(l.id)}
           href={`/listing/${l.id}`}
-          className="block border border-gray-200 rounded-md overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition"
+          className="flex items-center gap-3 border border-gray-200 rounded-md overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition sm:block"
         >
-          <div className="relative aspect-[3/2.5] sm:aspect-[4/3] bg-gray-50 overflow-hidden">
-            <SafeImage src={l.image} alt={l.title} className="absolute inset-0 w-full h-full object-cover object-center" />
+          {/* Image: 20% width on mobile, full width card on sm+ */}
+          <div className="w-1/5 min-w-[56px] h-16 bg-gray-50 overflow-hidden sm:relative sm:aspect-[3/2.5] sm:h-auto sm:w-full sm:min-w-0">
+            <SafeImage src={l.image} alt={l.title} className="w-full h-full object-cover object-center" />
           </div>
-          <div className="p-1.5 sm:p-3">
+
+          {/* Content area */}
+          <div className="flex-1 p-1.5 sm:p-3">
             <h3 className="text-[11px] leading-tight sm:text-sm font-semibold text-gray-900 line-clamp-2">{l.title}</h3>
             <div className="mt-0.5 sm:mt-1 flex items-center justify-between">
               <div className="text-xs sm:text-base font-bold text-gray-900">{l.price}</div>
