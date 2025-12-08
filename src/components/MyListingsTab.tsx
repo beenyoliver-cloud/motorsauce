@@ -82,15 +82,16 @@ export default function MyListingsTab({ sellerName }: { sellerName?: string }) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
       {items.map((l) => {
         const u = getCurrentUserSync();
         const uid = u?.id;
         const isMine = Boolean(uid && (l.sellerId === uid || l.ownerId === uid || norm(l?.seller?.name || "") === norm(u?.name || "")));
         return (
           <div key={String(l.id)} className="group border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition">
-            <Link href={`/listing/${l.id}`} className="block">
-              <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
+            <Link href={`/listing/${l.id}`} className="block md:block sm:flex">
+              {/* Mobile: Row layout like search page, Desktop: Block layout */}
+              <div className="relative aspect-square sm:aspect-[4/3] md:aspect-[4/3] sm:w-[120px] md:w-auto bg-gray-50 overflow-hidden shrink-0">
                 <SafeImage src={l.image} alt={l.title} className="absolute inset-0 w-full h-full object-cover object-center" />
                 {isMine && (
                   <button
@@ -102,10 +103,10 @@ export default function MyListingsTab({ sellerName }: { sellerName?: string }) {
                   </button>
                 )}
               </div>
-              <div className="p-3">
-                <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">{l.title}</h3>
+              <div className="p-2 sm:p-3 flex-1 flex flex-col justify-between">
+                <h3 className="text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2">{l.title}</h3>
                 <div className="mt-1 flex items-center justify-between">
-                  <div className="text-base font-bold text-gray-900">{l.price}</div>
+                  <div className="text-sm sm:text-base font-bold text-gray-900">{l.price}</div>
                   <FavoriteButton listingId={String(l.id)} showLabel={false} />
                 </div>
               </div>

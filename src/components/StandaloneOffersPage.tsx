@@ -206,34 +206,34 @@ export default function StandaloneOffersPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-6xl px-4 py-8">
+      <div className="mx-auto max-w-6xl px-3 sm:px-4 py-4 sm:py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900">Offers</h1>
-          <p className="mt-2 text-gray-600">Manage your sent and received offers</p>
+        <div className="mb-4 sm:mb-8">
+          <h1 className="text-2xl sm:text-4xl font-bold text-gray-900">Offers</h1>
+          <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">Manage your sent and received offers</p>
         </div>
 
         {/* Tabs */}
-        <div className="mb-8 flex gap-4 border-b border-gray-200">
+        <div className="mb-4 sm:mb-8 flex gap-2 sm:gap-4 border-b border-gray-200">
           <button
             onClick={() => setActiveTab("sent")}
-            className={`px-4 py-3 font-medium transition-colors ${
+            className={`px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base font-medium transition-colors ${
               activeTab === "sent"
                 ? "border-b-2 border-yellow-500 text-yellow-600"
                 : "text-gray-600 hover:text-gray-900"
             }`}
           >
-            Offers Sent ({sentOffers.length})
+            Sent ({sentOffers.length})
           </button>
           <button
             onClick={() => setActiveTab("received")}
-            className={`px-4 py-3 font-medium transition-colors ${
+            className={`px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base font-medium transition-colors ${
               activeTab === "received"
                 ? "border-b-2 border-yellow-500 text-yellow-600"
                 : "text-gray-600 hover:text-gray-900"
             }`}
           >
-            Offers Received ({receivedOffers.length})
+            Received ({receivedOffers.length})
           </button>
         </div>
 
@@ -260,14 +260,14 @@ export default function StandaloneOffersPage() {
 
         {/* Offers Grid */}
         {offers.length > 0 && (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
             {offers.map((offer) => (
               <div
                 key={offer.id}
                 className="rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col"
               >
                 {/* Image */}
-                <Link href={`/listing/${offer.listing_id}`} className="block relative h-48 bg-gray-100 overflow-hidden hover:opacity-90 transition-opacity">
+                <Link href={`/listing/${offer.listing_id}`} className="block relative h-32 sm:h-48 bg-gray-100 overflow-hidden hover:opacity-90 transition-opacity">
                   {offer.listing_image ? (
                     <img
                       src={offer.listing_image}
@@ -276,42 +276,42 @@ export default function StandaloneOffersPage() {
                     />
                   ) : (
                     <div className="flex items-center justify-center h-full">
-                      <span className="text-gray-400">No image</span>
+                      <span className="text-gray-400 text-sm">No image</span>
                     </div>
                   )}
                 </Link>
 
                 {/* Content */}
-                <div className="flex flex-col flex-1 p-4">
+                <div className="flex flex-col flex-1 p-3 sm:p-4">
                   {/* Title and Status */}
-                  <div className="mb-3">
+                  <div className="mb-2 sm:mb-3">
                     <Link
                       href={`/listing/${offer.listing_id}`}
-                      className="text-lg font-semibold text-gray-900 hover:text-yellow-600 line-clamp-2"
+                      className="text-sm sm:text-lg font-semibold text-gray-900 hover:text-yellow-600 line-clamp-2"
                     >
                       {offer.listing_title}
                     </Link>
-                    <div className="mt-2">{getStatusBadge(offer.status)}</div>
+                    <div className="mt-1.5 sm:mt-2">{getStatusBadge(offer.status)}</div>
                   </div>
 
                   {/* Price Comparison */}
-                  <div className="mb-4 p-3 bg-gray-100 rounded-lg">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-gray-600">Listed Price</span>
-                      <span className="text-sm text-gray-400 line-through">
+                  <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-gray-100 rounded-lg">
+                    <div className="flex justify-between items-center mb-1.5 sm:mb-2">
+                      <span className="text-xs sm:text-sm text-gray-600">Listed</span>
+                      <span className="text-xs sm:text-sm text-gray-400 line-through">
                         {formatPrice(offer.listing_price, offer.currency)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-700">Your Offer</span>
-                      <span className="text-lg font-bold text-yellow-600">
+                      <span className="text-xs sm:text-sm font-medium text-gray-700">Offer</span>
+                      <span className="text-base sm:text-lg font-bold text-yellow-600">
                         {formatPrice(offer.offered_amount, offer.currency)}
                       </span>
                     </div>
                     {offer.counter_amount && (
-                      <div className="mt-2 pt-2 border-t border-gray-300 flex justify-between items-center">
-                        <span className="text-sm font-medium text-gray-700">Counter</span>
-                        <span className="text-lg font-bold text-blue-600">
+                      <div className="mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-gray-300 flex justify-between items-center">
+                        <span className="text-xs sm:text-sm font-medium text-gray-700">Counter</span>
+                        <span className="text-base sm:text-lg font-bold text-blue-600">
                           {formatPrice(offer.counter_amount, offer.currency)}
                         </span>
                       </div>
@@ -319,7 +319,7 @@ export default function StandaloneOffersPage() {
                   </div>
 
                   {/* Timestamps */}
-                  <div className="mb-4 space-y-1 text-xs text-gray-500">
+                  <div className="mb-3 sm:mb-4 space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs text-gray-500">
                     <div>Created: {formatDate(offer.created_at)}</div>
                     {offer.responded_at && <div>Responded: {formatDate(offer.responded_at)}</div>}
                     {offer.status === "pending" && (

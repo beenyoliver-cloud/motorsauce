@@ -657,14 +657,19 @@ function SellForm() {
         <button
           type="submit"
           disabled={!canSubmit || submitting}
-          className={`px-6 py-3 rounded-lg font-semibold transition ${
+          className={`px-8 py-4 rounded-lg font-bold text-base transition-all shadow-md ${
             !canSubmit || submitting
-              ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-              : "bg-gold-500 hover:bg-gold-600 text-black"
+              ? "bg-gray-200 text-gray-400 cursor-not-allowed border-2 border-gray-300"
+              : "bg-yellow-500 hover:bg-yellow-600 text-black border-2 border-yellow-600 hover:border-yellow-700 hover:shadow-lg hover:scale-105"
           }`}
         >
           {submitting ? "Creating Listing…" : "Create Listing"}
         </button>
+        {!canSubmit && !submitting && (
+          <span className="text-sm text-gray-500">
+            Complete all required fields to enable
+          </span>
+        )}
       </div>
 
       {/* Success */}
