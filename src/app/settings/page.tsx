@@ -22,6 +22,9 @@ export default function SettingsPage() {
   const [avatar, setAvatar] = useState("");
   const [backgroundImage, setBackgroundImage] = useState("");
   const [about, setAbout] = useState("");
+  const [postcode, setPostcode] = useState("");
+  const [county, setCounty] = useState("");
+  const [country, setCountry] = useState("United Kingdom");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -41,10 +44,10 @@ export default function SettingsPage() {
       setName(currentUser.name || "");
       setEmail(currentUser.email || "");
       
-      // Load profile data (avatar, background, and about)
+      // Load profile data (avatar, background, about, and location)
       const { data: profile } = await supabase
         .from('profiles')
-        .select('avatar, background_image, about')
+        .select('avatar, background_image, about, postcode, county, country')
         .eq('id', currentUser.id)
         .single();
       
@@ -52,6 +55,9 @@ export default function SettingsPage() {
         setAvatar(profile.avatar || "");
         setBackgroundImage(profile.background_image || "");
         setAbout(profile.about || "");
+        setPostcode(profile.postcode || "");
+        setCounty(profile.county || "");
+        setCountry(profile.country || "United Kingdom");
       }
       
       setLoading(false);
@@ -132,7 +138,7 @@ export default function SettingsPage() {
     }
 
     try {
-      // Update name, email, avatar, background, and about in profiles table
+      // Update name, email, avatar, background, about, and location in profiles table
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ 
@@ -140,7 +146,10 @@ export default function SettingsPage() {
           email: email.trim(),
           avatar: avatar.trim() || null,
           background_image: backgroundImage.trim() || null,
-          about: about.trim() || null
+          about: about.trim() || null,
+          postcode: postcode.trim() || null,
+          county: county.trim() || null,
+          country: country.trim() || null
         })
         .eq('id', user.id);
 
@@ -396,6 +405,60 @@ export default function SettingsPage() {
             <p className="text-xs text-gray-500 mt-1">
               {about.length}/500 characters
             </p>
+          </div>
+
+          {/* Location Section */}
+          <div className="pt-4 border-t border-gray-200">
+            <h3 className="text-lg font-semibold text-black mb-3">Location (Optional)</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Your location helps buyers see distance to items. Only county and country are displayed publicly.
+            </p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Postcode
+                </label>
+                <input
+                  type="text"
+                  value={postcode}
+                  onChange={(e) => setPostcode(e.target.value.toUpperCase())}
+                  placeholder="e.g., SW1A 1AA"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-gray-700"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Used for calculating distances (not shown publicly)
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    County
+                  </label>
+                  <input
+                    type="text"
+                    value={county}
+                    onChange={(e) => setCounty(e.target.value)}
+                    placeholder="e.g., Greater London"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-gray-700"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Country
+                  </label>
+                  <input
+                    type="text"
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    placeholder="e.g., United Kingdom"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-gray-700"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           <button

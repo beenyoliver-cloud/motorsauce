@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import ProfileActions from "@/components/ProfileActions";
 import ReportUserButton from "@/components/ReportUserButton";
 import MyListingsTab from "@/components/MyListingsTab";
+import MyDraftsTab from "@/components/MyDraftsTab";
 import SavedTabGate from "@/components/SavedTabGate";
 import SellerListingCount from "@/components/SellerListingCount";
 import EditableAvatar from "@/components/EditableAvatar";
@@ -49,7 +50,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
   const { username } = await params;
   const sp = await searchParams;
   const displayName = decodeURIComponent(username);
-  const activeTab = (sp?.tab ?? "my") as "saved" | "my" | "about" | "reviews" | "garage";
+  const activeTab = (sp?.tab ?? "my") as "saved" | "my" | "drafts" | "about" | "reviews" | "garage";
   const autoEdit = sp?.edit === "1";
   const baseHref = `/profile/${encodeURIComponent(displayName)}`;
 
@@ -62,6 +63,8 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
     avatar?: string | null;
     background_image?: string | null;
     about?: string | null;
+    county?: string | null;
+    country?: string | null;
   } = {};
   try {
     // Use absolute URL for server-side fetch
@@ -135,10 +138,16 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
                   <span className="font-medium text-black">5.0</span>
                   <span className="text-gray-500">(0)</span>
                 </div>
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1">
-                  <MapPin className="h-3.5 w-3.5 text-gray-400" />
-                  <span>UK</span>
-                </div>
+                {(sellerMetrics.county || sellerMetrics.country) && (
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1">
+                    <MapPin className="h-3.5 w-3.5 text-gray-400" />
+                    <span>
+                      {sellerMetrics.county && sellerMetrics.country 
+                        ? `${sellerMetrics.county}, ${sellerMetrics.country}`
+                        : sellerMetrics.county || sellerMetrics.country}
+                    </span>
+                  </div>
+                )}
                 <div className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1">
                   <Store className="h-3.5 w-3.5 text-gray-400" />
                   <span>Joined 2025</span>
@@ -199,6 +208,8 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
       {/* ---------- Content ---------- */}
       <div className="mt-4 space-y-4">
         {activeTab === "my" && <MyListingsTab sellerName={displayName} />}
+
+        {activeTab === "drafts" && <MyDraftsTab sellerName={displayName} />}
 
         {activeTab === "about" && (
           <ProfileAboutCard 

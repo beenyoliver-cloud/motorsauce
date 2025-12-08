@@ -88,20 +88,20 @@ export default function MyListingsTab({ sellerName }: { sellerName?: string }) {
         const uid = u?.id;
         const isMine = Boolean(uid && (l.sellerId === uid || l.ownerId === uid || norm(l?.seller?.name || "") === norm(u?.name || "")));
         return (
-          <div key={String(l.id)} className="group border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition">
+          <div key={String(l.id)} className="group relative border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition">
+            {isMine && (
+              <button
+                type="button"
+                onClick={() => router.push(`/listing/${l.id}/edit`)}
+                className="absolute top-2 right-2 rounded-md bg-black/70 px-2 py-1 text-xs font-medium text-white opacity-0 group-hover:opacity-100 transition z-20 hover:bg-black"
+              >
+                Edit
+              </button>
+            )}
             {/* Mobile: Row layout, Tablet+: Block layout */}
             <Link href={`/listing/${l.id}`} className="flex sm:block items-center gap-3 sm:gap-0">
               <div className="relative w-[120px] h-[120px] sm:w-auto sm:h-auto sm:aspect-[4/3] bg-gray-50 overflow-hidden shrink-0">
                 <SafeImage src={l.image} alt={l.title} className="w-full h-full object-cover object-center" />
-                {isMine && (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/listing/${l.id}/edit`); }}
-                    className="absolute top-2 right-2 rounded-md bg-black/70 px-2 py-1 text-xs font-medium text-white opacity-0 group-hover:opacity-100 transition z-10"
-                  >
-                    Edit
-                  </button>
-                )}
               </div>
               <div className="flex-1 p-2 sm:p-3 flex flex-col justify-between min-w-0">
                 <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">{l.title}</h3>

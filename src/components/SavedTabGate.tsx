@@ -30,15 +30,16 @@ export default function SavedTabGate({
 }: {
   sellerName: string;
   baseHref: string;
-  activeTab: "saved" | "my" | "about" | "reviews" | "garage";
+  activeTab: "saved" | "my" | "drafts" | "about" | "reviews" | "garage";
   isBusinessAccount?: boolean;
 }) {
   const [me, setMe] = useState(false);
   const [garageCount, setGarageCount] = useState(0);
+  const [draftCount, setDraftCount] = useState(0);
 
   useEffect(() => {
     isMe(sellerName).then(setMe);
-    getCurrentUserSync() ?? null;
+    const currentUser = getCurrentUserSync();
     
     // Load garage count if not business
     if (!isBusinessAccount) {
@@ -49,7 +50,27 @@ export default function SavedTabGate({
         setGarageCount(0);
       }
     }
+
+    // Load draft count if owner
+    if (currentUser?.id) {
+      loadDraftCount(currentUser.id);
+    }
   }, [sellerName, isBusinessAccount]);
+
+  async function loadDraftCount(userId: string) {
+    try {
+      const { supabaseBrowser } = await import("@/lib/supabase");
+      const supabase = supabaseBrowser();
+      const { count } = await supabase
+        .from("listings")
+        .select("*", { count: "exact", head: true })
+        .eq("seller_id", userId)
+        .eq("status", "draft");
+      setDraftCount(count || 0);
+    } catch {
+      setDraftCount(0);
+    }
+  }
 
   const listingsLabel = useMemo(
     () => (me ? "My Listings" : `${sellerName}'s listings`),
@@ -62,6 +83,7 @@ export default function SavedTabGate({
       <div className="mt-6 flex flex-wrap gap-2">
         {me && <TabLink href={`${baseHref}?tab=saved`} label="Saved" isActive={activeTab === "saved"} />}
         <TabLink href={`${baseHref}?tab=my`} label={listingsLabel} isActive={activeTab === "my"} />
+        {me && <TabLink href={`${baseHref}?tab=drafts`} label={`Drafts${draftCount > 0 ? ` (${draftCount})` : ''}`} isActive={activeTab === "drafts"} />}
         <TabLink href={`${baseHref}?tab=about`} label="About" isActive={activeTab === "about"} />
         <TabLink href={`${baseHref}?tab=reviews`} label="Reviews (0)" isActive={activeTab === "reviews"} />
         {!isBusinessAccount && (
