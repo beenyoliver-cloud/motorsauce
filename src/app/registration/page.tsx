@@ -328,37 +328,45 @@ export default function RegistrationPage() {
       </nav>
 
       {/* Hero / Search */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 md:p-8 shadow-sm">
-        <h1 className="text-3xl md:text-4xl font-extrabold text-black tracking-tight flex items-center gap-2">
-          <ShieldCheck className="h-7 w-7 text-yellow-700" />
-          Search by Registration
-        </h1>
-        <p className="mt-2 text-gray-700 max-w-2xl">
-          Enter your UK number plate to find parts that fit. We'll auto-fill your make and year, then you can add your model for the best results.
-        </p>
+      <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-6 md:p-8 shadow-md">
+        <div className="flex items-start gap-3 mb-3">
+          <div className="p-2 bg-yellow-100 rounded-lg">
+            <ShieldCheck className="h-7 w-7 text-yellow-600" />
+          </div>
+          <div>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">
+              Search by Registration
+            </h1>
+            <p className="mt-2 text-gray-600 max-w-2xl leading-relaxed">
+              Enter your UK registration number to instantly find compatible parts for your vehicle. 
+              We'll identify your make and year automatically.
+            </p>
+          </div>
+        </div>
 
-        <form onSubmit={onSubmit} className="mt-5 space-y-3">
+        <form onSubmit={onSubmit} className="mt-6 space-y-4">
           {/* Registration input and search button */}
           <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex-1 flex items-center border border-gray-300 rounded-md bg-white px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-yellow-400">
-              <Search size={18} className="text-gray-500 mr-2" aria-hidden />
+            <div className="flex-1 flex items-center border-2 border-gray-300 rounded-lg bg-white px-4 py-3 shadow-sm focus-within:ring-2 focus-within:ring-yellow-400 focus-within:border-yellow-500 transition-all">
+              <Search size={20} className="text-gray-400 mr-3" aria-hidden />
               <input
                 type="text"
                 inputMode="text"
                 autoCapitalize="characters"
                 autoCorrect="off"
-                placeholder="AB12 CDE"
+                placeholder="e.g. AB12 CDE"
                 value={reg}
                 onChange={(e) => setReg(normalizeRegInput(e.target.value))}
-                className="flex-1 border-none focus:ring-0 text-[15px] text-[#111] placeholder-gray-500 bg-transparent tracking-wider"
+                className="flex-1 border-none focus:ring-0 text-base text-gray-900 placeholder-gray-400 bg-transparent tracking-wider font-medium"
                 aria-label="Vehicle registration"
               />
             </div>
             <button
               type="submit"
-              className="inline-flex items-center justify-center rounded-md bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-4 py-2.5 whitespace-nowrap"
+              disabled={loading}
+              className="inline-flex items-center justify-center rounded-lg bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-6 py-3 whitespace-nowrap shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {loading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
               Find my parts
             </button>
           </div>

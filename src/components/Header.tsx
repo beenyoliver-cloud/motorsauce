@@ -439,6 +439,13 @@ export default function Header() {
                     My Messages {unread > 0 ? `(${unread})` : ""}
                   </Link>
                   <Link
+                    href="/offers-standalone"
+                    className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    My Offers
+                  </Link>
+                  <Link
                     href="/sales"
                     className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
                     onClick={() => setMobileMenuOpen(false)}

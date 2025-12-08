@@ -50,7 +50,7 @@ export default function SellFAB() {
       href="/sell"
       className={`
         md:hidden fixed bottom-6 right-6 z-40
-        flex flex-col items-center justify-center gap-1
+        flex items-center justify-center gap-2 px-5 py-3
         bg-yellow-500 text-black
         rounded-full shadow-lg hover:shadow-xl
         transition-all duration-300 ease-out
@@ -58,18 +58,14 @@ export default function SellFAB() {
         hover:scale-105 active:scale-95
         group
       `}
-      style={{
-        width: '64px',
-        height: '64px',
-      }}
       aria-label="Sell your parts"
     >
       <PlusCircle 
-        size={28} 
+        size={20} 
         className="text-black group-hover:rotate-90 transition-transform duration-300" 
         strokeWidth={2.5}
       />
-      <span className="text-[10px] font-bold uppercase tracking-wide">
+      <span className="text-sm font-bold uppercase tracking-wide">
         Sell
       </span>
       

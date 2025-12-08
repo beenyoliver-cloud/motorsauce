@@ -54,15 +54,27 @@ export async function GET(req: Request) {
       console.warn("[unread-count] read status error:", readError);
     }
 
+    // Deleted threads for current user
+    const { data: deletedRows, error: deletedError } = await supabase
+      .from("thread_deletions")
+      .select("thread_id")
+      .eq("user_id", user.id);
+
+    if (deletedError) {
+      console.warn("[unread-count] deleted status error:", deletedError);
+    }
+
     const readSet = new Set((readRows || []).map((r: any) => r.thread_id));
+    const deletedSet = new Set((deletedRows || []).map((r: any) => r.thread_id));
     const count = (threads || []).reduce((acc, t: any) => {
       // Only count threads that have at least a created_at/last_message_at (defensive)
       const hasAny = Boolean(t.last_message_at || t.created_at);
       const isRead = readSet.has(t.id);
-      return acc + (hasAny && !isRead ? 1 : 0);
+      const isDeleted = deletedSet.has(t.id);
+      return acc + (hasAny && !isRead && !isDeleted ? 1 : 0);
     }, 0);
 
-    console.log(`[unread-count] User ${user.id}: ${threads?.length} participating threads, ${readSet.size} marked read, ${count} unread`);
+    console.log(`[unread-count] User ${user.id}: ${threads?.length} participating threads, ${readSet.size} marked read, ${deletedSet.size} deleted, ${count} unread`);
     return NextResponse.json({ count }, { status: 200 });
   } catch (error: any) {
     console.error("[unread-count] Unexpected error:", error);
