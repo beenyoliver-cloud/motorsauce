@@ -98,14 +98,14 @@ export default function ResultsGrid() {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 md:gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-4 md:gap-6">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="animate-pulse border border-gray-200 rounded-lg overflow-hidden">
-            <div className="aspect-square sm:aspect-[4/3] bg-gray-100" />
-            <div className="p-2 sm:p-3 space-y-2">
+          <div key={i} className="animate-pulse border border-gray-200 rounded-md overflow-hidden">
+            <div className="aspect-[3/2.5] sm:aspect-[4/3] bg-gray-100" />
+            <div className="p-1.5 sm:p-3 space-y-1.5">
               <div className="h-3 sm:h-4 bg-gray-100 rounded" />
               <div className="h-2 sm:h-3 bg-gray-100 rounded w-2/3" />
-              <div className="h-4 sm:h-5 bg-gray-100 rounded w-1/3" />
+              <div className="h-3 sm:h-5 bg-gray-100 rounded w-1/3" />
             </div>
           </div>
         ))}
@@ -132,21 +132,23 @@ export default function ResultsGrid() {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 md:gap-6">
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-4 md:gap-6">
       {visible.map((l) => (
         <Link
           key={String(l.id)}
           href={`/listing/${l.id}`}
-          className="block border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition"
+          className="block border border-gray-200 rounded-md overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition"
         >
-          <div className="relative aspect-square sm:aspect-[4/3] bg-gray-50 overflow-hidden">
+          <div className="relative aspect-[3/2.5] sm:aspect-[4/3] bg-gray-50 overflow-hidden">
             <SafeImage src={l.image} alt={l.title} className="absolute inset-0 w-full h-full object-cover object-center" />
           </div>
-          <div className="p-2 sm:p-3">
-            <h3 className="text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2 leading-tight">{l.title}</h3>
-            <div className="mt-1 flex items-center justify-between">
-              <div className="text-sm sm:text-base font-bold text-gray-900">{l.price}</div>
-              <FavoriteButton listingId={String(l.id)} showLabel={false} />
+          <div className="p-1.5 sm:p-3">
+            <h3 className="text-[11px] leading-tight sm:text-sm font-semibold text-gray-900 line-clamp-2">{l.title}</h3>
+            <div className="mt-0.5 sm:mt-1 flex items-center justify-between">
+              <div className="text-xs sm:text-base font-bold text-gray-900">{l.price}</div>
+              <div className="scale-75 sm:scale-100 origin-right">
+                <FavoriteButton listingId={String(l.id)} showLabel={false} />
+              </div>
             </div>
           </div>
         </Link>
