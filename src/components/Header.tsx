@@ -297,7 +297,7 @@ export default function Header() {
             >
               {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {isUserLoaded && user && (
                   <>
                     <NotificationsDropdown />
@@ -331,8 +331,8 @@ export default function Header() {
         </div>
 
         {/* Logo */}
-        <div className="px-3 py-1.5 flex justify-center">
-          <Link href="/" className="text-xl font-extrabold text-yellow-500 tracking-tight" aria-label="Motorsource home">
+        <div className="px-3 py-2 flex justify-center">
+          <Link href="/" className="text-2xl font-extrabold text-yellow-500 tracking-tight" aria-label="Motorsource home">
             Motorsource
           </Link>
         </div>

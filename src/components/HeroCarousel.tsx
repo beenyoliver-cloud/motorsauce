@@ -66,7 +66,7 @@ export default function HeroCarousel() {
   const slide = slides[index] || slides[0];
 
   return (
-    <section className="relative w-full overflow-hidden rounded-none sm:rounded-2xl border-0 sm:border border-gray-200 bg-gray-900 -mx-3 sm:mx-0" style={{ height: 'clamp(180px, 40vw, 280px)' }}>
+    <section className="relative overflow-hidden rounded-none sm:rounded-2xl border-0 sm:border border-gray-200 bg-gray-900 -mx-3 sm:mx-0 w-screen sm:w-full" style={{ height: 'clamp(180px, 40vw, 280px)', maxWidth: '100vw' }}>
       {/* Image */}
       <div className="absolute inset-0">
         <SafeImage
