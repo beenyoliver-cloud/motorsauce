@@ -104,16 +104,6 @@ export default function MyDraftsTab({ sellerName }: { sellerName: string }) {
             DRAFT
           </div>
 
-          {/* Edit button */}
-          <button
-            type="button"
-            onClick={() => router.push(`/listing/${draft.id}/edit`)}
-            className="absolute top-2 right-2 rounded-md bg-black/70 px-2 py-1 text-xs font-medium text-white sm:opacity-0 sm:group-hover:opacity-100 transition z-20 hover:bg-black flex items-center gap-1"
-          >
-            <Edit className="h-3 w-3" />
-            Edit
-          </button>
-
           {/* Content - not clickable since it's a draft */}
           <div className="flex sm:block items-center gap-3 sm:gap-0">
             <div className="relative w-[120px] h-[120px] sm:w-auto sm:h-auto sm:aspect-[4/3] bg-gray-100 overflow-hidden shrink-0">
@@ -126,7 +116,7 @@ export default function MyDraftsTab({ sellerName }: { sellerName: string }) {
               )}
             </div>
             <div className="flex-1 p-2 sm:p-3 flex flex-col justify-between min-w-0">
-              <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">{draft.title}</h3>
+              <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 pr-20 sm:pr-0">{draft.title}</h3>
               <div className="mt-1">
                 <div className="text-base font-bold text-gray-900">{draft.price}</div>
               </div>
@@ -137,6 +127,16 @@ export default function MyDraftsTab({ sellerName }: { sellerName: string }) {
               )}
             </div>
           </div>
+
+          {/* Edit button - positioned outside content to prevent overlap */}
+          <button
+            type="button"
+            onClick={() => router.push(`/listing/${draft.id}/edit`)}
+            className="absolute top-2 right-2 rounded-md bg-yellow-600 text-white px-3 py-1.5 text-xs font-semibold sm:opacity-0 sm:group-hover:opacity-100 sm:bg-black/70 transition z-20 hover:bg-yellow-700 sm:hover:bg-black flex items-center gap-1 shadow-sm"
+          >
+            <Edit className="h-3 w-3" />
+            Edit
+          </button>
         </div>
       ))}
     </div>
