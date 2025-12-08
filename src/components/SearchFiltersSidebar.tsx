@@ -136,8 +136,8 @@ export default function SearchFiltersSidebar(props: Props) {
 
   // The actual sidebar content (used for both desktop and mobile)
   const Panel = (
-    <aside className="md:sticky md:top-4 md:self-start md:w-[300px] md:max-h-[calc(100vh-2rem)] md:overflow-y-auto md:border-r md:border-gray-200 md:bg-white">
-      <div className="p-4 space-y-6">
+    <aside className="md:sticky md:top-4 md:self-start md:w-[300px] md:border-r md:border-gray-200 md:bg-white">
+      <div className="p-4 space-y-6 md:max-h-[calc(100vh-2rem)] md:overflow-y-auto">
         {/* Search query */}
         <div>
           <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700">Search</div>
