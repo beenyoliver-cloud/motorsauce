@@ -14,10 +14,21 @@ export default function ReportUserButton({ sellerName, sellerId }: ReportUserBut
   const [reason, setReason] = useState("fraud");
   const [details, setDetails] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const [toastOpen, setToastOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
   const [toastType, setToastType] = useState<"success" | "error">("success");
+
+  // Get current user ID to prevent self-reporting
+  useEffect(() => {
+    async function fetchCurrentUser() {
+      const supabase = supabaseBrowser();
+      const { data: { session } } = await supabase.auth.getSession();
+      setCurrentUserId(session?.user?.id || null);
+    }
+    fetchCurrentUser();
+  }, []);
 
   useEffect(() => {
     if (!toastOpen) return;
@@ -82,6 +93,11 @@ export default function ReportUserButton({ sellerName, sellerId }: ReportUserBut
     } finally {
       setSubmitting(false);
     }
+  }
+
+  // Don't show report button if user is trying to report themselves
+  if (currentUserId && currentUserId === sellerId) {
+    return null;
   }
 
   return (

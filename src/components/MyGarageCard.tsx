@@ -174,8 +174,11 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
       window.addEventListener("ms:garage", onGarage as EventListener);
       return () => window.removeEventListener("ms:garage", onGarage as EventListener);
     } else {
-      setPublicView(readPublicGarage(displayName));
-      const onStorage = () => setPublicView(readPublicGarage(displayName));
+      // Fetch public garage data asynchronously
+      readPublicGarage(displayName).then(setPublicView);
+      const onStorage = () => {
+        readPublicGarage(displayName).then(setPublicView);
+      };
       window.addEventListener("storage", onStorage);
       return () => window.removeEventListener("storage", onStorage);
     }

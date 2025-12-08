@@ -180,21 +180,94 @@ export async function publishPublicCopy(username?: string) {
     // Sanitize cars before making public
     const sanitizedCars = cars.map(sanitizeCarForPublic);
     const selected = getSelectedCarId();
+    
+    // Get auth token
+    const { supabaseBrowser } = await import("./supabase");
+    const supabase = supabaseBrowser();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.warn("No session available to publish garage");
+      return;
+    }
+    
+    // Save to database
+    await fetch("/api/garage", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        username: u,
+        cars: sanitizedCars,
+        selected_car_id: selected,
+        is_public: true,
+      }),
+    });
+    
+    // Keep localStorage as backup for now
     const payload = { cars: sanitizedCars, selected };
     localStorage.setItem(K_PUBLIC(u), JSON.stringify(payload));
-  } catch {}
+  } catch (err) {
+    console.error("Failed to publish garage:", err);
+  }
 }
+
 export async function removePublicCopy(username?: string) {
   try {
     const u = username ?? await currentUsername();
     if (!u) return;
+    
+    // Get auth token
+    const { supabaseBrowser } = await import("./supabase");
+    const supabase = supabaseBrowser();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.warn("No session available to remove garage");
+      return;
+    }
+    
+    // Update database to set is_public = false
+    await fetch("/api/garage", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        username: u,
+        cars: [],
+        selected_car_id: null,
+        is_public: false,
+      }),
+    });
+    
+    // Remove from localStorage
     localStorage.removeItem(K_PUBLIC(u));
-  } catch {}
+  } catch (err) {
+    console.error("Failed to remove public garage:", err);
+  }
 }
-export function readPublicGarage(
+
+export async function readPublicGarage(
   username: string
-): { cars: Car[]; selected?: string | null } | null {
+): Promise<{ cars: Car[]; selected?: string | null } | null> {
   try {
+    // First try to fetch from API
+    const response = await fetch(`/api/garage?username=${encodeURIComponent(username)}`);
+    if (response.ok) {
+      const data = await response.json();
+      if (data.cars && data.cars.length > 0) {
+        return {
+          cars: data.cars,
+          selected: data.selected_car_id || null,
+        };
+      }
+    }
+    
+    // Fallback to localStorage (for backward compatibility)
     const raw = localStorage.getItem(K_PUBLIC(username));
     if (!raw) return null;
     const obj = JSON.parse(raw) as { cars?: unknown; selected?: unknown };
