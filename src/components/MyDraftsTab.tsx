@@ -131,8 +131,20 @@ export default function MyDraftsTab({ sellerName }: { sellerName: string }) {
           {/* Edit button - positioned outside content to prevent overlap */}
           <button
             type="button"
-            onClick={() => router.push(`/listing/${draft.id}/edit`)}
-            className="absolute top-2 right-2 rounded-md bg-yellow-600 text-white px-3 py-1.5 text-xs font-semibold sm:opacity-0 sm:group-hover:opacity-100 sm:bg-black/70 transition z-20 hover:bg-yellow-700 sm:hover:bg-black flex items-center gap-1 shadow-sm"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+              router.push(`/listing/${draft.id}/edit`);
+              return false;
+            }}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+            }}
+            onTouchStart={(e) => {
+              e.stopPropagation();
+            }}
+            className="absolute top-2 right-2 rounded-md bg-yellow-600 text-white px-3 py-1.5 text-xs font-semibold sm:opacity-0 sm:group-hover:opacity-100 sm:bg-black/70 transition z-30 hover:bg-yellow-700 sm:hover:bg-black flex items-center gap-1 shadow-sm pointer-events-auto"
           >
             <Edit className="h-3 w-3" />
             Edit

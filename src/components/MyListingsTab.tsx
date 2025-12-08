@@ -108,9 +108,17 @@ export default function MyListingsTab({ sellerName }: { sellerName?: string }) {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+                  e.nativeEvent.stopImmediatePropagation();
                   router.push(`/listing/${l.id}/edit`);
+                  return false;
                 }}
-                className="absolute top-2 right-2 sm:top-2 sm:right-2 rounded-md bg-yellow-500 text-black px-3 py-1.5 text-xs font-semibold sm:opacity-0 sm:group-hover:opacity-100 sm:bg-black/70 sm:text-white transition z-20 hover:bg-yellow-600 sm:hover:bg-black shadow-sm"
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                }}
+                onTouchStart={(e) => {
+                  e.stopPropagation();
+                }}
+                className="absolute top-2 right-2 sm:top-2 sm:right-2 rounded-md bg-yellow-500 text-black px-3 py-1.5 text-xs font-semibold sm:opacity-0 sm:group-hover:opacity-100 sm:bg-black/70 sm:text-white transition z-30 hover:bg-yellow-600 sm:hover:bg-black shadow-sm pointer-events-auto"
               >
                 Edit
               </button>
