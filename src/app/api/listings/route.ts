@@ -237,7 +237,12 @@ export async function GET(req: Request) {
     .from("listings")
     .select("*");
   
-  // Filter by seller if provided
+  // Only show active listings in public search (unless requesting specific seller's view)
+  if (!sellerId) {
+    query = query.eq("status", "active");
+  }
+  
+  // Filter by seller if provided (show all their listings including drafts for profile view)
   if (sellerId) {
     query = query.eq("seller_id", sellerId);
   }
