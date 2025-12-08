@@ -107,15 +107,14 @@ function SellForm() {
     if (images.length === 0) return false;
     // OEM/Aftermarket REQUIRE vehicles (either multiple vehicles OR universal flag) - MANDATORY
     if (isVehicleSpecific && selectedVehicles.length === 0 && !isUniversal) return false;
-    // Validate selected vehicles
+    // Validate selected vehicles - just check they have make and model populated
     if (selectedVehicles.length > 0) {
       for (const v of selectedVehicles) {
         if (!v.make.trim() || !v.model.trim()) return false;
-        if (v.model && (!v.make || !(vehicles[v.make] || []).includes(v.model))) return false;
       }
     }
     return true;
-  }, [title, category, price, images.length, isVehicleSpecific, selectedVehicles, isUniversal, vehicles]);
+  }, [title, category, price, images.length, isVehicleSpecific, selectedVehicles, isUniversal]);
 
   useEffect(() => {
     let active = true;
@@ -205,15 +204,6 @@ function SellForm() {
     setErrorMsg(null);
 
     if (!canSubmit) {
-      if (selectedVehicles.length > 0) {
-        const invalidVehicle = selectedVehicles.find(
-          v => v.model && (!v.make || !(vehicles[v.make] || []).includes(v.model))
-        );
-        if (invalidVehicle) {
-          setErrorMsg("One or more selected vehicles have invalid make/model combinations.");
-          return;
-        }
-      }
       if (isVehicleSpecific && selectedVehicles.length === 0 && !isUniversal) {
         setErrorMsg("Please select at least one vehicle or mark as universal/generic part.");
         return;

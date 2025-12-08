@@ -350,16 +350,9 @@ function SearchPageInner() {
 
       {/* Results column */}
       <section className="pt-3 sm:pt-4">
-        {/* Mobile toolbar */}
-        <div className="md:hidden mb-2 flex items-center justify-between px-3">
+        {/* Mobile header (no filters button) */}
+        <div className="md:hidden mb-2 px-3">
           <h1 className="text-lg font-bold text-black">Search</h1>
-          <button
-            type="button"
-            onClick={() => setMobileFiltersOpen(true)}
-            className="px-2.5 py-1.5 text-sm rounded-md border border-gray-300 bg-white text-gray-900 hover:bg-gray-100"
-          >
-            Filters
-          </button>
         </div>
 
         <div className="space-y-4 sm:space-y-6 px-3 sm:px-4 md:px-6">
