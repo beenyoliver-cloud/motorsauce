@@ -36,17 +36,18 @@ interface Offer {
 export default function StandaloneOffersPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"sent" | "received">("sent");
-  const [offers, setOffers] = useState<Offer[]>([]);
+  const [sentOffers, setSentOffers] = useState<Offer[]>([]);
+  const [receivedOffers, setReceivedOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [respondingOfferId, setRespondingOfferId] = useState<string | null>(null);
   const [counterAmounts, setCounterAmounts] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
-    fetchOffers();
-  }, [activeTab]);
+    fetchAllOffers();
+  }, []);
 
-  async function fetchOffers() {
+  async function fetchAllOffers() {
     setLoading(true);
     setError(null);
     try {
@@ -59,20 +60,30 @@ export default function StandaloneOffersPage() {
         return;
       }
 
-      const type = activeTab === "sent" ? "sent" : "received";
-      const response = await fetch(`/api/offers-standalone?type=${type}`, {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+      // Fetch both sent and received offers in parallel
+      const [sentRes, receivedRes] = await Promise.all([
+        fetch(`/api/offers-standalone?type=sent`, {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }),
+        fetch(`/api/offers-standalone?type=received`, {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }),
+      ]);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `API error: ${response.status}`);
+      if (!sentRes.ok || !receivedRes.ok) {
+        const errorData = await sentRes.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to fetch offers");
       }
 
-      const data = await response.json();
-      setOffers(data.offers || []);
+      const sentData = await sentRes.json();
+      const receivedData = await receivedRes.json();
+      
+      setSentOffers(sentData.offers || []);
+      setReceivedOffers(receivedData.offers || []);
     } catch (err) {
       console.error("Failed to fetch offers:", err);
       setError(err instanceof Error ? err.message : "Failed to load offers");
@@ -80,6 +91,8 @@ export default function StandaloneOffersPage() {
       setLoading(false);
     }
   }
+
+  const offers = activeTab === "sent" ? sentOffers : receivedOffers;
 
   async function respondToOffer(offerId: string, status: string, counterAmount?: number) {
     setRespondingOfferId(offerId);
@@ -103,8 +116,8 @@ export default function StandaloneOffersPage() {
       });
 
       if (response.ok) {
-        // Refresh offers
-        fetchOffers();
+        // Refresh all offers
+        fetchAllOffers();
         setCounterAmounts({});
       } else {
         const error = await response.json();
@@ -180,7 +193,7 @@ export default function StandaloneOffersPage() {
               The offers system is still being set up. Please ensure the database tables and functions have been created in Supabase.
             </p>
             <button
-              onClick={() => fetchOffers()}
+              onClick={() => fetchAllOffers()}
               className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700"
             >
               Try Again
@@ -210,7 +223,7 @@ export default function StandaloneOffersPage() {
                 : "text-gray-600 hover:text-gray-900"
             }`}
           >
-            Offers Sent ({offers.length})
+            Offers Sent ({sentOffers.length})
           </button>
           <button
             onClick={() => setActiveTab("received")}
@@ -220,7 +233,7 @@ export default function StandaloneOffersPage() {
                 : "text-gray-600 hover:text-gray-900"
             }`}
           >
-            Offers Received ({offers.length})
+            Offers Received ({receivedOffers.length})
           </button>
         </div>
 

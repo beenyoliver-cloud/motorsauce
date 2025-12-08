@@ -370,6 +370,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               listingId={listing.id}
               listingTitle={listing.title}
               listingImage={gallery[0] || listing.image}
+              listingPrice={Number(String(listing.price).replace(/[^\d.]/g, "")) || 0}
             />
 
             {/* Contact Seller (auto-disables on own listing) */}
