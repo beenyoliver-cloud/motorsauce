@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { PlusCircle } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
@@ -9,9 +10,10 @@ import { getCurrentUser } from "@/lib/auth";
 /**
  * Floating Action Button for "Sell" - Mobile only
  * Shows a prominent yellow circular button in the bottom-right corner
- * Only visible on mobile when user is logged in
+ * Only visible on mobile when user is logged in and on the home page
  */
 export default function SellFAB() {
+  const pathname = usePathname();
   const [show, setShow] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -39,7 +41,9 @@ export default function SellFAB() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  if (!show) return null;
+  // Only show on home page (mobile) when user is logged in
+  const isHomePage = pathname === "/";
+  if (!show || !isHomePage) return null;
 
   return (
     <Link
