@@ -51,9 +51,10 @@ export default function StandaloneOffersPage() {
     setError(null);
     try {
       const supabase = supabaseBrowser();
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-      if (!session) {
+      if (sessionError || !session) {
+        setError("Please log in to view offers");
         router.push("/auth/login");
         return;
       }
@@ -66,7 +67,8 @@ export default function StandaloneOffersPage() {
       });
 
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API error: ${response.status}`);
       }
 
       const data = await response.json();
