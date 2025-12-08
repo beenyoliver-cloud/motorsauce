@@ -599,7 +599,7 @@ function SearchPageInner() {
                     </span>
                     {l.distanceKm !== undefined && (
                       <span className="absolute top-1.5 right-1.5 text-[10px] px-2 py-0.5 rounded z-10 bg-blue-500 text-white sm:top-2 sm:right-2">
-                        {l.distanceKm < 1 ? '<1 km' : l.distanceKm < 10 ? `~${l.distanceKm} km` : `~${Math.round(l.distanceKm / 5) * 5} km`}
+                        {l.distanceKm < 1 ? '<1 mi' : l.distanceKm < 10 ? `~${l.distanceKm} mi` : `~${Math.round(l.distanceKm / 5) * 5} mi`}
                       </span>
                     )}
                     <SafeImage

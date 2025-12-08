@@ -84,6 +84,9 @@ function SellForm() {
   const [price, setPrice] = useState<string>("");
   const [quantity, setQuantity] = useState<number>(1);
   const [postcode, setPostcode] = useState("");
+  const [sellerLat, setSellerLat] = useState<number | null>(null);
+  const [sellerLng, setSellerLng] = useState<number | null>(null);
+  const [geocoding, setGeocoding] = useState(false);
   const [shippingOption, setShippingOption] = useState<ShippingOption>("both");
   const [acceptsReturns, setAcceptsReturns] = useState(false);
   const [returnDays, setReturnDays] = useState<number>(14);
@@ -199,6 +202,26 @@ function SellForm() {
     };
   }, []);
 
+  async function handleGeocodePostcode() {
+    if (!postcode.trim()) return;
+    setGeocoding(true);
+    try {
+      const response = await fetch(`/api/geocode/postcode?postcode=${encodeURIComponent(postcode)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSellerLat(data.lat_rounded);
+        setSellerLng(data.lng_rounded);
+      } else {
+        setErrorMsg("Invalid postcode");
+      }
+    } catch (err) {
+      console.error("Geocoding error:", err);
+      setErrorMsg("Failed to geocode postcode");
+    } finally {
+      setGeocoding(false);
+    }
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErrorMsg(null);
@@ -234,6 +257,9 @@ function SellForm() {
         price: parseFloat(price),
         quantity,
         postcode: postcode.trim() || undefined,
+        seller_postcode: postcode.trim() || undefined,
+        seller_lat: sellerLat,
+        seller_lng: sellerLng,
         shipping_option: shippingOption,
         accepts_returns: acceptsReturns,
         return_days: acceptsReturns ? returnDays : undefined,
@@ -601,14 +627,29 @@ function SellForm() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Location (Postcode)</label>
-          <input
-            type="text"
-            value={postcode}
-            onChange={(e) => setPostcode(e.target.value.toUpperCase())}
-            placeholder="e.g., SW1A 1AA"
-            maxLength={8}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-gold-400"
-          />
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={postcode}
+              onChange={(e) => setPostcode(e.target.value.toUpperCase())}
+              placeholder="e.g., SW1A 1AA"
+              maxLength={8}
+              className="flex-1 border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-gold-400"
+            />
+            <button
+              type="button"
+              onClick={handleGeocodePostcode}
+              disabled={geocoding || !postcode.trim()}
+              className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-sm font-medium disabled:opacity-50"
+            >
+              {geocoding ? "..." : "Validate"}
+            </button>
+          </div>
+          {sellerLat && sellerLng ? (
+            <p className="mt-1 text-xs text-green-600">✓ Location validated (approximate, for distance calc)</p>
+          ) : (
+            <p className="mt-1 text-xs text-gray-600">Helps buyers see distance from their location</p>
+          )}
         </div>
 
         <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">

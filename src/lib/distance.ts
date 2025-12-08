@@ -6,7 +6,7 @@
  * @param lon1 Longitude of first point
  * @param lat2 Latitude of second point
  * @param lon2 Longitude of second point
- * @returns Distance in kilometers
+ * @returns Distance in miles
  */
 export function calculateDistance(
   lat1: number,
@@ -14,7 +14,7 @@ export function calculateDistance(
   lat2: number,
   lon2: number
 ): number {
-  const R = 6371; // Earth's radius in kilometers
+  const R = 3958.8; // Earth's radius in miles (changed from 6371 km)
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
   
@@ -37,15 +37,15 @@ function toRad(degrees: number): number {
 
 /**
  * Format distance for display
- * @param km Distance in kilometers
- * @returns Formatted string like "~5 km" or "~150 km"
+ * @param miles Distance in miles
+ * @returns Formatted string like "~5 mi" or "~150 mi"
  */
-export function formatDistance(km: number): string {
-  if (km < 1) return "<1 km";
-  if (km < 10) return `~${km} km`;
-  // Round to nearest 5 for distances > 10km
-  const rounded = Math.round(km / 5) * 5;
-  return `~${rounded} km`;
+export function formatDistance(miles: number): string {
+  if (miles < 1) return "<1 mi";
+  if (miles < 10) return `~${miles} mi`;
+  // Round to nearest 5 for distances > 10 miles
+  const rounded = Math.round(miles / 5) * 5;
+  return `~${rounded} mi`;
 }
 
 /**
