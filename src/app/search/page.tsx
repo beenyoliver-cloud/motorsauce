@@ -486,16 +486,16 @@ function SearchPageInner() {
             </div>
           ) : activeTab === "parts" && sortedResults.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 lg:gap-6">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 lg:gap-6">
                 {paginatedResults.map((l) => (
                   <div
                     key={l.id}
                     className="group relative border border-gray-200 rounded-md overflow-hidden bg-white hover:shadow-lg transition-all sm:rounded-xl"
                   >
-                  <Link href={`/listing/${l.id}`} className="flex items-center gap-2 sm:block">
-                    <div className="relative w-[60px] h-[60px] flex-shrink-0 bg-gray-50 overflow-hidden sm:aspect-[4/3] sm:w-full sm:h-auto">
+                  <Link href={`/listing/${l.id}`} className="flex items-center gap-3 sm:block">
+                    <div className="relative w-[120px] h-[120px] flex-shrink-0 bg-gray-50 overflow-hidden sm:aspect-[4/3] sm:w-full sm:h-auto">
                     <span
-                      className={`absolute top-1 left-1 text-[9px] px-1.5 py-0.5 rounded z-10 sm:top-2 sm:left-2 sm:text-[10px] sm:px-2 ${
+                      className={`absolute top-1.5 left-1.5 text-[10px] px-2 py-0.5 rounded z-10 sm:top-2 sm:left-2 sm:text-[10px] sm:px-2 ${
                         l.category === "OEM"
                           ? "bg-yellow-500 text-black"
                           : l.category === "Aftermarket"
@@ -512,10 +512,10 @@ function SearchPageInner() {
                       loading="lazy"
                     />
                   </div>
-                  <div className="flex-1 py-1.5 pr-1.5 sm:p-3">
-                    <h3 className="text-[11px] leading-[1.3] sm:text-sm font-semibold text-gray-900 line-clamp-2">{l.title}</h3>
+                  <div className="flex-1 py-2 pr-2 sm:p-3">
+                    <h3 className="text-sm leading-tight sm:text-sm font-semibold text-gray-900 line-clamp-2">{l.title}</h3>
                     {l.category !== "Tool" && (
-                      <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-[11px] text-gray-700 truncate">
+                      <p className="mt-1 sm:mt-1 text-[11px] sm:text-[11px] text-gray-700 truncate">
                         {l.make} {l.model} {l.genCode} •{" "}
                         {l.year ?? `${l.yearFrom ?? ""}${l.yearFrom || l.yearTo ? "–" : ""}${l.yearTo ?? ""}`} • {l.engine}
                       </p>
@@ -532,7 +532,7 @@ function SearchPageInner() {
                         {/* Trust badge placeholder (data to be wired) */}
                         <TrustBadge soldCount={undefined} />
                       </div>
-                      <div className="text-xs sm:text-base font-bold text-gray-900">{l.price}</div>
+                      <div className="text-sm sm:text-base font-bold text-gray-900">{l.price}</div>
                     </div>
                   </div>
                 </Link>
