@@ -108,7 +108,7 @@ export default function MyDraftsTab({ sellerName }: { sellerName: string }) {
           <button
             type="button"
             onClick={() => router.push(`/listing/${draft.id}/edit`)}
-            className="absolute top-2 right-2 rounded-md bg-black/70 px-2 py-1 text-xs font-medium text-white opacity-0 group-hover:opacity-100 transition z-20 hover:bg-black flex items-center gap-1"
+            className="absolute top-2 right-2 rounded-md bg-black/70 px-2 py-1 text-xs font-medium text-white sm:opacity-0 sm:group-hover:opacity-100 transition z-20 hover:bg-black flex items-center gap-1"
           >
             <Edit className="h-3 w-3" />
             Edit

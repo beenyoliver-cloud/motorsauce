@@ -93,7 +93,7 @@ export default function MyListingsTab({ sellerName }: { sellerName?: string }) {
               <button
                 type="button"
                 onClick={() => router.push(`/listing/${l.id}/edit`)}
-                className="absolute top-2 right-2 rounded-md bg-black/70 px-2 py-1 text-xs font-medium text-white opacity-0 group-hover:opacity-100 transition z-20 hover:bg-black"
+                className="absolute top-2 right-2 rounded-md bg-black/70 px-2 py-1 text-xs font-medium text-white sm:opacity-0 sm:group-hover:opacity-100 transition z-20 hover:bg-black"
               >
                 Edit
               </button>
