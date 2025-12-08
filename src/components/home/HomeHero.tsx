@@ -285,24 +285,25 @@ export default function HomeHero() {
                 value={plate}
                 onChange={(e) => setPlate(e.target.value.toUpperCase())}
                 placeholder="AB12 CDE"
-                className="flex-1 rounded-md border border-gray-300 bg-[#FFF7CC] text-gray-900 placeholder:text-gray-500 px-3 py-2 font-mono uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                className="flex-1 rounded-md border border-gray-300 bg-[#FFF7CC] text-gray-900 placeholder:text-gray-500 px-3 py-2 text-sm uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                style={{ letterSpacing: '0.08em' }}
               />
             </div>
             <button
               type="button"
               onClick={submitPlateSearch}
               disabled={plateLoading}
-              className="justify-self-start md:justify-self-end inline-flex items-center gap-2 rounded-md bg-yellow-500 text-black font-semibold px-4 py-2 hover:bg-yellow-600 disabled:opacity-50"
+              className="justify-self-start md:justify-self-end inline-flex items-center gap-1.5 rounded-md bg-yellow-500 text-black font-semibold px-3 py-2 text-sm hover:bg-yellow-600 disabled:opacity-50 transition-all"
             >
               {plateLoading ? (
                 <>
-                  <div className="animate-spin h-4 w-4 border-2 border-black border-t-transparent rounded-full" />
-                  Looking up…
+                  <div className="animate-spin h-3.5 w-3.5 border-2 border-black border-t-transparent rounded-full" />
+                  <span className="text-xs sm:text-sm">Looking up…</span>
                 </>
               ) : (
                 <>
-                  <SearchIcon size={16} />
-                  Apply filters
+                  <SearchIcon size={14} />
+                  <span className="text-xs sm:text-sm">Search</span>
                 </>
               )}
             </button>
