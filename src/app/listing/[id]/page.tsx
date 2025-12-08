@@ -268,9 +268,15 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
   }
   if (!listing) notFound();
 
-  // Check if current user is the owner
-  const currentUser = await getCurrentUser();
-  const isOwner = currentUser?.id === listing.sellerId;
+  // Check if current user is the owner (safely handle auth in server component)
+  let isOwner = false;
+  try {
+    const currentUser = await getCurrentUser();
+    isOwner = currentUser?.id === listing.sellerId;
+  } catch {
+    // User not authenticated or error fetching user - not owner
+    isOwner = false;
+  }
 
   const gallery = listing.images?.length ? listing.images : [listing.image];
 
