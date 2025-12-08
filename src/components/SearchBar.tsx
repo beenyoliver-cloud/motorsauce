@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Search, X, User, Package } from "lucide-react";
+import { Search, X, User, Package, ChevronDown } from "lucide-react";
 import { nsKey } from "@/lib/auth";
 
 type SearchSuggestion = {
@@ -19,9 +19,17 @@ type Props = {
   compact?: boolean;
 };
 
+const CATEGORIES = [
+  { label: "All Categories", value: "" },
+  { label: "OEM Parts", value: "oem" },
+  { label: "Aftermarket Parts", value: "aftermarket" },
+  { label: "Tools & Accessories", value: "tools" },
+];
+
 export default function SearchBar({ initialQuery = "", placeholder = "Search parts or sellers…", autoFocus, compact = false }: Props) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
+  const [category, setCategory] = useState("");
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
@@ -84,20 +92,45 @@ export default function SearchBar({ initialQuery = "", placeholder = "Search par
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const q = query.trim();
-    if (!q) return;
-
-    // Save to recent searches
-    try {
-      const key = nsKey("recent_searches");
-      const arr = [q, ...recentSearches.filter((s) => s !== q)].slice(0, 10);
-      localStorage.setItem(key, JSON.stringify(arr));
-      setRecentSearches(arr.slice(0, 5));
-    } catch {
-      // ignore
+    
+    // Allow search even without query (will show all results, optionally filtered by category)
+    let searchUrl = "/search";
+    const params = new URLSearchParams();
+    
+    if (q) {
+      params.set("q", q);
+      // Save to recent searches
+      try {
+        const key = nsKey("recent_searches");
+        const arr = [q, ...recentSearches.filter((s) => s !== q)].slice(0, 10);
+        localStorage.setItem(key, JSON.stringify(arr));
+        setRecentSearches(arr.slice(0, 5));
+      } catch {
+        // ignore
+      }
+    }
+    
+    if (category) {
+      params.set("category", category);
+    }
+    
+    const queryString = params.toString();
+    if (queryString) {
+      searchUrl += `?${queryString}`;
     }
 
     setShowSuggestions(false);
-    router.push(`/search?q=${encodeURIComponent(q)}`);
+    router.push(searchUrl);
+  }
+
+  function handleSearchIconClick() {
+    // If there's a query or category, submit the search
+    if (query.trim() || category) {
+      handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+    } else {
+      // Otherwise just go to the search page
+      router.push("/search");
+    }
   }
 
   function clearQuery() {
@@ -125,7 +158,33 @@ export default function SearchBar({ initialQuery = "", placeholder = "Search par
     <div ref={wrapperRef} className="relative w-full">
       <form onSubmit={handleSubmit} className="relative">
         <div className={`flex items-center w-full border border-gray-300 rounded-full focus-within:ring-2 focus-within:ring-yellow-400 bg-white shadow-sm ${compact ? "px-3 py-1.5" : "px-4 py-2"}`}>
-          <Search className="text-gray-400 mr-2 flex-shrink-0" size={compact ? 16 : 18} aria-hidden="true" />
+          <button
+            type="button"
+            onClick={handleSearchIconClick}
+            className="text-gray-400 hover:text-yellow-500 mr-2 flex-shrink-0 transition-colors cursor-pointer"
+            aria-label="Search"
+          >
+            <Search size={compact ? 16 : 18} />
+          </button>
+          
+          {/* Category Dropdown */}
+          <div className="relative flex-shrink-0 hidden sm:block">
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className={`appearance-none border-none bg-transparent pr-6 focus:ring-0 text-gray-700 font-medium cursor-pointer ${compact ? "text-xs" : "text-sm"}`}
+              aria-label="Category"
+            >
+              {CATEGORIES.map((cat) => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={14} className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-px bg-gray-200 mr-2" />
+          </div>
+          
           <input
             ref={inputRef}
             type="text"
@@ -134,7 +193,7 @@ export default function SearchBar({ initialQuery = "", placeholder = "Search par
             onFocus={() => setShowSuggestions(true)}
             placeholder={placeholder}
             autoFocus={autoFocus}
-            className={`flex-1 border-none focus:ring-0 text-gray-900 placeholder-gray-500 bg-transparent outline-none ${compact ? "text-sm" : "text-[15px]"}`}
+            className={`flex-1 border-none focus:ring-0 text-gray-900 placeholder-gray-500 bg-transparent outline-none ${compact ? "text-sm" : "text-[15px]"} sm:ml-2`}
             aria-label="Search"
           />
           {query && (
