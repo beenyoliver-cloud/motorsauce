@@ -38,6 +38,7 @@ export default function StandaloneOffersPage() {
   const [activeTab, setActiveTab] = useState<"sent" | "received">("sent");
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [respondingOfferId, setRespondingOfferId] = useState<string | null>(null);
   const [counterAmounts, setCounterAmounts] = useState<{ [key: string]: string }>({});
 
@@ -47,6 +48,7 @@ export default function StandaloneOffersPage() {
 
   async function fetchOffers() {
     setLoading(true);
+    setError(null);
     try {
       const supabase = supabaseBrowser();
       const { data: { session } } = await supabase.auth.getSession();
@@ -63,12 +65,15 @@ export default function StandaloneOffersPage() {
         },
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setOffers(data.offers || []);
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
       }
-    } catch (error) {
-      console.error("Failed to fetch offers:", error);
+
+      const data = await response.json();
+      setOffers(data.offers || []);
+    } catch (err) {
+      console.error("Failed to fetch offers:", err);
+      setError(err instanceof Error ? err.message : "Failed to load offers");
     } finally {
       setLoading(false);
     }
@@ -158,6 +163,28 @@ export default function StandaloneOffersPage() {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="text-gray-500">Loading offers...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="mx-auto max-w-6xl px-4 py-8">
+          <div className="rounded-lg border border-red-200 bg-red-50 p-6">
+            <h2 className="text-lg font-semibold text-red-900">Error Loading Offers</h2>
+            <p className="mt-2 text-red-800">{error}</p>
+            <p className="mt-4 text-sm text-red-700">
+              The offers system is still being set up. Please ensure the database tables and functions have been created in Supabase.
+            </p>
+            <button
+              onClick={() => fetchOffers()}
+              className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
       </div>
     );
   }

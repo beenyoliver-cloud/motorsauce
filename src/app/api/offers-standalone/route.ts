@@ -52,7 +52,14 @@ export async function GET(req: Request) {
     const { data: offers, error } = await query;
 
     if (error) {
-      console.error("[offers-standalone API] Error:", error);
+      console.error("[offers-standalone API] Query error:", error);
+      // Check if table doesn't exist
+      if (error.code === "PGRST116") {
+        return NextResponse.json({ 
+          error: "Offers system not yet initialized. Please set up the database schema.",
+          code: "NOT_INITIALIZED"
+        }, { status: 503 });
+      }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
