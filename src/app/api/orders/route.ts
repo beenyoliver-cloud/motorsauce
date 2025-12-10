@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
         shipping_cost: shipping_cost,
         total: total,
         shipping_method: shipping_method,
+        shipping_address: shipping_address, // Add shipping address to database
         status: "confirmed",
       })
       .select()
