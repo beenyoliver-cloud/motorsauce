@@ -10,13 +10,11 @@ import {
   ChevronDown,
   Menu,
   X,
-  ShoppingCart,
   MessageSquare,
 } from "lucide-react";
 import { getCurrentUser, LocalUser, nsKey } from "@/lib/auth";
 import { isAdmin } from "@/lib/admin";
 import { supabaseBrowser } from "@/lib/supabase";
-import CartDrawer from "@/components/CartDrawer";
 import SearchBar from "@/components/SearchBar";
 import { NotificationsDropdown } from "@/components/NotificationsDropdown";
 
@@ -49,27 +47,11 @@ function getInitials(label: string): string {
     : (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
-/** Basket helpers */
-function readCartCount(): number {
-  if (typeof window === "undefined") return 0;
-  try {
-    const raw = localStorage.getItem("ms:cart:v1");
-    if (!raw) return 0;
-    const parsed = JSON.parse(raw) as { items?: { qty?: number }[] } | null;
-    const items = Array.isArray(parsed?.items) ? parsed!.items : [];
-    return items.reduce((sum, i) => sum + (i.qty || 0), 0);
-  } catch {
-    return 0;
-  }
-}
-
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const [user, setUser] = useState<LocalUser | null>(null);
   const [avatar, setAvatar] = useState<string | null>(null);
-  const [cartCount, setCartCount] = useState(0);
-  const [cartOpen, setCartOpen] = useState(false);
   const [isUserLoaded, setIsUserLoaded] = useState(false);
   const [isAdminUser, setIsAdminUser] = useState(false);
   const [hideTopBar, setHideTopBar] = useState(false);
@@ -232,25 +214,6 @@ export default function Header() {
     };
   }, []);
 
-  // Cart
-  useEffect(() => {
-    const updateCart = () => setCartCount(readCartCount());
-    updateCart();
-    window.addEventListener("ms:cart", updateCart as EventListener);
-    window.addEventListener("storage", updateCart);
-    return () => {
-      window.removeEventListener("ms:cart", updateCart as EventListener);
-      window.removeEventListener("storage", updateCart);
-    };
-  }, []);
-
-   // Open cart drawer on custom event
-   useEffect(() => {
-     const handleOpenCart = () => setCartOpen(true);
-     window.addEventListener("ms:opencart", handleOpenCart as EventListener);
-     return () => window.removeEventListener("ms:opencart", handleOpenCart as EventListener);
-   }, []);
-
   // Lock body scroll when mobile menu is open
   useEffect(() => {
     if (mobileMenuOpen) {
@@ -323,18 +286,6 @@ export default function Header() {
               )}
               <Link href={profileHref} aria-label="Profile" className="flex items-center justify-center text-black hover:text-yellow-500 w-9">
                 <User size={20} />
-              </Link>
-              <Link
-                href="/basket"
-                aria-label="Open basket"
-                className="relative flex items-center justify-center text-black hover:text-yellow-500 w-9 z-10 touch-manipulation"
-              >
-                <ShoppingCart size={20} />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[10px] font-bold min-w-[16px] h-[16px] px-1">
-                    {cartCount}
-                  </span>
-                )}
               </Link>
             </div>
           </div>
@@ -419,17 +370,6 @@ export default function Header() {
                       </span>
                     </Link>
                   )}
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      setCartOpen(true);
-                    }}
-                    className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      <ShoppingCart size={16} /> Basket {cartCount > 0 ? `(${cartCount})` : ""}
-                    </span>
-                  </button>
                   <Link
                     href={profileHref}
                     className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
@@ -482,16 +422,6 @@ export default function Header() {
                 </>
               ) : (
                 <>
-                  <Link
-                    href="/basket"
-                    className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      <ShoppingCart size={16} /> Basket {cartCount > 0 ? `(${cartCount})` : ""}
-                    </span>
-                  </Link>
-                  <div className="border-t border-gray-100" />
                   <Link
                     href="/auth/login"
                     className="block px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-50 hover:text-yellow-600"
@@ -624,18 +554,6 @@ export default function Header() {
           </Link>
             </>
         )}
-        <button
-  onClick={() => setCartOpen(true)}
-  className="relative flex items-center text-black hover:text-yellow-500 transition-colors"
-  aria-label="Open basket"
->
-  <ShoppingCart size={20} />
-  {cartCount > 0 && (
-  <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[11px] font-bold min-w-[18px] h-[18px] px-1">
-      {cartCount}
-    </span>
-  )}
-</button>
 
         {/* Profile with dropdown */}
         <div className="relative group">
@@ -709,11 +627,6 @@ export default function Header() {
             )}
           </div>
         </div>
-      </div>
-
-      {/* Cart drawer - desktop only (mobile navigates to /basket page) */}
-      <div className="hidden md:block">
-        <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
       </div>
     </nav>
     </>

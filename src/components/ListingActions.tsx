@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { Share2, MessageSquare, ShoppingCart, PoundSterling, X } from "lucide-react";
+import { Share2, MessageSquare, PoundSterling, X } from "lucide-react";
 import FavoriteButton from "@/components/FavoriteButton";
 import ReportUserButton from "@/components/ReportUserButton";
 import { useRouter } from "next/navigation";
@@ -87,10 +87,14 @@ export default function ListingActions({
     <>
       {/* Actions */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        {/* Buy now — primary CTA spans full width on its row */}
-        <Link href={buyHref} className={`col-span-2 md:col-span-4 ${btnPrimary}`} aria-label="Buy now">
-          <ShoppingCart className="h-4 w-4" />
-          Buy now
+        {/* Message seller — Primary CTA for classifieds */}
+        <Link
+          href={`/messages/new?to=${encodeURIComponent(sellerName)}`}
+          className={`col-span-2 md:col-span-4 ${btnPrimary}`}
+          aria-label={`Message ${sellerName}`}
+        >
+          <MessageSquare className="h-4 w-4" />
+          <span className="whitespace-nowrap">Contact Seller</span>
         </Link>
 
         {/* Make an offer (opens modal) */}
@@ -98,16 +102,6 @@ export default function ListingActions({
           <PoundSterling className="h-4 w-4" />
           Make an offer
         </button>
-
-        {/* Message seller — DARK for contrast */}
-        <Link
-          href={`/messages/new?to=${encodeURIComponent(sellerName)}`}
-          className={btnMessage}
-          aria-label={`Message ${sellerName}`}
-        >
-          <MessageSquare className="h-4 w-4" />
-          <span className="whitespace-nowrap">Message seller</span>
-        </Link>
 
         {/* Save (favorites) */}
         <div>
