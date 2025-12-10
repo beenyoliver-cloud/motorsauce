@@ -17,7 +17,6 @@ import SimilarProducts from "@/components/SimilarProducts";
 import VehicleCompatibilityChecker from "@/components/VehicleCompatibilityChecker";
 import ListingImageGallery from "@/components/ListingImageGallery";
 import MarkAsSoldButton from "@/components/MarkAsSoldButton";
-import ClassifiedsBanner from "@/components/ClassifiedsBanner";
 import { getCurrentUser } from "@/lib/auth";
 // Temporarily disabled: import PriceReducedBadge from "@/components/PriceReducedBadge";
 // Temporarily disabled: import PriceHistoryChart from "@/components/PriceHistoryChart";
@@ -282,14 +281,10 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
   const gallery = listing.images?.length ? listing.images : [listing.image];
 
   return (
-    <>
-      {/* Classifieds Safety Banner */}
-      <ClassifiedsBanner />
-      
-      <section className="mx-auto max-w-6xl px-3 sm:px-4 py-4 sm:py-8">
-        {/* Track recently viewed (client side) */}
-        {/* @ts-ignore Server -> Client component mount */}
-        <TrackRecentlyViewed id={listing.id} />
+    <section className="mx-auto max-w-6xl px-3 sm:px-4 py-4 sm:py-8">
+      {/* Track recently viewed (client side) */}
+      {/* @ts-ignore Server -> Client component mount */}
+      <TrackRecentlyViewed id={listing.id} />
       {/* Track exposure to seller (client side) */}
       {/* @ts-ignore Server -> Client component mount */}
       <SellerExposureTracker sellerName={listing.seller?.name} avatar={listing.seller?.avatar} />
@@ -344,15 +339,20 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
 
           {/* CTAs */}
           <div className="flex flex-wrap gap-3 pt-1">
-            {/* Contact Seller (primary action for classifieds) */}
-            <ContactSellerButton
-              sellerName={listing.seller?.name || "Seller"}
-              sellerId={listing.sellerId}
-              listingId={listing.id}
-              listingTitle={listing.title}
-            />
+            <Link
+              href={`/basket/add?listing=${encodeURIComponent(String(listing.id))}&redirect=checkout`}
+              className="inline-flex items-center justify-center rounded-md bg-yellow-500 px-5 py-2.5 font-semibold text-black hover:bg-yellow-600"
+            >
+              Buy now
+            </Link>
+            <Link
+              href={`/basket/add?listing=${encodeURIComponent(String(listing.id))}`}
+              className="inline-flex items-center justify-center rounded-md border border-gray-500 bg-white px-5 py-2.5 text-gray-900 hover:bg-gray-100"
+            >
+              Add to basket
+            </Link>
 
-            {/* Make Offer (negotiate price) */}
+            {/* Make Offer (persistent messaging; auto-disables on own listing) */}
             <MakeOfferButtonNew
               sellerName={listing.seller?.name || "Seller"}
               sellerId={listing.sellerId as string}
@@ -360,6 +360,14 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               listingTitle={listing.title}
               listingImage={gallery[0] || listing.image}
               listingPrice={Number(String(listing.price).replace(/[^\d.]/g, "")) || 0}
+            />
+
+            {/* Contact Seller (auto-disables on own listing) */}
+            <ContactSellerButton
+              sellerName={listing.seller?.name || "Seller"}
+              sellerId={listing.sellerId}
+              listingId={listing.id}
+              listingTitle={listing.title}
             />
 
             {/* Report listing (Trust & Safety MVP) */}
@@ -514,7 +522,6 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
 
       {/* Similar Products */}
       <SimilarProducts listingId={listing.id} limit={6} />
-      </section>
-    </>
+    </section>
   );
 }
