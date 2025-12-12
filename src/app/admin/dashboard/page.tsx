@@ -72,7 +72,30 @@ export default function AdminDashboard() {
         throw new Error(errorText || "Failed to fetch metrics");
       }
       const data = await response.json();
-      setMetrics(data);
+      
+      // Map snake_case API response to camelCase for the interface
+      setMetrics({
+        totalListings: data.total_listings || 0,
+        activeListings: data.active_listings || 0,
+        totalUsers: data.total_users || 0,
+        totalRevenue: data.total_sales || 0, // We use total_sales as revenue proxy
+        pendingReports: data.pending_reports || 0,
+        bannedUsers: data.banned_users || 0,
+        suspendedUsers: data.suspended_users || 0,
+        listingsToday: data.listings_today || 0,
+        listingsThisWeek: data.listings_week || 0,
+        listingsThisMonth: data.listings_month || 0,
+        usersToday: data.users_today || 0,
+        usersThisWeek: data.users_week || 0,
+        usersThisMonth: data.users_month || 0,
+        topSellers: data.top_sellers || [],
+        recentActivity: data.recent_listings?.map((l: any) => ({
+          id: l.id,
+          type: 'listing',
+          description: l.title,
+          created_at: l.created_at
+        })) || [],
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
