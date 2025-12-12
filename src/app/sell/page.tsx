@@ -274,7 +274,8 @@ function SellForm() {
         return_days: acceptsReturns ? returnDays : undefined,
         condition,
         description: description.trim(),
-        images: uploadedUrls
+        images: uploadedUrls,
+        status: 'active'
       });
 
       setSubmitted(true);
@@ -283,6 +284,63 @@ function SellForm() {
     } catch (err) {
       console.error('Error creating listing:', err);
       setErrorMsg(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function saveAsDraft() {
+    setErrorMsg(null);
+    
+    // Minimum validation for drafts - just need a title
+    if (!title.trim()) {
+      setErrorMsg("Please enter a title before saving as draft.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const uploadedUrls = images.length > 0 
+        ? await Promise.all(images.map((img: Img) => uploadImage(img.file)))
+        : [];
+
+      // Convert selected vehicles to database format
+      const vehiclesArray = selectedVehicles.length > 0 
+        ? vehiclesToArray(selectedVehicles, isUniversal)
+        : [];
+      const firstVehicle = selectedVehicles[0];
+
+      const listing = await createListing({
+        title: title.trim(),
+        category: category || 'OEM',
+        part_type: subcategory || undefined,
+        main_category: mainCategory || undefined,
+        make: firstVehicle?.make.trim() || undefined,
+        model: firstVehicle?.model.trim() || undefined,
+        year: firstVehicle?.year,
+        vehicles: vehiclesArray,
+        price: price ? parseFloat(price) : 0,
+        quantity: quantity || 1,
+        postcode: postcode.trim() || undefined,
+        seller_postcode: postcode.trim() || undefined,
+        seller_lat: sellerLat,
+        seller_lng: sellerLng,
+        shipping_option: shippingOption,
+        accepts_returns: acceptsReturns,
+        return_days: acceptsReturns ? returnDays : undefined,
+        condition,
+        description: description.trim(),
+        images: uploadedUrls,
+        status: 'draft',
+        draft_reason: 'Saved as draft - incomplete listing'
+      });
+
+      setSubmitted(true);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      router.push('/profile');
+    } catch (err) {
+      console.error('Error saving draft:', err);
+      setErrorMsg(err instanceof Error ? err.message : "Failed to save draft. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -827,6 +885,22 @@ function SellForm() {
           {!submitting && canSubmit && (
             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 transform -skew-x-12 group-hover:translate-x-full transition-transform duration-700"></div>
           )}
+        </button>
+
+        <button
+          type="button"
+          onClick={saveAsDraft}
+          disabled={!title.trim() || submitting}
+          className={`flex-1 sm:flex-none px-8 py-5 rounded-2xl font-semibold text-lg transition-all shadow-md border-2 ${
+            !title.trim() || submitting
+              ? "bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed"
+              : "bg-white text-gray-800 border-gray-300 hover:border-gray-400 hover:bg-gray-50 hover:shadow-lg"
+          }`}
+        >
+          <span className="flex items-center justify-center gap-2">
+            <span>📝</span>
+            Save as Draft
+          </span>
         </button>
         <button
           type="button"
