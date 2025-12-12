@@ -37,6 +37,12 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Staging Password Gate
 
+## Admin Debug Endpoints
+
+- Set `ADMIN_API_KEY` in every environment (local `.env.local`, Vercel, CI, etc.). Use a long random string.
+- When calling protected routes such as `/api/health`, `/api/debug-env`, `/api/debug-admin`, `/api/debug-business*`, include the header `x-admin-key: $ADMIN_API_KEY`.
+- Requests without the correct header receive `403`, so remember to update any uptime monitors or scripts that hit those endpoints.
+
 ## Vehicle dataset (makes/models)
 
 The forms can consume a simple JSON map of make → models from `public/vehicles.json`.
