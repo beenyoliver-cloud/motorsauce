@@ -59,11 +59,16 @@ export default function SellPage() {
   }
 
   return (
-    <section className="page-center px-4 py-10">
-      <h1 className="text-2xl font-bold text-black mb-2">Sell a Part</h1>
-      <p className="text-sm text-gray-600 mb-8">Fill in the details below. Required fields are marked with *</p>
+    <section className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 py-12 px-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">List Your Part</h1>
+          <p className="text-lg text-gray-600">Fill in the details below to create your listing</p>
+          <p className="text-sm text-gray-500 mt-2">Fields marked with <span className="text-red-500">*</span> are required</p>
+        </div>
 
-      {isAuthed && <SellForm />}
+        {isAuthed && <SellForm />}
+      </div>
     </section>
   );
 }
@@ -284,49 +289,61 @@ function SellForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6 max-w-2xl">
+    <form onSubmit={onSubmit} className="space-y-8">
       {/* Essential Details Card */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm space-y-5">
-        <div>
-          <h2 className="text-sm font-semibold text-black mb-4">Essential Details</h2>
+      <div className="bg-white border-2 border-gray-100 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-gray-100">
+          <div className="w-10 h-10 bg-gradient-to-br from-gold-400 to-gold-600 rounded-xl flex items-center justify-center">
+            <span className="text-xl">📝</span>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">Essential Details</h2>
         </div>
 
         {/* Title */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Listing Title *</label>
+          <label className="block text-sm font-semibold text-gray-800 mb-2">
+            Listing Title <span className="text-red-500">*</span>
+          </label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g., Vauxhall Astra J Front Brake Pads"
-            className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-gold-400"
+            className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all"
             required
           />
-          <p className="mt-1 text-xs text-gray-600">Be specific. Good titles sell faster.</p>
+          <p className="mt-2 text-xs text-gray-500 flex items-center gap-1.5">
+            <span className="text-green-600">💡</span>
+            Be specific. Good titles sell faster.
+          </p>
         </div>
 
         {/* Category & Condition */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+            <label className="block text-sm font-semibold text-gray-800 mb-2">
+              Category <span className="text-red-500">*</span>
+            </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as Category)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-400"
+              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all cursor-pointer"
               required
             >
               <option value="">Select a category</option>
-              <option value="OEM">OEM</option>
-              <option value="Aftermarket">Aftermarket</option>
-              <option value="Tool">Tool / Accessory</option>
+              <option value="OEM">🔧 OEM</option>
+              <option value="Aftermarket">⚡ Aftermarket</option>
+              <option value="Tool">🛠️ Tool / Accessory</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Condition *</label>
+            <label className="block text-sm font-semibold text-gray-800 mb-2">
+              Condition <span className="text-red-500">*</span>
+            </label>
             <select
               value={condition}
               onChange={(e) => setCondition(e.target.value as Condition)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-400"
+              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all cursor-pointer"
             >
               <option>New</option>
               <option>Used - Like New</option>
@@ -337,11 +354,13 @@ function SellForm() {
         </div>
 
         {/* Price & Quantity */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Price (£) *</label>
+            <label className="block text-sm font-semibold text-gray-800 mb-2">
+              Price (£) <span className="text-red-500">*</span>
+            </label>
             <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-600">£</span>
+              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold text-lg">£</span>
               <input
                 type="number"
                 inputMode="decimal"
@@ -350,35 +369,39 @@ function SellForm() {
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 placeholder="0.00"
-                className="w-full border border-gray-300 rounded-md pl-7 pr-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-gold-400"
+                className="w-full border-2 border-gray-200 rounded-xl pl-10 pr-4 py-3 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all text-lg font-semibold"
                 required
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+            <label className="block text-sm font-semibold text-gray-800 mb-2">
+              Quantity
+            </label>
             <input
               type="number"
               inputMode="numeric"
               min={1}
               value={quantity}
               onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-400"
+              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all"
             />
           </div>
         </div>
 
         {/* Part Type - Main Category and Subcategory */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Main Category *</label>
+            <label className="block text-sm font-semibold text-gray-800 mb-2">
+              Main Category <span className="text-red-500">*</span>
+            </label>
             <select
               value={mainCategory}
               onChange={(e) => {
                 setMainCategory(e.target.value as MainCategory | "");
                 setSubcategory(""); // Reset subcategory when main changes
               }}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-400"
+              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all cursor-pointer"
               required
             >
               <option value="">Select main category</option>
@@ -388,11 +411,13 @@ function SellForm() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Subcategory *</label>
+            <label className="block text-sm font-semibold text-gray-800 mb-2">
+              Subcategory <span className="text-red-500">*</span>
+            </label>
             <select
               value={subcategory}
               onChange={(e) => setSubcategory(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-400"
+              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all cursor-pointer disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
               disabled={!mainCategory}
               required
             >
@@ -402,44 +427,63 @@ function SellForm() {
               ))}
             </select>
             {!mainCategory && (
-              <p className="mt-1 text-xs text-gray-500">Select a main category first</p>
+              <p className="mt-2 text-xs text-gray-500 flex items-center gap-1.5">
+                <span>↑</span> Select a main category first
+              </p>
             )}
           </div>
         </div>
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+          <label className="block text-sm font-semibold text-gray-800 mb-2">
+            Description
+          </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Add details: mileage, wear, condition, what's included…"
-            className="w-full min-h-[100px] border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-gold-400"
+            className="w-full min-h-[120px] border-2 border-gray-200 rounded-xl px-4 py-3 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all resize-y"
             maxLength={1000}
           />
-          <p className="mt-1 text-xs text-gray-600">{description.length}/1000 characters</p>
+          <div className="mt-2 flex items-center justify-between text-xs">
+            <p className="text-gray-500">Add as much detail as possible to help buyers</p>
+            <p className={`font-medium ${description.length > 900 ? 'text-orange-600' : 'text-gray-500'}`}>
+              {description.length}/1000
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Vehicle Details - Collapsible Multi-Vehicle */}
-      <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+      <div className="border-2 border-gray-100 rounded-2xl overflow-hidden bg-white shadow-lg hover:shadow-xl transition-shadow">
         <button
           type="button"
           onClick={() => setVehiclesExpanded(!vehiclesExpanded)}
-          className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition"
+          className="w-full flex items-center justify-between px-8 py-5 hover:bg-gradient-to-r hover:from-gray-50 hover:to-white transition-all group"
         >
-          <div className="flex items-center gap-3">
-            <span className="font-medium text-gray-900">
-              📍 Vehicle Compatibility {isVehicleSpecific ? "*" : "(Optional)"}
-            </span>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <span className="text-xl">🚗</span>
+            </div>
+            <div className="text-left">
+              <span className="font-bold text-gray-900 text-lg block">
+                Vehicle Compatibility {isVehicleSpecific && <span className="text-red-500">*</span>}
+              </span>
+              {!isVehicleSpecific && <span className="text-sm text-gray-500">Optional for tools & accessories</span>}
+            </div>
             {isVehicleSpecific && selectedVehicles.length > 0 && (
-              <span className="inline-block bg-green-100 text-green-700 text-xs px-2 py-1 rounded">{selectedVehicles.length} selected</span>
+              <span className="inline-flex items-center bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
+                ✓ {selectedVehicles.length} selected
+              </span>
             )}
             {isUniversal && (
-              <span className="inline-block bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">Universal</span>
+              <span className="inline-flex items-center bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
+                🌐 Universal
+              </span>
             )}
           </div>
-          <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${vehiclesExpanded ? "rotate-180" : ""}`} />
+          <ChevronDown className={`w-6 h-6 text-gray-400 transition-transform ${vehiclesExpanded ? "rotate-180" : ""}`} />
         </button>
         
         {vehiclesExpanded && (
@@ -577,18 +621,41 @@ function SellForm() {
       </div>
 
       {/* Photos Card */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-black mb-4">Photos * ({images.length}/12)</h2>
+      <div className="bg-white border-2 border-gray-100 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl flex items-center justify-center">
+              <span className="text-xl">📸</span>
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">
+                Photos <span className="text-red-500">*</span>
+              </h2>
+              <p className="text-sm text-gray-500">Add up to 12 high-quality images</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <span className={`text-2xl font-bold ${images.length === 0 ? 'text-gray-400' : 'text-gold-600'}`}>
+              {images.length}
+            </span>
+            <span className="text-sm text-gray-500">/12</span>
+          </div>
+        </div>
 
         <label
           ref={dropRef}
-          className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:bg-gray-50 transition"
+          className="flex flex-col items-center justify-center gap-4 border-3 border-dashed border-gray-300 rounded-2xl p-12 text-center cursor-pointer hover:bg-gradient-to-br hover:from-gray-50 hover:to-white hover:border-gold-400 transition-all group"
         >
-          <Upload className="h-8 w-8 text-gray-400" />
+          <div className="w-16 h-16 bg-gradient-to-br from-gold-100 to-gold-200 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Upload className="h-8 w-8 text-gold-600" />
+          </div>
           <div>
-            <div className="text-sm font-medium text-gray-700">Drag photos here or <span className="text-gold-600 font-semibold">browse</span></div>
-            <div className="text-xs text-gray-600 mt-1">
-              Up to 12 images • {Math.round(MAX_FILE_SIZE / 1024 / 1024)}MB max each • {Math.round(MAX_TOTAL_SIZE / 1024 / 1024)}MB total
+            <div className="text-base font-semibold text-gray-700 mb-2">
+              Drag photos here or <span className="text-gold-600 font-bold">browse</span>
+            </div>
+            <div className="text-sm text-gray-500 space-y-1">
+              <p>Up to 12 images • {Math.round(MAX_FILE_SIZE / 1024 / 1024)}MB max each</p>
+              <p className="text-xs">Total limit: {Math.round(MAX_TOTAL_SIZE / 1024 / 1024)}MB</p>
             </div>
           </div>
           <input
@@ -601,24 +668,28 @@ function SellForm() {
         </label>
 
         {fileValidationError && (
-          <div className="mt-3 border border-red-200 bg-red-50 text-red-800 rounded-lg p-3 text-sm">
-            {fileValidationError}
+          <div className="mt-4 border-2 border-red-300 bg-red-50 text-red-800 rounded-xl p-4 text-sm font-medium flex items-start gap-3">
+            <span className="text-xl">⚠️</span>
+            <span>{fileValidationError}</span>
           </div>
         )}
 
         {images.length > 0 && (
-          <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {images.map((img) => (
-              <div key={img.id} className="relative group rounded-lg overflow-hidden border border-gray-200">
-                <img src={img.url} alt="Preview" className="h-32 w-full object-cover" />
+              <div key={img.id} className="relative group rounded-xl overflow-hidden border-2 border-gray-200 hover:border-gold-400 transition-all shadow-md hover:shadow-lg">
+                <img src={img.url} alt="Preview" className="h-36 w-full object-cover" />
                 <button
                   type="button"
                   onClick={() => removeImg(img.id)}
-                  className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition"
+                  className="absolute top-2 right-2 p-2 rounded-full bg-red-500 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110"
                   aria-label="Remove image"
                 >
                   <X className="h-4 w-4" />
                 </button>
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <p className="text-white text-xs font-medium">Click × to remove</p>
+                </div>
               </div>
             ))}
           </div>
@@ -626,77 +697,91 @@ function SellForm() {
       </div>
 
       {/* Shipping & Returns Card */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm space-y-4">
-        <h2 className="text-sm font-semibold text-black">Shipping & Returns</h2>
+      <div className="bg-white border-2 border-gray-100 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow space-y-6">
+        <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-100">
+          <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center">
+            <span className="text-xl">📦</span>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">Shipping & Returns</h2>
+        </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Shipping Options *</label>
+          <label className="block text-sm font-semibold text-gray-800 mb-2">
+            Shipping Options <span className="text-red-500">*</span>
+          </label>
           <select
             value={shippingOption}
             onChange={(e) => setShippingOption(e.target.value as ShippingOption)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-400"
+            className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all cursor-pointer"
             required
           >
-            <option value="both">Collection or Delivery</option>
-            <option value="collection">Collection Only</option>
-            <option value="delivery">Delivery Only</option>
+            <option value="both">📦 Collection or Delivery</option>
+            <option value="collection">🚶 Collection Only</option>
+            <option value="delivery">🚚 Delivery Only</option>
           </select>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Location (Postcode)</label>
-          <div className="flex gap-2">
+          <label className="block text-sm font-semibold text-gray-800 mb-2">
+            Location (Postcode)
+          </label>
+          <div className="flex gap-3">
             <input
               type="text"
               value={postcode}
               onChange={(e) => setPostcode(e.target.value.toUpperCase())}
               placeholder="e.g., SW1A 1AA"
               maxLength={8}
-              className="flex-1 border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-gold-400"
+              className="flex-1 border-2 border-gray-200 rounded-xl px-4 py-3 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all uppercase font-medium"
             />
             <button
               type="button"
               onClick={handleGeocodePostcode}
               disabled={geocoding || !postcode.trim()}
-              className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-sm font-medium disabled:opacity-50"
+              className="px-5 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all"
             >
-              {geocoding ? "..." : "Validate"}
+              {geocoding ? "⏳ Checking..." : "📍 Validate"}
             </button>
           </div>
           {sellerLat && sellerLng ? (
-            <p className="mt-1 text-xs text-green-600">✓ Location validated (approximate, for distance calc)</p>
+            <p className="mt-2 text-sm text-green-700 font-medium flex items-center gap-2 bg-green-50 rounded-lg p-2">
+              <span>✓</span>
+              Location validated (approximate, for distance calculation)
+            </p>
           ) : (
-            <p className="mt-1 text-xs text-gray-600">Helps buyers see distance from their location</p>
+            <p className="mt-2 text-xs text-gray-500">
+              💡 Helps buyers see how far the item is from their location
+            </p>
           )}
         </div>
 
-        <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-          <div className="flex items-start gap-3">
+        <div className="border-2 border-gray-200 rounded-xl p-5 bg-gradient-to-br from-gray-50 to-white">
+          <div className="flex items-start gap-4">
             <input
               type="checkbox"
               id="acceptsReturns"
               checked={acceptsReturns}
               onChange={(e) => setAcceptsReturns(e.target.checked)}
-              className="mt-1 h-4 w-4 rounded border-gray-300 text-gold-500 focus:ring-gold-400"
+              className="mt-1 h-5 w-5 rounded-lg border-2 border-gray-300 text-gold-500 focus:ring-2 focus:ring-gold-400 cursor-pointer"
             />
             <div className="flex-1">
-              <label htmlFor="acceptsReturns" className="block text-sm font-medium text-gray-700 cursor-pointer">
-                Accept returns
+              <label htmlFor="acceptsReturns" className="block text-sm font-semibold text-gray-800 cursor-pointer mb-1">
+                🔄 Accept returns
               </label>
-              <p className="text-xs text-gray-600 mt-0.5">Buyers can return within a set period</p>
+              <p className="text-xs text-gray-600">Buyers can return within a set period (builds trust!)</p>
             </div>
           </div>
 
           {acceptsReturns && (
-            <div className="mt-3 ml-7">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Return window</label>
+            <div className="mt-4 ml-9 p-4 bg-white rounded-lg border-2 border-green-200">
+              <label className="block text-sm font-semibold text-gray-800 mb-2">Return window</label>
               <select
                 value={returnDays}
                 onChange={(e) => setReturnDays(Number(e.target.value))}
-                className="w-40 border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-400"
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all cursor-pointer"
               >
                 <option value={7}>7 days</option>
-                <option value={14}>14 days</option>
+                <option value={14}>14 days (recommended)</option>
                 <option value={30}>30 days</option>
               </select>
             </div>
@@ -706,42 +791,67 @@ function SellForm() {
 
       {/* Errors */}
       {errorMsg && (
-        <div className="border border-red-200 bg-red-50 text-red-800 rounded-lg p-4">
-          {errorMsg}
+        <div className="border-2 border-red-300 bg-red-50 text-red-800 rounded-2xl p-6 shadow-lg flex items-start gap-4">
+          <span className="text-3xl">❌</span>
+          <div>
+            <h3 className="font-bold text-lg mb-1">Error</h3>
+            <p>{errorMsg}</p>
+          </div>
         </div>
       )}
 
       {/* Submit Buttons */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-4">
         <button
           type="submit"
           disabled={!canSubmit || submitting}
-          className={`flex-1 sm:flex-none px-8 py-4 rounded-lg font-bold text-base transition-all shadow-md ${
+          className={`flex-1 sm:flex-none px-10 py-5 rounded-2xl font-bold text-lg transition-all shadow-lg relative overflow-hidden group ${
             !canSubmit || submitting
               ? "bg-gray-200 text-gray-400 cursor-not-allowed border-2 border-gray-300"
-              : "bg-yellow-500 hover:bg-yellow-600 text-black border-2 border-yellow-600 hover:border-yellow-700 hover:shadow-lg hover:scale-105"
+              : "bg-gradient-to-r from-gold-500 to-yellow-500 hover:from-gold-600 hover:to-yellow-600 text-black border-2 border-gold-600 hover:border-gold-700 hover:shadow-2xl hover:scale-105 transform"
           }`}
         >
-          {submitting ? "Creating Listing…" : "Create Listing"}
+          <span className="relative z-10 flex items-center justify-center gap-2">
+            {submitting ? (
+              <>
+                <span className="animate-spin">⏳</span>
+                Creating Listing…
+              </>
+            ) : (
+              <>
+                <span>🚀</span>
+                Create Listing
+              </>
+            )}
+          </span>
+          {!submitting && canSubmit && (
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 transform -skew-x-12 group-hover:translate-x-full transition-transform duration-700"></div>
+          )}
         </button>
         <button
           type="button"
           onClick={() => router.push("/")}
-          className="flex-1 sm:flex-none px-8 py-4 rounded-lg font-medium text-base border-2 border-gray-300 bg-white hover:bg-gray-50 text-black transition"
+          className="flex-1 sm:flex-none px-10 py-5 rounded-2xl font-semibold text-lg border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-700 transition-all shadow-md hover:shadow-lg"
         >
           Cancel
         </button>
-        {!canSubmit && !submitting && (
-          <span className="text-sm text-gray-500 sm:ml-3">
-            Complete all required fields to enable
-          </span>
-        )}
       </div>
+
+      {!canSubmit && !submitting && (
+        <div className="flex items-center justify-center gap-2 text-sm text-gray-500 bg-gray-50 rounded-xl p-4 border-2 border-gray-200">
+          <span>ℹ️</span>
+          <span>Complete all required fields to enable the Create Listing button</span>
+        </div>
+      )}
 
       {/* Success */}
       {submitted && (
-        <div className="border border-green-200 bg-green-50 text-green-800 rounded-lg p-4">
-          Your listing has been created. Redirecting…
+        <div className="border-2 border-green-300 bg-green-50 text-green-800 rounded-2xl p-6 shadow-lg flex items-start gap-4 animate-pulse">
+          <span className="text-3xl">✅</span>
+          <div>
+            <h3 className="font-bold text-lg mb-1">Success!</h3>
+            <p>Your listing has been created. Redirecting you now…</p>
+          </div>
         </div>
       )}
     </form>
