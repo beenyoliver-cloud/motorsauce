@@ -2,10 +2,12 @@
 
 import { useMemo, useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, X } from "lucide-react";
-import { uploadImage } from "@/lib/storage";
+import { Upload, X, ChevronDown, Plus } from "lucide-react";
+import { uploadImage, validateFileSize, validateTotalSize, MAX_FILE_SIZE, MAX_TOTAL_SIZE } from "@/lib/storage";
 import { VEHICLES as VEHICLES_FALLBACK } from "@/data/vehicles";
 import { updateListing } from "@/lib/listingsService";
+import { getMainCategories, getSubcategoriesForMain, type MainCategory } from '@/data/partCategories';
+import { addVehicle, removeVehicle, vehiclesToArray, type SelectedVehicle } from '@/lib/vehicleHelpers';
 
 type Category = "OEM" | "Aftermarket" | "Tool" | "";
 type Condition = "New" | "Used - Like New" | "Used - Good" | "Used - Fair";
@@ -40,11 +42,13 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
   // Core fields
   const [title, setTitle] = useState<string>(listing.title ?? "");
   const [category, setCategory] = useState<Category>((listing.category as Category) ?? "");
-  const [partType, setPartType] = useState<string>(listing.part_type ?? "");
-  const [make, setMake] = useState<string>(listing.make ?? "");
-  const [model, setModel] = useState<string>(listing.model ?? "");
-  const [year, setYear] = useState<number | undefined>(listing.year ?? undefined);
-  const [genCode, setGenCode] = useState<string>("");
+  const [mainCategory, setMainCategory] = useState<MainCategory | "">((listing as any).main_category ?? "");
+  const [subcategory, setSubcategory] = useState<string>(listing.part_type ?? "");
+  const [isUniversal, setIsUniversal] = useState(false);
+  const [selectedVehicles, setSelectedVehicles] = useState<SelectedVehicle[]>([]);
+  const [tempMake, setTempMake] = useState("");
+  const [tempModel, setTempModel] = useState("");
+  const [tempYear, setTempYear] = useState<number | undefined>();
   const [condition, setCondition] = useState<Condition>((listing.condition as Condition) ?? "Used - Good");
   const [price, setPrice] = useState<string>(String(listing.price ?? ""));
   const [quantity, setQuantity] = useState<number>(listing.quantity ?? 1);
@@ -53,6 +57,8 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
   const [acceptsReturns, setAcceptsReturns] = useState<boolean>(Boolean(listing.accepts_returns));
   const [returnDays, setReturnDays] = useState<number>(listing.return_days ?? 14);
   const [description, setDescription] = useState<string>(listing.description ?? "");
+  const [vehiclesExpanded, setVehiclesExpanded] = useState(false);
+  const [fileValidationError, setFileValidationError] = useState<string | null>(null);
 
   // New: Location for distance calculation
   const [sellerLat, setSellerLat] = useState<number | null>((listing as any).seller_lat ?? null);
@@ -74,12 +80,15 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
   const isVehicleSpecific = category !== "Tool" && category !== "";
   const canSave = useMemo(() => {
     if (!title.trim()) return false;
+    if (!mainCategory) return false;
+    if (!subcategory) return false;
     const priceNum = Number(price);
     if (!price || Number.isNaN(priceNum)) return false;
     if (existingImages.length + newFiles.length === 0) return false;
-    if (model && (!make || !(vehicles[make] || []).includes(model))) return false;
+    // Vehicle-specific parts require vehicles unless marked as universal
+    if (isVehicleSpecific && selectedVehicles.length === 0 && !isUniversal) return false;
     return true;
-  }, [title, price, existingImages.length, newFiles.length, make, model, vehicles]);
+  }, [title, mainCategory, subcategory, price, existingImages.length, newFiles.length, isVehicleSpecific, selectedVehicles, isUniversal]);
 
   function onPickImages(files: FileList | null) {
     if (!files) return;
@@ -163,13 +172,19 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
       }
       const nextImages = [...existingImages, ...uploaded].slice(0, 10);
 
+      // Convert selected vehicles to array format
+      const vehiclesArray = vehiclesToArray(selectedVehicles, isUniversal);
+      const firstVehicle = selectedVehicles[0];
+      
       await updateListing(String(listing.id), {
         title: title.trim(),
         category,
-        part_type: partType || undefined,
-        make: make.trim(),
-        model: model.trim(),
-        year: year ?? undefined,
+        part_type: subcategory || undefined,
+        main_category: mainCategory || undefined,
+        make: firstVehicle?.make.trim() || undefined,
+        model: firstVehicle?.model.trim() || undefined,
+        year: firstVehicle?.year,
+        vehicles: vehiclesArray,
         condition,
         price: parseFloat(String(price)),
         quantity: Number.isFinite(quantity) ? Math.max(1, quantity) : 1,
@@ -203,13 +218,19 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
       }
       const nextImages = [...existingImages, ...uploaded].slice(0, 10);
 
+      // Convert selected vehicles to array format
+      const vehiclesArray = vehiclesToArray(selectedVehicles, isUniversal);
+      const firstVehicle = selectedVehicles[0];
+      
       await updateListing(String(listing.id), {
         title: title.trim(),
         category,
-        part_type: partType || undefined,
-        make: make.trim(),
-        model: model.trim(),
-        year: year ?? undefined,
+        part_type: subcategory || undefined,
+        main_category: mainCategory || undefined,
+        make: firstVehicle?.make.trim() || undefined,
+        model: firstVehicle?.model.trim() || undefined,
+        year: firstVehicle?.year,
+        vehicles: vehiclesArray,
         condition,
         price: price ? parseFloat(String(price)) : 0,
         quantity: Number.isFinite(quantity) ? Math.max(1, quantity) : 1,
@@ -268,145 +289,113 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-8">
-      {/* Details card */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+    <form onSubmit={onSubmit} className="space-y-6">
+      {/* Listing Details Section */}
+      <div className="bg-white border-2 border-gray-200 rounded-2xl p-8 shadow-sm">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-2xl">
+            📝
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Listing Details</h2>
+            <p className="text-sm text-gray-600">Essential information about your part</p>
+          </div>
+        </div>
+
         {/* Title */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Listing Title *</label>
+          <label className="block text-sm font-semibold text-gray-900 mb-2">
+            Listing Title <span className="text-red-500">*</span>
+          </label>
           <input
             type="text"
-            name="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g., Vauxhall Astra J Front Brake Pads"
-            className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            placeholder="e.g., Vauxhall Astra J Front Brake Pads - OEM Quality"
+            className="w-full border-2 border-gray-300 rounded-xl py-3 px-4 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all"
             required
           />
-          <p className="mt-1 text-xs text-gray-600">Clear & specific titles sell faster.</p>
+          <p className="mt-2 text-xs text-gray-500">Clear & specific titles sell faster. Include make, model, and part name.</p>
         </div>
 
-        {/* Category & Part Type */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        {/* Category Type */}
+        <div className="mb-6">
+          <label className="block text-sm font-semibold text-gray-900 mb-2">
+            Category <span className="text-red-500">*</span>
+          </label>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value as Category)}
+            className="w-full border-2 border-gray-300 rounded-xl py-3 px-4 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all"
+            required
+          >
+            <option value="">Select a category</option>
+            <option value="OEM">🔧 OEM (Original Equipment Manufacturer)</option>
+            <option value="Aftermarket">⚡ Aftermarket (Performance/Replacement)</option>
+            <option value="Tool">🛠️ Tool / Accessory</option>
+          </select>
+          <p className="mt-2 text-xs text-gray-500">
+            OEM for original parts, Aftermarket for replacements/upgrades, Tools for equipment.
+          </p>
+        </div>
+
+        {/* Part Categories - Main & Subcategory */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
+              Part Category <span className="text-red-500">*</span>
+            </label>
             <select
-              name="category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value as Category)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              value={mainCategory}
+              onChange={(e) => {
+                setMainCategory(e.target.value as MainCategory | "");
+                setSubcategory(""); // Reset subcategory when main changes
+              }}
+              className="w-full border-2 border-gray-300 rounded-xl py-3 px-4 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all"
               required
             >
-              <option value="">Select a category</option>
-              <option value="OEM">OEM</option>
-              <option value="Aftermarket">Aftermarket</option>
-              <option value="Tool">Tool / Accessory</option>
+              <option value="">Select main category</option>
+              {getMainCategories().map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Part Type</label>
-            <select
-              name="partType"
-              value={partType}
-              onChange={(e) => setPartType(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-            >
-              <option value="">Select type (optional)</option>
-              <option value="Engine">Engine</option>
-              <option value="Transmission">Transmission</option>
-              <option value="Brakes">Brakes</option>
-              <option value="Suspension">Suspension</option>
-              <option value="Exhaust">Exhaust</option>
-              <option value="Body">Body Panels</option>
-              <option value="Interior">Interior</option>
-              <option value="Electrical">Electrical</option>
-              <option value="Wheels">Wheels & Tyres</option>
-              <option value="Lighting">Lighting</option>
-              <option value="Cooling">Cooling System</option>
-              <option value="Fuel System">Fuel System</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-        </div>
 
-        {/* Fitment */}
-        <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${isVehicleSpecific ? "" : "opacity-60"}`}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Make {isVehicleSpecific ? "(recommended)" : "(optional)"}
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
+              Subcategory <span className="text-red-500">*</span>
             </label>
             <select
-              name="make"
-              value={make}
-              onChange={(e) => { setMake(e.target.value); setModel(""); }}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-100"
-              disabled={!isVehicleSpecific}
+              value={subcategory}
+              onChange={(e) => setSubcategory(e.target.value)}
+              disabled={!mainCategory}
+              className="w-full border-2 border-gray-300 rounded-xl py-3 px-4 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
+              required
             >
-              <option value="">Select a make</option>
-              {Object.keys(vehicles).sort().map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
+              <option value="">{mainCategory ? "Select subcategory" : "Select main category first"}</option>
+              {mainCategory &&
+                getSubcategoriesForMain(mainCategory).map((sub) => (
+                  <option key={sub} value={sub}>
+                    {sub}
+                  </option>
+                ))}
             </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Model {isVehicleSpecific ? "(recommended)" : "(optional)"}
-            </label>
-            <select
-              name="model"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-100"
-              disabled={!isVehicleSpecific}
-            >
-              <option value="">{make ? "Select a model" : "Select a make first"}</option>
-              {(vehicles[make] || []).map((mdl) => (
-                <option key={mdl} value={mdl}>{mdl}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Generation</label>
-            <select
-              name="genCode"
-              value={genCode}
-              onChange={(e) => setGenCode(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-100"
-              disabled={!isVehicleSpecific || !make || !model || !getGenOptions(detailed, make, model).length}
-            >
-              <option value="">{!make || !model ? "Select make & model first" : (getGenOptions(detailed, make, model).length ? "Select a generation (optional)" : "No generations available")}</option>
-              {getGenOptions(detailed, make, model).map((g: string) => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
-            <input
-              type="number"
-              name="year"
-              inputMode="numeric"
-              value={year ?? ""}
-              onChange={(e) => setYear(e.target.value ? Number(e.target.value) : undefined)}
-              placeholder="2018"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-100"
-              disabled={!isVehicleSpecific}
-            />
           </div>
         </div>
 
         {/* Condition & Price */}
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_220px] gap-4 mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Condition</label>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
+              Condition <span className="text-red-500">*</span>
+            </label>
             <select
-              name="condition"
               value={condition}
               onChange={(e) => setCondition(e.target.value as Condition)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="w-full border-2 border-gray-300 rounded-xl py-3 px-4 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all"
+              required
             >
               <option>New</option>
               <option>Used - Like New</option>
@@ -416,19 +405,20 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Price *</label>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
+              Price <span className="text-red-500">*</span>
+            </label>
             <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-600">£</span>
+              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 font-medium">£</span>
               <input
                 type="number"
-                name="price"
                 inputMode="decimal"
                 step="0.01"
                 min={0}
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 placeholder="0.00"
-                className="w-full border border-gray-300 rounded-md pl-7 pr-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                className="w-full border-2 border-gray-300 rounded-xl py-3 pl-9 pr-4 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all"
                 required
               />
             </div>
@@ -436,130 +426,225 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
         </div>
 
         {/* Quantity */}
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+        <div className="mb-6">
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Quantity Available</label>
           <input
             type="number"
-            name="quantity"
             inputMode="numeric"
             min={1}
             value={quantity}
             onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
-            className="w-40 border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            className="w-32 border-2 border-gray-300 rounded-xl py-3 px-4 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all"
           />
-        </div>
-
-        {/* Location & Shipping */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Location (Postcode)
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                name="postcode"
-                value={postcode}
-                onChange={(e) => setPostcode(e.target.value.toUpperCase())}
-                placeholder="e.g., SW1A 1AA"
-                maxLength={8}
-                className="flex-1 border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              />
-              <button
-                type="button"
-                onClick={handleGeocodePostcode}
-                disabled={geocoding || !postcode.trim()}
-                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-sm font-medium disabled:opacity-50"
-              >
-                {geocoding ? "..." : "Validate"}
-              </button>
-            </div>
-            {sellerLat && sellerLng ? (
-              <p className="mt-1 text-xs text-green-600">✓ Location validated (approximate, for distance calc)</p>
-            ) : (
-              <p className="mt-1 text-xs text-gray-600">Helps buyers see distance from their location</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Options *</label>
-            <select
-              name="shippingOption"
-              value={shippingOption}
-              onChange={(e) => setShippingOption(e.target.value as ShippingOption)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              required
-            >
-              <option value="both">Collection or Delivery</option>
-              <option value="collection">Collection Only</option>
-              <option value="delivery">Delivery Only</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Returns Policy */}
-        <div className="mt-4 border border-gray-200 rounded-lg p-4 bg-gray-50">
-          <div className="flex items-start gap-3">
-            <input
-              type="checkbox"
-              id="acceptsReturns"
-              checked={acceptsReturns}
-              onChange={(e) => setAcceptsReturns(e.target.checked)}
-              className="mt-1 h-4 w-4 rounded border-gray-300 text-yellow-500 focus:ring-yellow-400"
-            />
-            <div className="flex-1">
-              <label htmlFor="acceptsReturns" className="block text-sm font-medium text-gray-700 cursor-pointer">
-                Accept returns
-              </label>
-              <p className="text-xs text-gray-600 mt-0.5">Buyers can return within a set number of days</p>
-            </div>
-          </div>
-
-          {acceptsReturns && (
-            <div className="mt-3 ml-7">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Return window (days)</label>
-              <select
-                name="returnDays"
-                value={returnDays}
-                onChange={(e) => setReturnDays(Number(e.target.value))}
-                className="w-40 border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              >
-                <option value={7}>7 days</option>
-                <option value={14}>14 days</option>
-                <option value={30}>30 days</option>
-              </select>
-            </div>
-          )}
         </div>
 
         {/* Description */}
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <div>
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Description</label>
           <textarea
-            name="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Add any useful details: mileage, wear, defects, what's included, shipping/collection…"
-            className="w-full min-h-[120px] border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 placeholder-gray-450 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            placeholder="Describe the condition, any defects, what's included, fitment notes, shipping details..."
+            className="w-full min-h-[140px] border-2 border-gray-300 rounded-xl py-3 px-4 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all resize-y"
             maxLength={1000}
           />
-          <p className="mt-1 text-xs text-gray-600">{description.length}/1000</p>
+          <p className="mt-2 text-xs text-gray-500">{description.length}/1000 characters</p>
         </div>
       </div>
 
-      {/* Photos card */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-black mb-3">Photos</h2>
+      {/* Vehicle Compatibility Section */}
+      <div className="bg-white border-2 border-gray-200 rounded-2xl p-8 shadow-sm">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-2xl">
+            🚗
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Vehicle Compatibility</h2>
+            <p className="text-sm text-gray-600">Which vehicles does this part fit?</p>
+          </div>
+        </div>
+
+        {/* Universal Part Toggle */}
+        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isUniversal}
+              onChange={(e) => {
+                setIsUniversal(e.target.checked);
+                if (e.target.checked) {
+                  setSelectedVehicles([]);
+                }
+              }}
+              className="mt-1 h-5 w-5 rounded border-gray-300 text-gold-500 focus:ring-2 focus:ring-gold-500"
+            />
+            <div>
+              <span className="font-semibold text-gray-900">Universal Part</span>
+              <p className="text-sm text-gray-600 mt-1">
+                Check this if your part fits multiple vehicles or is a universal/generic item
+              </p>
+            </div>
+          </label>
+        </div>
+
+        {/* Vehicle Selection (shown when not universal) */}
+        {!isUniversal && (
+          <div className="space-y-4">
+            {/* Collapsible Add Vehicle Section */}
+            <div className="border-2 border-gray-200 rounded-xl overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setVehiclesExpanded(!vehiclesExpanded)}
+                className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+              >
+                <span className="font-semibold text-gray-900">
+                  {selectedVehicles.length > 0 ? `${selectedVehicles.length} Vehicle(s) Added` : "Add Compatible Vehicles"}
+                </span>
+                <ChevronDown
+                  className={`h-5 w-5 text-gray-600 transition-transform ${vehiclesExpanded ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {vehiclesExpanded && (
+                <div className="p-6 space-y-4 bg-white">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">Make</label>
+                      <select
+                        value={tempMake}
+                        onChange={(e) => {
+                          setTempMake(e.target.value);
+                          setTempModel("");
+                        }}
+                        className="w-full border-2 border-gray-300 rounded-xl py-2 px-3 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all"
+                      >
+                        <option value="">Select make</option>
+                        {Object.keys(vehicles)
+                          .sort()
+                          .map((m) => (
+                            <option key={m} value={m}>
+                              {m}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">Model</label>
+                      <select
+                        value={tempModel}
+                        onChange={(e) => setTempModel(e.target.value)}
+                        disabled={!tempMake}
+                        className="w-full border-2 border-gray-300 rounded-xl py-2 px-3 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all disabled:bg-gray-100"
+                      >
+                        <option value="">{tempMake ? "Select model" : "Select make first"}</option>
+                        {tempMake &&
+                          (vehicles[tempMake] || []).map((mdl) => (
+                            <option key={mdl} value={mdl}>
+                              {mdl}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">Year (optional)</label>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        value={tempYear ?? ""}
+                        onChange={(e) => setTempYear(e.target.value ? Number(e.target.value) : undefined)}
+                        placeholder="2018"
+                        className="w-full border-2 border-gray-300 rounded-xl py-2 px-3 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (tempMake && tempModel) {
+                        const newVehicles = addVehicle(selectedVehicles, tempMake, tempModel, tempYear);
+                        setSelectedVehicles(newVehicles);
+                        setTempMake("");
+                        setTempModel("");
+                        setTempYear(undefined);
+                      }
+                    }}
+                    disabled={!tempMake || !tempModel}
+                    className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-gold-500 to-yellow-500 hover:from-gold-600 hover:to-yellow-600 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Plus className="h-5 w-5" />
+                    Add Vehicle
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Selected Vehicles List */}
+            {selectedVehicles.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-gray-700">Compatible Vehicles:</p>
+                <div className="space-y-2">
+                  {selectedVehicles.map((vehicle) => (
+                    <div
+                      key={vehicle.id}
+                      className="flex items-center justify-between p-3 bg-green-50 border-2 border-green-200 rounded-xl"
+                    >
+                      <span className="text-sm font-medium text-gray-900">
+                        {vehicle.make} {vehicle.model}
+                        {vehicle.year ? ` (${vehicle.year})` : ""}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedVehicles(removeVehicle(selectedVehicles, vehicle.id))}
+                        className="p-1 hover:bg-red-100 rounded-lg transition-colors text-red-600"
+                        aria-label="Remove vehicle"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {!isUniversal && selectedVehicles.length === 0 && (
+              <p className="text-sm text-amber-700 bg-amber-50 border-2 border-amber-200 rounded-xl p-4">
+                ⚠️ Please add at least one compatible vehicle, or mark this as a universal part.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Photos Section */}
+      <div className="bg-white border-2 border-gray-200 rounded-2xl p-8 shadow-sm">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-2xl">
+            📸
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Photos</h2>
+            <p className="text-sm text-gray-600">Add up to 10 high-quality images</p>
+          </div>
+        </div>
+
+        {fileValidationError && (
+          <div className="mb-4 p-4 bg-red-50 border-2 border-red-200 text-red-800 rounded-xl">
+            {fileValidationError}
+          </div>
+        )}
 
         <label
           ref={dropRef}
-          className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer hover:bg-gray-50"
+          className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center cursor-pointer hover:border-gold-500 hover:bg-gradient-to-br hover:from-gold-50 hover:to-yellow-50 transition-all"
         >
-          <Upload className="h-6 w-6 text-gray-500" />
+          <Upload className="h-8 w-8 text-gray-400" />
           <div className="text-sm text-gray-700">
-            Drag & drop photos here, or <span className="text-yellow-600 font-semibold">browse</span>
+            <span className="font-semibold text-gold-600">Click to upload</span> or drag and drop
           </div>
-          <div className="text-xs text-gray-600">Up to 10 images • JPG/PNG/WebP • Max ~10MB each</div>
+          <div className="text-xs text-gray-500">PNG, JPG, WebP up to 12MB each (max 10 images)</div>
           <input
             type="file"
             accept="image/*"
@@ -570,15 +655,18 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
         </label>
 
         {(existingImages.length > 0 || newFiles.length > 0) && (
-          <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
             {existingImages.map((img, i) => (
-              <div key={`ex-${i}`} className="relative group rounded-lg overflow-hidden border border-gray-200">
+              <div
+                key={`ex-${i}`}
+                className="relative group rounded-xl overflow-hidden border-2 border-gray-200 aspect-square"
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={img} alt="Existing" className="site-image" />
+                <img src={img} alt="Existing" className="w-full h-full object-cover" />
                 <button
                   type="button"
                   onClick={() => removeExisting(i)}
-                  className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition"
+                  className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
                   aria-label="Remove image"
                 >
                   <X className="h-4 w-4" />
@@ -587,72 +675,176 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
             ))}
 
             {newFiles.map((f, i) => (
-              <div key={`new-${i}`} className="relative group rounded-lg overflow-hidden border border-yellow-300">
-                <img src={URL.createObjectURL(f)} alt="New" className="site-image" />
+              <div
+                key={`new-${i}`}
+                className="relative group rounded-xl overflow-hidden border-2 border-gold-400 aspect-square"
+              >
+                <img src={URL.createObjectURL(f)} alt="New" className="w-full h-full object-cover" />
                 <button
                   type="button"
                   onClick={() => removeNew(i)}
-                  className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition"
+                  className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
                   aria-label="Remove image"
                 >
                   <X className="h-4 w-4" />
                 </button>
+                <div className="absolute bottom-2 left-2 px-2 py-1 bg-gold-500 text-white text-xs font-semibold rounded-lg">
+                  NEW
+                </div>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Errors */}
+      {/* Shipping & Location Section */}
+      <div className="bg-white border-2 border-gray-200 rounded-2xl p-8 shadow-sm">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-2xl">
+            📦
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Shipping & Location</h2>
+            <p className="text-sm text-gray-600">How buyers can receive the part</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
+              Your Postcode <span className="text-red-500">*</span>
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={postcode}
+                onChange={(e) => setPostcode(e.target.value.toUpperCase())}
+                placeholder="e.g., SW1A 1AA"
+                maxLength={8}
+                className="flex-1 border-2 border-gray-300 rounded-xl py-3 px-4 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all"
+                required
+              />
+              <button
+                type="button"
+                onClick={handleGeocodePostcode}
+                disabled={geocoding || !postcode.trim()}
+                className="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-semibold disabled:opacity-50 transition-colors"
+              >
+                {geocoding ? "..." : "Verify"}
+              </button>
+            </div>
+            {sellerLat && sellerLng ? (
+              <p className="mt-2 text-xs text-green-600 flex items-center gap-1">
+                <span className="font-semibold">✓</span> Location verified
+              </p>
+            ) : (
+              <p className="mt-2 text-xs text-gray-500">Used to calculate distance for buyers</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
+              Shipping Options <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={shippingOption}
+              onChange={(e) => setShippingOption(e.target.value as ShippingOption)}
+              className="w-full border-2 border-gray-300 rounded-xl py-3 px-4 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all"
+              required
+            >
+              <option value="both">📦 Collection or Delivery</option>
+              <option value="collection">🏠 Collection Only</option>
+              <option value="delivery">🚚 Delivery Only</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Returns Policy */}
+        <div className="p-5 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={acceptsReturns}
+              onChange={(e) => setAcceptsReturns(e.target.checked)}
+              className="mt-1 h-5 w-5 rounded border-gray-300 text-gold-500 focus:ring-2 focus:ring-gold-500"
+            />
+            <div className="flex-1">
+              <span className="font-semibold text-gray-900">Accept Returns</span>
+              <p className="text-sm text-gray-600 mt-1">Allow buyers to return within a specified period</p>
+            </div>
+          </label>
+
+          {acceptsReturns && (
+            <div className="mt-4 ml-8">
+              <label className="block text-sm font-semibold text-gray-900 mb-2">Return Window</label>
+              <select
+                value={returnDays}
+                onChange={(e) => setReturnDays(Number(e.target.value))}
+                className="w-48 border-2 border-gray-300 rounded-xl py-2 px-3 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all"
+              >
+                <option value={7}>7 days</option>
+                <option value={14}>14 days</option>
+                <option value={30}>30 days</option>
+              </select>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Error Display */}
       {error && (
-        <div className="border border-red-200 bg-red-50 text-red-800 rounded-lg p-3">
-          {error}
+        <div className="border-2 border-red-300 bg-red-50 text-red-800 rounded-2xl p-4 font-medium">
+          ⚠️ {error}
         </div>
       )}
 
-      {/* Actions */}
+      {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         <button
           type="submit"
           disabled={!canSave || saving}
-          className={`flex-1 sm:flex-none px-5 py-2.5 rounded-md font-semibold ${
+          className={`flex-1 sm:flex-none px-6 py-3.5 rounded-xl font-bold text-lg transition-all ${
             !canSave || saving
-              ? "bg-yellow-300 text-black cursor-not-allowed"
-              : "bg-yellow-500 hover:bg-yellow-600 text-black"
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+              : "bg-gradient-to-r from-gold-500 to-yellow-500 hover:from-gold-600 hover:to-yellow-600 text-white shadow-lg hover:shadow-xl"
           }`}
         >
-          {saving ? "Saving…" : "Save & Publish"}
+          {saving ? "Saving..." : "💾 Save & Publish"}
         </button>
+
         <button
           type="button"
           onClick={handleSaveAsDraft}
           disabled={saving}
-          className="flex-1 sm:flex-none px-5 py-2.5 rounded-md font-semibold border border-gray-300 text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+          className="flex-1 sm:flex-none px-6 py-3.5 rounded-xl font-semibold border-2 border-gray-300 text-gray-800 hover:bg-gray-50 disabled:opacity-50 transition-all"
         >
-          Save as Draft
+          📝 Save as Draft
         </button>
+
         <button
           type="button"
           onClick={handleMarkAsSold}
           disabled={saving}
-          className="flex-1 sm:flex-none px-5 py-2.5 rounded-md font-semibold border border-green-300 bg-green-50 text-green-900 hover:bg-green-100 disabled:opacity-50"
+          className="flex-1 sm:flex-none px-6 py-3.5 rounded-xl font-semibold border-2 border-green-300 bg-green-50 text-green-900 hover:bg-green-100 disabled:opacity-50 transition-all"
         >
-          Mark as Sold
+          ✅ Mark as Sold
         </button>
+
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 sm:flex-none px-5 py-2.5 rounded-md font-semibold border border-gray-300 text-gray-800 hover:bg-gray-50"
+          className="flex-1 sm:flex-none px-6 py-3.5 rounded-xl font-semibold border-2 border-gray-300 text-gray-800 hover:bg-gray-50 transition-all"
         >
-          Cancel
+          ❌ Cancel
         </button>
+
         <button
           type="button"
           onClick={handleDelete}
           disabled={deleting}
-          className="flex-1 sm:flex-none px-5 py-2.5 rounded-md font-semibold border border-red-300 bg-red-50 text-red-900 hover:bg-red-100 disabled:opacity-50"
+          className="flex-1 sm:flex-none px-6 py-3.5 rounded-xl font-semibold border-2 border-red-300 bg-red-50 text-red-900 hover:bg-red-100 disabled:opacity-50 transition-all"
         >
-          {deleting ? "Deleting..." : "Delete"}
+          {deleting ? "Deleting..." : "🗑️ Delete"}
         </button>
       </div>
     </form>

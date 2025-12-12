@@ -34,9 +34,15 @@ export default async function EditListingPage({ params }: { params: Promise<{ id
   }
 
   return (
-    <section className="max-w-3xl mx-auto px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold text-black">Edit Listing</h1>
-      <EditListingForm listing={listing} />
+    <section className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 py-12 px-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">Edit Your Listing</h1>
+          <p className="text-lg text-gray-600">Update your listing details</p>
+          <p className="text-sm text-gray-500 mt-2">Fields marked with <span className="text-red-500">*</span> are required</p>
+        </div>
+        <EditListingForm listing={listing} />
+      </div>
     </section>
   );
 }
