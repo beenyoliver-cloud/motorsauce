@@ -32,7 +32,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { action, userId, reason, duration } = body;
+    const { action, userId, reason, duration, suspendDays } = body;
+    const durationDays = duration || suspendDays; // Support both parameter names
 
     if (!action || !userId) {
       return NextResponse.json({ error: "Missing action or userId" }, { status: 400 });
@@ -64,9 +65,9 @@ export async function POST(request: NextRequest) {
         updateData = { is_banned: false, ban_reason: null, banned_at: null, banned_by: null };
         break;
       case "suspend":
-        const suspendedUntil = duration ? new Date(Date.now() + duration * 24 * 60 * 60 * 1000).toISOString() : null;
+        const suspendedUntil = durationDays ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString() : null;
         updateData = { is_suspended: true, suspended_until: suspendedUntil };
-        logDetails = { reason, duration_days: duration };
+        logDetails = { reason, duration_days: durationDays };
         break;
       case "unsuspend":
         updateData = { is_suspended: false, suspended_until: null };
