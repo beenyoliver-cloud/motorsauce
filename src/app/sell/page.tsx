@@ -320,8 +320,7 @@ function SellForm() {
         shipping_option: shippingOption || 'both',
         accepts_returns: acceptsReturns,
         description: description.trim() || '',
-        images: uploadedUrls,
-        image_url: uploadedUrls[0] || null, // Use correct column name
+        images: uploadedUrls, // Only use images array, not image_url
         status: 'draft',
         draft_reason: 'Saved as draft - incomplete listing'
       };
