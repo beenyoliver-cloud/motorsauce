@@ -10,10 +10,10 @@ import { VEHICLES as VEHICLES_FALLBACK } from '@/data/vehicles';
 import { addVehicle, removeVehicle, vehiclesToArray, type SelectedVehicle } from '@/lib/vehicleHelpers';
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
+import { getMainCategories, getSubcategoriesForMain, type MainCategory } from '@/data/partCategories';
 
 type Category = "OEM" | "Aftermarket" | "Tool" | "";
 type Condition = "New" | "Used - Like New" | "Used - Good" | "Used - Fair";
-type PartType = "" | "Engine" | "Transmission" | "Brakes" | "Suspension" | "Exhaust" | "Body" | "Interior" | "Electrical" | "Wheels" | "Lighting" | "Cooling" | "Fuel System" | "Other";
 type ShippingOption = "collection" | "delivery" | "both";
 
 type Img = { id: string; file: File; url: string };
@@ -72,7 +72,8 @@ function SellForm() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<Category>("");
-  const [partType, setPartType] = useState<PartType>("");
+  const [mainCategory, setMainCategory] = useState<MainCategory | "">("");
+  const [subcategory, setSubcategory] = useState("");
   const [isUniversal, setIsUniversal] = useState(false);
   const [selectedVehicles, setSelectedVehicles] = useState<SelectedVehicle[]>([]);
   // Temporary state for adding vehicles
@@ -106,6 +107,8 @@ function SellForm() {
   const canSubmit = useMemo(() => {
     if (!title.trim()) return false;
     if (!category) return false;
+    if (!mainCategory) return false;
+    if (!subcategory) return false;
     if (!price || Number.isNaN(Number(price))) return false;
     if (images.length === 0) return false;
     // OEM/Aftermarket REQUIRE vehicles (either multiple vehicles OR universal flag) - MANDATORY
@@ -117,7 +120,7 @@ function SellForm() {
       }
     }
     return true;
-  }, [title, category, price, images.length, isVehicleSpecific, selectedVehicles, isUniversal]);
+  }, [title, category, mainCategory, subcategory, price, images.length, isVehicleSpecific, selectedVehicles, isUniversal]);
 
   useEffect(() => {
     let active = true;
@@ -249,7 +252,8 @@ function SellForm() {
       const listing = await createListing({
         title: title.trim(),
         category,
-        part_type: partType || undefined,
+        part_type: subcategory || undefined,
+        main_category: mainCategory || undefined,
         make: firstVehicle?.make.trim() || undefined,
         model: firstVehicle?.model.trim() || undefined,
         year: firstVehicle?.year,
@@ -364,29 +368,43 @@ function SellForm() {
           </div>
         </div>
 
-        {/* Part Type */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Part Type (Optional)</label>
-          <select
-            value={partType}
-            onChange={(e) => setPartType(e.target.value as PartType)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-400"
-          >
-            <option value="">Select type</option>
-            <option value="Engine">Engine</option>
-            <option value="Transmission">Transmission</option>
-            <option value="Brakes">Brakes</option>
-            <option value="Suspension">Suspension</option>
-            <option value="Exhaust">Exhaust</option>
-            <option value="Body">Body Panels</option>
-            <option value="Interior">Interior</option>
-            <option value="Electrical">Electrical</option>
-            <option value="Wheels">Wheels & Tyres</option>
-            <option value="Lighting">Lighting</option>
-            <option value="Cooling">Cooling System</option>
-            <option value="Fuel System">Fuel System</option>
-            <option value="Other">Other</option>
-          </select>
+        {/* Part Type - Main Category and Subcategory */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Main Category *</label>
+            <select
+              value={mainCategory}
+              onChange={(e) => {
+                setMainCategory(e.target.value as MainCategory | "");
+                setSubcategory(""); // Reset subcategory when main changes
+              }}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-400"
+              required
+            >
+              <option value="">Select main category</option>
+              {getMainCategories().map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Subcategory *</label>
+            <select
+              value={subcategory}
+              onChange={(e) => setSubcategory(e.target.value)}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-400"
+              disabled={!mainCategory}
+              required
+            >
+              <option value="">Select subcategory</option>
+              {mainCategory && getSubcategoriesForMain(mainCategory).map((sub) => (
+                <option key={sub} value={sub}>{sub}</option>
+              ))}
+            </select>
+            {!mainCategory && (
+              <p className="mt-1 text-xs text-gray-500">Select a main category first</p>
+            )}
+          </div>
         </div>
 
         {/* Description */}

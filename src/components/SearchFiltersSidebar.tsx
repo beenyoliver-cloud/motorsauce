@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { VEHICLE_DATABASE, getAllMakes, getModelsForMake, getYearsForModel } from "@/data/vehicles";
+import { getMainCategories, getSubcategoriesForMain, type MainCategory } from "@/data/partCategories";
 
 type Props = {
   q: string;
@@ -24,7 +25,6 @@ type Props = {
 };
 
 const CATEGORIES: Array<"OEM" | "Aftermarket" | "Tool"> = ["OEM", "Aftermarket", "Tool"];
-const PART_TYPES = ["Engine", "Transmission", "Brakes", "Suspension", "Exhaust", "Body", "Interior", "Electrical", "Wheels", "Lighting", "Cooling", "Fuel System", "Other"];
 const GARAGE_KEYS = ["ms:garage:favourite", "garage:favourite", "ms_garage_favourite", "garage_favourite"] as const;
 
 function readFavouriteGarage():
@@ -178,21 +178,39 @@ export default function SearchFiltersSidebar(props: Props) {
           </div>
         </div>
 
-        {/* Part Type */}
+        {/* Part Type - Main Category and Subcategory */}
         <div>
           <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700">Part Type</div>
-          <select
-            value={sp.get("partType") || ""}
-            onChange={(e) => setParam("partType", e.target.value)}
-            className={inputBase}
-          >
-            <option value="">All types</option>
-            {PART_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
+          <div className="space-y-2">
+            <select
+              value={sp.get("mainCategory") || ""}
+              onChange={(e) => {
+                setParam("mainCategory", e.target.value);
+                // Clear subcategory when main category changes
+                if (e.target.value !== sp.get("mainCategory")) {
+                  setParam("subcategory", "");
+                }
+              }}
+              className={inputBase}
+            >
+              <option value="">All categories</option>
+              {getMainCategories().map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+
+            <select
+              value={sp.get("subcategory") || ""}
+              onChange={(e) => setParam("subcategory", e.target.value)}
+              className={inputBase}
+              disabled={!sp.get("mainCategory")}
+            >
+              <option value="">{sp.get("mainCategory") ? "All subcategories" : "Select category first"}</option>
+              {sp.get("mainCategory") && getSubcategoriesForMain(sp.get("mainCategory") as MainCategory).map((sub) => (
+                <option key={sub} value={sub}>{sub}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Vehicle */}

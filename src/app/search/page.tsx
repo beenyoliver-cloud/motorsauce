@@ -16,6 +16,7 @@ import ActiveFilters from "@/components/ActiveFilters";
 import { Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { nsKey } from "@/lib/auth";
 import SaveSearchButton from "@/components/SaveSearchButton";
+import { searchListing, normalizeSearchTerm } from "@/lib/searchHelpers";
 
 /* ---------- Types ---------- */
 type Listing = {
@@ -41,6 +42,8 @@ type Listing = {
   vin?: string;
   yearFrom?: number;
   yearTo?: number;
+  main_category?: string;
+  part_type?: string;
   // Multi-vehicle support
   vehicles?: Array<{ make: string; model: string; year?: number; universal?: boolean }>;
 };
@@ -254,6 +257,8 @@ function SearchPageInner() {
   const models = arrify(sp.getAll("model"));
   const genCodes = arrify(sp.getAll("gen").concat(sp.getAll("genCode")));
   const engines = arrify(sp.getAll("engine"));
+  const mainCategory = sp.get("mainCategory") || "";
+  const subcategory = sp.get("subcategory") || "";
 
   const yearMin = toNum(sp.get("yearMin"));
   const yearMax = toNum(sp.get("yearMax"));
@@ -265,6 +270,10 @@ function SearchPageInner() {
     () =>
       all.filter((l) => {
         if (categories.length && !categories.includes(l.category)) return false;
+        
+        // Main category and subcategory filtering
+        if (mainCategory && l.main_category !== mainCategory) return false;
+        if (subcategory && l.part_type !== subcategory) return false;
         
         // Multi-vehicle filtering with backward compatibility
         if (makes.length) {
@@ -302,28 +311,24 @@ function SearchPageInner() {
         }
 
         if (q) {
-          const needle = q.toLowerCase().trim();
-          const hay = [
-            l.title,
-            l.description ?? "",
-            l.category,
-            l.condition,
-            l.make ?? "",
-            l.model ?? "",
-            l.genCode ?? "",
-            l.engine ?? "",
-            l.oem ?? "",
-            String(l.yearFrom ?? ""),
-            String(l.yearTo ?? ""),
-            String(l.year ?? ""),
-          ]
-            .join(" ")
-            .toLowerCase();
-          if (!hay.includes(needle)) return false;
+          // Use fuzzy search with typo tolerance
+          const normalized = normalizeSearchTerm(q);
+          if (!searchListing({
+            title: l.title,
+            description: l.description,
+            oem: l.oem,
+            make: l.make,
+            model: l.model,
+            category: l.category,
+            part_type: (l as any).part_type,
+            main_category: (l as any).main_category,
+          }, normalized)) {
+            return false;
+          }
         }
         return true;
       }),
-    [all, categories, makes, models, genCodes, engines, yearMin, yearMax, priceMin, priceMax, q, seller]
+    [all, categories, mainCategory, subcategory, makes, models, genCodes, engines, yearMin, yearMax, priceMin, priceMax, q, seller]
   );
 
   // Sorting
