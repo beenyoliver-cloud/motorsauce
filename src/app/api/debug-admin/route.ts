@@ -1,55 +1,48 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireAdminApiKey } from "../_lib/adminAuth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
+  const gate = requireAdminApiKey(req);
+  if (gate) return gate;
+
   try {
     const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      return NextResponse.json({ error: "Missing authorization header" }, { status: 401 });
+    }
+
     const publicUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const publicKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE;
 
-    const response: any = {
-      timestamp: new Date().toISOString(),
-      environment: {
-        hasPublicUrl: !!publicUrl,
-        hasPublicKey: !!publicKey,
-        hasServiceKey: !!serviceKey,
-      },
-      request: {
-        hasAuthHeader: !!authHeader,
-      },
-    };
-
-    // If no auth header, return basic info
-    if (!authHeader) {
-      response.error = "No authorization header";
-      return NextResponse.json(response);
+    if (!publicUrl || !publicKey) {
+      return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500 });
     }
 
-    // Create client with auth token
-    const supabase = createClient(publicUrl!, publicKey!, {
+    const supabase = createClient(publicUrl, publicKey, {
       auth: { persistSession: false },
       global: { headers: { Authorization: authHeader } },
     });
 
-    // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    response.user = {
-      id: user?.id,
-      email: user?.email,
-      error: authError?.message,
-    };
-
-    if (!user) {
-      response.error = "Could not get user from token";
-      return NextResponse.json(response);
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized", details: authError?.message }, { status: 401 });
     }
 
-    // Check admin status with service role
+    const response: any = {
+      timestamp: new Date().toISOString(),
+      user: { id: user.id, email: user.email },
+      environment: {
+        supabaseConfigured: true,
+        serviceRoleConfigured: Boolean(serviceKey),
+      },
+    };
+
     if (serviceKey) {
-      const serviceSupabase = createClient(publicUrl!, serviceKey);
+      const serviceSupabase = createClient(publicUrl, serviceKey);
       const { data, error } = await serviceSupabase
         .from("admins")
         .select("id")
@@ -58,12 +51,10 @@ export async function GET(req: Request) {
 
       response.adminCheck = {
         method: "service_role",
-        success: !error,
         isAdmin: !!data,
         error: error?.message,
       };
     } else {
-      // Try with RLS
       const { data, error } = await supabase
         .from("admins")
         .select("id")
@@ -72,7 +63,6 @@ export async function GET(req: Request) {
 
       response.adminCheck = {
         method: "rls_fallback",
-        success: !error,
         isAdmin: !!data,
         error: error?.message,
       };
@@ -83,7 +73,6 @@ export async function GET(req: Request) {
     return NextResponse.json({
       timestamp: new Date().toISOString(),
       error: error.message || "Unknown error",
-      stack: error.stack,
-    });
+    }, { status: 500 });
   }
 }

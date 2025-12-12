@@ -1,342 +1,681 @@
-"use client";"use client";
+"use client";"use client";"use client";
 
 
 
-import { useEffect, useState } from "react";import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
-import { useRouter, useSearchParams } from "next/navigation";import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-import { import { Search, User, Mail, Calendar, AlertCircle, MessageSquare, ShoppingBag, Flag, Eye, Ban, CheckCircle } from "lucide-react";
+import {import { useEffect, useState } from "react";import { useEffect, useState } from "react";
+
+  Search, User, Mail, ShoppingBag, Flag, Eye, Ban, CheckCircle,
+
+  Clock, AlertTriangle, Shield, XCircle, Loader2, History, MessageSquare, AlertCircleimport { useRouter, useSearchParams } from "next/navigation";import { useRouter } from "next/navigation";
+
+} from "lucide-react";
+
+import { supabaseBrowser } from "@/lib/supabase";import { import { Search, User, Mail, Calendar, AlertCircle, MessageSquare, ShoppingBag, Flag, Eye, Ban, CheckCircle } from "lucide-react";
+
+import { AdminNav, AdminBreadcrumb } from "@/components/AdminNav";
 
   Search, User, Mail, Calendar, AlertCircle, MessageSquare, ShoppingBag, import { supabaseBrowser } from "@/lib/supabase";
 
-  Flag, Eye, Ban, CheckCircle, Clock, AlertTriangle, Shield, XCircle,import { AdminNav, AdminBreadcrumb } from "@/components/AdminNav";
+interface UserRecord {
 
-  Loader2, History
+  id: string;  Flag, Eye, Ban, CheckCircle, Clock, AlertTriangle, Shield, XCircle,import { AdminNav, AdminBreadcrumb } from "@/components/AdminNav";
 
-} from "lucide-react";interface UserRecord {
+  email: string;
 
-import { supabaseBrowser } from "@/lib/supabase";  id: string;
+  name: string;  Loader2, History
 
-import { AdminNav, AdminBreadcrumb } from "@/components/AdminNav";  email: string;
+  created_at: string;
 
-  name: string;
+  avatar_url?: string;} from "lucide-react";interface UserRecord {
 
-interface UserRecord {  created_at: string;
+  total_listings: number;
+
+  total_reports: number;import { supabaseBrowser } from "@/lib/supabase";  id: string;
+
+  messages_24h: number;
+
+  is_banned?: boolean;import { AdminNav, AdminBreadcrumb } from "@/components/AdminNav";  email: string;
+
+  is_suspended?: boolean;
+
+  suspended_until?: string;  name: string;
+
+  ban_reason?: string;
+
+  warning_count?: number;interface UserRecord {  created_at: string;
+
+}
 
   id: string;  avatar_url?: string;
 
-  email: string;  bio?: string;
+export default function AdminUsersPage() {
 
-  name: string;  location?: string;
-
-  created_at: string;  total_listings: number;
-
-  avatar_url?: string;  total_sales: number;
-
-  bio?: string;  total_reports: number;
-
-  location?: string;  pending_reports: number;
-
-  total_listings: number;  messages_24h: number;
-
-  total_sales: number;  last_active?: string;
-
-  total_reports: number;}
-
-  pending_reports: number;
-
-  messages_24h: number;export default function AdminUsersPage() {
-
-  last_active?: string;  const [users, setUsers] = useState<UserRecord[]>([]);
-
-  is_banned?: boolean;  const [filteredUsers, setFilteredUsers] = useState<UserRecord[]>([]);
-
-  is_suspended?: boolean;  const [loading, setLoading] = useState(true);
-
-  suspended_until?: string;  const [searchQuery, setSearchQuery] = useState("");
-
-  ban_reason?: string;  const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
-
-  warning_count?: number;  const [userMessages, setUserMessages] = useState<any[]>([]);
-
-}  const [userReports, setUserReports] = useState<any[]>([]);
-
-  const [loadingDetails, setLoadingDetails] = useState(false);
-
-export default function AdminUsersPage() {  const router = useRouter();
-
-  const [users, setUsers] = useState<UserRecord[]>([]);  const supabase = supabaseBrowser();
+  const [users, setUsers] = useState<UserRecord[]>([]);  email: string;  bio?: string;
 
   const [filteredUsers, setFilteredUsers] = useState<UserRecord[]>([]);
 
-  const [loading, setLoading] = useState(true);  useEffect(() => {
+  const [loading, setLoading] = useState(true);  name: string;  location?: string;
 
-  const [searchQuery, setSearchQuery] = useState("");    checkAdminAndFetchUsers();
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const [statusFilter, setStatusFilter] = useState<string>("all");  }, []);
+  const [statusFilter, setStatusFilter] = useState<string>("all");  created_at: string;  total_listings: number;
 
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
 
-  const [userMessages, setUserMessages] = useState<any[]>([]);  useEffect(() => {
+  const [moderating, setModerating] = useState(false);  avatar_url?: string;  total_sales: number;
 
-  const [userReports, setUserReports] = useState<any[]>([]);    if (searchQuery.trim() === "") {
+  const [showModerationModal, setShowModerationModal] = useState(false);
 
-  const [moderationLogs, setModerationLogs] = useState<any[]>([]);      setFilteredUsers(users);
+  const [moderationAction, setModerationAction] = useState("");  bio?: string;  total_reports: number;
+
+  const [moderationReason, setModerationReason] = useState("");
+
+  const [suspensionDays, setSuspensionDays] = useState(7);  location?: string;  pending_reports: number;
+
+  const router = useRouter();
+
+  const searchParams = useSearchParams();  total_listings: number;  messages_24h: number;
+
+  const supabase = supabaseBrowser();
+
+  total_sales: number;  last_active?: string;
+
+  useEffect(() => {
+
+    const filter = searchParams.get("filter");  total_reports: number;}
+
+    if (filter) setStatusFilter(filter);
+
+    const search = searchParams.get("search");  pending_reports: number;
+
+    if (search) setSearchQuery(search);
+
+    checkAdminAndFetchUsers();  messages_24h: number;export default function AdminUsersPage() {
+
+  }, []);
+
+  last_active?: string;  const [users, setUsers] = useState<UserRecord[]>([]);
+
+  useEffect(() => {
+
+    let filtered = users;  is_banned?: boolean;  const [filteredUsers, setFilteredUsers] = useState<UserRecord[]>([]);
+
+    if (statusFilter === "banned") filtered = filtered.filter(u => u.is_banned);
+
+    else if (statusFilter === "suspended") filtered = filtered.filter(u => u.is_suspended && !u.is_banned);  is_suspended?: boolean;  const [loading, setLoading] = useState(true);
+
+    else if (statusFilter === "reported") filtered = filtered.filter(u => u.total_reports > 0);
+
+    else if (statusFilter === "active") filtered = filtered.filter(u => !u.is_banned && !u.is_suspended);  suspended_until?: string;  const [searchQuery, setSearchQuery] = useState("");
+
+
+
+    if (searchQuery.trim()) {  ban_reason?: string;  const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
+
+      const query = searchQuery.toLowerCase();
+
+      filtered = filtered.filter(u =>  warning_count?: number;  const [userMessages, setUserMessages] = useState<any[]>([]);
+
+        u.name?.toLowerCase().includes(query) ||
+
+        u.email?.toLowerCase().includes(query) ||}  const [userReports, setUserReports] = useState<any[]>([]);
+
+        u.id?.toLowerCase().includes(query)
+
+      );  const [loadingDetails, setLoadingDetails] = useState(false);
+
+    }
+
+    setFilteredUsers(filtered);export default function AdminUsersPage() {  const router = useRouter();
+
+  }, [searchQuery, statusFilter, users]);
+
+  const [users, setUsers] = useState<UserRecord[]>([]);  const supabase = supabaseBrowser();
+
+  const checkAdminAndFetchUsers = async () => {
+
+    try {  const [filteredUsers, setFilteredUsers] = useState<UserRecord[]>([]);
+
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.access_token) { router.push("/auth/login"); return; }  const [loading, setLoading] = useState(true);  useEffect(() => {
+
+
+
+      const adminRes = await fetch("/api/is-admin", {  const [searchQuery, setSearchQuery] = useState("");    checkAdminAndFetchUsers();
+
+        headers: { Authorization: `Bearer ${session.access_token}` },
+
+      });  const [statusFilter, setStatusFilter] = useState<string>("all");  }, []);
+
+      const { isAdmin } = await adminRes.json();
+
+      if (!isAdmin) { router.push("/"); return; }  const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
+
+
+
+      await fetchUsers();  const [userMessages, setUserMessages] = useState<any[]>([]);  useEffect(() => {
+
+    } catch (error) {
+
+      console.error("Error:", error);  const [userReports, setUserReports] = useState<any[]>([]);    if (searchQuery.trim() === "") {
+
+      setLoading(false);
+
+    }  const [moderationLogs, setModerationLogs] = useState<any[]>([]);      setFilteredUsers(users);
+
+  };
 
   const [loadingDetails, setLoadingDetails] = useState(false);    } else {
 
-  const [moderating, setModerating] = useState(false);      const query = searchQuery.toLowerCase();
+  const fetchUsers = async () => {
 
-  const [showModerationModal, setShowModerationModal] = useState(false);      setFilteredUsers(
+    setLoading(true);  const [moderating, setModerating] = useState(false);      const query = searchQuery.toLowerCase();
 
-  const [moderationAction, setModerationAction] = useState<string>("");        users.filter(
+    const { data: profiles } = await supabase
 
-  const [moderationReason, setModerationReason] = useState("");          (user) =>
+      .from("profiles")  const [showModerationModal, setShowModerationModal] = useState(false);      setFilteredUsers(
 
-  const [suspensionDays, setSuspensionDays] = useState(7);            user.name?.toLowerCase().includes(query) ||
+      .select("*")
 
-  const router = useRouter();            user.email?.toLowerCase().includes(query) ||
+      .order("created_at", { ascending: false });  const [moderationAction, setModerationAction] = useState<string>("");        users.filter(
 
-  const searchParams = useSearchParams();            user.id?.toLowerCase().includes(query)
 
-  const supabase = supabaseBrowser();        )
+
+    if (profiles) {  const [moderationReason, setModerationReason] = useState("");          (user) =>
+
+      const usersWithStats = await Promise.all(
+
+        profiles.map(async (profile) => {  const [suspensionDays, setSuspensionDays] = useState(7);            user.name?.toLowerCase().includes(query) ||
+
+          const [listingsCount, reportsCount] = await Promise.all([
+
+            supabase.from("listings").select("id", { count: "exact", head: true }).eq("seller_id", profile.id),  const router = useRouter();            user.email?.toLowerCase().includes(query) ||
+
+            supabase.from("user_reports").select("id", { count: "exact", head: true }).eq("reported_user_id", profile.id),
+
+          ]);  const searchParams = useSearchParams();            user.id?.toLowerCase().includes(query)
+
+          return {
+
+            id: profile.id,  const supabase = supabaseBrowser();        )
+
+            email: profile.email,
+
+            name: profile.name,      );
+
+            created_at: profile.created_at,
+
+            avatar_url: profile.avatar_url,  useEffect(() => {    }
+
+            total_listings: listingsCount.count || 0,
+
+            total_reports: reportsCount.count || 0,    // Check for filter in URL  }, [searchQuery, users]);
+
+            messages_24h: 0,
+
+            is_banned: profile.is_banned || false,    const filter = searchParams.get("filter");
+
+            is_suspended: profile.is_suspended || false,
+
+            suspended_until: profile.suspended_until,    if (filter) {  const checkAdminAndFetchUsers = async () => {
+
+            ban_reason: profile.ban_reason,
+
+            warning_count: profile.warning_count || 0,      setStatusFilter(filter);    try {
+
+          };
+
+        })    }      const {
 
       );
 
-  useEffect(() => {    }
+      setUsers(usersWithStats);    const search = searchParams.get("search");        data: { user },
 
-    // Check for filter in URL  }, [searchQuery, users]);
+      setFilteredUsers(usersWithStats);
 
-    const filter = searchParams.get("filter");
+    }    if (search) {      } = await supabase.auth.getUser();
 
-    if (filter) {  const checkAdminAndFetchUsers = async () => {
+    setLoading(false);
 
-      setStatusFilter(filter);    try {
-
-    }      const {
-
-    const search = searchParams.get("search");        data: { user },
-
-    if (search) {      } = await supabase.auth.getUser();
-
-      setSearchQuery(search);      if (!user) {
-
-    }        router.push("/auth/login?next=/admin/users");
-
-    checkAdminAndFetchUsers();        return;
-
-  }, []);      }
+  };      setSearchQuery(search);      if (!user) {
 
 
 
-  useEffect(() => {      // Check admin status using API endpoint (bypasses RLS)
+  const handleModeration = async () => {    }        router.push("/auth/login?next=/admin/users");
 
-    let filtered = users;      const { data: { session } } = await supabase.auth.getSession();
+    if (!selectedUser || !moderationAction) return;
 
-          if (!session?.access_token) {
+    setModerating(true);    checkAdminAndFetchUsers();        return;
 
-    // Apply status filter        router.push("/auth/login");
+    try {
 
-    if (statusFilter === "banned") {        return;
+      const { data: { session } } = await supabase.auth.getSession();  }, []);      }
 
-      filtered = filtered.filter(u => u.is_banned);      }
+      if (!session?.access_token) return;
 
-    } else if (statusFilter === "suspended") {
 
-      filtered = filtered.filter(u => u.is_suspended && !u.is_banned);      const adminRes = await fetch("/api/is-admin", {
 
-    } else if (statusFilter === "reported") {        headers: {
+      const body: any = { action: moderationAction, userId: selectedUser.id, reason: moderationReason };
 
-      filtered = filtered.filter(u => u.total_reports > 0);          Authorization: `Bearer ${session.access_token}`,
+      if (moderationAction === "suspend") body.duration = suspensionDays;  useEffect(() => {      // Check admin status using API endpoint (bypasses RLS)
 
-    } else if (statusFilter === "active") {        },
 
-      filtered = filtered.filter(u => !u.is_banned && !u.is_suspended);      });
 
-    }
+      const res = await fetch("/api/admin/moderation", {    let filtered = users;      const { data: { session } } = await supabase.auth.getSession();
 
-          if (!adminRes.ok) {
+        method: "POST",
 
-    // Apply search        router.push("/");
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },          if (!session?.access_token) {
 
-    if (searchQuery.trim()) {        return;
+        body: JSON.stringify(body),
 
-      const query = searchQuery.toLowerCase();      }
+      });    // Apply status filter        router.push("/auth/login");
 
-      filtered = filtered.filter(
 
-        (user) =>      const { isAdmin } = await adminRes.json();
 
-          user.name?.toLowerCase().includes(query) ||      if (!isAdmin) {
+      if (res.ok) {    if (statusFilter === "banned") {        return;
 
-          user.email?.toLowerCase().includes(query) ||        router.push("/");
+        await fetchUsers();
 
-          user.id?.toLowerCase().includes(query)        return;
+        setShowModerationModal(false);      filtered = filtered.filter(u => u.is_banned);      }
 
-      );      }
+        setSelectedUser(null);
 
-    }
+      } else {    } else if (statusFilter === "suspended") {
 
-          await fetchUsers();
+        const error = await res.json();
 
-    setFilteredUsers(filtered);    } catch (error) {
-
-  }, [searchQuery, statusFilter, users]);      console.error("Error checking admin status:", error);
-
-      setLoading(false);
-
-  const checkAdminAndFetchUsers = async () => {    }
-
-    try {  };
-
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {  const fetchUsers = async () => {
-
-        router.push("/auth/login?next=/admin/users");    try {
-
-        return;      setLoading(true);
+        alert(error.error || "Failed");      filtered = filtered.filter(u => u.is_suspended && !u.is_banned);      const adminRes = await fetch("/api/is-admin", {
 
       }
 
-      // Get all profiles with aggregated data
+    } catch (error) {    } else if (statusFilter === "reported") {        headers: {
 
-      const { data: { session } } = await supabase.auth.getSession();      const { data, error } = await supabase.rpc("get_users_admin_view");
+      alert("Error occurred");
 
-      if (!session?.access_token) {
+    } finally {      filtered = filtered.filter(u => u.total_reports > 0);          Authorization: `Bearer ${session.access_token}`,
 
-        router.push("/auth/login");      if (error) {
+      setModerating(false);
 
-        return;        console.error("Error fetching users:", error);
+    }    } else if (statusFilter === "active") {        },
+
+  };
+
+      filtered = filtered.filter(u => !u.is_banned && !u.is_suspended);      });
+
+  const openModerationModal = (action: string) => {
+
+    setModerationAction(action);    }
+
+    setModerationReason("");
+
+    setSuspensionDays(7);          if (!adminRes.ok) {
+
+    setShowModerationModal(true);
+
+  };    // Apply search        router.push("/");
+
+
+
+  const getRiskLevel = (user: UserRecord) => {    if (searchQuery.trim()) {        return;
+
+    if (user.is_banned) return { level: "banned", color: "text-red-800 bg-red-100 border-red-300" };
+
+    if (user.is_suspended) return { level: "suspended", color: "text-orange-800 bg-orange-100 border-orange-300" };      const query = searchQuery.toLowerCase();      }
+
+    if (user.total_reports > 0) return { level: "reported", color: "text-yellow-800 bg-yellow-100 border-yellow-300" };
+
+    return { level: "good", color: "text-green-600 bg-green-50 border-green-300" };      filtered = filtered.filter(
+
+  };
+
+        (user) =>      const { isAdmin } = await adminRes.json();
+
+  if (loading) {
+
+    return (          user.name?.toLowerCase().includes(query) ||      if (!isAdmin) {
+
+      <div className="max-w-7xl mx-auto p-8">
+
+        <AdminBreadcrumb current="Users" />          user.email?.toLowerCase().includes(query) ||        router.push("/");
+
+        <AdminNav />
+
+        <div className="text-center py-8 text-gray-600">Loading users...</div>          user.id?.toLowerCase().includes(query)        return;
+
+      </div>
+
+    );      );      }
+
+  }
+
+    }
+
+  return (
+
+    <div className="max-w-7xl mx-auto p-8">          await fetchUsers();
+
+      <AdminBreadcrumb current="Users" />
+
+      <AdminNav />    setFilteredUsers(filtered);    } catch (error) {
+
+
+
+      <div className="mb-6">  }, [searchQuery, statusFilter, users]);      console.error("Error checking admin status:", error);
+
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">User Management</h1>
+
+        <p className="text-gray-600">Search, manage, and moderate users</p>      setLoading(false);
+
+      </div>
+
+  const checkAdminAndFetchUsers = async () => {    }
+
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+
+        <div className="flex-1 relative">    try {  };
+
+          <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+
+          <input      const { data: { user } } = await supabase.auth.getUser();
+
+            type="text"
+
+            placeholder="Search by name, email, or ID..."      if (!user) {  const fetchUsers = async () => {
+
+            value={searchQuery}
+
+            onChange={(e) => setSearchQuery(e.target.value)}        router.push("/auth/login?next=/admin/users");    try {
+
+            className="w-full pl-10 pr-4 py-3 border rounded-lg text-gray-900"
+
+          />        return;      setLoading(true);
+
+        </div>
+
+        <select      }
+
+          value={statusFilter}
+
+          onChange={(e) => setStatusFilter(e.target.value)}      // Get all profiles with aggregated data
+
+          className="px-4 py-3 border rounded-lg text-gray-900"
+
+        >      const { data: { session } } = await supabase.auth.getSession();      const { data, error } = await supabase.rpc("get_users_admin_view");
+
+          <option value="all">All Users</option>
+
+          <option value="active">Active</option>      if (!session?.access_token) {
+
+          <option value="banned">Banned</option>
+
+          <option value="suspended">Suspended</option>        router.push("/auth/login");      if (error) {
+
+          <option value="reported">With Reports</option>
+
+        </select>        return;        console.error("Error fetching users:", error);
+
+      </div>
 
       }        // Fallback to basic query if RPC doesn't exist
 
-        const { data: profiles } = await supabase
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
 
-      const adminRes = await fetch("/api/is-admin", {          .from("profiles")
+        <div className="bg-white p-4 rounded-lg border"><div className="text-sm text-gray-600">Total</div><div className="text-2xl font-bold">{users.length}</div></div>        const { data: profiles } = await supabase
 
-        headers: { Authorization: `Bearer ${session.access_token}` },          .select("*")
+        <div className="bg-white p-4 rounded-lg border"><div className="text-sm text-gray-600">Banned</div><div className="text-2xl font-bold text-red-600">{users.filter(u => u.is_banned).length}</div></div>
 
-      });          .order("created_at", { ascending: false });
+        <div className="bg-white p-4 rounded-lg border"><div className="text-sm text-gray-600">Suspended</div><div className="text-2xl font-bold text-orange-600">{users.filter(u => u.is_suspended).length}</div></div>      const adminRes = await fetch("/api/is-admin", {          .from("profiles")
+
+        <div className="bg-white p-4 rounded-lg border"><div className="text-sm text-gray-600">Reported</div><div className="text-2xl font-bold text-yellow-600">{users.filter(u => u.total_reports > 0).length}</div></div>
+
+      </div>        headers: { Authorization: `Bearer ${session.access_token}` },          .select("*")
 
 
 
-      if (!adminRes.ok) {        if (profiles) {
+      <div className="bg-white rounded-lg border overflow-hidden">      });          .order("created_at", { ascending: false });
 
-        router.push("/");          const usersWithStats = await Promise.all(
+        <table className="w-full">
 
-        return;            profiles.map(async (profile) => {
+          <thead className="bg-gray-50 border-b">
 
-      }              // Get counts individually
+            <tr>
 
-              const [listingsCount, reportsCount, messagesCount] = await Promise.all([
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>      if (!adminRes.ok) {        if (profiles) {
 
-      const { isAdmin } = await adminRes.json();                supabase.from("listings").select("id", { count: "exact", head: true }).eq("seller_id", profile.id),
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
 
-      if (!isAdmin) {                supabase.from("user_reports").select("id", { count: "exact", head: true }).eq("reported_user_id", profile.id),
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Listings</th>        router.push("/");          const usersWithStats = await Promise.all(
 
-        router.push("/");                supabase
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Reports</th>
 
-        return;                  .from("messages")
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>        return;            profiles.map(async (profile) => {
 
-      }                  .select("id", { count: "exact", head: true })
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
 
-                  .eq("from_user_id", profile.id)
+            </tr>      }              // Get counts individually
 
-      await fetchUsers();                  .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
+          </thead>
 
-    } catch (error) {              ]);
+          <tbody className="divide-y">              const [listingsCount, reportsCount, messagesCount] = await Promise.all([
 
-      console.error("Error checking admin status:", error);
+            {filteredUsers.map((user) => {
 
-      setLoading(false);              return {
+              const risk = getRiskLevel(user);      const { isAdmin } = await adminRes.json();                supabase.from("listings").select("id", { count: "exact", head: true }).eq("seller_id", profile.id),
 
-    }                id: profile.id,
+              return (
 
-  };                email: profile.email,
+                <tr key={user.id} className={user.is_banned ? "bg-red-50" : user.is_suspended ? "bg-orange-50" : "hover:bg-gray-50"}>      if (!isAdmin) {                supabase.from("user_reports").select("id", { count: "exact", head: true }).eq("reported_user_id", profile.id),
 
-                name: profile.name,
+                  <td className="px-4 py-3">
 
-  const fetchUsers = async () => {                created_at: profile.created_at,
+                    <div className="flex items-center gap-3">        router.push("/");                supabase
 
-    try {                avatar_url: profile.avatar_url,
+                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
 
-      setLoading(true);                bio: profile.bio,
+                        <User size={20} className="text-gray-500" />        return;                  .from("messages")
 
-                location: profile.location,
+                      </div>
 
-      // Fallback to basic query                total_listings: listingsCount.count || 0,
+                      <div>      }                  .select("id", { count: "exact", head: true })
 
-      const { data: profiles } = await supabase                total_sales: 0,
+                        <div className="font-medium text-gray-900">{user.name || "Unnamed"}</div>
 
-        .from("profiles")                total_reports: reportsCount.count || 0,
+                        <div className="text-xs text-gray-500">{new Date(user.created_at).toLocaleDateString()}</div>                  .eq("from_user_id", profile.id)
 
-        .select("*")                pending_reports: 0,
+                      </div>
+
+                    </div>      await fetchUsers();                  .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
+
+                  </td>
+
+                  <td className="px-4 py-3 text-sm text-gray-600">{user.email}</td>    } catch (error) {              ]);
+
+                  <td className="px-4 py-3 text-center"><span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-sm">{user.total_listings}</span></td>
+
+                  <td className="px-4 py-3 text-center">{user.total_reports > 0 ? <span className="px-2 py-1 bg-red-50 text-red-700 rounded text-sm">{user.total_reports}</span> : <span className="text-gray-400">0</span>}</td>      console.error("Error checking admin status:", error);
+
+                  <td className="px-4 py-3"><span className={`px-2 py-1 rounded text-xs font-medium border ${risk.color}`}>{risk.level.toUpperCase()}</span></td>
+
+                  <td className="px-4 py-3 text-center">      setLoading(false);              return {
+
+                    <button onClick={() => setSelectedUser(user)} className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">Manage</button>
+
+                  </td>    }                id: profile.id,
+
+                </tr>
+
+              );  };                email: profile.email,
+
+            })}
+
+          </tbody>                name: profile.name,
+
+        </table>
+
+      </div>  const fetchUsers = async () => {                created_at: profile.created_at,
+
+
+
+      {selectedUser && (    try {                avatar_url: profile.avatar_url,
+
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">      setLoading(true);                bio: profile.bio,
+
+            <div className="flex justify-between items-start mb-4">
+
+              <div>                location: profile.location,
+
+                <h2 className="text-xl font-bold text-gray-900">{selectedUser.name || "Unnamed User"}</h2>
+
+                <p className="text-gray-600">{selectedUser.email}</p>      // Fallback to basic query                total_listings: listingsCount.count || 0,
+
+                <div className="flex gap-2 mt-2">
+
+                  {selectedUser.is_banned && <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded">BANNED</span>}      const { data: profiles } = await supabase                total_sales: 0,
+
+                  {selectedUser.is_suspended && <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded">SUSPENDED</span>}
+
+                </div>        .from("profiles")                total_reports: reportsCount.count || 0,
+
+              </div>
+
+              <button onClick={() => setSelectedUser(null)} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>        .select("*")                pending_reports: 0,
+
+            </div>
 
         .order("created_at", { ascending: false });                messages_24h: messagesCount.count || 0,
 
-              };
+            <div className="bg-gray-50 rounded-lg p-4 mb-4">
 
-      if (profiles) {            })
+              <h3 className="font-bold text-gray-900 mb-3">Moderation Actions</h3>              };
 
-        const usersWithStats = await Promise.all(          );
+              <div className="flex flex-wrap gap-2">
 
-          profiles.map(async (profile) => {          setUsers(usersWithStats);
+                {!selectedUser.is_banned && (      if (profiles) {            })
 
-            const [listingsCount, reportsCount, messagesCount] = await Promise.all([          setFilteredUsers(usersWithStats);
+                  <>
 
-              supabase.from("listings").select("id", { count: "exact", head: true }).eq("seller_id", profile.id),        }
+                    <button onClick={() => openModerationModal("warn")} className="px-3 py-2 bg-yellow-100 text-yellow-800 rounded-lg text-sm">Warn</button>        const usersWithStats = await Promise.all(          );
 
-              supabase.from("user_reports").select("id", { count: "exact", head: true }).eq("reported_user_id", profile.id),      } else {
+                    {!selectedUser.is_suspended && <button onClick={() => openModerationModal("suspend")} className="px-3 py-2 bg-orange-100 text-orange-800 rounded-lg text-sm">Suspend</button>}
 
-              supabase        setUsers(data || []);
+                    {selectedUser.is_suspended && <button onClick={() => openModerationModal("unsuspend")} className="px-3 py-2 bg-green-100 text-green-800 rounded-lg text-sm">Unsuspend</button>}          profiles.map(async (profile) => {          setUsers(usersWithStats);
 
-                .from("messages")        setFilteredUsers(data || []);
+                    <button onClick={() => openModerationModal("ban")} className="px-3 py-2 bg-red-100 text-red-800 rounded-lg text-sm">Ban</button>
 
-                .select("id", { count: "exact", head: true })      }
+                  </>            const [listingsCount, reportsCount, messagesCount] = await Promise.all([          setFilteredUsers(usersWithStats);
 
-                .eq("from_user_id", profile.id)    } catch (error) {
+                )}
+
+                {selectedUser.is_banned && <button onClick={() => openModerationModal("unban")} className="px-3 py-2 bg-green-100 text-green-800 rounded-lg text-sm">Unban</button>}              supabase.from("listings").select("id", { count: "exact", head: true }).eq("seller_id", profile.id),        }
+
+              </div>
+
+            </div>              supabase.from("user_reports").select("id", { count: "exact", head: true }).eq("reported_user_id", profile.id),      } else {
+
+
+
+            <div className="grid grid-cols-3 gap-4">              supabase        setUsers(data || []);
+
+              <div className="p-3 bg-blue-50 rounded-lg text-center"><div className="text-sm text-gray-600">Listings</div><div className="text-xl font-bold text-blue-600">{selectedUser.total_listings}</div></div>
+
+              <div className="p-3 bg-red-50 rounded-lg text-center"><div className="text-sm text-gray-600">Reports</div><div className="text-xl font-bold text-red-600">{selectedUser.total_reports}</div></div>                .from("messages")        setFilteredUsers(data || []);
+
+              <div className="p-3 bg-yellow-50 rounded-lg text-center"><div className="text-sm text-gray-600">Warnings</div><div className="text-xl font-bold text-yellow-600">{selectedUser.warning_count || 0}</div></div>
+
+            </div>                .select("id", { count: "exact", head: true })      }
+
+          </div>
+
+        </div>                .eq("from_user_id", profile.id)    } catch (error) {
+
+      )}
 
                 .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),      console.error("Error in fetchUsers:", error);
 
-            ]);    } finally {
+      {showModerationModal && selectedUser && (
 
-      setLoading(false);
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">            ]);    } finally {
+
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+
+            <h3 className="text-xl font-bold text-gray-900 mb-4">{moderationAction.charAt(0).toUpperCase() + moderationAction.slice(1)} User</h3>      setLoading(false);
+
+            <p className="text-gray-600 mb-4">Confirm action on {selectedUser.name || selectedUser.email}?</p>
 
             return {    }
 
-              id: profile.id,  };
+            {moderationAction === "suspend" && (
 
-              email: profile.email,
+              <div className="mb-4">              id: profile.id,  };
 
-              name: profile.name,  const viewUserDetails = async (user: UserRecord) => {
+                <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
 
-              created_at: profile.created_at,    setSelectedUser(user);
+                <select value={suspensionDays} onChange={(e) => setSuspensionDays(Number(e.target.value))} className="w-full px-3 py-2 border rounded-lg">              email: profile.email,
 
-              avatar_url: profile.avatar_url,    setLoadingDetails(true);
+                  <option value={1}>1 day</option>
+
+                  <option value={7}>7 days</option>              name: profile.name,  const viewUserDetails = async (user: UserRecord) => {
+
+                  <option value={30}>30 days</option>
+
+                  <option value={90}>90 days</option>              created_at: profile.created_at,    setSelectedUser(user);
+
+                </select>
+
+              </div>              avatar_url: profile.avatar_url,    setLoadingDetails(true);
+
+            )}
 
               bio: profile.bio,
 
-              location: profile.location,    try {
+            {["ban", "suspend", "warn"].includes(moderationAction) && (
 
-              total_listings: listingsCount.count || 0,      // Fetch recent messages (last 24 hours)
+              <div className="mb-4">              location: profile.location,    try {
 
-              total_sales: 0,      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+                <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
 
-              total_reports: reportsCount.count || 0,      const { data: messages } = await supabase
+                <textarea value={moderationReason} onChange={(e) => setModerationReason(e.target.value)} placeholder="Enter reason..." className="w-full px-3 py-2 border rounded-lg h-20" />              total_listings: listingsCount.count || 0,      // Fetch recent messages (last 24 hours)
 
-              pending_reports: 0,        .from("messages")
+              </div>
 
-              messages_24h: messagesCount.count || 0,        .select(
+            )}              total_sales: 0,      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-              is_banned: profile.is_banned || false,          `
 
-              is_suspended: profile.is_suspended || false,          id,
 
-              suspended_until: profile.suspended_until,          message_text,
+            <div className="flex gap-3">              total_reports: reportsCount.count || 0,      const { data: messages } = await supabase
 
-              ban_reason: profile.ban_reason,          created_at,
+              <button onClick={() => setShowModerationModal(false)} className="flex-1 px-4 py-2 border text-gray-700 rounded-lg">Cancel</button>
+
+              <button onClick={handleModeration} disabled={moderating} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg flex items-center justify-center gap-2">              pending_reports: 0,        .from("messages")
+
+                {moderating ? <Loader2 size={16} className="animate-spin" /> : null}
+
+                Confirm              messages_24h: messagesCount.count || 0,        .select(
+
+              </button>
+
+            </div>              is_banned: profile.is_banned || false,          `
+
+          </div>
+
+        </div>              is_suspended: profile.is_suspended || false,          id,
+
+      )}
+
+    </div>              suspended_until: profile.suspended_until,          message_text,
+
+  );
+
+}              ban_reason: profile.ban_reason,          created_at,
+
 
               warning_count: profile.warning_count || 0,          thread_id,
 

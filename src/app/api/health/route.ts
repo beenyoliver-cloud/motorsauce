@@ -1,50 +1,44 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireAdminApiKey } from "../_lib/adminAuth";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const gate = requireAdminApiKey(req);
+  if (gate) return gate;
+
   const envCheck = {
-    hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 40),
-    hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    anonKeyLength: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length,
+    supabaseConfigured: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
     nodeEnv: process.env.NODE_ENV,
     vercelEnv: process.env.VERCEL_ENV,
   };
 
-  // Try to connect and query
-  let dbTest: any = { attempted: false };
-  try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { auth: { persistSession: false } }
-    );
+  let dbTest: { success: boolean; message: string } = { success: false, message: "not run" };
+  if (envCheck.supabaseConfigured) {
+    try {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { auth: { persistSession: false } }
+      );
 
-    const { data, error, count } = await supabase
-      .from("listings")
-      .select("*", { count: "exact", head: true });
+      const { error } = await supabase
+        .from("listings")
+        .select("*", { count: "exact", head: true });
 
-    dbTest = {
-      attempted: true,
-      success: !error,
-      count: count,
-      error: error?.message,
-      errorCode: error?.code,
-      errorDetails: error?.details,
-      errorHint: error?.hint,
-    };
-  } catch (err: any) {
-    dbTest = {
-      attempted: true,
-      success: false,
-      exception: err.message,
-    };
+      dbTest = error
+        ? { success: false, message: error.message || "query failed" }
+        : { success: true, message: "ok" };
+    } catch (err: any) {
+      dbTest = { success: false, message: err?.message || "exception" };
+    }
+  } else {
+    dbTest = { success: false, message: "supabase env vars missing" };
   }
 
   return NextResponse.json({
-    status: "ok",
+    status: dbTest.success ? "ok" : "degraded",
     timestamp: new Date().toISOString(),
     env: envCheck,
     database: dbTest,
