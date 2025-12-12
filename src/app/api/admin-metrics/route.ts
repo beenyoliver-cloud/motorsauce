@@ -58,6 +58,7 @@ export async function GET(req: NextRequest) {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
     // Get all metrics in parallel using service role (bypass RLS)
+    // Split into safe queries and optional queries (that might fail if tables/columns don't exist)
     const [
       // Totals
       listingsRes,
@@ -75,10 +76,6 @@ export async function GET(req: NextRequest) {
       // This month
       usersMonth,
       listingsMonth,
-      // Moderation
-      pendingReports,
-      bannedUsers,
-      suspendedUsers,
     ] = await Promise.all([
       // Totals
       serviceSupabase.from('listings').select('id', { count: 'exact', head: true }),
@@ -96,11 +93,40 @@ export async function GET(req: NextRequest) {
       // This month
       serviceSupabase.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', monthStart),
       serviceSupabase.from('listings').select('id', { count: 'exact', head: true }).gte('created_at', monthStart),
-      // Moderation - these may fail if columns don't exist yet
-      serviceSupabase.from('user_reports').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-      serviceSupabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_banned', true),
-      serviceSupabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_suspended', true),
     ]);
+    
+    // Log errors from core queries
+    if (listingsRes.error) console.error('[admin-metrics] listings error:', listingsRes.error);
+    if (usersRes.error) console.error('[admin-metrics] users error:', usersRes.error);
+    if (salesRes.error) console.error('[admin-metrics] sales error:', salesRes.error);
+
+    // Moderation queries - these may fail if columns/tables don't exist yet, so handle gracefully
+    let pendingReports = { count: 0 };
+    let bannedUsers = { count: 0 };
+    let suspendedUsers = { count: 0 };
+    
+    try {
+      const reportsResult = await serviceSupabase.from('user_reports').select('id', { count: 'exact', head: true }).eq('status', 'pending');
+      if (!reportsResult.error) pendingReports = { count: reportsResult.count || 0 };
+    } catch (e) {
+      console.log('[admin-metrics] user_reports table may not exist yet');
+    }
+    
+    try {
+      const bannedResult = await serviceSupabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_banned', true);
+      if (!bannedResult.error) bannedUsers = { count: bannedResult.count || 0 };
+      else console.log('[admin-metrics] is_banned column may not exist:', bannedResult.error.message);
+    } catch (e) {
+      console.log('[admin-metrics] is_banned query failed');
+    }
+    
+    try {
+      const suspendedResult = await serviceSupabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_suspended', true);
+      if (!suspendedResult.error) suspendedUsers = { count: suspendedResult.count || 0 };
+      else console.log('[admin-metrics] is_suspended column may not exist:', suspendedResult.error.message);
+    } catch (e) {
+      console.log('[admin-metrics] is_suspended query failed');
+    }
 
     // Get top sellers (top 5)
     const { data: topSellers } = await serviceSupabase
@@ -129,8 +155,8 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
-    // Get recent activity
-    const [recentUsers, recentListings, recentReports] = await Promise.all([
+    // Get recent activity - user_reports might not exist yet
+    const [recentUsers, recentListings] = await Promise.all([
       serviceSupabase
         .from('profiles')
         .select('id, name, email, created_at')
@@ -141,12 +167,20 @@ export async function GET(req: NextRequest) {
         .select('id, title, seller_id, created_at, status')
         .order('created_at', { ascending: false })
         .limit(5),
-      serviceSupabase
+    ]);
+    
+    // Try to get recent reports if table exists
+    let recentReportsData: any[] = [];
+    try {
+      const reportsResult = await serviceSupabase
         .from('user_reports')
         .select('id, reason, status, created_at')
         .order('created_at', { ascending: false })
-        .limit(5),
-    ]);
+        .limit(5);
+      if (!reportsResult.error) recentReportsData = reportsResult.data || [];
+    } catch (e) {
+      console.log('[admin-metrics] user_reports table may not exist for recent reports');
+    }
 
     return NextResponse.json({
       // Basic totals
@@ -172,9 +206,9 @@ export async function GET(req: NextRequest) {
       listings_month: listingsMonth?.count ?? 0,
       
       // Moderation
-      pending_reports: (pendingReports as any)?.count ?? 0,
-      banned_users: (bannedUsers as any)?.count ?? 0,
-      suspended_users: (suspendedUsers as any)?.count ?? 0,
+      pending_reports: pendingReports.count ?? 0,
+      banned_users: bannedUsers.count ?? 0,
+      suspended_users: suspendedUsers.count ?? 0,
       
       // Top sellers
       top_sellers: topSellersArray,
@@ -182,7 +216,7 @@ export async function GET(req: NextRequest) {
       // Recent activity
       recent_users: recentUsers?.data || [],
       recent_listings: recentListings?.data || [],
-      recent_reports: (recentReports as any)?.data || [],
+      recent_reports: recentReportsData,
     });
   } catch (error: any) {
     console.error('[admin-metrics] Error:', error);
