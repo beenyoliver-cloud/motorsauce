@@ -321,7 +321,7 @@ function SellForm() {
         accepts_returns: acceptsReturns,
         description: description.trim() || '',
         images: uploadedUrls,
-        image: uploadedUrls[0] || '', // Add primary image field
+        image_url: uploadedUrls[0] || null, // Use correct column name
         status: 'draft',
         draft_reason: 'Saved as draft - incomplete listing'
       };

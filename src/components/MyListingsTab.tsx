@@ -89,17 +89,14 @@ export default function MyListingsTab({ sellerName }: { sellerName?: string }) {
         const isMine = Boolean(uid && (l.sellerId === uid || l.ownerId === uid || norm(l?.seller?.name || "") === norm(u?.name || "")));
         return (
           <div key={String(l.id)} className="group relative border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition">
-            {/* Edit button - positioned first so it's on top */}
+            {/* Edit button - positioned absolutely on top */}
             {isMine && (
-              <Link
+              <a
                 href={`/listing/${l.id}/edit`}
-                className="absolute top-2 right-2 sm:top-2 sm:right-2 rounded-md bg-yellow-500 text-black px-3 py-1.5 text-xs font-semibold sm:opacity-0 sm:group-hover:opacity-100 sm:bg-black/70 sm:text-white transition z-50 hover:bg-yellow-600 sm:hover:bg-black shadow-sm pointer-events-auto"
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
+                className="absolute top-2 right-2 sm:top-2 sm:right-2 rounded-md bg-yellow-500 text-black px-3 py-1.5 text-xs font-semibold sm:opacity-0 sm:group-hover:opacity-100 sm:bg-black/70 sm:text-white transition z-50 hover:bg-yellow-600 sm:hover:bg-black shadow-sm"
               >
                 Edit
-              </Link>
+              </a>
             )}
             
             {/* Mobile: Row layout, Tablet+: Block layout */}
