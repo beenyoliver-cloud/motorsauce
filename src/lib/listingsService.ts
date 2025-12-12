@@ -16,6 +16,7 @@ export type Listing = {
   images?: string[];
   category?: string;
   part_type?: string;
+  main_category?: string;
   condition?: string;
   // Multi-vehicle support (new)
   vehicles?: Vehicle[];
