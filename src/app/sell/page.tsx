@@ -310,30 +310,37 @@ function SellForm() {
         : [];
       const firstVehicle = selectedVehicles[0];
 
-      const listing = await createListing({
+      // Build listing data with only defined values
+      const listingData: any = {
         title: title.trim(),
         category: category || 'OEM',
-        part_type: subcategory || undefined,
-        main_category: mainCategory || undefined,
-        make: firstVehicle?.make.trim() || undefined,
-        model: firstVehicle?.model.trim() || undefined,
-        year: firstVehicle?.year,
-        vehicles: vehiclesArray,
+        condition: condition || 'Used - Good',
         price: price ? parseFloat(price) : 0,
         quantity: quantity || 1,
-        postcode: postcode.trim() || undefined,
-        seller_postcode: postcode.trim() || undefined,
-        seller_lat: sellerLat,
-        seller_lng: sellerLng,
-        shipping_option: shippingOption,
+        shipping_option: shippingOption || 'both',
         accepts_returns: acceptsReturns,
-        return_days: acceptsReturns ? returnDays : undefined,
-        condition,
-        description: description.trim(),
+        description: description.trim() || '',
         images: uploadedUrls,
         status: 'draft',
         draft_reason: 'Saved as draft - incomplete listing'
-      });
+      };
+
+      // Add optional fields only if they have values
+      if (subcategory) listingData.part_type = subcategory;
+      if (mainCategory) listingData.main_category = mainCategory;
+      if (firstVehicle?.make) listingData.make = firstVehicle.make.trim();
+      if (firstVehicle?.model) listingData.model = firstVehicle.model.trim();
+      if (firstVehicle?.year) listingData.year = firstVehicle.year;
+      if (vehiclesArray.length > 0) listingData.vehicles = vehiclesArray;
+      if (postcode.trim()) {
+        listingData.postcode = postcode.trim();
+        listingData.seller_postcode = postcode.trim();
+      }
+      if (sellerLat) listingData.seller_lat = sellerLat;
+      if (sellerLng) listingData.seller_lng = sellerLng;
+      if (acceptsReturns && returnDays) listingData.return_days = returnDays;
+
+      const listing = await createListing(listingData);
 
       setSubmitted(true);
       await new Promise(resolve => setTimeout(resolve, 1000));
