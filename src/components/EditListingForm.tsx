@@ -8,6 +8,7 @@ import { VEHICLES as VEHICLES_FALLBACK } from "@/data/vehicles";
 import { updateListing } from "@/lib/listingsService";
 import { getMainCategories, getSubcategoriesForMain, type MainCategory } from '@/data/partCategories';
 import { addVehicle, removeVehicle, vehiclesToArray, type SelectedVehicle } from '@/lib/vehicleHelpers';
+import { supabaseBrowser } from "@/lib/supabase";
 
 type Category = "OEM" | "Aftermarket" | "Tool" | "";
 type Condition = "New" | "Used - Like New" | "Used - Good" | "Used - Fair";
@@ -300,13 +301,31 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
     if (!confirm("Are you sure you want to delete this listing? This cannot be undone.")) return;
     setDeleting(true);
     try {
-      await fetch(`/api/listings/${listing.id}`, {
+      // Get auth token for the API call
+      const supabase = supabaseBrowser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      if (!token) {
+        throw new Error("You must be logged in to delete a listing");
+      }
+      
+      const response = await fetch(`/api/listings/${listing.id}`, {
         method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
-      router.push('/profile');
+      
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to delete listing");
+      }
+      
+      // Use window.location for immediate navigation to prevent "not found" flash
+      window.location.href = '/profile';
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete listing");
-    } finally {
       setDeleting(false);
     }
   }

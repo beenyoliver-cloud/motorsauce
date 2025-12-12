@@ -84,11 +84,11 @@ export default function SellerActionsBar({ listingId, currentStatus = "active" }
 
       if (updateError) throw updateError;
 
-      router.push("/profile");
+      // Use window.location for immediate navigation to prevent "not found" flash
+      window.location.href = "/profile?tab=drafts";
     } catch (err: any) {
       console.error("Error moving to drafts:", err);
       setError(err.message || "Failed to move to drafts");
-    } finally {
       setLoading(null);
     }
   }
@@ -118,11 +118,11 @@ export default function SellerActionsBar({ listingId, currentStatus = "active" }
         throw new Error(data.error || "Failed to delete listing");
       }
 
-      router.push("/profile");
+      // Use window.location for immediate navigation to prevent "not found" flash
+      window.location.href = "/profile";
     } catch (err: any) {
       console.error("Error deleting listing:", err);
       setError(err.message || "Failed to delete listing");
-    } finally {
       setLoading(null);
     }
   }
