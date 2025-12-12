@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SellFAB from "@/components/SellFAB";
 import { LayoutClient } from "@/components/LayoutClient";
+import WarningBanner from "@/components/WarningBanner";
 import type { ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/react";
 
@@ -14,6 +15,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <Header />
         {/* Offset for fixed header: larger on mobile (custom ~120px), default 56px on md+ */}
         <div className="pt-[128px] md:pt-14">
+          {/* Warning banner for users with active warnings */}
+          <WarningBanner />
           <LayoutClient>
             {children}
             <Footer />

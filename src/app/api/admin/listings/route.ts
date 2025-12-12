@@ -1,105 +1,128 @@
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase";
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
-export const dynamic = "force-dynamic";
-const sb = supabaseServer();
-
-function assertAdmin(req: Request): NextResponse | null {
-  const key = process.env.ADMIN_API_KEY;
-  const provided = req.headers.get("x-admin-key");
-  if (!key || !provided || provided !== key) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-  return null;
+function getSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error("Missing Supabase configuration");
+  return createClient(url, key);
 }
 
-type AdminListingRow = {
-  id: string | number;
-  title: string;
-  price_cents?: number | null;
-  price?: number | string | null;
-  image_url?: string | null;
-  image?: string | null;
-  make?: string | null;
-  model?: string | null;
-  created_at?: string | null;
-};
+async function verifyAdmin(request: NextRequest) {
+  const supabaseAdmin = getSupabaseAdmin();
+  const authHeader = request.headers.get("authorization");
+  if (!authHeader?.startsWith("Bearer ")) return null;
 
-function toPrice(row: AdminListingRow) {
-  if (typeof row?.price_cents === "number") return "£" + (row.price_cents / 100).toFixed(2);
-  if (typeof row?.price === "number") return "£" + Number(row.price).toFixed(2);
-  if (typeof row?.price === "string") return row.price.startsWith("£") ? row.price : `£${row.price}`;
-  return "£0.00";
+  const token = authHeader.split(" ")[1];
+  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+  if (error || !user) return null;
+
+  const { data: admin } = await supabaseAdmin.from("admins").select("id").eq("id", user.id).single();
+  if (!admin) return null;
+
+  return { user, supabaseAdmin };
 }
 
-function mapRow(row: AdminListingRow) {
-  return {
-    id: row.id,
-    title: row.title,
-    price: toPrice(row),
-    image: row.image_url || row.image || "/images/placeholder.jpg",
-    make: row.make,
-    model: row.model,
-    created_at: row.created_at,
-  };
-}
-
-export async function GET(req: Request) {
-  const block = assertAdmin(req);
-  if (block) return block;
+// GET - Fetch all listings (for admin)
+export async function GET(request: NextRequest) {
   try {
-    const { data, error } = await sb.from("listings").select("*").order("created_at", { ascending: false }).limit(200);
-    if (error) {
-      console.error("admin listings fetch", error);
-      return NextResponse.json([], { status: 200 });
-    }
-    return NextResponse.json(((data as AdminListingRow[]) || []).map(mapRow));
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json([], { status: 200 });
+    const auth = await verifyAdmin(request);
+    if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { supabaseAdmin } = auth;
+    const { data, error } = await supabaseAdmin
+      .from("listings")
+      .select("*, profiles:seller_id(id, name, username, avatar_url)")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("Admin listings GET error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
-export async function DELETE(req: Request) {
-  const block = assertAdmin(req);
-  if (block) return block;
+// PATCH - Update listing status
+export async function PATCH(request: NextRequest) {
   try {
-    const url = new URL(req.url);
-    const id = url.searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "missing id" }, { status: 400 });
-    const { error } = await sb.from("listings").delete().eq("id", id);
-    if (error) {
-      console.error("admin delete", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    const auth = await verifyAdmin(request);
+    if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { supabaseAdmin } = auth;
+    const { listingId, status } = await request.json();
+
+    if (!listingId || !status) {
+      return NextResponse.json({ error: "Missing listingId or status" }, { status: 400 });
     }
-    return NextResponse.json({ deleted: id });
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "unexpected" }, { status: 500 });
+
+    const { error } = await supabaseAdmin
+      .from("listings")
+      .update({ status })
+      .eq("id", listingId);
+
+    if (error) throw error;
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Admin listings PATCH error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
-export async function POST(req: Request) {
-  const block = assertAdmin(req);
-  if (block) return block;
+// DELETE - Delete listing and notify seller
+export async function DELETE(request: NextRequest) {
   try {
-    const body = await req.json().catch(() => ({}));
-    if (!body || !body.title) return NextResponse.json({ error: "missing title" }, { status: 400 });
-    const payload: Partial<AdminListingRow> = {
-      title: body.title,
-      price: body.price,
-      image_url: body.image_url,
-      make: body.make,
-      model: body.model,
-    };
-    const { data, error } = await sb.from("listings").upsert(payload, { onConflict: "id" }).select().maybeSingle();
-    if (error) {
-      console.error("admin upsert", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    const auth = await verifyAdmin(request);
+    if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { user, supabaseAdmin } = auth;
+    const { listingId, reason } = await request.json();
+
+    if (!listingId) {
+      return NextResponse.json({ error: "Missing listingId" }, { status: 400 });
     }
-    return NextResponse.json(data || null);
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "unexpected" }, { status: 500 });
+
+    // Get listing details before deletion
+    const { data: listing, error: fetchError } = await supabaseAdmin
+      .from("listings")
+      .select("id, title, seller_id")
+      .eq("id", listingId)
+      .single();
+
+    if (fetchError || !listing) {
+      return NextResponse.json({ error: "Listing not found" }, { status: 404 });
+    }
+
+    // Delete the listing
+    const { error: deleteError } = await supabaseAdmin
+      .from("listings")
+      .delete()
+      .eq("id", listingId);
+
+    if (deleteError) throw deleteError;
+
+    // Create notification for the seller
+    await supabaseAdmin.from("notifications").insert({
+      user_id: listing.seller_id,
+      type: "listing_deleted",
+      title: "Listing Removed",
+      message: `Your listing "${listing.title}" has been removed by an administrator. Reason: ${reason || "Policy violation"}`,
+      data: { listing_id: listingId, listing_title: listing.title, reason, admin_id: user.id },
+      read: false,
+    });
+
+    // Log the admin action
+    await supabaseAdmin.from("moderation_logs").insert({
+      user_id: listing.seller_id,
+      admin_id: user.id,
+      action: "delete_listing",
+      reason: reason || "Policy violation",
+      details: { listing_id: listingId, listing_title: listing.title },
+    });
+
+    return NextResponse.json({ success: true, message: "Listing deleted and seller notified" });
+  } catch (error) {
+    console.error("Admin listings DELETE error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

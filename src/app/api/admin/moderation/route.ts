@@ -98,6 +98,37 @@ export async function POST(request: NextRequest) {
       details: Object.keys(logDetails).length > 0 ? logDetails : null,
     });
 
+    // Send notifications for certain actions
+    if (action === "warn") {
+      await supabaseAdmin.from("notifications").insert({
+        user_id: userId,
+        type: "warning",
+        title: "Account Warning",
+        message: `You have received an official warning: ${reason || "Policy violation"}. Please review our terms of service. Further violations may result in suspension or ban.`,
+        data: { reason, warning_count: updateData.warning_count },
+        read: false,
+      });
+    } else if (action === "suspend") {
+      const untilDate = durationDays ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toLocaleDateString() : "indefinitely";
+      await supabaseAdmin.from("notifications").insert({
+        user_id: userId,
+        type: "suspension",
+        title: "Account Suspended",
+        message: `Your account has been suspended until ${untilDate}. Reason: ${reason || "Policy violation"}`,
+        data: { reason, duration_days: durationDays },
+        read: false,
+      });
+    } else if (action === "ban") {
+      await supabaseAdmin.from("notifications").insert({
+        user_id: userId,
+        type: "ban",
+        title: "Account Banned",
+        message: `Your account has been permanently banned. Reason: ${reason || "Severe policy violation"}`,
+        data: { reason },
+        read: false,
+      });
+    }
+
     if (action === "ban" || action === "suspend") {
       await supabaseAdmin.from("listings").update({ status: "draft" }).eq("seller_id", userId).eq("status", "active");
     }
