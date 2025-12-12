@@ -321,6 +321,7 @@ function SellForm() {
         accepts_returns: acceptsReturns,
         description: description.trim() || '',
         images: uploadedUrls,
+        image: uploadedUrls[0] || '', // Add primary image field
         status: 'draft',
         draft_reason: 'Saved as draft - incomplete listing'
       };
@@ -340,13 +341,36 @@ function SellForm() {
       if (sellerLng) listingData.seller_lng = sellerLng;
       if (acceptsReturns && returnDays) listingData.return_days = returnDays;
 
+      console.log('Attempting to save draft with data:', listingData);
       const listing = await createListing(listingData);
+      console.log('Draft saved successfully:', listing);
 
       setSubmitted(true);
       await new Promise(resolve => setTimeout(resolve, 1000));
       router.push('/profile');
     } catch (err) {
-      console.error('Error saving draft:', err);
+      console.error('Error saving draft - Full error:', err);
+      console.error('Error details:', {
+        message: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+        fullError: JSON.stringify(err, null, 2)
+      });
+      
+      // Try to extract Supabase error details
+      if (err && typeof err === 'object') {
+        const supabaseErr = err as any;
+        if (supabaseErr.code || supabaseErr.details || supabaseErr.hint) {
+          console.error('Supabase error details:', {
+            code: supabaseErr.code,
+            details: supabaseErr.details,
+            hint: supabaseErr.hint,
+            message: supabaseErr.message
+          });
+          setErrorMsg(`Database error: ${supabaseErr.message || supabaseErr.details || 'Unknown error'}`);
+          return;
+        }
+      }
+      
       setErrorMsg(err instanceof Error ? err.message : "Failed to save draft. Please try again.");
     } finally {
       setSubmitting(false);

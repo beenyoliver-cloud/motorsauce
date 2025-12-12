@@ -89,27 +89,32 @@ export default function MyListingsTab({ sellerName }: { sellerName?: string }) {
         const isMine = Boolean(uid && (l.sellerId === uid || l.ownerId === uid || norm(l?.seller?.name || "") === norm(u?.name || "")));
         return (
           <div key={String(l.id)} className="group relative border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition">
-            {/* Mobile: Row layout, Tablet+: Block layout */}
-            <div className="flex sm:block items-center gap-3 sm:gap-0">
-              <Link href={`/listing/${l.id}`} className="relative w-[120px] h-[120px] sm:w-auto sm:h-auto sm:aspect-[4/3] bg-gray-50 overflow-hidden shrink-0 block">
-                <SafeImage src={l.image} alt={l.title} className="w-full h-full object-cover object-center" />
+            {/* Edit button - positioned first so it's on top */}
+            {isMine && (
+              <Link
+                href={`/listing/${l.id}/edit`}
+                className="absolute top-2 right-2 sm:top-2 sm:right-2 rounded-md bg-yellow-500 text-black px-3 py-1.5 text-xs font-semibold sm:opacity-0 sm:group-hover:opacity-100 sm:bg-black/70 sm:text-white transition z-50 hover:bg-yellow-600 sm:hover:bg-black shadow-sm pointer-events-auto"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                Edit
               </Link>
-              <Link href={`/listing/${l.id}`} className="flex-1 p-2 sm:p-3 flex flex-col justify-between min-w-0 block">
+            )}
+            
+            {/* Mobile: Row layout, Tablet+: Block layout */}
+            <Link href={`/listing/${l.id}`} className="flex sm:block items-center gap-3 sm:gap-0">
+              <div className="relative w-[120px] h-[120px] sm:w-auto sm:h-auto sm:aspect-[4/3] bg-gray-50 overflow-hidden shrink-0">
+                <SafeImage src={l.image} alt={l.title} className="w-full h-full object-cover object-center" />
+              </div>
+              <div className="flex-1 p-2 sm:p-3 flex flex-col justify-between min-w-0">
                 <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 pr-14 sm:pr-0">{l.title}</h3>
                 <div className="mt-1 flex items-center justify-between gap-2">
                   <div className="text-base font-bold text-gray-900">{l.price}</div>
                   <FavoriteButton listingId={String(l.id)} showLabel={false} />
                 </div>
-              </Link>
-            </div>
-            {isMine && (
-              <Link
-                href={`/listing/${l.id}/edit`}
-                className="absolute top-2 right-2 sm:top-2 sm:right-2 rounded-md bg-yellow-500 text-black px-3 py-1.5 text-xs font-semibold sm:opacity-0 sm:group-hover:opacity-100 sm:bg-black/70 sm:text-white transition z-30 hover:bg-yellow-600 sm:hover:bg-black shadow-sm"
-              >
-                Edit
-              </Link>
-            )}
+              </div>
+            </Link>
           </div>
         );
       })}
