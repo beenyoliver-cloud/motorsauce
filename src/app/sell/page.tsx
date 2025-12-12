@@ -257,8 +257,7 @@ function SellForm() {
       const listing = await createListing({
         title: title.trim(),
         category,
-        part_type: subcategory || undefined,
-        main_category: mainCategory || undefined,
+        // Note: main_category and part_type are not in DB schema yet
         make: firstVehicle?.make.trim() || undefined,
         model: firstVehicle?.model.trim() || undefined,
         year: firstVehicle?.year,
@@ -326,8 +325,7 @@ function SellForm() {
       };
 
       // Add optional fields only if they have values
-      if (subcategory) listingData.part_type = subcategory;
-      if (mainCategory) listingData.main_category = mainCategory;
+      // Note: main_category and part_type are not in DB schema yet
       if (firstVehicle?.make) listingData.make = firstVehicle.make.trim();
       if (firstVehicle?.model) listingData.model = firstVehicle.model.trim();
       if (firstVehicle?.year) listingData.year = firstVehicle.year;

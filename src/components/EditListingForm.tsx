@@ -191,8 +191,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
       };
 
       // Add optional fields only if they have values
-      if (subcategory) updateData.part_type = subcategory;
-      if (mainCategory) updateData.main_category = mainCategory;
+      // Note: main_category and part_type are not in DB schema yet
       if (firstVehicle?.make) updateData.make = firstVehicle.make.trim();
       if (firstVehicle?.model) updateData.model = firstVehicle.model.trim();
       if (firstVehicle?.year) updateData.year = firstVehicle.year;
@@ -254,8 +253,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
       await updateListing(String(listing.id), {
         title: title.trim(),
         category,
-        part_type: subcategory || undefined,
-        main_category: mainCategory || undefined,
+        // Note: main_category and part_type are not in DB schema yet
         make: firstVehicle?.make.trim() || undefined,
         model: firstVehicle?.model.trim() || undefined,
         year: firstVehicle?.year,
@@ -275,7 +273,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
         status: 'draft'
       });
 
-      router.push('/profile/' + (window as any).currentUser?.name || '');
+      router.push('/profile');
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save draft");
     } finally {
@@ -290,7 +288,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
       await updateListing(String(listing.id), {
         status: 'sold'
       });
-      router.push('/profile/' + (window as any).currentUser?.name || '');
+      router.push('/profile');
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to mark as sold");
     } finally {
@@ -305,7 +303,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
       await fetch(`/api/listings/${listing.id}`, {
         method: 'DELETE',
       });
-      router.push('/profile/' + (window as any).currentUser?.name || '');
+      router.push('/profile');
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete listing");
     } finally {

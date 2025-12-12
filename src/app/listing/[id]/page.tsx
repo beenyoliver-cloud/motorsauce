@@ -16,7 +16,7 @@ import Breadcrumb from "@/components/Breadcrumb";
 import SimilarProducts from "@/components/SimilarProducts";
 import VehicleCompatibilityChecker from "@/components/VehicleCompatibilityChecker";
 import ListingImageGallery from "@/components/ListingImageGallery";
-import MarkAsSoldButton from "@/components/MarkAsSoldButton";
+import SellerActionsBar from "@/components/SellerActionsBar";
 import { getCurrentUser } from "@/lib/auth";
 // Temporarily disabled: import PriceReducedBadge from "@/components/PriceReducedBadge";
 // Temporarily disabled: import PriceHistoryChart from "@/components/PriceHistoryChart";
@@ -374,25 +374,12 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             <ReportListingButton listingId={listing.id} />
           </div>
 
-          {/* Mark as Sold (owner only) */}
+          {/* Seller Actions Bar (owner only) */}
           {isOwner && (
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
-              <h2 className="mb-3 text-sm font-semibold text-black">Manage Listing</h2>
-              <div className="flex flex-wrap items-center gap-3">
-                <Link
-                  href={`/listing/${listing.id}/edit`}
-                  className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  Edit Listing
-                </Link>
-                {/* @ts-ignore Server -> Client component */}
-                <MarkAsSoldButton
-                  listingId={listing.id}
-                  currentStatus={listing.status}
-                  isOwner={isOwner}
-                />
-              </div>
-            </div>
+            <SellerActionsBar
+              listingId={listing.id}
+              currentStatus={listing.status}
+            />
           )}
 
           {/* Sold badge if listing is sold */}
