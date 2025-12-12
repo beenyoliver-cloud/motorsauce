@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    const { data: adminRecord } = await supabaseAdmin.from("admins").select("id").eq("user_id", user.id).single();
+    const { data: adminRecord } = await supabaseAdmin.from("admins").select("id").eq("id", user.id).single();
     if (!adminRecord) {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 });
     }
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const { data: targetAdmin } = await supabaseAdmin.from("admins").select("id").eq("user_id", userId).single();
+    const { data: targetAdmin } = await supabaseAdmin.from("admins").select("id").eq("id", userId).single();
     if (targetAdmin) {
       return NextResponse.json({ error: "Cannot moderate another admin" }, { status: 403 });
     }
@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    const { data: adminRecord } = await supabaseAdmin.from("admins").select("id").eq("user_id", user.id).single();
+    const { data: adminRecord } = await supabaseAdmin.from("admins").select("id").eq("id", user.id).single();
     if (!adminRecord) {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 });
     }

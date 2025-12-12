@@ -33,6 +33,7 @@ interface ModerationLog {
 export default function AdminUsersPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,15 +50,51 @@ export default function AdminUsersPage() {
   useEffect(() => { checkAdminAndFetchUsers(); }, []);
   useEffect(() => { filterUsers(); }, [users, searchQuery, filterStatus]);
 
+  async function getAccessToken(): Promise<string | null> {
+    if (accessToken) return accessToken;
+    const supabase = supabaseBrowser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token || null;
+    if (token) setAccessToken(token);
+    return token;
+  }
+
   async function checkAdminAndFetchUsers() {
     try {
       const supabase = supabaseBrowser();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/auth/signin"); return; }
-      const { data: adminCheck } = await supabase.from("admins").select("id").eq("user_id", user.id).single();
-      if (!adminCheck) { router.push("/"); return; }
+      const [{ data: { user } }, { data: { session } }] = await Promise.all([
+        supabase.auth.getUser(),
+        supabase.auth.getSession(),
+      ]);
+
+      if (!user || !session?.access_token) {
+        router.push("/auth/login?next=/admin/users");
+        return;
+      }
+
+      const token = session.access_token;
+      const adminRes = await fetch("/api/is-admin", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!adminRes.ok) {
+        router.push("/");
+        return;
+      }
+
+      const { isAdmin } = await adminRes.json();
+      if (!isAdmin) {
+        router.push("/");
+        return;
+      }
+
+      setAccessToken(token);
       await fetchUsers();
-    } catch (err) { console.error("Error:", err); } finally { setLoading(false); }
+    } catch (err) {
+      console.error("Error:", err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function fetchUsers() {
@@ -89,27 +126,51 @@ export default function AdminUsersPage() {
 
   async function handleModerationAction() {
     if (!selectedUser || !actionType) return;
+    const token = await getAccessToken();
+    if (!token) return;
     setProcessing(true);
     try {
       const response = await fetch("/api/admin/moderation", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: selectedUser.id, action: actionType, reason: actionReason, suspendDays: actionType === "suspend" ? suspendDays : undefined }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userId: selectedUser.id,
+          action: actionType,
+          reason: actionReason,
+          suspendDays: actionType === "suspend" ? suspendDays : undefined,
+        }),
       });
-      if (!response.ok) { const data = await response.json(); throw new Error(data.error || "Failed to perform action"); }
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to perform action");
+      }
       await fetchUsers();
       closeActionModal();
-    } catch (err) { console.error("Error:", err); alert(err instanceof Error ? err.message : "An error occurred"); } finally { setProcessing(false); }
+    } catch (err) {
+      console.error("Error:", err);
+      alert(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setProcessing(false);
+    }
   }
 
   async function fetchModerationHistory(userId: string) {
     try {
-      const response = await fetch(`/api/admin/moderation?userId=${userId}`);
+      const token = await getAccessToken();
+      if (!token) return;
+      const response = await fetch(`/api/admin/moderation?userId=${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!response.ok) throw new Error("Failed to fetch history");
       const data = await response.json();
       setModerationHistory(data.logs || []);
       setShowHistoryModal(true);
-    } catch (err) { console.error("Error:", err); }
+    } catch (err) {
+      console.error("Error:", err);
+    }
   }
 
   function openActionModal(user: User, action: "ban" | "suspend" | "warn" | "unban") { setSelectedUser(user); setActionType(action); setActionReason(""); setSuspendDays(7); setShowActionModal(true); }

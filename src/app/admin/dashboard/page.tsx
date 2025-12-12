@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Package, Users, DollarSign, BarChart3, Shield, AlertTriangle, TrendingUp, Clock, Eye, Ban, AlertCircle } from "lucide-react";
+import { Package, Users, DollarSign, Shield, AlertTriangle, TrendingUp, Ban, AlertCircle } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase";
 
 interface Metrics {
@@ -37,12 +37,40 @@ export default function AdminDashboard() {
   async function checkAdminAndFetchMetrics() {
     try {
       const supabase = supabaseBrowser();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/auth/signin"); return; }
-      const { data: adminCheck } = await supabase.from("admins").select("id").eq("user_id", user.id).single();
-      if (!adminCheck) { router.push("/"); return; }
-      const response = await fetch("/api/admin-metrics");
-      if (!response.ok) throw new Error("Failed to fetch metrics");
+      const [{ data: { user } }, { data: { session } }] = await Promise.all([
+        supabase.auth.getUser(),
+        supabase.auth.getSession(),
+      ]);
+
+      if (!user || !session?.access_token) {
+        router.push("/auth/login?next=/admin/dashboard");
+        return;
+      }
+
+      const token = session.access_token;
+
+      const adminRes = await fetch("/api/is-admin", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!adminRes.ok) {
+        const body = await adminRes.text();
+        throw new Error(body || "Failed to verify admin access");
+      }
+
+      const { isAdmin } = await adminRes.json();
+      if (!isAdmin) {
+        router.push("/");
+        return;
+      }
+
+      const response = await fetch("/api/admin-metrics", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to fetch metrics");
+      }
       const data = await response.json();
       setMetrics(data);
     } catch (err) {
