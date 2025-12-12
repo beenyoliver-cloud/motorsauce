@@ -190,16 +190,18 @@ export async function updateListing(id: string, updates: Partial<Listing>): Prom
 
   if (error) throw error;
 
+  // Handle seller data (could be object or array depending on Supabase version)
+  const sellerData = Array.isArray(data.seller) ? data.seller[0] : data.seller;
+
   return {
     ...data,
     price: typeof data.price === 'number' ? data.price : parseFloat(data.price),
     images: Array.isArray(data.images) ? data.images : [],
     seller: {
-      name: data.seller?.name,
-      avatar: data.seller?.avatar
+      name: sellerData?.name,
+      avatar: sellerData?.avatar
     }
   };
-  return data as Listing;
 }
 
 export async function deleteListing(id: string): Promise<void> {

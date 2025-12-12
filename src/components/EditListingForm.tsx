@@ -176,32 +176,61 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
       const vehiclesArray = vehiclesToArray(selectedVehicles, isUniversal);
       const firstVehicle = selectedVehicles[0];
       
-      await updateListing(String(listing.id), {
+      // Build update data with only defined values
+      const updateData: any = {
         title: title.trim(),
         category,
-        part_type: subcategory || undefined,
-        main_category: mainCategory || undefined,
-        make: firstVehicle?.make.trim() || undefined,
-        model: firstVehicle?.model.trim() || undefined,
-        year: firstVehicle?.year,
-        vehicles: vehiclesArray,
         condition,
         price: parseFloat(String(price)),
         quantity: Number.isFinite(quantity) ? Math.max(1, quantity) : 1,
-        postcode: postcode.trim() || undefined,
         shipping_option: shippingOption,
         accepts_returns: acceptsReturns,
-        return_days: acceptsReturns ? returnDays : undefined,
         description: description.trim(),
         images: nextImages,
-        seller_postcode: postcode.trim() || undefined,
-        seller_lat: sellerLat,
-        seller_lng: sellerLng,
         status: 'active'
-      });
+      };
+
+      // Add optional fields only if they have values
+      if (subcategory) updateData.part_type = subcategory;
+      if (mainCategory) updateData.main_category = mainCategory;
+      if (firstVehicle?.make) updateData.make = firstVehicle.make.trim();
+      if (firstVehicle?.model) updateData.model = firstVehicle.model.trim();
+      if (firstVehicle?.year) updateData.year = firstVehicle.year;
+      if (vehiclesArray.length > 0) updateData.vehicles = vehiclesArray;
+      if (postcode.trim()) {
+        updateData.postcode = postcode.trim();
+        updateData.seller_postcode = postcode.trim();
+      }
+      if (sellerLat) updateData.seller_lat = sellerLat;
+      if (sellerLng) updateData.seller_lng = sellerLng;
+      if (acceptsReturns && returnDays) updateData.return_days = returnDays;
+
+      console.log('Updating listing with data:', updateData);
+      await updateListing(String(listing.id), updateData);
 
       router.replace(`/listing/${listing.id}`);
     } catch (err) {
+      console.error('Error saving listing:', err);
+      console.error('Error details:', {
+        message: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+      });
+      
+      // Try to extract Supabase error details
+      if (err && typeof err === 'object') {
+        const supabaseErr = err as any;
+        if (supabaseErr.code || supabaseErr.details || supabaseErr.hint) {
+          console.error('Supabase error:', {
+            code: supabaseErr.code,
+            details: supabaseErr.details,
+            hint: supabaseErr.hint,
+            message: supabaseErr.message
+          });
+          setError(`Database error: ${supabaseErr.message || supabaseErr.details || 'Unknown error'}`);
+          return;
+        }
+      }
+      
       setError(err instanceof Error ? err.message : "Failed to save changes");
     } finally {
       setSaving(false);
