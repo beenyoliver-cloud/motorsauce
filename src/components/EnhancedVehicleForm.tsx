@@ -111,8 +111,8 @@ export default function EnhancedVehicleForm({
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image must be under 5MB");
+    if (file.size > 12 * 1024 * 1024) {
+      alert("Image must be under 12MB");
       return;
     }
 

@@ -5,8 +5,8 @@ import { supabaseBrowser } from './supabase';
 const BUCKET_NAME = 'parts-images';
 
 // File size constants (in bytes)
-export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB per image
-export const MAX_TOTAL_SIZE = 25 * 1024 * 1024; // 25MB total (5 images)
+export const MAX_FILE_SIZE = 12 * 1024 * 1024; // 12MB per image
+export const MAX_TOTAL_SIZE = 60 * 1024 * 1024; // 60MB total (5 images at 12MB each)
 
 export function validateFileSize(file: File): { valid: boolean; error?: string } {
   if (file.size > MAX_FILE_SIZE) {

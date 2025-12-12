@@ -41,8 +41,8 @@ export default function EditableBackground({
       e.target.value = '';
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image is larger than 5MB. Please choose a smaller image.');
+    if (file.size > 12 * 1024 * 1024) {
+      alert('Image is larger than 12MB. Please choose a smaller image.');
       e.target.value = '';
       return;
     }

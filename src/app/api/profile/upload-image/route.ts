@@ -32,10 +32,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid file type. Only JPEG, PNG, and WebP are allowed" }, { status: 400 });
     }
 
-    // Validate file size (5MB max)
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    // Validate file size (12MB max)
+    const maxSize = 12 * 1024 * 1024; // 12MB
     if (file.size > maxSize) {
-      return NextResponse.json({ error: "File too large. Maximum size is 5MB" }, { status: 400 });
+      return NextResponse.json({ error: "File too large. Maximum size is 12MB" }, { status: 400 });
     }
 
     // Determine bucket based on type

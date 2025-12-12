@@ -30,7 +30,7 @@ function cx(...parts: Array<string | false | null | undefined>) {
 
 async function readImageFile(file: File): Promise<string> {
   if (!file.type.startsWith("image/")) throw new Error("Please choose an image file.");
-  if (file.size > 2 * 1024 * 1024) throw new Error("Image larger than 2MB. Please choose a smaller image (<2MB).");
+  if (file.size > 12 * 1024 * 1024) throw new Error("Image larger than 12MB. Please choose a smaller image (<12MB).");
   const buf = await file.arrayBuffer();
   const blob = new Blob([new Uint8Array(buf)], { type: file.type });
   return await new Promise<string>((resolve, reject) => {
