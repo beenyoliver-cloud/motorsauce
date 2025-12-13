@@ -297,41 +297,41 @@ export default function Header() {
   <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         {/* Top icons row: hides on scroll down OR when menu is open */}
         <div
-          className={`overflow-hidden transition-all duration-300 ${(hideTopBar || mobileMenuOpen) ? "max-h-0 opacity-0 pointer-events-none" : "max-h-10 opacity-100"}`}
+          className={`overflow-hidden transition-all duration-300 ${(hideTopBar || mobileMenuOpen) ? "max-h-0 opacity-0 pointer-events-none" : "max-h-8 opacity-100"}`}
         >
-          <div className="h-10 flex items-center justify-between px-3">
+          <div className="h-8 flex items-center justify-between px-2">
             <button
-              className="flex items-center justify-center text-black hover:text-yellow-500 w-9"
+              className="flex items-center justify-center text-black hover:text-yellow-500 w-7"
               aria-label="Toggle menu"
               onClick={() => setMobileMenuOpen((v) => !v)}
             >
-              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center">
               {isUserLoaded && user && (
                   <>
                     <NotificationsDropdown />
-                <Link href="/messages" aria-label="Messages" className="relative flex items-center justify-center text-black hover:text-yellow-500 w-9">
-                      <MessageSquare size={20} />
+                <Link href="/messages" aria-label="Messages" className="relative flex items-center justify-center text-black hover:text-yellow-500 w-7">
+                      <MessageSquare size={18} />
                   {unread > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[10px] font-bold min-w-[16px] h-[16px] px-1">
+                    <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[9px] font-bold min-w-[14px] h-[14px] px-0.5">
                       {unread > 9 ? '9+' : unread}
                     </span>
                   )}
                 </Link>
                   </>
               )}
-              <Link href={profileHref} aria-label="Profile" className="flex items-center justify-center text-black hover:text-yellow-500 w-9">
-                <User size={20} />
+              <Link href={profileHref} aria-label="Profile" className="flex items-center justify-center text-black hover:text-yellow-500 w-7">
+                <User size={18} />
               </Link>
               <Link
                 href="/basket"
                 aria-label="Open basket"
-                className="relative flex items-center justify-center text-black hover:text-yellow-500 w-9 z-10 touch-manipulation"
+                className="relative flex items-center justify-center text-black hover:text-yellow-500 w-7 z-10 touch-manipulation"
               >
-                <ShoppingCart size={20} />
+                <ShoppingCart size={18} />
                 {cartCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[10px] font-bold min-w-[16px] h-[16px] px-1">
+                  <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[9px] font-bold min-w-[14px] h-[14px] px-0.5">
                     {cartCount}
                   </span>
                 )}
@@ -341,14 +341,14 @@ export default function Header() {
         </div>
 
         {/* Logo */}
-        <div className="px-3 py-2 flex justify-center">
-          <Link href="/" className="text-2xl font-extrabold text-yellow-500 tracking-tight" aria-label="Motorsource home">
+        <div className="px-2 py-1 flex justify-center">
+          <Link href="/" className="text-xl font-extrabold text-yellow-500 tracking-tight" aria-label="Motorsource home">
             Motorsource
           </Link>
         </div>
 
         {/* Search bar across the top */}
-        <div className="px-3 pb-2">
+        <div className="px-2 pb-1.5">
           <SearchBar placeholder="Search parts or sellers…" compact />
         </div>
       </div>

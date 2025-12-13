@@ -123,16 +123,6 @@ export default function SearchBar({ initialQuery = "", placeholder = "Search par
     router.push(searchUrl);
   }
 
-  function handleSearchIconClick() {
-    // If there's a query or category, submit the search
-    if (query.trim() || category) {
-      handleSubmit({ preventDefault: () => {} } as React.FormEvent);
-    } else {
-      // Otherwise just go to the search page
-      router.push("/search");
-    }
-  }
-
   function clearQuery() {
     setQuery("");
     inputRef.current?.focus();
@@ -157,17 +147,8 @@ export default function SearchBar({ initialQuery = "", placeholder = "Search par
   return (
     <div ref={wrapperRef} className="relative w-full">
       <form onSubmit={handleSubmit} className="relative">
-        <div className={`flex items-center w-full border border-gray-300 rounded-full focus-within:ring-2 focus-within:ring-yellow-400 bg-white shadow-sm ${compact ? "px-3 py-1.5" : "px-4 py-2"}`}>
-          <button
-            type="button"
-            onClick={handleSearchIconClick}
-            className="text-gray-400 hover:text-yellow-500 mr-2 flex-shrink-0 transition-colors cursor-pointer"
-            aria-label="Search"
-          >
-            <Search size={compact ? 16 : 18} />
-          </button>
-          
-          {/* Category Dropdown */}
+        <div className={`flex items-center w-full border border-gray-300 rounded-full focus-within:ring-2 focus-within:ring-yellow-400 bg-white shadow-sm ${compact ? "pl-3 pr-1 py-1" : "pl-4 pr-1 py-1.5"}`}>
+          {/* Category Dropdown - only show on desktop */}
           <div className="relative flex-shrink-0 hidden sm:block">
             <select
               value={category}
@@ -200,12 +181,21 @@ export default function SearchBar({ initialQuery = "", placeholder = "Search par
             <button
               type="button"
               onClick={clearQuery}
-              className="ml-2 p-1 hover:bg-gray-100 rounded-full transition"
+              className="mr-1 p-1 hover:bg-gray-100 rounded-full transition"
               aria-label="Clear search"
             >
               <X size={compact ? 14 : 16} className="text-gray-400" />
             </button>
           )}
+          
+          {/* Search Button - prominent blue like eBay */}
+          <button
+            type="submit"
+            className={`flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center transition-colors ${compact ? "w-8 h-8" : "w-10 h-10"}`}
+            aria-label="Search"
+          >
+            <Search size={compact ? 16 : 18} />
+          </button>
         </div>
       </form>
 
