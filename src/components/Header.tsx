@@ -347,7 +347,9 @@ export default function Header() {
             <img
               src="/images/motorsource_header_white_2000x600.png"
               alt="Motorsource"
-              style={{ width: '150px', height: 'auto' }}
+              width="150"
+              height="45"
+              style={{ width: '150px', height: 'auto', minWidth: '150px' }}
             />
           </Link>
         </div>
@@ -374,7 +376,9 @@ export default function Header() {
                 <img
                   src="/images/motorsource_header_white_2000x600.png"
                   alt="Motorsource"
-                  style={{ width: '150px', height: 'auto' }}
+                  width="150"
+                  height="45"
+                  style={{ width: '150px', height: 'auto', minWidth: '150px' }}
                 />
               </Link>
               <button
@@ -528,7 +532,9 @@ export default function Header() {
           <img
             src="/images/motorsource_header_white_2000x600.png"
             alt="Motorsource"
-            style={{ width: '180px', height: 'auto' }}
+            width="180"
+            height="54"
+            style={{ width: '180px', height: 'auto', minWidth: '180px' }}
           />
         </Link>
 
