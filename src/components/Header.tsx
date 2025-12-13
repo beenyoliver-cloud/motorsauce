@@ -527,14 +527,14 @@ export default function Header() {
       )}
 
       {/* Desktop header (>= md) */}
-      <nav className="hidden md:flex w-full h-[55px] bg-white border-b border-gray-200 items-center justify-between px-6 shadow-sm fixed top-0 z-40">
-        <Link href="/" aria-label="Motorsource home">
+      <nav className="hidden md:flex w-full h-[60px] bg-white border-b border-gray-200 items-center justify-between px-6 shadow-sm fixed top-0 z-40">
+        <Link href="/" aria-label="Motorsource home" className="flex-shrink-0">
           <img
             src="/images/motorsource_header_white_2000x600.png"
             alt="Motorsource"
-            width="180"
-            height="54"
-            style={{ width: '180px', height: 'auto', minWidth: '180px' }}
+            width="250"
+            height="75"
+            style={{ width: '250px', height: 'auto' }}
           />
         </Link>
 
