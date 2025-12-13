@@ -342,14 +342,14 @@ export default function Header() {
         </div>
 
         {/* Logo */}
-        <div className="px-2 py-1 flex justify-center">
+        <div className="px-2 py-1.5 flex justify-center">
           <Link href="/" aria-label="Motorsource home">
             <Image
               src="/images/MSlogo.png"
               alt="Motorsource"
-              width={140}
-              height={36}
-              className="h-7 w-auto"
+              width={200}
+              height={50}
+              className="h-10 w-auto"
               priority
             />
           </Link>
@@ -377,9 +377,9 @@ export default function Header() {
                 <Image
                   src="/images/MSlogo.png"
                   alt="Motorsource"
-                  width={140}
-                  height={36}
-                  className="h-7 w-auto"
+                  width={180}
+                  height={45}
+                  className="h-9 w-auto"
                 />
               </Link>
               <button
@@ -533,9 +533,9 @@ export default function Header() {
           <Image
             src="/images/MSlogo.png"
             alt="Motorsource"
-            width={180}
-            height={45}
-            className="h-9 w-auto"
+            width={220}
+            height={55}
+            className="h-11 w-auto"
             priority
           />
         </Link>
