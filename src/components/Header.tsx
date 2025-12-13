@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   PlusCircle,
@@ -342,8 +343,15 @@ export default function Header() {
 
         {/* Logo */}
         <div className="px-2 py-1 flex justify-center">
-          <Link href="/" className="text-xl font-extrabold text-yellow-500 tracking-tight" aria-label="Motorsource home">
-            Motorsource
+          <Link href="/" aria-label="Motorsource home">
+            <Image
+              src="/images/MSlogo.png"
+              alt="Motorsource"
+              width={140}
+              height={36}
+              className="h-7 w-auto"
+              priority
+            />
           </Link>
         </div>
 
@@ -365,8 +373,14 @@ export default function Header() {
           <div className="fixed inset-0 bg-white z-[110] overflow-y-auto flex flex-col">
             {/* Menu Header with Logo and Close */}
             <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between shrink-0">
-              <Link href="/" className="text-xl font-extrabold text-yellow-500 tracking-tight" aria-label="Motorsource home">
-                Motorsource
+              <Link href="/" aria-label="Motorsource home">
+                <Image
+                  src="/images/MSlogo.png"
+                  alt="Motorsource"
+                  width={140}
+                  height={36}
+                  className="h-7 w-auto"
+                />
               </Link>
               <button
                 onClick={() => setMobileMenuOpen(false)}
@@ -515,8 +529,15 @@ export default function Header() {
 
       {/* Desktop header (>= md) */}
       <nav className="hidden md:flex w-full h-[55px] bg-white border-b border-gray-200 items-center justify-between px-6 shadow-sm fixed top-0 z-40">
-        <Link href="/" className="text-2xl font-extrabold text-yellow-500 tracking-tight">
-          Motorsource
+        <Link href="/" aria-label="Motorsource home">
+          <Image
+            src="/images/MSlogo.png"
+            alt="Motorsource"
+            width={180}
+            height={45}
+            className="h-9 w-auto"
+            priority
+          />
         </Link>
 
       <form
