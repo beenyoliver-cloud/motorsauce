@@ -347,7 +347,7 @@ export default function Header() {
             <img
               src="/images/motorsource_header_white_2000x600.png"
               alt="Motorsource"
-              className="h-7 w-auto"
+              style={{ width: '150px', height: 'auto' }}
             />
           </Link>
         </div>
@@ -374,7 +374,7 @@ export default function Header() {
                 <img
                   src="/images/motorsource_header_white_2000x600.png"
                   alt="Motorsource"
-                  className="h-7 w-auto"
+                  style={{ width: '150px', height: 'auto' }}
                 />
               </Link>
               <button
@@ -528,7 +528,7 @@ export default function Header() {
           <img
             src="/images/motorsource_header_white_2000x600.png"
             alt="Motorsource"
-            className="h-8 w-auto"
+            style={{ width: '180px', height: 'auto' }}
           />
         </Link>
 
