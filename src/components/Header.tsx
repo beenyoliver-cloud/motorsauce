@@ -344,13 +344,10 @@ export default function Header() {
         {/* Logo */}
         <div className="px-2 py-1.5 flex justify-center">
           <Link href="/" aria-label="Motorsource home">
-            <Image
+            <img
               src="/images/MSlogo.png"
               alt="Motorsource"
-              width={200}
-              height={50}
-              className="h-10 w-auto"
-              priority
+              className="h-7 w-auto"
             />
           </Link>
         </div>
@@ -374,12 +371,10 @@ export default function Header() {
             {/* Menu Header with Logo and Close */}
             <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between shrink-0">
               <Link href="/" aria-label="Motorsource home">
-                <Image
+                <img
                   src="/images/MSlogo.png"
                   alt="Motorsource"
-                  width={180}
-                  height={45}
-                  className="h-9 w-auto"
+                  className="h-7 w-auto"
                 />
               </Link>
               <button
@@ -530,13 +525,10 @@ export default function Header() {
       {/* Desktop header (>= md) */}
       <nav className="hidden md:flex w-full h-[55px] bg-white border-b border-gray-200 items-center justify-between px-6 shadow-sm fixed top-0 z-40">
         <Link href="/" aria-label="Motorsource home">
-          <Image
+          <img
             src="/images/MSlogo.png"
             alt="Motorsource"
-            width={220}
-            height={55}
-            className="h-11 w-auto"
-            priority
+            className="h-8 w-auto"
           />
         </Link>
 
