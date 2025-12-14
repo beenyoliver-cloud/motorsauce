@@ -191,6 +191,8 @@ async function fetchListingFromSupabase(id: string): Promise<Listing | null> {
       createdAt: listing.created_at || new Date().toISOString(),
       sellerId: listing.seller_id ?? undefined,
       seller,
+      status: listing.status ?? "active",
+      markedSoldAt: listing.marked_sold_at ?? undefined,
       vin: listing.vin ?? undefined,
       yearFrom: typeof listing.year_from === "number" ? listing.year_from : listing.year_from ? Number(listing.year_from) : undefined,
       yearTo: typeof listing.year_to === "number" ? listing.year_to : listing.year_to ? Number(listing.year_to) : undefined,
@@ -276,6 +278,11 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
   } catch {
     // User not authenticated or error fetching user - not owner
     isOwner = false;
+  }
+
+  // If listing is sold or draft and user is NOT the owner, show 404
+  if ((listing.status === "sold" || listing.status === "draft") && !isOwner) {
+    notFound();
   }
 
   const gallery = listing.images?.length ? listing.images : [listing.image];

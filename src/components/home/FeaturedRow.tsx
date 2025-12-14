@@ -41,6 +41,7 @@ export default function FeaturedRow({
             const { data, error } = await sb
               .from("listings")
               .select("*")
+              .eq("status", "active")
               .order("created_at", { ascending: false })
               .limit(50);
 

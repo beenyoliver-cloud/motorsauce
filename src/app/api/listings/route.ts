@@ -41,6 +41,8 @@ type Listing = {
   vin?: string;
   yearFrom?: number;
   yearTo?: number;
+  status?: "active" | "draft" | "sold";
+  markedSoldAt?: string;
 };
 
 // Raw row as returned from Supabase including JOIN alias fields
@@ -74,6 +76,8 @@ type RawListingRow = {
   year_to?: number | string | null;
   seller?: unknown; // joined profile result
   seller_county?: string | null;
+  status?: "active" | "draft" | "sold" | null;
+  marked_sold_at?: string | null;
 };
 
 // Format £ from cents or accept preformatted string
@@ -148,6 +152,8 @@ function mapDbRow(row: RawListingRow): Listing {
     vin: row.vin ?? undefined,
     yearFrom: typeof row.year_from === "number" ? row.year_from : row.year_from ? Number(row.year_from) : undefined,
     yearTo: typeof row.year_to === "number" ? row.year_to : row.year_to ? Number(row.year_to) : undefined,
+    status: row.status ?? "active",
+    markedSoldAt: row.marked_sold_at ?? undefined,
   };
 }
 
