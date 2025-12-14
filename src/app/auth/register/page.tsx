@@ -61,12 +61,19 @@ export default function RegisterPage() {
 
     try {
       setBusy(true);
-      const user = await registerUser(name, email, pw, accountType, accountType === 'business' ? {
+      const result = await registerUser(name, email, pw, accountType, accountType === 'business' ? {
         businessName: businessName.trim(),
         businessType
       } : undefined);
-      // Redirect to address collection page after successful registration
-      router.replace(`/auth/address-setup?next=${encodeURIComponent(next || `/profile/${encodeURIComponent(user.name)}`)}`);
+      
+      // Check if email verification is required
+      if (result.requiresEmailVerification) {
+        // Redirect to verify email page
+        router.replace(`/auth/verify-email?email=${encodeURIComponent(email)}`);
+      } else {
+        // Redirect to address collection page after successful registration
+        router.replace(`/auth/address-setup?next=${encodeURIComponent(next || `/profile/${encodeURIComponent(result.user.name)}`)}`);
+      }
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not register.");
     } finally {

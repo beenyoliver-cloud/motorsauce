@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { Cart, calcTotals, getCart, setShipping } from "@/lib/cartStore";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Cart, calcTotals, getCart, setShipping, clearCart } from "@/lib/cartStore";
 import { formatGBP } from "@/lib/currency";
 import { resolveListingImage } from "@/lib/image";
 import { getCurrentUser } from "@/lib/auth";
+import { supabaseBrowser } from "@/lib/supabase";
 
 type Address = {
   fullName: string;
@@ -18,21 +19,142 @@ type Address = {
   postcode: string;
 };
 
+type OfferCheckout = {
+  offerId: string;
+  listingId: string;
+  title: string;
+  image: string;
+  offerPrice: number;
+  originalPrice: number;
+  sellerId: string;
+  sellerName: string;
+};
+
 export default function CheckoutPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const offerId = searchParams.get("offer_id");
+  
+  const [offerCheckout, setOfferCheckout] = useState<OfferCheckout | null>(null);
+  const [loadingOffer, setLoadingOffer] = useState(!!offerId);
+  const [offerError, setOfferError] = useState<string | null>(null);
+  
   // Require login to buy
   useEffect(() => {
     (async () => {
       const u = await getCurrentUser();
       if (!u) {
-        router.replace(`/auth/login?next=${encodeURIComponent('/checkout')}`);
+        router.replace(`/auth/login?next=${encodeURIComponent('/checkout' + (offerId ? `?offer_id=${offerId}` : ''))}`);
       }
     })();
-  }, [router]);
+  }, [router, offerId]);
+  
+  // Fetch offer details if offer_id is present
+  useEffect(() => {
+    if (!offerId) return;
+    
+    async function fetchOffer() {
+      setLoadingOffer(true);
+      setOfferError(null);
+      
+      try {
+        const supabase = supabaseBrowser();
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          setOfferError("Please log in to continue");
+          return;
+        }
+        
+        // Fetch the offer with listing details
+        const { data: offer, error } = await supabase
+          .from("offers")
+          .select(`
+            id,
+            amount,
+            status,
+            starter,
+            listing_id,
+            listings:listing_id (
+              id,
+              title,
+              price,
+              images,
+              seller_id,
+              status
+            )
+          `)
+          .eq("id", offerId)
+          .single();
+        
+        if (error || !offer) {
+          setOfferError("Offer not found");
+          return;
+        }
+        
+        // Verify the user is the buyer (starter of the offer)
+        if (offer.starter !== user.id) {
+          setOfferError("This offer doesn't belong to you");
+          return;
+        }
+        
+        // Verify the offer is accepted
+        if (offer.status !== "accepted") {
+          setOfferError("This offer has not been accepted");
+          return;
+        }
+        
+        const listing = offer.listings as any;
+        
+        // Verify the listing is still active
+        if (listing?.status !== "active") {
+          setOfferError("This listing is no longer available");
+          return;
+        }
+        
+        // Fetch seller info
+        const { data: seller } = await supabase
+          .from("profiles")
+          .select("name")
+          .eq("id", listing.seller_id)
+          .single();
+        
+        setOfferCheckout({
+          offerId: offer.id,
+          listingId: listing.id,
+          title: listing.title,
+          image: listing.images?.[0] || "/images/placeholder.png",
+          offerPrice: offer.amount,
+          originalPrice: listing.price,
+          sellerId: listing.seller_id,
+          sellerName: seller?.name || "Seller",
+        });
+      } catch (err) {
+        console.error("Error fetching offer:", err);
+        setOfferError("Failed to load offer details");
+      } finally {
+        setLoadingOffer(false);
+      }
+    }
+    
+    fetchOffer();
+  }, [offerId]);
+  
   const [cart, setCart] = useState<Cart>(getCart());
   const [addr, setAddr] = useState<Address>(() => readAddress());
   const [agree, setAgree] = useState(false);
-  const totals = useMemo(() => calcTotals(cart), [cart]);
+  
+  // Calculate totals based on offer or cart
+  const totals = useMemo(() => {
+    if (offerCheckout) {
+      const itemsSubtotal = offerCheckout.offerPrice;
+      const serviceFee = Math.max(0.5, Math.round(itemsSubtotal * 0.025 * 100) / 100);
+      const shipping = cart.shipping === "standard" ? 4.99 : 0;
+      const total = itemsSubtotal + serviceFee + shipping;
+      return { itemsSubtotal, serviceFee, shipping, total };
+    }
+    return calcTotals(cart);
+  }, [cart, offerCheckout]);
 
   useEffect(() => {
     const onChange = () => setCart(getCart());
@@ -44,21 +166,29 @@ export default function CheckoutPage() {
     };
   }, []);
 
-  const disabled = cart.items.length === 0 || !isAddressValid(addr) || !agree;
+  const hasItems = offerCheckout || cart.items.length > 0;
+  const disabled = !hasItems || !isAddressValid(addr) || !agree;
   const [paying, setPaying] = useState(false);
 
   async function placeOrder() {
     saveAddress(addr);
     const orderRef = "MS-" + Math.random().toString(36).slice(2, 8).toUpperCase();
+    const items = offerCheckout 
+      ? [{ id: offerCheckout.listingId, title: offerCheckout.title, image: offerCheckout.image, price: offerCheckout.offerPrice, qty: 1 }]
+      : cart.items;
     const snapshot = {
       orderRef,
       placedAt: new Date().toISOString(),
-      items: cart.items,
+      items,
       shipping: cart.shipping,
       address: addr,
       totals,
+      offerId: offerCheckout?.offerId || null,
     };
     const payload = encodeURIComponent(JSON.stringify(snapshot));
+    if (!offerCheckout) {
+      clearCart();
+    }
     router.push(`/checkout/success?o=${payload}`);
   }
 
@@ -66,11 +196,17 @@ export default function CheckoutPage() {
     if (disabled || paying) return;
     setPaying(true);
     try {
-      // Build minimal, server-verifiable payload
-      const body = {
-        items: cart.items.map((i) => ({ id: i.id, qty: i.qty })),
-        shipping: cart.shipping,
-      };
+      // Build payload - include offer_id if present
+      const body = offerCheckout
+        ? {
+            offer_id: offerCheckout.offerId,
+            shipping: cart.shipping,
+          }
+        : {
+            items: cart.items.map((i) => ({ id: i.id, qty: i.qty })),
+            shipping: cart.shipping,
+          };
+      
       const res = await fetch("/api/checkout/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -93,8 +229,46 @@ export default function CheckoutPage() {
       setPaying(false);
     }
   }
+  
+  // Show loading state for offer
+  if (loadingOffer) {
+    return (
+      <section className="mx-auto max-w-6xl px-4 py-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-yellow-500 border-t-transparent"></div>
+        </div>
+      </section>
+    );
+  }
+  
+  // Show error state for offer
+  if (offerId && offerError) {
+    return (
+      <section className="mx-auto max-w-6xl px-4 py-6">
+        <div className="mb-4">
+          <button
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-2 text-sm font-medium text-gray-800 hover:text-black"
+            aria-label="Go back"
+          >
+            <span className="text-lg">←</span> Back
+          </button>
+        </div>
+        <h1 className="text-2xl font-extrabold text-gray-900 mb-3">Checkout</h1>
+        <div className="rounded-xl border border-red-200 bg-red-50 p-8">
+          <p className="text-red-800 mb-4">{offerError}</p>
+          <Link
+            href="/offers"
+            className="inline-flex px-4 py-2 rounded-md bg-yellow-500 text-black font-semibold hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          >
+            View My Offers
+          </Link>
+        </div>
+      </section>
+    );
+  }
 
-  if (cart.items.length === 0) {
+  if (!hasItems) {
     return (
       <section className="mx-auto max-w-6xl px-4 py-6">
         <div className="mb-4">
@@ -213,25 +387,62 @@ export default function CheckoutPage() {
         <aside className="rounded-xl border border-gray-200 bg-white p-4 lg:sticky lg:top-[72px] h-fit">
           <h2 className="text-sm font-semibold text-gray-900 mb-3">Order summary</h2>
 
-          <ul className="mb-3 divide-y divide-gray-100">
-            {cart.items.map((it) => {
-              const img = resolveListingImage({ image: it.image, images: undefined, listingImage: undefined });
-              return (
-                <li key={it.id} className="py-2 flex items-center gap-3">
-                  <div className="h-14 w-16 rounded-md overflow-hidden border border-gray-200 bg-gray-50">
-                    <Image src={img} alt={it.title} width={128} height={96} className="h-full w-full object-cover" />
+          {/* Offer-based checkout */}
+          {offerCheckout && (
+            <div className="mb-3">
+              <div className="py-2 flex items-center gap-3">
+                <div className="h-14 w-16 rounded-md overflow-hidden border border-gray-200 bg-gray-50">
+                  <Image 
+                    src={resolveListingImage({ image: offerCheckout.image, images: undefined, listingImage: undefined })} 
+                    alt={offerCheckout.title} 
+                    width={128} 
+                    height={96} 
+                    className="h-full w-full object-cover" 
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-medium text-gray-900 line-clamp-2">{offerCheckout.title}</div>
+                  <div className="text-[11px] text-gray-700">Sold by {offerCheckout.sellerName}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs font-semibold text-green-600 whitespace-nowrap">
+                    {formatGBP(offerCheckout.offerPrice)}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-medium text-gray-900 line-clamp-2">{it.title}</div>
-                    <div className="text-[11px] text-gray-700">Qty {it.qty}</div>
-                  </div>
-                  <div className="text-xs font-semibold text-gray-900 whitespace-nowrap">
-                    {formatGBP(it.price * it.qty)}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                  {offerCheckout.originalPrice > offerCheckout.offerPrice && (
+                    <div className="text-[11px] text-gray-500 line-through">
+                      {formatGBP(offerCheckout.originalPrice)}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="mt-1 rounded-md bg-green-50 border border-green-200 px-2 py-1">
+                <p className="text-xs text-green-700">✓ Accepted offer price</p>
+              </div>
+            </div>
+          )}
+
+          {/* Cart-based checkout */}
+          {!offerCheckout && (
+            <ul className="mb-3 divide-y divide-gray-100">
+              {cart.items.map((it) => {
+                const img = resolveListingImage({ image: it.image, images: undefined, listingImage: undefined });
+                return (
+                  <li key={it.id} className="py-2 flex items-center gap-3">
+                    <div className="h-14 w-16 rounded-md overflow-hidden border border-gray-200 bg-gray-50">
+                      <Image src={img} alt={it.title} width={128} height={96} className="h-full w-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-medium text-gray-900 line-clamp-2">{it.title}</div>
+                      <div className="text-[11px] text-gray-700">Qty {it.qty}</div>
+                    </div>
+                    <div className="text-xs font-semibold text-gray-900 whitespace-nowrap">
+                      {formatGBP(it.price * it.qty)}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
 
           <div className="space-y-2 text-sm">
             <Row label="Items subtotal" value={formatGBP(totals.itemsSubtotal)} />

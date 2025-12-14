@@ -61,13 +61,18 @@ export async function loginWithEmail(email: string, password: string): Promise<{
   return { user, error: null };
 }
 
+export type RegisterResult = {
+  user: LocalUser;
+  requiresEmailVerification: boolean;
+};
+
 export async function registerUser(
   name: string, 
   email: string, 
   password: string,
   accountType: 'individual' | 'business' = 'individual',
   businessInfo?: { businessName: string; businessType: string }
-): Promise<LocalUser> {
+): Promise<RegisterResult> {
   const supabase = supabaseBrowser();
   
   // Check if username already exists
@@ -105,25 +110,13 @@ export async function registerUser(
     throw new Error('Registration failed');
   }
 
-  // Check if session was created (email confirmation disabled) or needs confirmation
-  if (!data.session) {
-    // No session means email confirmation is required, or we need to sign in manually
-    // Try to sign in immediately after registration
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-    
-    if (signInError) {
-      // If sign in fails, user may need to confirm email first
-      console.log('Auto sign-in after registration failed:', signInError.message);
-      // We'll continue anyway - the user object was created
-    }
-  }
-
-  // Dispatch auth event to update UI
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new Event('ms:auth'));
+  // Check if email confirmation is required
+  // If no session is returned but user exists, email confirmation is needed
+  const requiresEmailVerification = !data.session;
+  
+  // Don't try to auto sign-in - we want users to verify email first
+  if (requiresEmailVerification) {
+    console.log('Email verification required for user:', data.user.email);
   }
 
   // If business account, create business_info record
@@ -174,10 +167,24 @@ export async function registerUser(
     }
   }
 
-  return {
+  const user: LocalUser = {
     id: data.user.id,
     email: data.user.email!,
     name: data.user.user_metadata.name
+  };
+
+  // Only cache user if email verified (session exists)
+  if (!requiresEmailVerification) {
+    _cachedUser = user;
+    // Dispatch auth event to update UI
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('ms:auth'));
+    }
+  }
+
+  return {
+    user,
+    requiresEmailVerification
   };
 }
 

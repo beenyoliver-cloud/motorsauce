@@ -10,6 +10,7 @@ import {
   ArrowRightLeft,
   Trash2,
   MessageCircle,
+  ShoppingCart,
 } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase";
 import SafeImage from "./SafeImage";
@@ -163,6 +164,29 @@ export default function OffersManagement({ userId }: OffersManagementProps) {
     }
   }
 
+  async function handleBuyNow(offer: Offer) {
+    setActioningOfferId(offer.id);
+    try {
+      const supabase = supabaseBrowser();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        router.push("/auth/login?next=/offers");
+        return;
+      }
+
+      // Navigate to checkout with offer ID to use the offer price
+      router.push(`/checkout?offer_id=${offer.id}`);
+    } catch (error) {
+      console.error("Buy now failed:", error);
+      alert("Failed to proceed to checkout. Please try again.");
+    } finally {
+      setActioningOfferId(null);
+    }
+  }
+
   function formatPrice(amount: number): string {
     // amount is already decimal from database
     return `£${amount.toFixed(2)}`;
@@ -310,6 +334,11 @@ export default function OffersManagement({ userId }: OffersManagementProps) {
               !isExpiredOffer;
             const canAcceptCounter =
               activeTab === "sent" && offer.status === "countered";
+            // Show Buy Now button for accepted offers (buyer perspective)
+            const canBuyNow =
+              activeTab === "sent" &&
+              offer.status === "accepted" &&
+              offer.listing.status === "active";
 
             return (
               <div
@@ -455,6 +484,20 @@ export default function OffersManagement({ userId }: OffersManagementProps) {
                               {actioningOfferId === offer.id
                                 ? "Accepting..."
                                 : `Accept Counter (${formatPrice(offer.counter_amount)})`}
+                            </button>
+                          )}
+
+                          {/* Buy Now button for accepted offers */}
+                          {canBuyNow && (
+                            <button
+                              onClick={() => handleBuyNow(offer)}
+                              disabled={actioningOfferId === offer.id}
+                              className="flex items-center gap-2 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-600 disabled:opacity-50"
+                            >
+                              <ShoppingCart className="h-4 w-4" />
+                              {actioningOfferId === offer.id
+                                ? "Processing..."
+                                : `Buy Now at ${formatPrice(offer.amount)}`}
                             </button>
                           )}
                         </div>
