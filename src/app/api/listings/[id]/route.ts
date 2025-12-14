@@ -10,7 +10,7 @@ export async function GET(
   try {
     const { id } = await params;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE;
 
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error("Missing Supabase environment variables");
@@ -60,7 +60,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE;
 
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error("Missing Supabase environment variables");
@@ -177,10 +177,13 @@ export async function DELETE(
   try {
     const { id } = await params;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE;
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.error("Missing Supabase environment variables");
+      console.error("Missing Supabase environment variables for DELETE:", {
+        hasUrl: !!supabaseUrl,
+        hasServiceKey: !!supabaseServiceKey,
+      });
       return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
     }
 
