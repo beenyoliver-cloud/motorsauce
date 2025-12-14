@@ -23,17 +23,36 @@ export default function ForgotPasswordPage() {
       setBusy(true);
       const supabase = supabaseBrowser();
       
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Request timed out. Please try again later.")), 15000)
+      );
+      
+      const resetPromise = supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       });
+      
+      const { error } = await Promise.race([resetPromise, timeoutPromise]) as { error: Error | null };
 
       if (error) {
+        // Check for rate limit error
+        if (error.message?.toLowerCase().includes("rate limit")) {
+          throw new Error("Too many requests. Please wait a few minutes before trying again.");
+        }
         throw error;
       }
 
       setSuccess(true);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Failed to send reset email. Please try again.");
+      const message = e instanceof Error ? e.message : "Failed to send reset email. Please try again.";
+      // Make error messages more user-friendly
+      if (message.includes("504") || message.includes("timeout") || message.includes("timed out")) {
+        setErr("The server is busy. Please wait a moment and try again.");
+      } else if (message.includes("rate limit") || message.includes("too many")) {
+        setErr("Too many attempts. Please wait a few minutes before trying again.");
+      } else {
+        setErr(message);
+      }
     } finally {
       setBusy(false);
     }
