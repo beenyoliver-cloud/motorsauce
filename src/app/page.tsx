@@ -10,6 +10,7 @@ import TrustBand from "@/components/home/TrustBand";
 import SellCta from "@/components/home/SellCta";
 import LiveActivityFeed from "@/components/home/LiveActivityFeed";
 import JustSoldTicker from "@/components/home/JustSoldTicker";
+import TrustSignals from "@/components/home/TrustSignals";
 
 import SEOJsonLd from "@/components/SEOJsonLd";
 
@@ -25,6 +26,9 @@ export default function Home() {
         {/* @ts-ignore Server -> Client import allowed */}
         <HomeHero />
       </div>
+
+      {/* Trust signals strip */}
+      <TrustSignals />
 
       {/* Just Sold ticker - social proof banner */}
       {/* @ts-ignore Server -> Client import allowed */}
