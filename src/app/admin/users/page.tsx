@@ -99,11 +99,13 @@ export default function AdminUsersPage() {
       const { data: profiles, error: fetchError } = await sb.from("profiles").select("*").order("created_at", { ascending: false });
       if (fetchError) { setError("Failed to fetch users"); return; }
       const usersWithStats = await Promise.all((profiles || []).map(async (p) => {
-        const [lr, rr] = await Promise.all([
-          sb.from("listings").select("*", { count: "exact", head: true }).eq("seller_id", p.id),
-          sb.from("user_reports").select("*", { count: "exact", head: true }).eq("reported_user_id", p.id).eq("status", "pending").catch(() => ({ count: 0 })),
-        ]);
-        return { ...p, listing_count: lr.count || 0, report_count: (rr as { count: number }).count || 0 };
+        const lr = await sb.from("listings").select("*", { count: "exact", head: true }).eq("seller_id", p.id);
+        let reportCount = 0;
+        try {
+          const rr = await sb.from("user_reports").select("*", { count: "exact", head: true }).eq("reported_user_id", p.id).eq("status", "pending");
+          reportCount = rr.count || 0;
+        } catch { /* user_reports table may not exist */ }
+        return { ...p, listing_count: lr.count || 0, report_count: reportCount };
       }));
       setUsers(usersWithStats);
       setError(null);
