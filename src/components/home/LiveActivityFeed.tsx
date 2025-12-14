@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Activity, Package, CheckCircle2 } from "lucide-react";
 
 type ActivityItem = {
   id: string;
@@ -18,9 +17,9 @@ function timeAgo(timestamp: string): string {
   const seconds = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000);
   
   if (seconds < 60) return "just now";
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  return `${Math.floor(seconds / 86400)}d ago`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+  return `${Math.floor(seconds / 86400)} days ago`;
 }
 
 export default function LiveActivityFeed() {
@@ -49,123 +48,87 @@ export default function LiveActivityFeed() {
     return () => clearInterval(interval);
   }, []);
 
-  // Cycle through activities every 4 seconds
+  // Cycle through activities every 5 seconds
   useEffect(() => {
     if (activities.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % activities.length);
-    }, 4000);
+    }, 5000);
     return () => clearInterval(interval);
   }, [activities.length]);
 
+  // Loading skeleton - matches category tile style
   if (loading) {
     return (
-      <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl p-4 shadow-lg animate-pulse">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
         <div className="flex items-center gap-2 mb-3">
-          <div className="w-4 h-4 bg-gray-700 rounded" />
-          <div className="w-24 h-3 bg-gray-700 rounded" />
+          <div className="w-2 h-2 bg-gray-200 rounded-full" />
+          <div className="w-12 h-3 bg-gray-200 rounded" />
         </div>
-        <div className="space-y-3">
-          <div className="h-12 bg-gray-700/50 rounded" />
-          <div className="h-12 bg-gray-700/50 rounded" />
-        </div>
+        <div className="h-10 bg-gray-100 rounded" />
       </div>
     );
   }
   
+  // Empty state
   if (activities.length === 0) {
     return (
-      <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl p-4 shadow-lg">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="relative">
-            <Activity className="h-4 w-4 text-green-400" />
-            <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-green-400 rounded-full animate-pulse" />
-          </div>
-          <span className="text-xs font-semibold text-green-400 uppercase tracking-wide">Live Activity</span>
+      <div className="bg-white border border-gray-200 rounded-xl p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+          <span className="text-xs font-medium text-gray-500">Live</span>
         </div>
-        <p className="text-sm text-gray-400 text-center py-4">
-          No recent activity yet
+        <p className="text-sm text-gray-400">
+          No recent activity
         </p>
       </div>
     );
   }
 
   const current = activities[currentIndex];
+  const listingId = current.id.replace("listing-", "").replace("sale-", "");
 
   return (
-    <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl p-4 shadow-lg">
-      <div className="flex items-center gap-2 mb-3">
-        <div className="relative">
-          <Activity className="h-4 w-4 text-green-400" />
-          <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-green-400 rounded-full animate-pulse" />
-        </div>
-        <span className="text-xs font-semibold text-green-400 uppercase tracking-wide">Live Activity</span>
+    <Link 
+      href={`/listing/${listingId}`}
+      className="block bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all"
+    >
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-2">
+        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+        <span className="text-xs font-medium text-gray-500">Live</span>
       </div>
 
-      <div className="space-y-2 min-h-[80px]">
-        <div
-          key={current.id}
-          className="flex items-start gap-3 transition-opacity duration-300"
-        >
-          <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-            current.type === "sale" 
-              ? "bg-green-500/20 text-green-400" 
-              : "bg-yellow-500/20 text-yellow-400"
-          }`}>
-            {current.type === "sale" ? (
-              <CheckCircle2 className="h-4 w-4" />
-            ) : (
-              <Package className="h-4 w-4" />
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm text-white">
-              {current.type === "sale" ? (
-                <>
-                  <span className="text-green-400 font-medium">Sold!</span>{" "}
-                  <Link 
-                    href={`/listing/${current.id.replace("sale-", "")}`}
-                    className="hover:underline text-gray-200"
-                  >
-                    {current.title.length > 35 ? current.title.slice(0, 35) + "..." : current.title}
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link 
-                    href={`/profile/${encodeURIComponent(current.sellerName)}`}
-                    className="text-yellow-400 font-medium hover:underline"
-                  >
-                    {current.sellerName}
-                  </Link>{" "}
-                  listed{" "}
-                  <Link 
-                    href={`/listing/${current.id.replace("listing-", "")}`}
-                    className="hover:underline text-gray-200"
-                  >
-                    {current.title.length > 30 ? current.title.slice(0, 30) + "..." : current.title}
-                  </Link>
-                </>
-              )}
-            </p>
-            <p className="text-xs text-gray-400 mt-0.5">{timeAgo(current.timestamp)}</p>
-          </div>
-        </div>
+      {/* Activity message */}
+      <p className="text-sm text-gray-700 leading-snug">
+        {current.type === "sale" ? (
+          <>
+            <span className="text-green-600 font-medium">Sold: </span>
+            {current.title.length > 40 ? current.title.slice(0, 40) + "..." : current.title}
+          </>
+        ) : (
+          <>
+            New <span className="font-medium">{current.title.length > 35 ? current.title.slice(0, 35) + "..." : current.title}</span> listed
+          </>
+        )}
+      </p>
 
-        {/* Activity dots indicator */}
-        <div className="flex justify-center gap-1 pt-2">
-          {activities.slice(0, 5).map((_, i) => (
-            <button
+      {/* Timestamp */}
+      <p className="text-xs text-gray-400 mt-1">{timeAgo(current.timestamp)}</p>
+
+      {/* Dots indicator - only show if multiple activities */}
+      {activities.length > 1 && (
+        <div className="flex justify-center gap-1 mt-3">
+          {activities.slice(0, Math.min(5, activities.length)).map((_, i) => (
+            <span
               key={i}
-              onClick={() => setCurrentIndex(i)}
-              className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                i === currentIndex % 5 ? "bg-yellow-400" : "bg-gray-600"
+              className={`w-1 h-1 rounded-full transition-colors ${
+                i === currentIndex % Math.min(5, activities.length) ? "bg-gray-400" : "bg-gray-200"
               }`}
-              aria-label={`View activity ${i + 1}`}
             />
           ))}
         </div>
-      </div>
-    </div>
+      )}
+    </Link>
   );
 }
