@@ -76,7 +76,7 @@ export default function LiveActivityFeed() {
       <div className="bg-white border border-gray-200 rounded-xl p-4">
         <div className="flex items-center gap-2 mb-2">
           <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          <span className="text-xs font-medium text-gray-500">Live</span>
+          <span className="text-xs font-medium text-gray-500">Live Activity</span>
         </div>
         <p className="text-sm text-gray-400">
           No recent activity
@@ -96,7 +96,7 @@ export default function LiveActivityFeed() {
       {/* Header */}
       <div className="flex items-center gap-2 mb-2">
         <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-        <span className="text-xs font-medium text-gray-500">Live</span>
+        <span className="text-xs font-medium text-gray-500">Live Activity</span>
       </div>
 
       {/* Activity message */}
