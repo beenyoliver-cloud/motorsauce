@@ -40,7 +40,8 @@ export default function RecentlyViewedRow() {
         if (!ids.length) return;
         const subset = ids.slice(0, 10);
         const results = await Promise.all(subset.map((id) => fetchListing(id)));
-        const list = results.filter(Boolean) as Listing[];
+        // Filter out sold/draft listings - only show active
+        const list = (results.filter(Boolean) as Listing[]).filter(l => l.status === "active");
         if (alive) setItems(list);
       } catch {}
     })();

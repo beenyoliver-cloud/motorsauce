@@ -52,13 +52,13 @@ export async function POST(req: Request) {
 
     // Query by make
     if (makes.length) {
-  const { data, error } = await supabase.from("listings").select("*").in("make", makes).limit(50);
+  const { data, error } = await supabase.from("listings").select("*").in("make", makes).eq("status", "active").limit(50);
   if (!error && Array.isArray(data)) for (const r of (data as ListingRow[])) results.set(String(r.id), r);
     }
 
     // Query by model
     if (models.length) {
-  const { data, error } = await supabase.from("listings").select("*").in("model", models).limit(50);
+  const { data, error } = await supabase.from("listings").select("*").in("model", models).eq("status", "active").limit(50);
   if (!error && Array.isArray(data)) for (const r of (data as ListingRow[])) results.set(String(r.id), r);
     }
 
@@ -66,13 +66,13 @@ export async function POST(req: Request) {
     for (const term of searches.slice(0, 5)) {
       if (!term || typeof term !== "string") continue;
       const q = `%${term.replace(/%/g, "\\%").trim()}%`;
-  const { data, error } = await supabase.from("listings").select("*").ilike("title", q).limit(20);
+  const { data, error } = await supabase.from("listings").select("*").ilike("title", q).eq("status", "active").limit(20);
   if (!error && Array.isArray(data)) for (const r of (data as ListingRow[])) results.set(String(r.id), r);
     }
 
     // If nothing found yet, return most recent uploads (so the section isn't empty)
     if (!results.size) {
-  const { data, error } = await supabase.from("listings").select("*").order("created_at", { ascending: false }).limit(12);
+  const { data, error } = await supabase.from("listings").select("*").eq("status", "active").order("created_at", { ascending: false }).limit(12);
   if (!error && Array.isArray(data)) for (const r of (data as ListingRow[])) results.set(String(r.id), r);
     }
 

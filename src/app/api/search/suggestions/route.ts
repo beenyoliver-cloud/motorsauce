@@ -34,6 +34,7 @@ export async function GET(req: Request) {
     const { data: listings } = await supabase
       .from("listings")
       .select("id, title, make, model, price")
+      .eq("status", "active")
       .or(`title.ilike.%${query}%,make.ilike.%${query}%,model.ilike.%${query}%,description.ilike.%${query}%`)
       .limit(5);
 
