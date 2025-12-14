@@ -1,13 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Mail, CheckCircle, RefreshCw, ArrowLeft } from "lucide-react";
 import CenteredCard from "@/components/layout/CenteredCard";
 import { supabaseBrowser } from "@/lib/supabase";
 
+function VerifyEmailLoading() {
+  return (
+    <div className="flex items-center justify-center min-h-[50vh]">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-yellow-500 border-t-transparent"></div>
+    </div>
+  );
+}
+
 export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<VerifyEmailLoading />}>
+      <VerifyEmailContent />
+    </Suspense>
+  );
+}
+
+function VerifyEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
