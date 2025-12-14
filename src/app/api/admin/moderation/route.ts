@@ -3,11 +3,12 @@ import { createClient } from "@supabase/supabase-js";
 
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE;
   if (!url || !key) {
+    console.error("Missing Supabase configuration:", { hasUrl: !!url, hasKey: !!key });
     throw new Error("Missing Supabase configuration");
   }
-  return createClient(url, key);
+  return createClient(url, key, { auth: { persistSession: false } });
 }
 
 export async function POST(request: NextRequest) {
@@ -87,56 +88,78 @@ export async function POST(request: NextRequest) {
     const { error: updateError } = await supabaseAdmin.from("profiles").update(updateData).eq("id", userId);
     if (updateError) {
       console.error("Error updating user:", updateError);
-      return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
+      // Check if the columns don't exist
+      if (updateError.message?.includes("column") || updateError.code === "42703") {
+        return NextResponse.json({ 
+          error: "Database schema not set up. Please run the moderation SQL migration.",
+          details: updateError.message 
+        }, { status: 500 });
+      }
+      return NextResponse.json({ error: `Failed to update user: ${updateError.message}` }, { status: 500 });
     }
 
-    await supabaseAdmin.from("moderation_logs").insert({
-      user_id: userId,
-      admin_id: user.id,
-      action,
-      reason: reason || null,
-      details: Object.keys(logDetails).length > 0 ? logDetails : null,
-    });
-
-    // Send notifications for certain actions
-    if (action === "warn") {
-      await supabaseAdmin.from("notifications").insert({
+    // Try to insert moderation log, but don't fail if table doesn't exist
+    try {
+      await supabaseAdmin.from("moderation_logs").insert({
         user_id: userId,
-        type: "warning",
-        title: "Account Warning",
-        message: `You have received an official warning: ${reason || "Policy violation"}. Please review our terms of service. Further violations may result in suspension or ban.`,
-        data: { reason, warning_count: updateData.warning_count },
-        read: false,
+        admin_id: user.id,
+        action,
+        reason: reason || null,
+        details: Object.keys(logDetails).length > 0 ? logDetails : null,
       });
-    } else if (action === "suspend") {
-      const untilDate = durationDays ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toLocaleDateString() : "indefinitely";
-      await supabaseAdmin.from("notifications").insert({
-        user_id: userId,
-        type: "suspension",
-        title: "Account Suspended",
-        message: `Your account has been suspended until ${untilDate}. Reason: ${reason || "Policy violation"}`,
-        data: { reason, duration_days: durationDays },
-        read: false,
-      });
-    } else if (action === "ban") {
-      await supabaseAdmin.from("notifications").insert({
-        user_id: userId,
-        type: "ban",
-        title: "Account Banned",
-        message: `Your account has been permanently banned. Reason: ${reason || "Severe policy violation"}`,
-        data: { reason },
-        read: false,
-      });
+    } catch (logError) {
+      console.error("Error inserting moderation log (table may not exist):", logError);
     }
 
-    if (action === "ban" || action === "suspend") {
-      await supabaseAdmin.from("listings").update({ status: "draft" }).eq("seller_id", userId).eq("status", "active");
+    // Send notifications for certain actions (don't fail if notifications table doesn't exist)
+    try {
+      if (action === "warn") {
+        await supabaseAdmin.from("notifications").insert({
+          user_id: userId,
+          type: "warning",
+          title: "Account Warning",
+          message: `You have received an official warning: ${reason || "Policy violation"}. Please review our terms of service. Further violations may result in suspension or ban.`,
+          data: { reason, warning_count: updateData.warning_count },
+          read: false,
+        });
+      } else if (action === "suspend") {
+        const untilDate = durationDays ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toLocaleDateString() : "indefinitely";
+        await supabaseAdmin.from("notifications").insert({
+          user_id: userId,
+          type: "suspension",
+          title: "Account Suspended",
+          message: `Your account has been suspended until ${untilDate}. Reason: ${reason || "Policy violation"}`,
+          data: { reason, duration_days: durationDays },
+          read: false,
+        });
+      } else if (action === "ban") {
+        await supabaseAdmin.from("notifications").insert({
+          user_id: userId,
+          type: "ban",
+          title: "Account Banned",
+          message: `Your account has been permanently banned. Reason: ${reason || "Severe policy violation"}`,
+          data: { reason },
+          read: false,
+        });
+      }
+    } catch (notifError) {
+      console.error("Error sending notification (table may not exist):", notifError);
+    }
+
+    // Move listings to draft when banning/suspending
+    try {
+      if (action === "ban" || action === "suspend") {
+        await supabaseAdmin.from("listings").update({ status: "draft" }).eq("seller_id", userId).eq("status", "active");
+      }
+    } catch (listingError) {
+      console.error("Error updating listings:", listingError);
     }
 
     return NextResponse.json({ success: true, message: `User ${action}ed successfully`, userId, action });
   } catch (error) {
     console.error("Moderation API error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: `Internal server error: ${message}` }, { status: 500 });
   }
 }
 
