@@ -532,9 +532,7 @@ export default function Header() {
           <img
             src="/images/motorsource_header_white_2000x600.png"
             alt="Motorsource"
-            width="250"
-            height="75"
-            style={{ width: '250px', height: 'auto' }}
+            style={{ height: '50px', width: 'auto' }}
           />
         </Link>
 
