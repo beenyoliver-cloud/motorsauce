@@ -112,7 +112,7 @@ export default function GaragePartsIntegration({ car }: GaragePartsIntegrationPr
 
         setWatchEnabled(true);
         car.watchParts = true;
-        alert(`✓ Watch enabled for ${car.make} ${car.model} ${car.year}. You'll be notified when compatible parts are listed.`);
+        alert(`Watch enabled for ${car.make} ${car.model} ${car.year}. You'll be notified when compatible parts are listed.`);
       } else {
         // Remove watch
         const res = await fetch(

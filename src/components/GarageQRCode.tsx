@@ -178,7 +178,7 @@ export default function GarageQRCode({ username, vehicleCount }: GarageQRCodePro
 
             {/* Note */}
             <p className="mt-4 text-xs text-gray-500 text-center">
-              📱 Note: QR code links to your public garage profile. Make sure your garage is set to public.
+              Note: QR code links to your public garage profile. Make sure your garage is set to public.
             </p>
           </div>
         </div>

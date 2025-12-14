@@ -285,7 +285,7 @@ export default function RegisterPage() {
                   {passwordStrength.suggestions.length > 0 && (
                     <div className="mt-2 pt-2 border-t border-gray-200">
                       <div className="text-xs text-amber-600">
-                        💡 {passwordStrength.suggestions[0]}
+                        {passwordStrength.suggestions[0]}
                       </div>
                     </div>
                   )}

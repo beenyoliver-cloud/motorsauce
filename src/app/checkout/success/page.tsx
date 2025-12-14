@@ -153,7 +153,7 @@ export default function CheckoutSuccessPage() {
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-6 md:p-10 text-center">
-        <h1 className="text-2xl font-extrabold text-gray-900">Order placed 🎉</h1>
+        <h1 className="text-2xl font-extrabold text-gray-900">Order placed</h1>
         <p className="mt-2 text-gray-800">
           Reference: <span className="font-mono font-semibold">{orderRef}</span>
         </p>
@@ -161,7 +161,7 @@ export default function CheckoutSuccessPage() {
         {/* Error message if order creation failed */}
         {orderError && (
           <div className="mt-4 rounded-md bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-800">
-            <p className="font-semibold">⚠️ Note:</p>
+            <p className="font-semibold">Note:</p>
             <p className="mt-1">
               Your payment was successful, but there was an issue saving your order: {orderError}
             </p>

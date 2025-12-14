@@ -339,8 +339,8 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
       {/* Listing Details Section */}
       <div className="bg-white border-2 border-gray-200 rounded-2xl p-8 shadow-sm">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-2xl">
-            📝
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-2xl text-white font-bold">
+            1
           </div>
           <div>
             <h2 className="text-xl font-bold text-gray-900">Listing Details</h2>
@@ -376,9 +376,9 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
             required
           >
             <option value="">Select a category</option>
-            <option value="OEM">🔧 OEM (Original Equipment Manufacturer)</option>
-            <option value="Aftermarket">⚡ Aftermarket (Performance/Replacement)</option>
-            <option value="Tool">🛠️ Tool / Accessory</option>
+            <option value="OEM">OEM (Original Equipment Manufacturer)</option>
+            <option value="Aftermarket">Aftermarket (Performance/Replacement)</option>
+            <option value="Tool">Tool / Accessory</option>
           </select>
           <p className="mt-2 text-xs text-gray-500">
             OEM for original parts, Aftermarket for replacements/upgrades, Tools for equipment.
@@ -501,8 +501,8 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
       {/* Vehicle Compatibility Section */}
       <div className="bg-white border-2 border-gray-200 rounded-2xl p-8 shadow-sm">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-2xl">
-            🚗
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-2xl text-white font-bold">
+            2
           </div>
           <div>
             <h2 className="text-xl font-bold text-gray-900">Vehicle Compatibility</h2>
@@ -667,8 +667,8 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
       {/* Photos Section */}
       <div className="bg-white border-2 border-gray-200 rounded-2xl p-8 shadow-sm">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-2xl">
-            📸
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-2xl text-white font-bold">
+            3
           </div>
           <div>
             <h2 className="text-xl font-bold text-gray-900">Photos</h2>
@@ -746,8 +746,8 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
       {/* Shipping & Location Section */}
       <div className="bg-white border-2 border-gray-200 rounded-2xl p-8 shadow-sm">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-2xl">
-            📦
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-2xl text-white font-bold">
+            4
           </div>
           <div>
             <h2 className="text-xl font-bold text-gray-900">Shipping & Location</h2>
@@ -798,9 +798,9 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
               className="w-full border-2 border-gray-300 rounded-xl py-3 px-4 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all"
               required
             >
-              <option value="both">📦 Collection or Delivery</option>
-              <option value="collection">🏠 Collection Only</option>
-              <option value="delivery">🚚 Delivery Only</option>
+              <option value="both">Collection or Delivery</option>
+              <option value="collection">Collection Only</option>
+              <option value="delivery">Delivery Only</option>
             </select>
           </div>
         </div>
@@ -855,7 +855,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
               : "bg-gradient-to-r from-gold-500 to-yellow-500 hover:from-gold-600 hover:to-yellow-600 text-white shadow-lg hover:shadow-xl"
           }`}
         >
-          {saving ? "Saving..." : "💾 Save & Publish"}
+          {saving ? "Saving..." : "Save & Publish"}
         </button>
 
         <button
@@ -864,7 +864,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
           disabled={saving}
           className="flex-1 sm:flex-none px-6 py-3.5 rounded-xl font-semibold border-2 border-gray-300 text-gray-800 hover:bg-gray-50 disabled:opacity-50 transition-all"
         >
-          📝 Save as Draft
+          Save as Draft
         </button>
 
         <button
@@ -873,7 +873,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
           disabled={saving}
           className="flex-1 sm:flex-none px-6 py-3.5 rounded-xl font-semibold border-2 border-green-300 bg-green-50 text-green-900 hover:bg-green-100 disabled:opacity-50 transition-all"
         >
-          ✅ Mark as Sold
+          Mark as Sold
         </button>
 
         <button
@@ -881,7 +881,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
           onClick={onCancel}
           className="flex-1 sm:flex-none px-6 py-3.5 rounded-xl font-semibold border-2 border-gray-300 text-gray-800 hover:bg-gray-50 transition-all"
         >
-          ❌ Cancel
+          Cancel
         </button>
 
         <button
@@ -890,7 +890,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
           disabled={deleting}
           className="flex-1 sm:flex-none px-6 py-3.5 rounded-xl font-semibold border-2 border-red-300 bg-red-50 text-red-900 hover:bg-red-100 disabled:opacity-50 transition-all"
         >
-          {deleting ? "Deleting..." : "🗑️ Delete"}
+          {deleting ? "Deleting..." : "Delete"}
         </button>
       </div>
     </form>

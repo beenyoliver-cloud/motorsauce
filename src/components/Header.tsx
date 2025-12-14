@@ -393,7 +393,7 @@ export default function Header() {
                 className="block px-4 py-3 text-sm font-semibold text-yellow-600 hover:bg-yellow-50 border-b border-gray-200"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                🏠 Home
+                Home
               </Link>
               {categories.map(([name, href]) => (
                 <Link
@@ -617,7 +617,7 @@ export default function Header() {
             href="/admin/dashboard"
             className="flex items-center gap-1 text-sm font-medium text-black hover:text-yellow-500 transition-colors bg-yellow-100 px-2 py-1 rounded"
           >
-            🛠️ Admin
+            Admin
           </Link>
         )}
         {isUserLoaded && user && (

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Pencil, CheckCircle2, RotateCcw, FileText, Trash2, Loader2 } from "lucide-react";
+import { Pencil, CheckCircle2, RotateCcw, FileText, Trash2, Loader2, Wrench } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase";
 
 type Props = {
@@ -152,7 +152,7 @@ export default function SellerActionsBar({ listingId, currentStatus = "active" }
   return (
     <div className="rounded-xl border-2 border-blue-200 bg-blue-50 p-4">
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-lg">🔧</span>
+        <Wrench className="h-4 w-4 text-blue-700" />
         <h2 className="text-sm font-bold text-blue-900">Your Listing</h2>
       </div>
       

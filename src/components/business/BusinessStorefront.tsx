@@ -54,10 +54,10 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('catalogue');
 
   const tabs: { id: Tab; label: string; icon: string }[] = [
-    { id: 'catalogue', label: 'Catalogue', icon: '📦' },
-    { id: 'about', label: 'About', icon: 'ℹ️' },
-    { id: 'reviews', label: `Reviews (${business.review_count})`, icon: '⭐' },
-    { id: 'contact', label: 'Contact', icon: '📞' },
+    { id: 'catalogue', label: 'Catalogue', icon: '' },
+    { id: 'about', label: 'About', icon: '' },
+    { id: 'reviews', label: `Reviews (${business.review_count})`, icon: '' },
+    { id: 'contact', label: 'Contact', icon: '' },
   ];
 
   const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://motorsauce.vercel.app';

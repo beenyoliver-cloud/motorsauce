@@ -56,13 +56,13 @@ export default function Footer() {
             <li><Link href="/contact" className="hover:text-yellow-500">Contact</Link></li>
             <li><Link href="/privacy" className="hover:text-yellow-500">Privacy Policy</Link></li>
             <li><Link href="/terms" className="hover:text-yellow-500">Terms of Service</Link></li>
-            {isAdminUser && (
+            {isAdmin && (
               <li>
                 <Link 
                   href="/admin/dashboard" 
                   className="hover:text-yellow-500 font-semibold text-yellow-600"
                 >
-                  🛠️ Admin Tools
+                  Admin Tools
                 </Link>
               </li>
             )}

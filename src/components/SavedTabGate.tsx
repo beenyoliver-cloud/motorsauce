@@ -107,7 +107,7 @@ export default function SavedTabGate({
         {!isBusinessAccount && (
           <TabLink 
             href={`${baseHref}?tab=garage`} 
-            label={`🚗 Garage${garageCount > 0 ? ` (${garageCount})` : ''}`} 
+            label={`Garage${garageCount > 0 ? ` (${garageCount})` : ''}`} 
             isActive={activeTab === "garage"} 
           />
         )}

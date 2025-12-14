@@ -584,7 +584,7 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
                   : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
               )}
             >
-              🚗 Garage
+              Garage
             </button>
             <button
               onClick={() => setActiveTab("display-wall")}
@@ -595,7 +595,7 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
                   : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
               )}
             >
-              📸 Display Wall
+              Display Wall
             </button>
           </div>
         </div>
@@ -614,7 +614,7 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
           {/* Parts Integration for default car */}
           {mine && defaultCar && (
             <div className="px-6 py-5 border-b border-gray-200">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">🔧 Compatible Parts</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Compatible Parts</h3>
               <GaragePartsIntegration car={defaultCar} />
             </div>
           )}

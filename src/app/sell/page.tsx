@@ -380,7 +380,7 @@ function SellForm() {
       <div className="bg-white border-2 border-gray-100 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
         <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-gray-100">
           <div className="w-10 h-10 bg-gradient-to-br from-gold-400 to-gold-600 rounded-xl flex items-center justify-center">
-            <span className="text-xl">📝</span>
+            <span className="text-xl text-white font-bold">1</span>
           </div>
           <h2 className="text-xl font-bold text-gray-900">Essential Details</h2>
         </div>
@@ -399,7 +399,6 @@ function SellForm() {
             required
           />
           <p className="mt-2 text-xs text-gray-500 flex items-center gap-1.5">
-            <span className="text-green-600">💡</span>
             Be specific. Good titles sell faster.
           </p>
         </div>
@@ -417,9 +416,9 @@ function SellForm() {
               required
             >
               <option value="">Select a category</option>
-              <option value="OEM">🔧 OEM</option>
-              <option value="Aftermarket">⚡ Aftermarket</option>
-              <option value="Tool">🛠️ Tool / Accessory</option>
+              <option value="OEM">OEM</option>
+              <option value="Aftermarket">Aftermarket</option>
+              <option value="Tool">Tool / Accessory</option>
             </select>
           </div>
           <div>
@@ -550,7 +549,7 @@ function SellForm() {
         >
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-              <span className="text-xl">🚗</span>
+              <span className="text-xl text-white font-bold">2</span>
             </div>
             <div className="text-left">
               <span className="font-bold text-gray-900 text-lg block">
@@ -560,12 +559,12 @@ function SellForm() {
             </div>
             {isVehicleSpecific && selectedVehicles.length > 0 && (
               <span className="inline-flex items-center bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
-                ✓ {selectedVehicles.length} selected
+                {selectedVehicles.length} selected
               </span>
             )}
             {isUniversal && (
               <span className="inline-flex items-center bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
-                🌐 Universal
+                Universal
               </span>
             )}
           </div>
@@ -711,7 +710,7 @@ function SellForm() {
         <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl flex items-center justify-center">
-              <span className="text-xl">📸</span>
+              <span className="text-xl text-white font-bold">3</span>
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">
@@ -786,7 +785,7 @@ function SellForm() {
       <div className="bg-white border-2 border-gray-100 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow space-y-6">
         <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-100">
           <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center">
-            <span className="text-xl">📦</span>
+            <span className="text-xl text-white font-bold">4</span>
           </div>
           <h2 className="text-xl font-bold text-gray-900">Shipping & Returns</h2>
         </div>
@@ -801,9 +800,9 @@ function SellForm() {
             className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all cursor-pointer"
             required
           >
-            <option value="both">📦 Collection or Delivery</option>
-            <option value="collection">🚶 Collection Only</option>
-            <option value="delivery">🚚 Delivery Only</option>
+            <option value="both">Collection or Delivery</option>
+            <option value="collection">Collection Only</option>
+            <option value="delivery">Delivery Only</option>
           </select>
         </div>
 
@@ -826,7 +825,7 @@ function SellForm() {
               disabled={geocoding || !postcode.trim()}
               className="px-5 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all"
             >
-              {geocoding ? "⏳ Checking..." : "📍 Validate"}
+              {geocoding ? "Checking..." : "Validate"}
             </button>
           </div>
           {sellerLat && sellerLng ? (
@@ -836,7 +835,7 @@ function SellForm() {
             </p>
           ) : (
             <p className="mt-2 text-xs text-gray-500">
-              💡 Helps buyers see how far the item is from their location
+              Helps buyers see how far the item is from their location
             </p>
           )}
         </div>
@@ -852,9 +851,9 @@ function SellForm() {
             />
             <div className="flex-1">
               <label htmlFor="acceptsReturns" className="block text-sm font-semibold text-gray-800 cursor-pointer mb-1">
-                🔄 Accept returns
+                Accept returns
               </label>
-              <p className="text-xs text-gray-600">Buyers can return within a set period (builds trust!)</p>
+              <p className="text-xs text-gray-600">Buyers can return within a set period</p>
             </div>
           </div>
 
@@ -878,7 +877,7 @@ function SellForm() {
       {/* Errors */}
       {errorMsg && (
         <div className="border-2 border-red-300 bg-red-50 text-red-800 rounded-2xl p-6 shadow-lg flex items-start gap-4">
-          <span className="text-3xl">❌</span>
+          <span className="text-3xl">⚠️</span>
           <div>
             <h3 className="font-bold text-lg mb-1">Error</h3>
             <p>{errorMsg}</p>
@@ -900,12 +899,11 @@ function SellForm() {
           <span className="relative z-10 flex items-center justify-center gap-2">
             {submitting ? (
               <>
-                <span className="animate-spin">⏳</span>
+                <span className="animate-spin">...</span>
                 Creating Listing…
               </>
             ) : (
               <>
-                <span>🚀</span>
                 Create Listing
               </>
             )}
@@ -926,7 +924,6 @@ function SellForm() {
           }`}
         >
           <span className="flex items-center justify-center gap-2">
-            <span>📝</span>
             Save as Draft
           </span>
         </button>
@@ -949,7 +946,7 @@ function SellForm() {
       {/* Success */}
       {submitted && (
         <div className="border-2 border-green-300 bg-green-50 text-green-800 rounded-2xl p-6 shadow-lg flex items-start gap-4 animate-pulse">
-          <span className="text-3xl">✅</span>
+          <span className="text-3xl">✓</span>
           <div>
             <h3 className="font-bold text-lg mb-1">Success!</h3>
             <p>Your listing has been created. Redirecting you now…</p>

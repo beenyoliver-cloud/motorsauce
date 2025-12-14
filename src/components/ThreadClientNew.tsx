@@ -452,27 +452,27 @@ export default function ThreadClientNew({
                   let borderColor = "border-blue-200";
                   
                   if (m.text?.includes("accepted")) {
-                    icon = "✅";
+                    icon = "";
                     bgColor = "bg-green-50";
                     textColor = "text-green-700";
                     borderColor = "border-green-200";
                   } else if (m.text?.includes("declined")) {
-                    icon = "❌";
+                    icon = "";
                     bgColor = "bg-red-50";
                     textColor = "text-red-700";
                     borderColor = "border-red-200";
                   } else if (m.text?.includes("countered")) {
-                    icon = "📊";
+                    icon = "";
                     bgColor = "bg-yellow-50";
                     textColor = "text-yellow-700";
                     borderColor = "border-yellow-200";
                   } else if (m.text?.includes("withdrawn")) {
-                    icon = "🚫";
+                    icon = "";
                     bgColor = "bg-gray-100";
                     textColor = "text-gray-700";
                     borderColor = "border-gray-300";
                   } else if (m.text?.includes("Conversation started")) {
-                    icon = "💬";
+                    icon = "";
                     bgColor = "bg-purple-50";
                     textColor = "text-purple-700";
                     borderColor = "border-purple-200";
@@ -481,7 +481,7 @@ export default function ThreadClientNew({
                   return (
                     <div key={m.id} className="flex justify-center px-0 my-2">
                       <div className={`text-[12px] font-medium ${textColor} ${bgColor} px-3 py-2 rounded-full border ${borderColor} flex items-center gap-2 shadow-sm`}>
-                        <span className="text-base">{icon}</span>
+                        {icon && <span className="text-base">{icon}</span>}
                         <span>{m.text}</span>
                       </div>
                     </div>

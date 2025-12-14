@@ -79,7 +79,7 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
       console.log(`[OfferMessage] Withdrawing offer ${o.id}`);
       const result = await updateOfferStatusAPI(o.id, "withdrawn");
       console.log(`[OfferMessage] Offer withdrawn:`, result);
-      await sendSystemMessage(`🚫 ${displayName(selfName)} withdrew the offer of ${formatGBP(o.amountCents)}.`);
+      await sendSystemMessage(`${displayName(selfName)} withdrew the offer of ${formatGBP(o.amountCents)}.`);
       
       // Notify UI to refresh threads and messages
       if (typeof window !== "undefined") {
@@ -103,7 +103,7 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
       console.log(`[OfferMessage] Accepting offer ${o.id} for listing ${o.listingId || 'unknown'}`);
       const result = await updateOfferStatusAPI(o.id, "accepted");
       console.log(`[OfferMessage] Offer accepted:`, result);
-      await sendSystemMessage(`✅ ${displayName(selfName)} accepted the offer of ${formatGBP(o.amountCents)}.`);
+      await sendSystemMessage(`${displayName(selfName)} accepted the offer of ${formatGBP(o.amountCents)}.`);
       
       // Notify UI to refresh threads and messages
       if (typeof window !== "undefined") {
@@ -145,7 +145,7 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
       console.log(`[OfferMessage] Declining offer ${o.id} for listing ${o.listingId || 'unknown'}`);
       const result = await updateOfferStatusAPI(o.id, "declined");
       console.log(`[OfferMessage] Offer declined:`, result);
-      await sendSystemMessage(`❌ ${displayName(selfName)} declined the offer of ${formatGBP(o.amountCents)}.`);
+      await sendSystemMessage(`${displayName(selfName)} declined the offer of ${formatGBP(o.amountCents)}.`);
       
       // Notify UI to refresh threads and messages
       if (typeof window !== "undefined") {
@@ -183,7 +183,7 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
       console.log(`[OfferMessage] Countering offer ${o.id} with £${pounds} for listing ${o.listingId || 'unknown'}`);
       const result = await updateOfferStatusAPI(o.id, "countered");
       console.log(`[OfferMessage] Offer countered:`, result);
-      await sendSystemMessage(`📊 ${displayName(selfName)} countered with ${formatGBP(Math.round(pounds * 100))}.`);
+      await sendSystemMessage(`${displayName(selfName)} countered with ${formatGBP(Math.round(pounds * 100))}.`);
 
       // Notify UI to refresh threads and messages
       if (typeof window !== "undefined") {
@@ -332,10 +332,10 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
               {/* Seller/Buyer info */}
               <div className="text-xs text-gray-600 space-y-0.5">
                 {iAmStarter && (
-                  <p>📤 <span className="font-medium">Sent to seller</span> on {new Date().toLocaleDateString()}</p>
+                  <p><span className="font-medium">Sent to seller</span> on {new Date().toLocaleDateString()}</p>
                 )}
                 {iAmRecipient && !iAmStarter && (
-                  <p>📥 <span className="font-medium">Offer from buyer</span> on {new Date().toLocaleDateString()}</p>
+                  <p><span className="font-medium">Offer from buyer</span> on {new Date().toLocaleDateString()}</p>
                 )}
               </div>
             </div>

@@ -290,14 +290,14 @@ export async function PATCH(req: Request) {
     // Create system message to notify parties
     const systemText = (() => {
       if (status === "accepted") {
-        return `✅ Seller accepted the offer of £${(offer.amount_cents / 100).toFixed(2)}.`;
+        return `Seller accepted the offer of £${(offer.amount_cents / 100).toFixed(2)}.`;
       } else if (status === "declined") {
-        return `❌ Seller declined the offer of £${(offer.amount_cents / 100).toFixed(2)}.`;
+        return `Seller declined the offer of £${(offer.amount_cents / 100).toFixed(2)}.`;
       } else if (status === "countered") {
         const counterPrice = (counterAmountCents! / 100).toFixed(2);
-        return `📊 Seller countered with £${counterPrice}.`;
+        return `Seller countered with £${counterPrice}.`;
       } else if (status === "withdrawn") {
-        return `⚠️ Buyer withdrew their offer of £${(offer.amount_cents / 100).toFixed(2)}.`;
+        return `Buyer withdrew their offer of £${(offer.amount_cents / 100).toFixed(2)}.`;
       }
       return `Offer status changed to ${status}`;
     })();

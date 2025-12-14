@@ -391,7 +391,7 @@ function CheckoutContent() {
               </>
             ) : (
               <>
-                🔒 Continue to secure payment
+                Continue to secure payment
               </>
             )}
           </button>
