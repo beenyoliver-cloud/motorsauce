@@ -524,11 +524,11 @@ export default function Header() {
 
       {/* Desktop header (>= md) */}
       <nav className="hidden md:flex w-full h-[60px] bg-white border-b border-gray-200 items-center justify-between px-6 shadow-sm fixed top-0 z-40">
-        <Link href="/" aria-label="Motorsource home" className="flex-shrink-0">
+        <Link href="/" aria-label="Motorsource home" className="flex-shrink-0 h-[50px] flex items-center">
           <img
             src="/images/motorsource_header_white_2000x600.png"
             alt="Motorsource"
-            className="h-[200px] w-auto"
+            className="h-[180px] w-auto max-w-none"
           />
         </Link>
 
