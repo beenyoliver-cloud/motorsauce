@@ -55,15 +55,12 @@ export default function HomeHero() {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-3 sm:p-4 md:p-8 transition-all duration-300 hover:shadow-lg hover:border-yellow-300">
+    <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-3 sm:p-4 md:p-6 transition-all duration-300 hover:shadow-lg hover:border-yellow-300">
       <div className="max-w-4xl">
         <h1 className="text-xl sm:text-2xl md:text-4xl font-extrabold text-black tracking-tight animate-fadeIn leading-tight">Find the right part for your ride</h1>
-        <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm md:text-base text-gray-700 animate-fadeIn" style={{ animationDelay: '100ms' }}>
-          Search by registration to match parts to your car.
-        </p>
 
-        {/* Keep registration search; remove keyword search + filters from the homepage */}
-        <div className="mt-3 sm:mt-4 animate-fadeIn" style={{ animationDelay: '200ms' }}>
+        {/* Registration search (homepage stays focused) */}
+        <div className="mt-2 sm:mt-3 animate-fadeIn" style={{ animationDelay: '200ms' }}>
           <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_auto] items-center gap-2 rounded-xl border border-gray-200 bg-white p-3 md:p-4 shadow-sm">
             <label className="text-xs font-semibold text-gray-700 md:pr-2">Search by registration</label>
             <div className="flex items-center gap-2">
@@ -97,6 +94,10 @@ export default function HomeHero() {
               <div className="md:col-span-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2">{plateError}</div>
             )}
           </div>
+
+          <p className="mt-2 text-xs sm:text-sm text-gray-700">
+            We’ll match parts to your car’s make, model and year.
+          </p>
         </div>
       </div>
     </div>
