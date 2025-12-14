@@ -345,9 +345,9 @@ export default function Header() {
         <div className="px-2 py-1.5 flex justify-center">
           <Link href="/" aria-label="Motorsource home">
             <img
-              src="/images/motorsource_header_white_2000x600.png"
+              src="/images/croppedlogo.png"
               alt="Motorsource"
-              className="h-[40px] w-auto"
+              className="h-[32px] w-auto"
             />
           </Link>
         </div>
@@ -372,9 +372,9 @@ export default function Header() {
             <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between shrink-0">
               <Link href="/" aria-label="Motorsource home">
                 <img
-                  src="/images/motorsource_header_white_2000x600.png"
+                  src="/images/croppedlogo.png"
                   alt="Motorsource"
-                  className="h-[40px] w-auto"
+                  className="h-[32px] w-auto"
                 />
               </Link>
               <button
@@ -524,11 +524,11 @@ export default function Header() {
 
       {/* Desktop header (>= md) */}
       <nav className="hidden md:flex w-full h-[60px] bg-white border-b border-gray-200 items-center justify-between px-6 shadow-sm fixed top-0 z-40">
-        <Link href="/" aria-label="Motorsource home" className="flex-shrink-0 h-[50px] flex items-center">
+        <Link href="/" aria-label="Motorsource home" className="flex-shrink-0">
           <img
-            src="/images/motorsource_header_white_2000x600.png"
+            src="/images/croppedlogo.png"
             alt="Motorsource"
-            className="h-[180px] w-auto max-w-none"
+            className="h-[40px] w-auto"
           />
         </Link>
 
