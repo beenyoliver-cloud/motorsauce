@@ -36,6 +36,7 @@ export default function BusinessSettingsPage() {
   const [uploading, setUploading] = useState<'logo' | 'banner' | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [initialBusinessInfo, setInitialBusinessInfo] = useState<BusinessInfo | null>(null);
+  const [showInActivityFeed, setShowInActivityFeed] = useState(true);
   
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -129,7 +130,7 @@ export default function BusinessSettingsPage() {
       const supabase = supabaseBrowser();
       const { data: profile } = await supabase
         .from("profiles")
-        .select("account_type")
+        .select("account_type, show_in_activity_feed")
         .eq("id", user.id)
         .single();
 
@@ -137,6 +138,9 @@ export default function BusinessSettingsPage() {
         router.push("/settings");
         return;
       }
+
+      // Load activity feed preference from profile
+      setShowInActivityFeed(profile.show_in_activity_feed !== false);
 
       const { data, error } = await supabase
         .from("business_info")
@@ -189,6 +193,14 @@ export default function BusinessSettingsPage() {
         });
 
       if (updateError) throw updateError;
+
+      // Also update the profile's activity feed preference
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ show_in_activity_feed: showInActivityFeed })
+        .eq("id", user.id);
+
+      if (profileError) throw profileError;
 
       setSuccess(true);
       setHasUnsavedChanges(false);
@@ -706,6 +718,31 @@ export default function BusinessSettingsPage() {
                   defaultValue="United Kingdom"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Privacy Settings */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Privacy Settings</h2>
+            <div className="space-y-4">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showInActivityFeed}
+                  onChange={(e) => {
+                    setShowInActivityFeed(e.target.checked);
+                    setHasUnsavedChanges(true);
+                  }}
+                  className="mt-1 rounded text-yellow-500 focus:ring-yellow-500"
+                />
+                <div>
+                  <span className="font-medium text-gray-900">Show in Live Activity Feed</span>
+                  <p className="text-sm text-gray-600 mt-0.5">
+                    When enabled, your new listings and sales will appear in the homepage activity feed. 
+                    Disable this for more privacy.
+                  </p>
+                </div>
+              </label>
             </div>
           </div>
 

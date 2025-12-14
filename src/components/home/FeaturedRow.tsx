@@ -5,6 +5,7 @@ import Link from "next/link";
 import SafeImage from "@/components/SafeImage";
 import { supabaseBrowser } from "@/lib/supabase";
 import { ListingCardSkeleton } from "@/components/skeletons/Skeletons";
+import { HotBadgeSmall } from "@/components/HotBadge";
 
 type Listing = {
   id: string | number;
@@ -12,6 +13,7 @@ type Listing = {
   price: string;
   image: string;
   createdAt: string;
+  viewCount: number;
 };
 
 export default function FeaturedRow({
@@ -65,12 +67,14 @@ export default function FeaturedRow({
                       : `£${row.price}`
                     : "£0.00";
                 const createdAt = row.created_at || new Date().toISOString();
+                const viewCount = typeof row.view_count === "number" ? row.view_count : 0;
                 return {
                   id: row.id,
                   title: row.title,
                   price,
                   image: images[0] || "/images/placeholder.jpg",
                   createdAt,
+                  viewCount,
                 } as Listing;
               });
             }
@@ -186,6 +190,7 @@ export default function FeaturedRow({
               className="group min-w-[160px] max-w-[200px] sm:min-w-[200px] sm:max-w-[240px] border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-md hover:border-yellow-400 transition-colors duration-200"
             >
               <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
+                <HotBadgeSmall viewCount={p.viewCount} threshold={10} />
                 <SafeImage src={p.image} alt={p.title} className="absolute inset-0 w-full h-full object-cover object-center" />
                 <div className="absolute inset-0 bg-yellow-500/0 group-hover:bg-yellow-500/10 transition-colors duration-200" />
               </div>

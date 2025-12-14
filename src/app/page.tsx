@@ -8,6 +8,8 @@ import FeaturedRow from "@/components/home/FeaturedRow";
 import RecentlyViewedRow from "@/components/home/RecentlyViewedRow";
 import TrustBand from "@/components/home/TrustBand";
 import SellCta from "@/components/home/SellCta";
+import LiveActivityFeed from "@/components/home/LiveActivityFeed";
+import JustSoldTicker from "@/components/home/JustSoldTicker";
 
 import SEOJsonLd from "@/components/SEOJsonLd";
 
@@ -24,9 +26,21 @@ export default function Home() {
         <HomeHero />
       </div>
 
-      {/* Category tiles */}
+      {/* Just Sold ticker - social proof banner */}
       {/* @ts-ignore Server -> Client import allowed */}
-      <CategoryTiles />
+      <JustSoldTicker />
+
+      {/* Live activity feed + Category tiles side by side on desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <div className="lg:col-span-3">
+          {/* @ts-ignore Server -> Client import allowed */}
+          <CategoryTiles />
+        </div>
+        <div className="lg:col-span-1">
+          {/* @ts-ignore Server -> Client import allowed */}
+          <LiveActivityFeed />
+        </div>
+      </div>
 
       {/* Featured rows */}
       {/* @ts-ignore Server -> Client import allowed */}
