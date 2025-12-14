@@ -56,7 +56,7 @@ export default function Footer() {
             <li><Link href="/contact" className="hover:text-yellow-500">Contact</Link></li>
             <li><Link href="/privacy" className="hover:text-yellow-500">Privacy Policy</Link></li>
             <li><Link href="/terms" className="hover:text-yellow-500">Terms of Service</Link></li>
-            {isAdmin && (
+            {isAdminUser && (
               <li>
                 <Link 
                   href="/admin/dashboard" 
