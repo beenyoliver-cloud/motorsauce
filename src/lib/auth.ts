@@ -105,6 +105,27 @@ export async function registerUser(
     throw new Error('Registration failed');
   }
 
+  // Check if session was created (email confirmation disabled) or needs confirmation
+  if (!data.session) {
+    // No session means email confirmation is required, or we need to sign in manually
+    // Try to sign in immediately after registration
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    
+    if (signInError) {
+      // If sign in fails, user may need to confirm email first
+      console.log('Auto sign-in after registration failed:', signInError.message);
+      // We'll continue anyway - the user object was created
+    }
+  }
+
+  // Dispatch auth event to update UI
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('ms:auth'));
+  }
+
   // If business account, create business_info record
   if (accountType === 'business' && businessInfo) {
     try {
