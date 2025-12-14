@@ -528,7 +528,7 @@ export default function Header() {
           <img
             src="/images/motorsource_header_white_2000x600.png"
             alt="Motorsource"
-            className="h-[55px] w-auto"
+            className="h-[200px] w-auto"
           />
         </Link>
 
