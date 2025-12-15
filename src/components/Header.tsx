@@ -13,6 +13,7 @@ import {
   X,
   ShoppingCart,
   MessageSquare,
+  Tag,
 } from "lucide-react";
 import { getCurrentUser, LocalUser, nsKey } from "@/lib/auth";
 import { isAdmin } from "@/lib/admin";
@@ -64,52 +65,9 @@ function readCartCount(): number {
   }
 }
 
-/* Mobile Categories Dropdown - styled like desktop */
-function MobileCategoriesDropdown({ categories }: { categories: readonly (readonly [string, string])[] }) {
-  const [open, setOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close on click outside
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  return (
-    <div ref={dropdownRef} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-2 px-3 py-2 border border-gray-300 rounded-full bg-white text-sm font-medium text-gray-700 hover:border-yellow-400 transition-colors"
-      >
-        <span>Categories</span>
-        <ChevronDown size={16} className={`text-gray-500 transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
-          {categories.map(([name, href]) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setOpen(false)}
-              className="block px-4 py-3 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600 border-b border-gray-100 last:border-b-0 transition-colors"
-            >
-              {name}
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const [user, setUser] = useState<LocalUser | null>(null);
   const [avatar, setAvatar] = useState<string | null>(null);
@@ -117,8 +75,6 @@ export default function Header() {
   const [cartOpen, setCartOpen] = useState(false);
   const [isUserLoaded, setIsUserLoaded] = useState(false);
   const [isAdminUser, setIsAdminUser] = useState(false);
-  const [hideTopBar, setHideTopBar] = useState(false);
-  const lastScrollY = useRef(0);
 
   const categories = [
     ["OEM Parts", "/categories/oem"],
@@ -323,87 +279,59 @@ export default function Header() {
     ["Account Settings", "/settings"],
   ] as const;
 
-  // Hide/show the mobile top bar (icons row) on scroll
-  useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY || 0;
-      const goingDown = y > lastScrollY.current;
-      // Only hide when scrolled beyond small threshold
-      setHideTopBar(goingDown && y > 20);
-      lastScrollY.current = y;
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   return (
     <>
-      {/* Mobile header (md:hidden) */}
-  <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        {/* Top icons row: hides on scroll down OR when menu is open */}
-        <div
-          className={`overflow-hidden transition-all duration-300 ${(hideTopBar || mobileMenuOpen) ? "max-h-0 opacity-0 pointer-events-none" : "max-h-8 opacity-100"}`}
-        >
-          <div className="h-8 flex items-center justify-between px-2">
-            <button
-              className="flex items-center justify-center text-black hover:text-yellow-500 w-7"
-              aria-label="Toggle menu"
-              onClick={() => setMobileMenuOpen((v) => !v)}
-            >
-              {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
-            </button>
-            <div className="flex items-center">
-              {isUserLoaded && user && (
-                  <>
-                    <NotificationsDropdown />
-                <Link href="/messages" aria-label="Messages" className="relative flex items-center justify-center text-black hover:text-yellow-500 w-7">
-                      <MessageSquare size={18} />
-                  {unread > 0 && (
-                    <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[9px] font-bold min-w-[14px] h-[14px] px-0.5">
-                      {unread > 9 ? '9+' : unread}
-                    </span>
-                  )}
-                </Link>
-                  </>
-              )}
-              <Link href={profileHref} aria-label="Profile" className="flex items-center justify-center text-black hover:text-yellow-500 w-7">
-                <User size={18} />
-              </Link>
-              <Link
-                href="/basket"
-                aria-label="Open basket"
-                className="relative flex items-center justify-center text-black hover:text-yellow-500 w-7 z-10 touch-manipulation"
-              >
-                <ShoppingCart size={18} />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[9px] font-bold min-w-[14px] h-[14px] px-0.5">
-                    {cartCount}
-                  </span>
-                )}
-              </Link>
-            </div>
-          </div>
-        </div>
+      {/* Mobile header (md:hidden) - Compact single-row design */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        {/* Main row: Menu, Logo, Icons */}
+        <div className="h-12 flex items-center justify-between px-3">
+          {/* Left: Menu button */}
+          <button
+            className="flex items-center justify-center text-black hover:text-yellow-500 w-9 h-9 -ml-1"
+            aria-label="Toggle menu"
+            onClick={() => setMobileMenuOpen((v) => !v)}
+          >
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
 
-        {/* Logo */}
-        <div className="px-2 py-1.5 flex justify-center">
-          <Link href="/" aria-label="Motorsource home">
+          {/* Center: Logo */}
+          <Link href="/" aria-label="Motorsource home" className="absolute left-1/2 -translate-x-1/2">
             <img
               src="/images/croppedlogo.png"
               alt="Motorsource"
-              className="h-[32px] w-auto"
+              className="h-[28px] w-auto"
             />
           </Link>
+
+          {/* Right: Search + Cart icons */}
+          <div className="flex items-center gap-1">
+            <button
+              className="flex items-center justify-center text-black hover:text-yellow-500 w-9 h-9"
+              aria-label="Search"
+              onClick={() => setMobileSearchOpen((v) => !v)}
+            >
+              <SearchIcon size={20} />
+            </button>
+            <Link
+              href="/basket"
+              aria-label="Open basket"
+              className="relative flex items-center justify-center text-black hover:text-yellow-500 w-9 h-9"
+            >
+              <ShoppingCart size={20} />
+              {cartCount > 0 && (
+                <span className="absolute top-0.5 right-0.5 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[9px] font-bold min-w-[16px] h-[16px] px-0.5">
+                  {cartCount > 9 ? '9+' : cartCount}
+                </span>
+              )}
+            </Link>
+          </div>
         </div>
 
-        {/* Search bar */}
-        <div className="px-2 pb-1">
-          <SearchBar placeholder="Search parts or sellers…" compact />
-        </div>
-
-        {/* Categories dropdown bar - styled like desktop */}
-        <div className="px-2 pb-1.5">
-          <MobileCategoriesDropdown categories={categories} />
+        {/* Expandable search bar */}
+        <div className={`overflow-hidden transition-all duration-200 ${mobileSearchOpen ? "max-h-14 opacity-100" : "max-h-0 opacity-0"}`}>
+          <div className="px-3 pb-2">
+            <SearchBar placeholder="Search parts or sellers…" compact autoFocus={mobileSearchOpen} />
+          </div>
         </div>
       </div>
 
@@ -434,6 +362,51 @@ export default function Header() {
                 <X size={22} />
               </button>
             </div>
+
+            {/* Quick access bar for logged-in users */}
+            {isUserLoaded && user && (
+              <div className="flex items-center justify-around py-3 px-4 bg-gray-50 border-b border-gray-200">
+                <Link
+                  href={profileHref}
+                  className="flex flex-col items-center gap-1 text-gray-600 hover:text-yellow-600"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <User size={20} />
+                  <span className="text-xs">Profile</span>
+                </Link>
+                <Link
+                  href="/messages"
+                  className="relative flex flex-col items-center gap-1 text-gray-600 hover:text-yellow-600"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <div className="relative">
+                    <MessageSquare size={20} />
+                    {unread > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[9px] font-bold min-w-[16px] h-[16px] px-0.5">
+                        {unread > 9 ? '9+' : unread}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs">Messages</span>
+                </Link>
+                <Link
+                  href="/offers-standalone"
+                  className="flex flex-col items-center gap-1 text-gray-600 hover:text-yellow-600"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Tag size={20} />
+                  <span className="text-xs">Offers</span>
+                </Link>
+                <Link
+                  href="/sell"
+                  className="flex flex-col items-center gap-1 text-gray-600 hover:text-yellow-600"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <PlusCircle size={20} />
+                  <span className="text-xs">Sell</span>
+                </Link>
+              </div>
+            )}
 
             {/* Menu Content */}
             <nav className="flex flex-col flex-1">
