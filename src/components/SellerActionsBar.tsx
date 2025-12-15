@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Pencil, CheckCircle2, RotateCcw, FileText, Trash2, Loader2, Wrench } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase";
+import { getCurrentUser } from "@/lib/auth";
 
 type Props = {
   listingId: string | number;
@@ -118,8 +119,10 @@ export default function SellerActionsBar({ listingId, currentStatus = "active" }
         throw new Error(data.error || "Failed to delete listing");
       }
 
-      // Use window.location for immediate navigation to prevent "not found" flash
-      window.location.href = "/profile";
+      // Redirect to user's profile page after successful deletion
+      const user = await getCurrentUser();
+      const profileUrl = user?.name ? `/profile/${encodeURIComponent(user.name)}` : '/';
+      window.location.href = profileUrl;
     } catch (err: any) {
       console.error("Error deleting listing:", err);
       setError(err.message || "Failed to delete listing");

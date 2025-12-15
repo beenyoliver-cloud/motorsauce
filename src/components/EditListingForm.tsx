@@ -9,6 +9,7 @@ import { updateListing } from "@/lib/listingsService";
 import { getMainCategories, getSubcategoriesForMain, type MainCategory } from '@/data/partCategories';
 import { addVehicle, removeVehicle, vehiclesToArray, type SelectedVehicle } from '@/lib/vehicleHelpers';
 import { supabaseBrowser } from "@/lib/supabase";
+import { getCurrentUser } from "@/lib/auth";
 
 type Category = "OEM" | "Aftermarket" | "Tool" | "";
 type Condition = "New" | "Used - Like New" | "Used - Good" | "Used - Fair";
@@ -322,8 +323,10 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
         throw new Error(data.error || "Failed to delete listing");
       }
       
-      // Use window.location for immediate navigation to prevent "not found" flash
-      window.location.href = '/profile';
+      // Redirect to user's profile page after successful deletion
+      const user = await getCurrentUser();
+      const profileUrl = user?.name ? `/profile/${encodeURIComponent(user.name)}` : '/';
+      window.location.href = profileUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete listing");
       setDeleting(false);
