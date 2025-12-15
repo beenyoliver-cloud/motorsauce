@@ -64,6 +64,50 @@ function readCartCount(): number {
   }
 }
 
+/* Mobile Categories Dropdown - styled like desktop */
+function MobileCategoriesDropdown({ categories }: { categories: readonly (readonly [string, string])[] }) {
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close on click outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={dropdownRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-2 px-3 py-2 border border-gray-300 rounded-full bg-white text-sm font-medium text-gray-700 hover:border-yellow-400 transition-colors"
+      >
+        <span>Categories</span>
+        <ChevronDown size={16} className={`text-gray-500 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
+          {categories.map(([name, href]) => (
+            <Link
+              key={href}
+              href={href}
+              onClick={() => setOpen(false)}
+              className="block px-4 py-3 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600 border-b border-gray-100 last:border-b-0 transition-colors"
+            >
+              {name}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [unread, setUnread] = useState(0);
@@ -352,9 +396,9 @@ export default function Header() {
           </Link>
         </div>
 
-        {/* Search bar across the top */}
+        {/* Categories dropdown bar - styled like desktop */}
         <div className="px-2 pb-1.5">
-          <SearchBar placeholder="Search parts or sellers…" compact />
+          <MobileCategoriesDropdown categories={categories} />
         </div>
       </div>
 
@@ -533,8 +577,8 @@ export default function Header() {
         </Link>
 
       <div className="flex-1 flex justify-center px-4" role="search">
-        <div className="w-full max-w-xl">
-          <SearchBar placeholder="Search parts or sellers…" />
+        <div className="w-full max-w-2xl">
+          <SearchBar placeholder="Search parts or sellers…" compact />
         </div>
       </div>
 

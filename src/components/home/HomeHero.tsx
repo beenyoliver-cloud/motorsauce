@@ -61,22 +61,36 @@ export default function HomeHero() {
 
         {/* Registration search (homepage stays focused) */}
         <div className="mt-2 sm:mt-3 animate-fadeIn" style={{ animationDelay: '200ms' }}>
-          <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_auto] items-center gap-2 rounded-xl border border-gray-200 bg-white p-3 md:p-4 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_auto] items-center gap-2 md:gap-3 rounded-xl border border-gray-200 bg-white p-3 md:p-4 shadow-sm">
             <label className="text-xs font-semibold text-gray-700 md:pr-2">Search by registration</label>
             <div className="flex items-center gap-2">
-              <input
-                value={plate}
-                onChange={(e) => setPlate(e.target.value.toUpperCase())}
-                placeholder="AB12 CDE"
-                className="flex-1 rounded-md border border-gray-300 bg-[#FFF7CC] text-gray-900 placeholder:text-gray-500 px-3 py-2 text-sm uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-                style={{ letterSpacing: '0.08em' }}
-              />
+              {/* UK Number Plate Style Input */}
+              <div className="relative flex-1 flex items-stretch">
+                {/* Blue band with GB */}
+                <div className="flex flex-col items-center justify-center bg-[#003399] text-white px-1.5 py-1 rounded-l-md">
+                  <div className="flex flex-col items-center leading-none">
+                    <span className="text-[8px] font-bold">🇬🇧</span>
+                    <span className="text-[8px] font-bold tracking-tight">UK</span>
+                  </div>
+                </div>
+                {/* Yellow plate input */}
+                <input
+                  value={plate}
+                  onChange={(e) => setPlate(e.target.value.toUpperCase())}
+                  placeholder="AB12 CDE"
+                  className="flex-1 border-2 border-l-0 border-black bg-[#FFD038] text-black placeholder:text-gray-600 px-3 py-2 text-base sm:text-lg uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-black rounded-r-md font-bold"
+                  style={{ 
+                    fontFamily: "'UK Number Plate', 'Charles Wright', 'Courier New', monospace",
+                    letterSpacing: '0.15em'
+                  }}
+                />
+              </div>
             </div>
             <button
               type="button"
               onClick={submitPlateSearch}
               disabled={plateLoading}
-              className="justify-self-start md:justify-self-end inline-flex items-center gap-1.5 rounded-md bg-yellow-500 text-black font-semibold px-3 py-2 text-sm hover:bg-yellow-600 disabled:opacity-50 transition-all"
+              className="justify-self-start md:justify-self-end inline-flex items-center gap-1.5 rounded-md bg-yellow-500 text-black font-semibold px-4 py-2.5 text-sm hover:bg-yellow-600 disabled:opacity-50 transition-all"
             >
               {plateLoading ? (
                 <>
@@ -85,7 +99,7 @@ export default function HomeHero() {
                 </>
               ) : (
                 <>
-                  <SearchIcon size={14} />
+                  <SearchIcon size={16} />
                   <span className="text-xs sm:text-sm">Search</span>
                 </>
               )}
