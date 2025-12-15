@@ -47,11 +47,8 @@ export default function Home() {
       </div>
 
       {/* Featured rows */}
-      {/* @ts-ignore Server -> Client import allowed */}
       <FeaturedRow title="New this week" variant="new" />
-      {/* @ts-ignore Server -> Client import allowed */}
       <FeaturedRow title="Under £250" variant="under250" />
-      {/* @ts-ignore Server -> Client import allowed */}
       <FeaturedRow title="Under £20" variant="under20" />
 
       {/* Suggested parts (personalized via API) */}

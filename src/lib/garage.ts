@@ -82,6 +82,12 @@ export function fallbackCarImage(): string {
 
 /* --------- Owner side (signed-in user) --------- */
 export function loadMyCars(): Car[] {
+  const cars = readCarsFromStorage();
+  maybeSyncActiveCar(cars);
+  return cars;
+}
+
+function readCarsFromStorage(): Car[] {
   try {
     const raw = localStorage.getItem(K_CARS());
     const arr = raw ? JSON.parse(raw) : [];
@@ -94,7 +100,7 @@ export function loadMyCars(): Car[] {
         model: String(obj.model ?? ""),
         year: String(obj.year ?? ""),
         image: typeof obj.image === "string" && obj.image ? obj.image : undefined,
-        photos: Array.isArray(obj.photos) ? obj.photos.filter(p => typeof p === "string") : undefined,
+        photos: Array.isArray(obj.photos) ? obj.photos.filter((p) => typeof p === "string") : undefined,
         color: typeof obj.color === "string" ? obj.color : undefined,
         registration: typeof obj.registration === "string" ? obj.registration : undefined,
         hideRegistration: obj.hideRegistration === true,
@@ -124,6 +130,7 @@ export function saveMyCars(cars: Car[]) {
   localStorage.setItem(K_CARS(), JSON.stringify(cars));
   window.dispatchEvent(new Event("ms:garage"));
   if (isPublic()) publishPublicCopy();
+  maybeSyncActiveCar(cars);
 }
 
 /** Sanitize car data for public viewing - removes sensitive information */
@@ -159,6 +166,7 @@ export function setSelectedCarId(id: string | null) {
   if (!id) localStorage.removeItem(K_SELECTED());
   else localStorage.setItem(K_SELECTED(), id);
   window.dispatchEvent(new Event("ms:garage"));
+  maybeSyncActiveCar();
 }
 
 export function isPublic(): boolean {
@@ -169,6 +177,58 @@ export async function setPublic(pub: boolean, username?: string) {
   if (pub) await publishPublicCopy(username);
   else await removePublicCopy(username);
   window.dispatchEvent(new Event("ms:garage"));
+}
+
+type ActiveCarSyncPayload = {
+  id?: string;
+  make?: string;
+  model?: string;
+  year?: number;
+};
+
+const ACTIVE_CAR_SYNC_ENDPOINT = "/api/garage/active";
+let lastSyncedActiveCarJSON: string | null = null;
+
+function maybeSyncActiveCar(cars?: Car[]) {
+  if (typeof window === "undefined") return;
+  const list = Array.isArray(cars) ? cars : readCarsFromStorage();
+  const selectedId = getSelectedCarId();
+  const active = selectedId ? list.find((c) => c.id === selectedId) : list[0];
+  const payload = buildSyncPayload(active);
+  const serialized = JSON.stringify(payload ?? null);
+  if (serialized === lastSyncedActiveCarJSON) return;
+  lastSyncedActiveCarJSON = serialized;
+  void syncServerActiveCar(payload);
+}
+
+function buildSyncPayload(car?: Car): ActiveCarSyncPayload | null {
+  if (!car) return null;
+  const make = String(car.make ?? "").trim();
+  const model = String(car.model ?? "").trim();
+  const yearNumber = Number(String(car.year ?? "").replace(/[^\d]/g, ""));
+  const payload: ActiveCarSyncPayload = {};
+  if (car.id) payload.id = String(car.id);
+  if (make) payload.make = make;
+  if (model) payload.model = model;
+  if (Number.isFinite(yearNumber)) payload.year = yearNumber;
+  if (!payload.id && !payload.make && !payload.model && typeof payload.year !== "number") {
+    return null;
+  }
+  return payload;
+}
+
+async function syncServerActiveCar(payload: ActiveCarSyncPayload | null) {
+  if (typeof fetch === "undefined") return;
+  try {
+    await fetch(ACTIVE_CAR_SYNC_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ car: payload }),
+      keepalive: true,
+    });
+  } catch {
+    // Swallow network errors; UI will remain functional without server personalization
+  }
 }
 
 /* --------- Public copy (for others to view) --------- */

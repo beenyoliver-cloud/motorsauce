@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { supabase as supabaseServerAnon } from "@/lib/supabaseServer";
 
 export const dynamic = "force-dynamic";
+
+const ACTIVE_CAR_COOKIE = "ms_active_car";
 
 // Use anon key server client to respect RLS
 const supabase = supabaseServerAnon;
@@ -40,15 +43,34 @@ function mapRow(row: ListingRow) {
 
 export async function POST(req: Request) {
   try {
-  const body = await req.json().catch(() => ({} as { garage?: unknown; searches?: unknown }));
-  const garage: GarageCar[] = Array.isArray(body?.garage) ? (body.garage as GarageCar[]) : [];
+    const body = await req.json().catch(() => ({} as { garage?: unknown; searches?: unknown }));
+    const garage: GarageCar[] = Array.isArray(body?.garage) ? (body.garage as GarageCar[]) : [];
     const searches: string[] = Array.isArray(body?.searches) ? body.searches : [];
 
-  const results = new Map<string | number, ListingRow>();
+    // Also read active car from cookie for server-side personalization
+    const cookieStore = await cookies();
+    const activeCarRaw = cookieStore.get(ACTIVE_CAR_COOKIE)?.value;
+    let activeCar: GarageCar | null = null;
+    if (activeCarRaw) {
+      try {
+        const parsed = JSON.parse(activeCarRaw);
+        if (parsed?.make || parsed?.model) {
+          activeCar = { make: parsed.make, model: parsed.model };
+        }
+      } catch {}
+    }
 
-    // Gather makes/models from garage
-    const makes = Array.from(new Set(garage.map((c) => (c.make || "").trim()).filter(Boolean)));
-    const models = Array.from(new Set(garage.map((c) => (c.model || "").trim()).filter(Boolean)));
+    const results = new Map<string | number, ListingRow>();
+
+    // Gather makes/models from garage + active car cookie
+    const makes = Array.from(new Set([
+      ...garage.map((c) => (c.make || "").trim()).filter(Boolean),
+      ...(activeCar?.make ? [activeCar.make.trim()] : []),
+    ]));
+    const models = Array.from(new Set([
+      ...garage.map((c) => (c.model || "").trim()).filter(Boolean),
+      ...(activeCar?.model ? [activeCar.model.trim()] : []),
+    ]));
 
     // Query by make
     if (makes.length) {

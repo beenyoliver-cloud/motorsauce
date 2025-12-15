@@ -1,10 +1,7 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { cache } from "react";
+import { cookies } from "next/headers";
 import SafeImage from "@/components/SafeImage";
-import { supabaseBrowser } from "@/lib/supabase";
-import { ListingCardSkeleton } from "@/components/skeletons/Skeletons";
 import { HotBadgeSmall } from "@/components/HotBadge";
 
 type Listing = {
@@ -14,9 +11,20 @@ type Listing = {
   image: string;
   createdAt: string;
   viewCount: number;
+  make?: string;
+  model?: string;
+  year?: number;
 };
 
-export default function FeaturedRow({
+type ActiveCarPreference = {
+  make?: string;
+  model?: string;
+  year?: number;
+};
+
+const ACTIVE_CAR_COOKIE = "ms_active_car";
+
+export default async function FeaturedRow({
   title,
   variant = "new",
   limit = 12,
@@ -25,154 +33,10 @@ export default function FeaturedRow({
   variant?: "new" | "under250" | "under20";
   limit?: number;
 }) {
-  const [items, setItems] = useState<Listing[]>([]);
-  const [loading, setLoading] = useState(true);
+  const allListings = await getListingPool();
+  const activeCar = await readActiveCarPreference();
+  const items = pickVariant(allListings, variant, limit, activeCar);
 
-  useEffect(() => {
-    let alive = true;
-    async function load() {
-      try {
-        const res = await fetch("/api/listings?limit=200", { cache: "no-store" });
-        const rows = (await res.json()) as unknown;
-        let list: Listing[] = Array.isArray(rows) ? (rows as Listing[]) : [];
-
-        // Fallback: if API fails or returns non-array/empty, query Supabase directly (public anon, RLS enforced)
-        if (!Array.isArray(rows) || list.length === 0) {
-          try {
-            const sb = supabaseBrowser();
-            const { data, error } = await sb
-              .from("listings")
-              .select("*")
-              .eq("status", "active")
-              .order("created_at", { ascending: false })
-              .limit(50);
-
-            if (!error && Array.isArray(data)) {
-              list = (data as any[]).map((row) => {
-                const images: string[] = Array.isArray(row.images) && row.images.length
-                  ? row.images
-                  : row.image_url
-                  ? [row.image_url]
-                  : row.image
-                  ? [row.image]
-                  : [];
-                const price =
-                  typeof row.price_cents === "number"
-                    ? "£" + (row.price_cents / 100).toFixed(2)
-                    : typeof row.price === "number"
-                    ? "£" + Number(row.price).toFixed(2)
-                    : typeof row.price === "string"
-                    ? row.price.startsWith("£")
-                      ? row.price
-                      : `£${row.price}`
-                    : "£0.00";
-                const createdAt = row.created_at || new Date().toISOString();
-                const viewCount = typeof row.view_count === "number" ? row.view_count : 0;
-                return {
-                  id: row.id,
-                  title: row.title,
-                  price,
-                  image: images[0] || "/images/placeholder.jpg",
-                  createdAt,
-                  viewCount,
-                } as Listing;
-              });
-            }
-          } catch (e) {
-            // Ignore fallback errors; we'll just show empty state
-          }
-        }
-        // Parse price helper
-        const priceOf = (l: Listing) => Number(String(l.price).replace(/[^\d.]/g, ""));
-
-        // Filter by price cap for variants
-        if (variant === "under250" || variant === "under20") {
-          const cap = variant === "under20" ? 20 : 250;
-          list = list.filter((l) => {
-            const n = priceOf(l);
-            return Number.isFinite(n) && n <= cap;
-          });
-        }
-
-        // Personalization: prioritize items that fit user's active car
-        try {
-          const { loadMyCars } = await import("@/lib/garage");
-          const cars = loadMyCars();
-          const active = cars?.[0];
-
-          if (active) {
-            const mk = String(active.make || "").trim().toLowerCase();
-            const md = String(active.model || "").trim().toLowerCase();
-            const yr = Number(String(active.year || "").replace(/[^\d]/g, ""));
-
-            const score = (l: Listing) => {
-              // We only have the public Listing shape here; rely on title heuristics for fit
-              // Prefer exact make/model mentions in title and cheap price for under variants
-              const t = String(l.title || "").toLowerCase();
-              let s = 0;
-              if (mk && t.includes(mk)) s += 2;
-              if (md && t.includes(md)) s += 2;
-              if (Number.isFinite(yr)) {
-                // Loose year match in title (e.g., 2016/16, 2008-2012)
-                if (t.includes(String(yr))) s += 1;
-              }
-              // Slightly prefer cheaper within cap
-              const p = priceOf(l);
-              if (Number.isFinite(p)) s += Math.max(0, 3 - Math.log10(Math.max(1, p)));
-              return s;
-            };
-
-            // Sort by score desc, then recency by createdAt (if variant === 'new')
-            list = list
-              .slice()
-              .sort((a, b) => {
-                const sb = score(b) - score(a);
-                if (sb !== 0) return sb;
-                if (variant === "new") {
-                  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-                }
-                return 0;
-              });
-          } else if (variant === "under250" || variant === "under20") {
-            // No car selected: randomize under-cap selection for variety
-            list = list
-              .map((l) => ({ l, r: Math.random() }))
-              .sort((a, b) => a.r - b.r)
-              .map(({ l }) => l);
-          }
-        } catch {
-          // If garage import fails (SSR/edge or privacy), just continue with existing order
-        }
-
-        if (alive) setItems(list.slice(0, limit));
-      } catch {
-        if (alive) setItems([]);
-      } finally {
-        if (alive) setLoading(false);
-      }
-    }
-    load();
-    return () => {
-      alive = false;
-    };
-  }, [variant, limit]);
-
-  if (loading) {
-    return (
-      <section className="mb-8">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xl font-bold text-black">{title}</h2>
-        </div>
-        <div className="-mx-1 overflow-x-auto">
-          <div className="px-1 flex gap-3">
-            {[...Array(Math.min(limit, 8))].map((_, i) => (
-              <ListingCardSkeleton key={i} />
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
   if (!items.length) return null;
 
   return (
@@ -204,4 +68,120 @@ export default function FeaturedRow({
       </div>
     </section>
   );
+}
+
+const getListingPool = cache(async (): Promise<Listing[]> => {
+  try {
+    const res = await fetch("/api/listings?limit=200", { cache: "no-store" });
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (!Array.isArray(data)) return [];
+    return data as Listing[];
+  } catch {
+    return [];
+  }
+});
+
+function pickVariant(
+  listings: Listing[],
+  variant: "new" | "under250" | "under20",
+  limit: number,
+  activeCar: ActiveCarPreference | null
+) {
+  const safeLimit = Number.isFinite(limit) ? limit : 12;
+  const cap = variant === "under20" ? 20 : variant === "under250" ? 250 : null;
+  const filtered = listings.filter((listing) => {
+    if (!cap) return true;
+    return priceOf(listing) <= cap;
+  });
+
+  const pref = normalizeActiveCar(activeCar);
+  const hasPref = !!(pref.make || pref.model || typeof pref.year === "number");
+
+  if (hasPref) {
+    return filtered
+      .slice()
+      .sort((a, b) => {
+        const diff = scoreListing(b, pref) - scoreListing(a, pref);
+        if (diff !== 0) return diff;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      })
+      .slice(0, safeLimit);
+  }
+
+  if (cap && filtered.length > safeLimit) {
+    return filtered
+      .map((item) => ({ item, r: Math.random() }))
+      .sort((a, b) => a.r - b.r)
+      .map(({ item }) => item)
+      .slice(0, safeLimit);
+  }
+
+  return filtered.slice(0, safeLimit);
+}
+
+async function readActiveCarPreference(): Promise<ActiveCarPreference | null> {
+  const cookieStore = await cookies();
+  const raw = cookieStore.get(ACTIVE_CAR_COOKIE)?.value;
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const make = typeof parsed.make === "string" ? parsed.make : undefined;
+    const model = typeof parsed.model === "string" ? parsed.model : undefined;
+    const yearValue =
+      typeof parsed.year === "number"
+        ? parsed.year
+        : typeof parsed.year === "string"
+        ? Number(parsed.year.replace(/[^\d]/g, ""))
+        : undefined;
+    if (!make && !model && !yearValue) return null;
+    const preference: ActiveCarPreference = {};
+    if (make) preference.make = make;
+    if (model) preference.model = model;
+    if (Number.isFinite(yearValue)) preference.year = yearValue;
+    return preference;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeActiveCar(pref: ActiveCarPreference | null) {
+  return {
+    make: pref?.make ? pref.make.toLowerCase().trim() : "",
+    model: pref?.model ? pref.model.toLowerCase().trim() : "",
+    year: typeof pref?.year === "number" && Number.isFinite(pref.year) ? pref.year : undefined,
+  };
+}
+
+function scoreListing(listing: Listing, pref: ReturnType<typeof normalizeActiveCar>) {
+  let score = 0;
+  const title = String(listing.title || "").toLowerCase();
+  if (pref.make) {
+    const listingMake = String(listing.make || "").toLowerCase();
+    if (listingMake === pref.make) score += 3;
+    else if (title.includes(pref.make)) score += 2;
+  }
+  if (pref.model) {
+    const listingModel = String(listing.model || "").toLowerCase();
+    if (listingModel === pref.model) score += 3;
+    else if (title.includes(pref.model)) score += 2;
+  }
+  if (typeof pref.year === "number") {
+    if (typeof listing.year === "number" && listing.year === pref.year) {
+      score += 1;
+    } else if (title.includes(String(pref.year))) {
+      score += 1;
+    }
+  }
+
+  const p = priceOf(listing);
+  if (Number.isFinite(p)) {
+    score += Math.max(0, 3 - Math.log10(Math.max(1, p)));
+  }
+  return score;
+}
+
+function priceOf(listing: Listing) {
+  const value = Number(String(listing.price).replace(/[^\d.]/g, ""));
+  return Number.isFinite(value) ? value : Number.POSITIVE_INFINITY;
 }
