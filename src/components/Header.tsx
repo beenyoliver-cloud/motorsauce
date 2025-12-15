@@ -396,6 +396,11 @@ export default function Header() {
           </Link>
         </div>
 
+        {/* Search bar */}
+        <div className="px-2 pb-1">
+          <SearchBar placeholder="Search parts or sellers…" compact />
+        </div>
+
         {/* Categories dropdown bar - styled like desktop */}
         <div className="px-2 pb-1.5">
           <MobileCategoriesDropdown categories={categories} />
