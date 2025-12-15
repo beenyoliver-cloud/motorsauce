@@ -11,6 +11,7 @@ import {
   readPublicGarage,
   vehicleLabel,
   fallbackCarImage,
+  loadGarageFromDatabase,
 } from "@/lib/garage";
 import { VEHICLES, YEARS } from "@/data/vehicles";
 import {
@@ -163,9 +164,18 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
 
   useEffect(() => {
     if (mine) {
+      // First load from localStorage
       setCars(loadMyCars());
       setSelectedId(getSelectedCarId());
       setPubState(isPublic());
+      
+      // Then try to sync from database (for logged-in users)
+      loadGarageFromDatabase().then((dbCars) => {
+        if (dbCars && dbCars.length > 0) {
+          setCars(dbCars);
+        }
+      });
+      
       const onGarage = () => {
         setCars(loadMyCars());
         setSelectedId(getSelectedCarId());

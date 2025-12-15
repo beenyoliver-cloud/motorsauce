@@ -129,8 +129,85 @@ function readCarsFromStorage(): Car[] {
 export function saveMyCars(cars: Car[]) {
   localStorage.setItem(K_CARS(), JSON.stringify(cars));
   window.dispatchEvent(new Event("ms:garage"));
+  // Always sync to database for logged-in users (regardless of public visibility)
+  void syncGarageToDatabase(cars);
   if (isPublic()) publishPublicCopy();
   maybeSyncActiveCar(cars);
+}
+
+/** Sync garage to database for permanent storage */
+async function syncGarageToDatabase(cars: Car[]) {
+  try {
+    const { supabaseBrowser } = await import("./supabase");
+    const supabase = supabaseBrowser();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      // Not logged in, can't sync to database
+      return;
+    }
+    
+    const username = await currentUsername();
+    if (!username) return;
+    
+    const selected = getSelectedCarId();
+    const isPub = isPublic();
+    
+    // Sync to database - this ensures garage persists across devices/browsers
+    await fetch("/api/garage", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        username,
+        cars: isPub ? cars.map(sanitizeCarForPublic) : cars,
+        selected_car_id: selected,
+        is_public: isPub,
+      }),
+    });
+  } catch (err) {
+    console.error("Failed to sync garage to database:", err);
+  }
+}
+
+/** Load garage from database and merge with localStorage */
+export async function loadGarageFromDatabase(): Promise<Car[] | null> {
+  try {
+    const { supabaseBrowser } = await import("./supabase");
+    const supabase = supabaseBrowser();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) return null;
+    
+    const { data: garage, error } = await supabase
+      .from("public_garages")
+      .select("cars, selected_car_id, is_public")
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+    
+    if (error || !garage) return null;
+    
+    const cars = Array.isArray(garage.cars) ? garage.cars as Car[] : [];
+    
+    // Update localStorage with database data
+    if (cars.length > 0) {
+      localStorage.setItem(K_CARS(), JSON.stringify(cars));
+      if (garage.selected_car_id) {
+        localStorage.setItem(K_SELECTED(), garage.selected_car_id);
+      }
+      if (garage.is_public) {
+        localStorage.setItem(K_VIS(), "1");
+      }
+      window.dispatchEvent(new Event("ms:garage"));
+    }
+    
+    return cars;
+  } catch (err) {
+    console.error("Failed to load garage from database:", err);
+    return null;
+  }
 }
 
 /** Sanitize car data for public viewing - removes sensitive information */
