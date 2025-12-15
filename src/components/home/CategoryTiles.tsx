@@ -4,12 +4,12 @@ import Link from "next/link";
 import { Settings, Sparkles, Disc3, Container, Wind, Wrench } from "lucide-react";
 
 const tiles = [
-  { label: "OEM Parts", href: "/search?category=OEM", icon: Settings },
-  { label: "Aftermarket", href: "/search?category=Aftermarket", icon: Sparkles },
+  { label: "OEM Parts", href: "/search?category=oem", icon: Settings },
+  { label: "Aftermarket", href: "/search?category=aftermarket", icon: Sparkles },
   { label: "Brakes", href: "/search?q=brake", icon: Disc3 },
   { label: "Suspension", href: "/search?q=coilover", icon: Container },
   { label: "Exhausts", href: "/search?q=exhaust", icon: Wind },
-  { label: "Tools & More", href: "/search?category=Tool", icon: Wrench },
+  { label: "Tools & More", href: "/search?category=tools", icon: Wrench },
 ];
 
 export default function CategoryTiles() {

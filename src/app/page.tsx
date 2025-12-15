@@ -11,6 +11,7 @@ import SellCta from "@/components/home/SellCta";
 import LiveActivityFeed from "@/components/home/LiveActivityFeed";
 import JustSoldTicker from "@/components/home/JustSoldTicker";
 import TrustSignals from "@/components/home/TrustSignals";
+import TrendingChips from "@/components/home/TrendingChips";
 
 import SEOJsonLd from "@/components/SEOJsonLd";
 
@@ -25,6 +26,8 @@ export default function Home() {
         <HeroCarousel />
         {/* @ts-ignore Server -> Client import allowed */}
         <HomeHero />
+        {/* Quick discovery chips (curated + recent) */}
+        <TrendingChips />
       </div>
 
       {/* Trust signals strip */}

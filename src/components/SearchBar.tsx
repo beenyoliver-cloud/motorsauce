@@ -147,13 +147,13 @@ export default function SearchBar({ initialQuery = "", placeholder = "Search par
   return (
     <div ref={wrapperRef} className="relative w-full">
       <form onSubmit={handleSubmit} className="relative">
-        <div className={`flex items-center w-full border border-gray-300 rounded-full focus-within:ring-2 focus-within:ring-yellow-400 bg-white shadow-sm ${compact ? "pl-3 pr-1 py-1" : "pl-4 pr-1 py-1.5"}`}>
+        <div className={`flex items-center w-full border border-gray-300 rounded-full focus-within:ring-2 focus-within:ring-yellow-400 bg-white shadow-sm ${compact ? "pl-3 pr-1 py-0.5" : "pl-4 pr-1 py-1"}`}>
           {/* Category Dropdown - only show on desktop */}
           <div className="relative flex-shrink-0 hidden sm:block">
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className={`appearance-none border-none bg-transparent pr-6 focus:ring-0 text-gray-700 font-medium cursor-pointer ${compact ? "text-xs" : "text-sm"}`}
+              className={`appearance-none border-none bg-transparent pr-5 focus:ring-0 text-gray-700 font-medium cursor-pointer ${compact ? "text-xs" : "text-sm"}`}
               aria-label="Category"
             >
               {CATEGORIES.map((cat) => (
@@ -162,7 +162,7 @@ export default function SearchBar({ initialQuery = "", placeholder = "Search par
                 </option>
               ))}
             </select>
-            <ChevronDown size={14} className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <ChevronDown size={14} className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             <div className="absolute right-0 top-0 bottom-0 w-px bg-gray-200 mr-2" />
           </div>
           
