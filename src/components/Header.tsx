@@ -282,7 +282,7 @@ export default function Header() {
     <>
       {/* Mobile header (md:hidden) - Compact two-row design */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        {/* Top row: Menu, Logo, Cart */}
+        {/* Top row: Menu, Logo, Icons */}
         <div className="h-11 flex items-center justify-between px-2">
           {/* Left: Menu button */}
           <button
@@ -302,19 +302,33 @@ export default function Header() {
             />
           </Link>
 
-          {/* Right: Cart icon */}
-          <Link
-            href="/basket"
-            aria-label="Open basket"
-            className="relative flex items-center justify-center text-black hover:text-yellow-500 w-9 h-9"
-          >
-            <ShoppingCart size={20} />
-            {cartCount > 0 && (
-              <span className="absolute top-0 right-0 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[9px] font-bold min-w-[16px] h-[16px] px-0.5">
-                {cartCount > 9 ? '9+' : cartCount}
-              </span>
+          {/* Right: Notifications, Profile, Cart - tight spacing */}
+          <div className="flex items-center">
+            {isUserLoaded && user && (
+              <>
+                <NotificationsDropdown />
+                <Link
+                  href={profileHref}
+                  aria-label="Profile"
+                  className="flex items-center justify-center text-black hover:text-yellow-500 w-8 h-9"
+                >
+                  <User size={20} />
+                </Link>
+              </>
             )}
-          </Link>
+            <Link
+              href="/basket"
+              aria-label="Open basket"
+              className="relative flex items-center justify-center text-black hover:text-yellow-500 w-8 h-9"
+            >
+              <ShoppingCart size={20} />
+              {cartCount > 0 && (
+                <span className="absolute top-0.5 right-0 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[9px] font-bold min-w-[15px] h-[15px] px-0.5">
+                  {cartCount > 9 ? '9+' : cartCount}
+                </span>
+              )}
+            </Link>
+          </div>
         </div>
 
         {/* Search bar - always visible */}
