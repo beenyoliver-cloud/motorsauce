@@ -67,7 +67,6 @@ function readCartCount(): number {
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const [user, setUser] = useState<LocalUser | null>(null);
   const [avatar, setAvatar] = useState<string | null>(null);
@@ -281,13 +280,13 @@ export default function Header() {
 
   return (
     <>
-      {/* Mobile header (md:hidden) - Compact single-row design */}
+      {/* Mobile header (md:hidden) - Compact two-row design */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        {/* Main row: Menu, Logo, Icons */}
-        <div className="h-12 flex items-center justify-between px-3">
+        {/* Top row: Menu, Logo, Cart */}
+        <div className="h-11 flex items-center justify-between px-2">
           {/* Left: Menu button */}
           <button
-            className="flex items-center justify-center text-black hover:text-yellow-500 w-9 h-9 -ml-1"
+            className="flex items-center justify-center text-black hover:text-yellow-500 w-9 h-9"
             aria-label="Toggle menu"
             onClick={() => setMobileMenuOpen((v) => !v)}
           >
@@ -299,39 +298,28 @@ export default function Header() {
             <img
               src="/images/croppedlogo.png"
               alt="Motorsource"
-              className="h-[28px] w-auto"
+              className="h-[26px] w-auto"
             />
           </Link>
 
-          {/* Right: Search + Cart icons */}
-          <div className="flex items-center gap-1">
-            <button
-              className="flex items-center justify-center text-black hover:text-yellow-500 w-9 h-9"
-              aria-label="Search"
-              onClick={() => setMobileSearchOpen((v) => !v)}
-            >
-              <SearchIcon size={20} />
-            </button>
-            <Link
-              href="/basket"
-              aria-label="Open basket"
-              className="relative flex items-center justify-center text-black hover:text-yellow-500 w-9 h-9"
-            >
-              <ShoppingCart size={20} />
-              {cartCount > 0 && (
-                <span className="absolute top-0.5 right-0.5 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[9px] font-bold min-w-[16px] h-[16px] px-0.5">
-                  {cartCount > 9 ? '9+' : cartCount}
-                </span>
-              )}
-            </Link>
-          </div>
+          {/* Right: Cart icon */}
+          <Link
+            href="/basket"
+            aria-label="Open basket"
+            className="relative flex items-center justify-center text-black hover:text-yellow-500 w-9 h-9"
+          >
+            <ShoppingCart size={20} />
+            {cartCount > 0 && (
+              <span className="absolute top-0 right-0 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[9px] font-bold min-w-[16px] h-[16px] px-0.5">
+                {cartCount > 9 ? '9+' : cartCount}
+              </span>
+            )}
+          </Link>
         </div>
 
-        {/* Expandable search bar */}
-        <div className={`overflow-hidden transition-all duration-200 ${mobileSearchOpen ? "max-h-14 opacity-100" : "max-h-0 opacity-0"}`}>
-          <div className="px-3 pb-2">
-            <SearchBar placeholder="Search parts or sellers…" compact autoFocus={mobileSearchOpen} />
-          </div>
+        {/* Search bar - always visible */}
+        <div className="px-2 pb-2">
+          <SearchBar placeholder="Search parts or sellers…" compact />
         </div>
       </div>
 

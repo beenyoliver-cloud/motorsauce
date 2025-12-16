@@ -13,8 +13,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body className="min-h-screen bg-white text-gray-900">
         <Header />
-        {/* Offset for fixed header: larger on mobile (custom ~120px), 60px on md+ */}
-        <div className="pt-[128px] md:pt-[60px]">
+        {/* Offset for fixed header: ~84px on mobile, 60px on md+ */}
+        <div className="pt-[84px] md:pt-[60px]">
           {/* Warning banner for users with active warnings */}
           <WarningBanner />
           <LayoutClient>
