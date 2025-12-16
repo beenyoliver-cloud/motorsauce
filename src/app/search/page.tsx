@@ -438,6 +438,17 @@ function SearchPageInner() {
           {/* Horizontal scrollable filter bubbles - Mobile only */}
           <div className="md:hidden -mx-3 sm:-mx-4">
             <div className="flex gap-2 overflow-x-auto px-3 sm:px-4 py-1 scrollbar-hide snap-x snap-mandatory">
+              {/* Filters button - first in list */}
+              <button
+                onClick={() => setMobileFiltersOpen(true)}
+                className="flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium bg-black text-white hover:bg-gray-800 snap-start flex items-center gap-1.5"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filters
+              </button>
+
               {/* Category filters */}
               {["OEM", "Aftermarket", "Tool"].map((cat) => (
                 <button
@@ -485,14 +496,6 @@ function SearchPageInner() {
                   {cond}
                 </button>
               ))}
-
-              {/* More filters button */}
-              <button
-                onClick={() => setMobileFiltersOpen(true)}
-                className="flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium bg-gray-100 border border-gray-300 text-gray-900 hover:bg-gray-200 snap-start"
-              >
-                More Filters
-              </button>
             </div>
           </div>
 

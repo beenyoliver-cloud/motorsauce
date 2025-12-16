@@ -407,12 +407,28 @@ export default function SearchFiltersSidebar(props: Props) {
       {/* Desktop: render sidebar as a normal grid column, sticky inside (no overlap with footer) */}
       <div className="hidden md:block">{Panel}</div>
 
-      {/* Mobile drawer (unchanged) */}
+      {/* Mobile drawer - full height with scroll */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/40" onClick={onMobileClose} aria-hidden />
-          <div className="absolute top-0 left-0 h-full w-[86%] bg-white shadow-xl">
-            {Panel}
+          <div className="absolute top-0 left-0 h-full w-[86%] max-w-[320px] bg-white shadow-xl flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 shrink-0">
+              <span className="font-semibold text-gray-900">Filters</span>
+              <button
+                onClick={onMobileClose}
+                className="p-1 text-gray-500 hover:text-gray-900"
+                aria-label="Close filters"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {/* Scrollable content */}
+            <div className="flex-1 overflow-y-auto overscroll-contain">
+              {Panel}
+            </div>
           </div>
         </div>
       )}
