@@ -11,6 +11,7 @@ type ContactSellerButtonProps = {
   sellerId?: string;
   listingId: string | number;
   listingTitle?: string;
+  className?: string;
 };
 
 export default function ContactSellerButton({
@@ -18,6 +19,7 @@ export default function ContactSellerButton({
   sellerId,
   listingId,
   listingTitle,
+  className = "",
 }: ContactSellerButtonProps) {
   const router = useRouter();
   const me = getCurrentUserSync();
@@ -59,7 +61,7 @@ export default function ContactSellerButton({
     <button
       onClick={handleClick}
       disabled={isOwn}
-      className="inline-flex items-center justify-center gap-2 rounded-lg border-2 border-gray-900 bg-white px-5 py-2.5 font-semibold text-gray-900 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+      className={`inline-flex items-center justify-center gap-2 rounded-lg border-2 border-gray-900 bg-white px-5 py-2.5 font-semibold text-gray-900 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition ${className}`}
       title={isOwn ? "You can't message yourself" : "Contact seller"}
     >
       <MessageCircle size={18} />

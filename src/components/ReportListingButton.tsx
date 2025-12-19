@@ -4,7 +4,13 @@
 import { useState } from "react";
 import { addReport, hideListingForUser } from "@/lib/moderationStore";
 
-export default function ReportListingButton({ listingId }: { listingId: string | number }) {
+export default function ReportListingButton({
+  listingId,
+  className = "",
+}: {
+  listingId: string | number;
+  className?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
 
@@ -21,7 +27,7 @@ export default function ReportListingButton({ listingId }: { listingId: string |
     <>
       <button
         onClick={() => setOpen(true)}
-        className="rounded-md border border-gray-300 bg-white px-3 py-2 text-xs text-gray-800 hover:bg-gray-50"
+        className={`rounded-md border border-gray-300 bg-white px-3 py-2 text-xs text-gray-800 hover:bg-gray-50 ${className}`}
       >
         Report listing
       </button>

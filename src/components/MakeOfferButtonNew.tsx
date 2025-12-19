@@ -13,6 +13,7 @@ type MakeOfferButtonNewProps = {
   listingTitle: string;
   listingImage?: string;
   listingPrice?: number;
+  className?: string;
 };
 
 export default function MakeOfferButtonNew({
@@ -22,6 +23,7 @@ export default function MakeOfferButtonNew({
   listingTitle,
   listingImage,
   listingPrice = 0,
+  className = "",
 }: MakeOfferButtonNewProps) {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -60,7 +62,7 @@ export default function MakeOfferButtonNew({
     return (
       <button
         disabled
-        className="rounded-md px-4 py-2 text-sm font-semibold bg-gray-200 text-gray-500 cursor-not-allowed"
+        className={`rounded-md px-4 py-2 text-sm font-semibold bg-gray-200 text-gray-500 cursor-not-allowed ${className}`}
       >
         Loading...
       </button>
@@ -75,7 +77,7 @@ export default function MakeOfferButtonNew({
           isOwnListing
             ? "bg-gray-200 text-gray-500 cursor-not-allowed"
             : "bg-yellow-500 text-black hover:bg-yellow-600"
-        }`}
+        } ${className}`}
         disabled={isOwnListing}
         title={
           isOwnListing

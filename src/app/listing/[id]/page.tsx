@@ -22,7 +22,7 @@ import SellerResponseTimeBadge from "@/components/SellerResponseTimeBadge";
 // Temporarily disabled: import PriceReducedBadge from "@/components/PriceReducedBadge";
 // Temporarily disabled: import PriceHistoryChart from "@/components/PriceHistoryChart";
 import { createClient } from "@supabase/supabase-js";
-import { AlertTriangle, Clock3, ListChecks, MapPin, ShieldCheck, TrendingUp } from "lucide-react";
+import { AlertTriangle, Clock3, ListChecks, MapPin, PlusCircle, ShieldCheck, ShoppingCart, TrendingUp } from "lucide-react";
 
 // Ensure this page always renders dynamically at runtime on Vercel
 export const dynamic = "force-dynamic";
@@ -604,20 +604,17 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
 
         {/* ---------- Details ---------- */}
         <div className="space-y-3 sm:space-y-4">
-          {/* Title + Save */}
-          <div className="flex items-start justify-between gap-2 sm:gap-3">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-black leading-tight">{listing.title}</h1>
-              <div className="mt-1 text-xs sm:text-sm text-gray-700">
-                {listing.category} • {listing.condition}
-                {listing.year ? ` • ${listing.year}` : ""}
-                {listing.oem ? ` • OEM ${listing.oem}` : ""}
-                {(listing.make || listing.model || listing.genCode || listing.engine) && (
-                  <> • {[listing.make, listing.model, listing.genCode, listing.engine].filter(Boolean).join(" ")}</>
-                )}
-              </div>
+          {/* Title */}
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-black leading-tight">{listing.title}</h1>
+            <div className="mt-1 text-xs sm:text-sm text-gray-700">
+              {listing.category} • {listing.condition}
+              {listing.year ? ` • ${listing.year}` : ""}
+              {listing.oem ? ` • OEM ${listing.oem}` : ""}
+              {(listing.make || listing.model || listing.genCode || listing.engine) && (
+                <> • {[listing.make, listing.model, listing.genCode, listing.engine].filter(Boolean).join(" ")}</>
+              )}
             </div>
-            <FavoriteButton listingId={String(listing.id)} />
           </div>
 
           {/* Price + Badge */}
@@ -627,40 +624,66 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
           </div>
 
           {/* CTAs */}
-          <div className="flex flex-wrap gap-3 pt-1">
-            <Link
-              href={`/basket/add?listing=${encodeURIComponent(String(listing.id))}&redirect=checkout`}
-              className="inline-flex items-center justify-center rounded-md bg-yellow-500 px-5 py-2.5 font-semibold text-black hover:bg-yellow-600"
-            >
-              Buy now
-            </Link>
-            <Link
-              href={`/basket/add?listing=${encodeURIComponent(String(listing.id))}`}
-              className="inline-flex items-center justify-center rounded-md border border-gray-500 bg-white px-5 py-2.5 text-gray-900 hover:bg-gray-100"
-            >
-              Add to basket
-            </Link>
-
-            {/* Make Offer (persistent messaging; auto-disables on own listing) */}
-            <MakeOfferButtonNew
-              sellerName={listing.seller?.name || "Seller"}
-              sellerId={listing.sellerId as string}
-              listingId={listing.id}
-              listingTitle={listing.title}
-              listingImage={gallery[0] || listing.image}
-              listingPrice={Number(String(listing.price).replace(/[^\d.]/g, "")) || 0}
-            />
-
-            {/* Contact Seller (auto-disables on own listing) */}
-            <ContactSellerButton
-              sellerName={listing.seller?.name || "Seller"}
-              sellerId={listing.sellerId}
-              listingId={listing.id}
-              listingTitle={listing.title}
-            />
-
-            {/* Report listing (Trust & Safety MVP) */}
-            <ReportListingButton listingId={listing.id} />
+          <div className="pt-1">
+            <div className="rounded-2xl border border-gray-200 bg-white/90 p-5 shadow-sm shadow-gray-200 space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Purchase options</p>
+                  <p className="text-sm text-gray-600">Buyer protection keeps funds in escrow until you confirm delivery.</p>
+                </div>
+                <ShieldCheck className="h-5 w-5 text-gray-700 flex-shrink-0" />
+              </div>
+              <Link
+                href={`/basket/add?listing=${encodeURIComponent(String(listing.id))}&redirect=checkout`}
+                className="flex w-full items-center justify-between gap-4 rounded-2xl bg-yellow-500 px-5 py-4 text-black shadow-lg shadow-yellow-200 transition hover:bg-yellow-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="rounded-full bg-black/10 p-2 text-black">
+                    <ShoppingCart className="h-5 w-5" />
+                  </span>
+                  <div className="text-left">
+                    <p className="text-base font-semibold leading-tight">Buy now</p>
+                    <p className="text-xs font-medium text-black/70">Secure checkout • tap and pay</p>
+                  </div>
+                </div>
+                <span className="text-sm font-semibold">Checkout →</span>
+              </Link>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <Link
+                  href={`/basket/add?listing=${encodeURIComponent(String(listing.id))}`}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-gray-900 bg-white px-4 py-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-50"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  Add to basket
+                </Link>
+                <MakeOfferButtonNew
+                  sellerName={listing.seller?.name || "Seller"}
+                  sellerId={listing.sellerId as string}
+                  listingId={listing.id}
+                  listingTitle={listing.title}
+                  listingImage={gallery[0] || listing.image}
+                  listingPrice={Number(String(listing.price).replace(/[^\d.]/g, "")) || 0}
+                  className="w-full justify-center rounded-xl border-2 border-yellow-500 bg-white text-yellow-700 hover:bg-yellow-50"
+                />
+                <ContactSellerButton
+                  sellerName={listing.seller?.name || "Seller"}
+                  sellerId={listing.sellerId}
+                  listingId={listing.id}
+                  listingTitle={listing.title}
+                  className="w-full justify-center bg-gray-900 text-white hover:bg-black"
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <FavoriteButton
+                  listingId={String(listing.id)}
+                  className="flex-1 min-w-[140px] justify-center text-sm font-semibold"
+                />
+                <ReportListingButton
+                  listingId={listing.id}
+                  className="flex-1 min-w-[140px] border-red-200 text-red-700 hover:bg-red-50"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Seller Actions Bar (owner only) */}
