@@ -520,6 +520,8 @@ export default function BusinessSettingsPage() {
       helper: "Submit compliance documents to unlock selling.",
     },
   };
+  const currentStatusMeta = verificationStatusMeta[verificationStatus];
+  const CurrentStatusIcon = currentStatusMeta?.icon;
 
   if (loading) {
     return (
@@ -562,13 +564,13 @@ export default function BusinessSettingsPage() {
                   Upload compliance documents so the trust team can approve your storefront.
                 </p>
               </div>
-              {verificationStatusMeta[verificationStatus] && (
+              {currentStatusMeta && (
                 <div className="text-right">
-                  <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold ${verificationStatusMeta[verificationStatus].className}`}>
-                    <verificationStatusMeta[verificationStatus].icon className="h-4 w-4" />
-                    {verificationStatusMeta[verificationStatus].label}
+                  <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold ${currentStatusMeta.className}`}>
+                    {CurrentStatusIcon && <CurrentStatusIcon className="h-4 w-4" />}
+                    {currentStatusMeta.label}
                   </span>
-                  <p className="mt-1 text-xs text-gray-500">{verificationStatusMeta[verificationStatus].helper}</p>
+                  <p className="mt-1 text-xs text-gray-500">{currentStatusMeta.helper}</p>
                 </div>
               )}
             </div>
