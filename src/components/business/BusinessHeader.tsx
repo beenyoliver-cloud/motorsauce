@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { BusinessProfile } from "./BusinessStorefront";
 import { Building2, CheckCircle, Settings, Phone, Globe, Mail } from "lucide-react";
@@ -8,18 +9,39 @@ import { Building2, CheckCircle, Settings, Phone, Globe, Mail } from "lucide-rea
 type Props = {
   business: BusinessProfile;
   isOwner: boolean;
+  onColorsDetected?: (colors: { primary: string; secondary: string; accent: string }) => void;
 };
 
-export default function BusinessHeader({ business, isOwner }: Props) {
+export default function BusinessHeader({ business, isOwner, onColorsDetected }: Props) {
   const [bannerError, setBannerError] = useState(false);
   const [logoError, setLogoError] = useState(false);
-  const primary = business.brand_primary_color || "#facc15";
-  const secondary = business.brand_secondary_color || "#0f172a";
-  const accent = business.brand_accent_color || "#fde68a";
+  const [detectedColors, setDetectedColors] = useState<{ primary: string; secondary: string; accent: string } | null>(null);
+  const primary = business.brand_primary_color || detectedColors?.primary || "#facc15";
+  const secondary = business.brand_secondary_color || detectedColors?.secondary || "#0f172a";
+  const accent = business.brand_accent_color || detectedColors?.accent || "#fde68a";
   const quickActions = quickActionButtons(business);
   
   const bannerUrl = business.banner_url;
   const logoUrl = business.logo_url || business.avatar;
+
+  useEffect(() => {
+    if (!logoUrl || business.brand_primary_color || !onColorsDetected) return;
+    let cancelled = false;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = logoUrl;
+    img.onload = () => {
+      if (cancelled) return;
+      const palette = extractPalette(img);
+      if (palette) {
+        setDetectedColors(palette);
+        onColorsDetected(palette);
+      }
+    };
+    return () => {
+      cancelled = true;
+    };
+  }, [logoUrl, business.brand_primary_color, onColorsDetected]);
 
   return (
     <div className="bg-white">
@@ -172,4 +194,66 @@ function quickActionButtons(business: BusinessProfile) {
     });
   }
   return items;
+}
+
+function extractPalette(image: HTMLImageElement) {
+  try {
+    const canvas = document.createElement("canvas");
+    const maxSize = 80;
+    const ratio = Math.max(image.width, image.height) / maxSize || 1;
+    canvas.width = Math.max(1, Math.floor(image.width / ratio));
+    canvas.height = Math.max(1, Math.floor(image.height / ratio));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let r = 0;
+    let g = 0;
+    let b = 0;
+    let count = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      const alpha = data[i + 3];
+      if (alpha < 50) continue;
+      r += data[i];
+      g += data[i + 1];
+      b += data[i + 2];
+      count += 1;
+    }
+    if (!count) return null;
+    const avg = {
+      r: Math.round(r / count),
+      g: Math.round(g / count),
+      b: Math.round(b / count),
+    };
+    const primary = rgbToCss(avg);
+    const secondary = rgbToCss(darken(avg, 30));
+    const accent = rgbToCss(lighten(avg, 30));
+    return { primary, secondary, accent };
+  } catch {
+    return null;
+  }
+}
+
+function rgbToCss({ r, g, b }: { r: number; g: number; b: number }) {
+  return `rgb(${clamp(r)}, ${clamp(g)}, ${clamp(b)})`;
+}
+
+function clamp(value: number) {
+  return Math.max(0, Math.min(255, Math.round(value)));
+}
+
+function darken(color: { r: number; g: number; b: number }, amount: number) {
+  return {
+    r: clamp(color.r - amount),
+    g: clamp(color.g - amount),
+    b: clamp(color.b - amount),
+  };
+}
+
+function lighten(color: { r: number; g: number; b: number }, amount: number) {
+  return {
+    r: clamp(color.r + amount),
+    g: clamp(color.g + amount),
+    b: clamp(color.b + amount),
+  };
 }

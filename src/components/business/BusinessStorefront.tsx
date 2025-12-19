@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { CSSProperties, useState } from "react";
+import { CSSProperties, useState, useMemo, useCallback } from "react";
+import type { ReactNode } from "react";
 import BusinessHeader from "./BusinessHeader";
 import BusinessStats from "./BusinessStats";
 import BusinessAbout from "./BusinessAbout";
@@ -57,13 +58,30 @@ type Props = {
 
 export default function BusinessStorefront({ business, isOwner }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('catalogue');
-  const themeStyles: CSSProperties = {
-    "--brand-primary": business.brand_primary_color || "#facc15",
-    "--brand-secondary": business.brand_secondary_color || "#0f172a",
-    "--brand-accent": business.brand_accent_color || "#fde68a",
-  } as CSSProperties;
+  const [theme, setTheme] = useState({
+    primary: business.brand_primary_color || "#facc15",
+    secondary: business.brand_secondary_color || "#0f172a",
+    accent: business.brand_accent_color || "#fde68a",
+  });
+  const themeStyles: CSSProperties = useMemo(
+    () =>
+      ({
+        "--brand-primary": theme.primary,
+        "--brand-secondary": theme.secondary,
+        "--brand-accent": theme.accent,
+      }) as CSSProperties,
+    [theme]
+  );
+  const handleColorsDetected = useCallback(
+    (colors: { primary: string; secondary: string; accent: string }) => {
+      setTheme((prev) =>
+        prev.primary === colors.primary && prev.secondary === colors.secondary ? prev : colors
+      );
+    },
+    []
+  );
 
-  const tabs: Array<{ id: Tab; label: string; icon: React.ReactNode }> = [
+  const tabs: Array<{ id: Tab; label: string; icon: ReactNode }> = [
     { id: 'catalogue', label: 'Catalogue', icon: <Boxes className="h-4 w-4" /> },
     { id: 'about', label: 'About', icon: <Info className="h-4 w-4" /> },
     { id: 'reviews', label: `Reviews (${business.review_count})`, icon: <StarIcon className="h-4 w-4" /> },
@@ -86,12 +104,17 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
     telephone: business.phone_number || undefined,
     sameAs: business.website_url ? [business.website_url] : undefined,
   };
+  const specialtyCollections =
+    (business.specialties && business.specialties.length > 0
+      ? business.specialties
+      : ["Performance", "OEM sourcing", "Detailing", "Wheels & tyres"]
+    ).slice(0, 4);
 
   return (
     <div className="min-h-screen bg-white" style={themeStyles}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* Business Header with Banner */}
-      <BusinessHeader business={business} isOwner={isOwner} />
+      <BusinessHeader business={business} isOwner={isOwner} onColorsDetected={handleColorsDetected} />
 
       {/* Stats Bar */}
       <div className="relative -mt-10 px-4">
@@ -146,6 +169,63 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
         </div>
       </div>
 
+      {specialtyCollections.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 mt-6 space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900">Featured collections</h3>
+            <Link href="#catalogue" className="text-sm text-yellow-600 hover:text-yellow-700">
+              Browse catalogue →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {specialtyCollections.map((collection) => (
+              <Link
+                key={collection}
+                href={`/search?q=${encodeURIComponent(collection)}`}
+                className="rounded-2xl border border-gray-200 bg-gradient-to-br from-[var(--brand-secondary,#0f172a)]/90 to-[var(--brand-secondary,#0f172a)]/60 text-white px-4 py-5 shadow hover:shadow-lg transition"
+              >
+                <p className="text-xs uppercase tracking-[0.3em] text-white/70">Collection</p>
+                <p className="mt-1 text-xl font-semibold">{collection}</p>
+                <p className="text-sm text-white/80 mt-2">Tap to view curated stock tagged for this specialty.</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto px-4 mt-6">
+        <div className="rounded-3xl border border-gray-200 bg-white p-6 flex flex-col lg:flex-row gap-4 shadow">
+          <div className="flex-1">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Testimonials</p>
+            <p className="mt-1 text-2xl font-semibold text-gray-900">
+              {business.review_count > 0
+                ? `Loved by ${business.review_count}+ customers`
+                : "New shop gathering reviews"}
+            </p>
+            <p className="mt-2 text-sm text-gray-700 leading-relaxed">
+              {business.review_count > 0
+                ? "Buyers frequently mention fast responses and carefully packaged parts. Explore their reviews to see recent feedback."
+                : "Be the first to leave a review and help other enthusiasts learn about this seller."}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex -space-x-2">
+              {[1, 2, 3].map((i) => (
+                <span key={i} className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-600 text-sm font-semibold border border-white shadow">
+                  {i}
+                </span>
+              ))}
+            </div>
+            <Link
+              href="#reviews"
+              className="ml-auto inline-flex items-center justify-center rounded-full bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-400"
+            >
+              Read reviews
+            </Link>
+          </div>
+        </div>
+      </div>
+
       {/* Navigation Tabs */}
       <div className="bg-white border-b sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4">
@@ -170,9 +250,21 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {activeTab === 'catalogue' && <BusinessCatalogue businessId={business.id} isOwner={isOwner} />}
-        {activeTab === 'about' && <BusinessAbout business={business} />}
-        {activeTab === 'reviews' && <BusinessReviews businessId={business.id} business={business} />}
+        {activeTab === 'catalogue' && (
+          <div id="catalogue">
+            <BusinessCatalogue businessId={business.id} isOwner={isOwner} />
+          </div>
+        )}
+        {activeTab === 'about' && (
+          <div id="about">
+            <BusinessAbout business={business} />
+          </div>
+        )}
+        {activeTab === 'reviews' && (
+          <div id="reviews">
+            <BusinessReviews businessId={business.id} business={business} />
+          </div>
+        )}
         {activeTab === 'contact' && <BusinessContact business={business} />}
       </div>
     </div>
