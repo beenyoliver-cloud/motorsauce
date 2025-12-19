@@ -100,6 +100,7 @@ export default function RecentlyViewedRow() {
                 >
                   <Link
                     href={`/listing/${listing.id}`}
+                    data-listing-card={String(listing.id)}
                     className="block border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg hover:border-gray-300 transition-all duration-200"
                   >
                     {/* Image */}

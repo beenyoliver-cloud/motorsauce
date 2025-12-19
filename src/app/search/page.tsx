@@ -590,6 +590,7 @@ function SearchPageInner() {
                 {paginatedResults.map((l) => (
                   <div
                     key={l.id}
+                    data-listing-card={String(l.id)}
                     className="group relative border border-gray-200 rounded-md overflow-hidden bg-white hover:shadow-lg transition-all sm:rounded-xl"
                   >
                   <Link href={`/listing/${l.id}`} className="flex items-center gap-3 sm:block">

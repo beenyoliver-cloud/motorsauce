@@ -296,9 +296,9 @@ export default function Header() {
           {/* Center: Logo */}
           <Link href="/" aria-label="Motorsource home" className="absolute left-1/2 -translate-x-1/2">
             <img
-              src="/images/croppedlogo.png"
-              alt="Motorsource"
-              className="h-[26px] w-auto"
+              src="/images/MSlogoreal.png"
+              alt="Motorsauce"
+              className="h-[28px] w-auto"
             />
           </Link>
 
@@ -351,9 +351,9 @@ export default function Header() {
             <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between shrink-0">
               <Link href="/" aria-label="Motorsource home">
                 <img
-                  src="/images/croppedlogo.png"
-                  alt="Motorsource"
-                  className="h-[32px] w-auto"
+                  src="/images/MSlogoreal.png"
+                  alt="Motorsauce"
+                  className="h-[34px] w-auto"
                 />
               </Link>
               <button
@@ -547,12 +547,12 @@ export default function Header() {
       )}
 
       {/* Desktop header (>= md) */}
-      <nav className="hidden md:flex w-full h-[60px] bg-white border-b border-gray-200 items-center justify-between px-6 shadow-sm fixed top-0 z-40">
-        <Link href="/" aria-label="Motorsource home" className="flex-shrink-0">
+      <nav className="hidden md:flex w-full h-[64px] bg-white border-b border-gray-200 items-center justify-between px-6 shadow-sm fixed top-0 z-40">
+        <Link href="/" aria-label="Motorsauce home" className="flex-shrink-0">
           <img
-            src="/images/croppedlogo.png"
-            alt="Motorsource"
-            className="h-[40px] w-auto"
+            src="/images/MSlogoreal.png"
+            alt="Motorsauce"
+            className="h-[42px] w-auto"
           />
         </Link>
 

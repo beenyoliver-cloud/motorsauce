@@ -11,10 +11,11 @@ function TabLink({ href, label, isActive }: { href: string; label: string; isAct
   return (
     <Link
       href={href}
-      className={`px-4 py-2 text-sm rounded-full border transition ${
+      aria-current={isActive ? "page" : undefined}
+      className={`px-4 py-2 text-sm rounded-2xl border transition shadow-sm ${
         isActive
-          ? "bg-yellow-500 text-black border-yellow-500"
-          : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+          ? "bg-slate-900 text-white border-slate-900 shadow-slate-900/20"
+          : "bg-white/90 text-gray-700 border-gray-200 hover:border-yellow-400"
       }`}
     >
       {label}

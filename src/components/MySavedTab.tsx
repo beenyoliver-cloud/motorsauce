@@ -88,7 +88,7 @@ export default function MySavedTab() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
       {savedListings.map((l) => (
-        <Link key={l.id} href={`/listing/${l.id}`} className="block border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition">
+        <Link key={l.id} href={`/listing/${l.id}`} data-listing-card={String(l.id)} className="block border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition">
           <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
             <span className="absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded bg-yellow-500 text-black z-10">Saved</span>
             <SafeImage src={l.image} alt={l.title} className="absolute inset-0 w-full h-full object-cover object-center" />

@@ -5,10 +5,9 @@ import { Star, Clock, TrendingUp, MessageCircle } from "lucide-react";
 
 type Props = {
   business: BusinessProfile;
-  className?: string;
 };
 
-export default function BusinessStats({ business, className = "" }: Props) {
+export default function BusinessStats({ business }: Props) {
   const formatResponseTime = (minutes: number | null) => {
     if (!minutes) return "N/A";
     if (minutes < 60) return `${minutes} mins`;
@@ -45,7 +44,8 @@ export default function BusinessStats({ business, className = "" }: Props) {
 
   return (
     <div
-      className={`text-white bg-gradient-to-br from-[var(--brand-secondary,#0f172a)] to-[#020617] ${className}`}
+      className="text-white border-b border-slate-900/20"
+      style={{ background: "linear-gradient(120deg, var(--brand-secondary, #0f172a), #020617)" }}
     >
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

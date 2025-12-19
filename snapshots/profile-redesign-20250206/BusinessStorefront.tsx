@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { CSSProperties, useState } from "react";
 import BusinessHeader from "./BusinessHeader";
 import BusinessStats from "./BusinessStats";
@@ -8,7 +7,6 @@ import BusinessAbout from "./BusinessAbout";
 import BusinessCatalogue from "./BusinessCatalogue";
 import BusinessReviews from "./BusinessReviews";
 import BusinessContact from "./BusinessContact";
-import { Boxes, Info, Star as StarIcon, PhoneCall } from "lucide-react";
 
 export type BusinessProfile = {
   id: string;
@@ -63,11 +61,11 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
     "--brand-accent": business.brand_accent_color || "#fde68a",
   } as CSSProperties;
 
-  const tabs: Array<{ id: Tab; label: string; icon: JSX.Element }> = [
-    { id: 'catalogue', label: 'Catalogue', icon: <Boxes className="h-4 w-4" /> },
-    { id: 'about', label: 'About', icon: <Info className="h-4 w-4" /> },
-    { id: 'reviews', label: `Reviews (${business.review_count})`, icon: <StarIcon className="h-4 w-4" /> },
-    { id: 'contact', label: 'Contact', icon: <PhoneCall className="h-4 w-4" /> },
+  const tabs: { id: Tab; label: string; icon: string }[] = [
+    { id: 'catalogue', label: 'Catalogue', icon: '' },
+    { id: 'about', label: 'About', icon: '' },
+    { id: 'reviews', label: `Reviews (${business.review_count})`, icon: '' },
+    { id: 'contact', label: 'Contact', icon: '' },
   ];
 
   const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://motorsauce.vercel.app';
@@ -94,74 +92,25 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
       <BusinessHeader business={business} isOwner={isOwner} />
 
       {/* Stats Bar */}
-      <div className="relative -mt-10 px-4">
-        <div className="max-w-7xl mx-auto">
-          <BusinessStats business={business} className="rounded-3xl shadow-2xl border border-white/10 overflow-hidden" />
-        </div>
-      </div>
-
-      {/* Highlights */}
-      <div className="max-w-7xl mx-auto px-4 mt-6 grid gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-2">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">About the shop</p>
-          <p className="text-sm text-gray-700 leading-relaxed">
-            {business.about_business && business.about_business.trim().length > 0
-              ? business.about_business.slice(0, 180) + (business.about_business.length > 180 ? "…" : "")
-              : "This business hasn’t shared their story yet. Browse their catalogue or contact them for more details."}
-          </p>
-          <Link href="#about" className="text-sm font-semibold text-yellow-600 hover:text-yellow-700">
-            Learn more →
-          </Link>
-        </div>
-        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-2">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Specialities</p>
-          <div className="flex flex-wrap gap-2">
-            {(business.specialties && business.specialties.length > 0
-              ? business.specialties
-              : ["OEM sourcing", "Fast dispatch", "Verified seller"]
-            ).slice(0, 6).map((chip) => (
-              <span key={chip} className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-800">
-                {chip}
-              </span>
-            ))}
-          </div>
-        </div>
-        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-2">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Customer care</p>
-          <p className="text-sm text-gray-700">
-            Avg response time:{" "}
-            <span className="font-semibold">
-              {business.avg_response_time_minutes ? `${Math.round((business.avg_response_time_minutes || 0) / 60)}h` : "New seller"}
-            </span>
-          </p>
-          <p className="text-sm text-gray-700">
-            Response rate:{" "}
-            <span className="font-semibold">
-              {business.response_rate ? `${business.response_rate}%` : "Building reputation"}
-            </span>
-          </p>
-          <p className="text-xs text-gray-500">
-            Contact them any time via Motorsauce chat or their preferred channels.
-          </p>
-        </div>
-      </div>
+      <BusinessStats business={business} />
 
       {/* Navigation Tabs */}
       <div className="bg-white border-b sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4">
-          <nav className="flex space-x-4 overflow-x-auto py-2">
+          <nav className="flex space-x-8 overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition ${
+                className={`py-4 px-2 font-medium text-sm border-b-2 whitespace-nowrap transition-colors ${
                   activeTab === tab.id
-                    ? 'bg-[var(--brand-primary)] text-black border-[var(--brand-primary)] shadow'
-                    : 'bg-white text-gray-700 border-gray-200 hover:border-yellow-400'
+                    ? 'text-[var(--brand-primary)]'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
                 }`}
+                style={{ borderColor: activeTab === tab.id ? "var(--brand-primary)" : undefined }}
               >
-                {tab.icon}
-                <span>{tab.label}</span>
+                <span className="mr-2">{tab.icon}</span>
+                {tab.label}
               </button>
             ))}
           </nav>

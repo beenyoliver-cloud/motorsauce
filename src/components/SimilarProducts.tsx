@@ -72,6 +72,7 @@ export default function SimilarProducts({ listingId, limit = 6 }: SimilarProduct
           <Link
             key={product.id}
             href={`/listing/${product.id}`}
+            data-listing-card={String(product.id)}
             className="group block overflow-hidden rounded-lg border border-gray-200 bg-white transition hover:shadow-md"
           >
             <div className="aspect-square overflow-hidden bg-gray-50">

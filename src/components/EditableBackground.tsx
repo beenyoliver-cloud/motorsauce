@@ -7,11 +7,13 @@ import { isMe } from '@/lib/auth';
 export default function EditableBackground({
   displayName,
   backgroundUrl,
-  className = ''
+  className = '',
+  heightClass = 'h-32 md:h-48',
 }: {
   displayName: string;
   backgroundUrl?: string | null;
   className?: string;
+  heightClass?: string;
 }) {
   const [src, setSrc] = useState<string | null>(backgroundUrl || null);
   const [canEdit, setCanEdit] = useState(false);
@@ -80,7 +82,7 @@ export default function EditableBackground({
 
   return (
     <div className={`relative group ${className}`}>
-      <div className="h-32 md:h-48 w-full overflow-hidden bg-gradient-to-r from-gray-800 to-gray-600">
+      <div className={`${heightClass} w-full overflow-hidden bg-gradient-to-r from-gray-800 to-gray-600`}>
         {src && (
           // eslint-disable-next-line @next/next/no-img-element
           <img 

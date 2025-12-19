@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { BusinessProfile } from "./BusinessStorefront";
-import { Building2, CheckCircle, Settings, Phone, Globe, Mail } from "lucide-react";
+import { Building2, CheckCircle, Settings } from "lucide-react";
 
 type Props = {
   business: BusinessProfile;
@@ -16,7 +16,6 @@ export default function BusinessHeader({ business, isOwner }: Props) {
   const primary = business.brand_primary_color || "#facc15";
   const secondary = business.brand_secondary_color || "#0f172a";
   const accent = business.brand_accent_color || "#fde68a";
-  const quickActions = quickActionButtons(business);
   
   const bannerUrl = business.banner_url;
   const logoUrl = business.logo_url || business.avatar;
@@ -124,52 +123,9 @@ export default function BusinessHeader({ business, isOwner }: Props) {
                 ))}
               </div>
             )}
-            {quickActions.length > 0 && (
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {quickActions.map((action) => (
-                  <a
-                    key={action.label}
-                    href={action.href}
-                    target={action.external ? "_blank" : undefined}
-                    rel={action.external ? "noreferrer" : undefined}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-900 hover:border-yellow-400 transition"
-                  >
-                    {action.icon}
-                    {action.label}
-                  </a>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       </div>
     </div>
   );
-}
-
-function quickActionButtons(business: BusinessProfile) {
-  const items: Array<{ label: string; href: string; icon: ReactNode; external?: boolean }> = [];
-  if (business.phone_number) {
-    items.push({
-      label: "Call shop",
-      href: `tel:${business.phone_number}`,
-      icon: <Phone className="h-4 w-4 text-gray-700" />,
-    });
-  }
-  if (business.customer_support_email) {
-    items.push({
-      label: "Email support",
-      href: `mailto:${business.customer_support_email}`,
-      icon: <Mail className="h-4 w-4 text-gray-700" />,
-    });
-  }
-  if (business.website_url) {
-    items.push({
-      label: "Visit website",
-      href: business.website_url,
-      icon: <Globe className="h-4 w-4 text-gray-700" />,
-      external: true,
-    });
-  }
-  return items;
 }

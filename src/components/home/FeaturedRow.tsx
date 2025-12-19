@@ -51,6 +51,7 @@ export default async function FeaturedRow({
             <Link
               key={p.id}
               href={`/listing/${p.id}`}
+              data-listing-card={String(p.id)}
               className="group min-w-[160px] max-w-[200px] sm:min-w-[200px] sm:max-w-[240px] border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-md hover:border-yellow-400 transition-colors duration-200"
             >
               <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">

@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 
 type Props = {
-  src: string;             // can include or omit extension
+  src: string;
   alt: string;
   className?: string;
   loading?: "eager" | "lazy";
@@ -11,24 +11,75 @@ type Props = {
 };
 
 const EXT_CHAIN = ["jpg", "jpeg", "png", "webp"];
+const BRAND_FALLBACK = "/images/motorsource_logo_square.png";
 
 function buildCandidates(input: string): string[] {
-  // If the path already has an extension, strip it and try multiple
-  const m = input.match(/^(.*?)(\.(jpg|jpeg|png|webp))?$/i);
-  const base = (m?.[1] || input).trim();
+  const trimmed = (input || "").trim();
+  if (!trimmed) return [];
+  const m = trimmed.match(/^(.*?)(\.(jpg|jpeg|png|webp))?$/i);
+  const base = (m?.[1] || trimmed).trim();
   return EXT_CHAIN.map((ext) => `${base}.${ext}`);
 }
 
 export default function SafeImage({ src, alt, className, loading = "lazy", draggable }: Props) {
   const candidates = useMemo(() => buildCandidates(src), [src]);
-  const [i, setI] = useState(0);
+  const [currentSrc, setCurrentSrc] = useState<string>(() => candidates[0] || src || BRAND_FALLBACK);
+  const [attempt, setAttempt] = useState(0);
+  const [usedFallback, setUsedFallback] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
 
-  // Stop at the last candidate; if all fail, keep the last URL (so layout stays stable)
-  const onError = () => setI((p) => (p < candidates.length - 1 ? p + 1 : p));
+  useEffect(() => {
+    setAttempt(0);
+    setUsedFallback(false);
+    setCurrentSrc(candidates[0] || src || BRAND_FALLBACK);
+  }, [src, candidates]);
+
+  const hideListingCard = () => {
+    const el = imgRef.current?.closest("[data-listing-card]");
+    if (el instanceof HTMLElement) {
+      el.style.display = "none";
+      el.setAttribute("data-hidden-reason", "image-missing");
+      return el.getAttribute("data-listing-card") || null;
+    }
+    return null;
+  };
+
+  const handleFinalFailure = () => {
+    const listingId = hideListingCard();
+    if (!usedFallback) {
+      setUsedFallback(true);
+      setCurrentSrc(BRAND_FALLBACK);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("ms:listing-image-missing", {
+            detail: { src, listingId },
+          })
+        );
+      }
+    } else {
+      if (typeof window !== "undefined" && listingId) {
+        window.dispatchEvent(
+          new CustomEvent("ms:listing-image-missing", {
+            detail: { src, listingId },
+          })
+        );
+      }
+    }
+  };
+
+  const onError = () => {
+    if (!usedFallback && attempt < candidates.length - 1) {
+      setAttempt((prev) => prev + 1);
+      setCurrentSrc(candidates[attempt + 1]);
+      return;
+    }
+    handleFinalFailure();
+  };
 
   return (
     <img
-      src={candidates[i]}
+      ref={imgRef}
+      src={currentSrc}
       alt={alt}
       className={className}
       loading={loading}

@@ -171,6 +171,7 @@ export default function SuggestedParts({ limit = 12 }: Props) {
           filteredListings.map((p) => (
             <article
               key={p.id}
+              data-listing-card={String(p.id)}
               className="min-w-[230px] max-w-[260px] snap-start rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all flex flex-col"
             >
               <Link href={`/listing/${p.id}`} className="block relative aspect-[4/3] overflow-hidden rounded-t-2xl">

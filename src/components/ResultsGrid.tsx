@@ -139,6 +139,7 @@ export default function ResultsGrid() {
         <Link
           key={String(l.id)}
           href={`/listing/${l.id}`}
+          data-listing-card={String(l.id)}
           className="flex items-center gap-3 border border-gray-200 rounded-md overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition sm:block"
         >
           {/* Image: fixed 120x120 on mobile, full width card on sm+ */}
