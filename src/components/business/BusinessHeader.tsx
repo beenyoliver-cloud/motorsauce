@@ -75,9 +75,9 @@ export default function BusinessHeader({ business, isOwner, onColorsDetected }: 
       {/* Business Info - Improved mobile layout */}
       <div className="max-w-7xl mx-auto px-3 md:px-4 -mt-12 md:-mt-16 relative z-10 pb-4">
         <div className="flex flex-col md:flex-row items-start md:items-end gap-3 md:gap-4">
-          {/* Logo - Smaller on mobile */}
+          {/* Logo - Larger for better visibility */}
           <div className="flex-shrink-0">
-            <div className="w-20 h-20 md:w-32 md:h-32 rounded-lg md:rounded-xl bg-white shadow-lg md:shadow-xl border-2 md:border-4 border-white overflow-hidden">
+            <div className="w-24 h-24 md:w-40 md:h-40 rounded-lg md:rounded-xl bg-white shadow-lg md:shadow-xl border-2 md:border-4 border-white overflow-hidden">
               {logoUrl && !logoError ? (
                 <img
                   src={logoUrl}
@@ -87,7 +87,7 @@ export default function BusinessHeader({ business, isOwner, onColorsDetected }: 
                 />
               ) : (
                 <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                  <Building2 className="w-8 h-8 md:w-16 md:h-16 text-gray-400" />
+                  <Building2 className="w-10 h-10 md:w-20 md:h-20 text-gray-400" />
                 </div>
               )}
             </div>
