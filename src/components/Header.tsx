@@ -269,8 +269,7 @@ export default function Header() {
 
   const profileLinks = [
     ["My Profile", profileHref],
-     ["My Orders", "/orders"],
-    ["My Offers", "/offers-standalone"],
+    ["My Orders", "/orders"],
     ["Saved Searches", "/saved-searches"],
     ["My Messages", "/messages"],
     ["Previous Sales", "/sales"],
@@ -400,14 +399,6 @@ export default function Header() {
                   <span className="text-xs">Messages</span>
                 </Link>
                 <Link
-                  href="/offers-standalone"
-                  className="flex flex-col items-center gap-1 text-gray-600 hover:text-yellow-600"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Tag size={20} />
-                  <span className="text-xs">Offers</span>
-                </Link>
-                <Link
                   href="/sell"
                   className="flex flex-col items-center gap-1 text-gray-600 hover:text-yellow-600"
                   onClick={() => setMobileMenuOpen(false)}
@@ -484,13 +475,6 @@ export default function Header() {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     My Messages {unread > 0 ? `(${unread})` : ""}
-                  </Link>
-                  <Link
-                    href="/offers-standalone"
-                    className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    My Offers
                   </Link>
                   <Link
                     href="/sales"

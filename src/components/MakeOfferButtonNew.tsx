@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import MakeOfferModal from "./MakeOfferModal";
 import { supabaseBrowser } from "@/lib/supabase";
+import { createThread } from "@/lib/messagesClient";
 
 type MakeOfferButtonNewProps = {
   sellerName: string;
@@ -53,9 +54,14 @@ export default function MakeOfferButtonNew({
     setIsModalOpen(true);
   }
 
-  function handleOfferCreated() {
-    // Redirect to offers page after successful creation
-    router.push("/offers-standalone");
+  async function handleOfferCreated() {
+    setIsModalOpen(false);
+    const thread = await createThread(sellerId, String(listingId));
+    if (thread) {
+      router.push(`/messages/${encodeURIComponent(thread.id)}?offer=new`);
+    } else {
+      router.push("/messages");
+    }
   }
 
   if (isLoading) {

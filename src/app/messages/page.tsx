@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { MessageCircle, CheckSquare, Square, Trash2, X, Search, ShieldAlert } from "lucide-react";
+import { MessageCircle, CheckSquare, Square, Trash2, X, Search, ShieldAlert, Sparkles } from "lucide-react";
 import { fetchThreads, Thread, deleteThread, markThreadRead, markThreadUnread } from "@/lib/messagesClient";
 import { displayName } from "@/lib/names";
 import { supabaseBrowser } from "@/lib/supabase";
@@ -26,6 +26,10 @@ export default function MessagesPage() {
     { id: "offers", label: "Offers" },
     { id: "business", label: "Business buyers" },
   ];
+  const formatGBP = (amountCents?: number) => {
+    if (typeof amountCents !== "number") return "—";
+    return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(amountCents / 100);
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -212,7 +216,9 @@ export default function MessagesPage() {
 
   const unreadCount = threads.filter(t => !t.isRead).length;
   const needsReplyCount = threads.filter(t => t.needsReply).length;
-  const openOfferCount = threads.filter(t => t.openOffer).length;
+  const offerThreads = threads.filter(t => Boolean(t.openOffer));
+  const pendingOfferThreads = threads.filter(t => Boolean(t.openOffer?.needsResponse));
+  const openOfferCount = offerThreads.length;
 
   if (!mounted || loading) {
     return (
@@ -271,6 +277,42 @@ export default function MessagesPage() {
             </div>
           </div>
         </div>
+        {pendingOfferThreads.length > 0 && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-emerald-900">
+                  {pendingOfferThreads.length === 1
+                    ? "You have an offer waiting for a response."
+                    : `${pendingOfferThreads.length} offers need your response.`}
+                </p>
+                <p className="text-sm text-emerald-800">
+                  Reply, counter, or accept inside chat—offers live alongside the conversation.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {pendingOfferThreads.slice(0, 3).map((thread) => (
+                <Link
+                  key={thread.id}
+                  href={`/messages/${encodeURIComponent(thread.id)}`}
+                  className="inline-flex items-center gap-2 rounded-full bg-white text-emerald-900 text-xs font-semibold px-3 py-1 border border-emerald-200 hover:border-emerald-400 transition"
+                >
+                  Review {displayName(thread.peer.name)}
+                </Link>
+              ))}
+              <button
+                onClick={() => setViewFilter("offers")}
+                className="inline-flex items-center gap-2 rounded-full bg-emerald-600 text-white text-xs font-semibold px-3 py-1 hover:bg-emerald-700 transition"
+              >
+                View all offers
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="border-b border-gray-200 px-4 py-3 space-y-3">
@@ -394,7 +436,6 @@ export default function MessagesPage() {
                 });
                 const badges: string[] = [];
                 if (t.needsReply) badges.push("Needs reply");
-                if (t.openOffer) badges.push("Offer pending");
                 if (t.peer.businessVerified) badges.push("Verified seller");
 
                 const Avatar = () => {
@@ -475,6 +516,20 @@ export default function MessagesPage() {
                               {badge}
                             </span>
                           ))}
+                        </div>
+                      )}
+                      {t.openOffer && (
+                        <div
+                          className={`mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold border ${
+                            t.openOffer.needsResponse
+                              ? "bg-rose-50 border-rose-200 text-rose-800"
+                              : "bg-indigo-50 border-indigo-200 text-indigo-800"
+                          }`}
+                        >
+                          <span>
+                            {t.openOffer.needsResponse ? "Offer needs response" : "Offer sent"}
+                          </span>
+                          <span>{formatGBP(t.openOffer.amountCents)}</span>
                         </div>
                       )}
                       {t.listing?.title && (

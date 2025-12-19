@@ -35,6 +35,9 @@ export type Thread = {
     status: string;
     amountCents: number;
     currency: string;
+    fromSelf?: boolean;
+    needsResponse?: boolean;
+    createdAt?: string | null;
   } | null;
   createdAt: string;
 };

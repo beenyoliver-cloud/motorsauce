@@ -160,17 +160,34 @@ export async function GET(req: Request) {
     }
 
     // Fetch open offers for quick filtering
-    const offerMap = new Map<string, { id: string; amount_cents: number; currency: string; status: string }>();
+    type OfferMeta = {
+      id: string;
+      amount_cents: number;
+      currency: string;
+      status: string;
+      starter_id: string;
+      recipient_id: string;
+      created_at: string | null;
+    };
+    const offerMap = new Map<string, OfferMeta>();
     if (threadIds.length > 0) {
       const { data: offerRows, error: offerError } = await supabase
         .from("offers")
-        .select("id, thread_id, amount_cents, currency, status")
+        .select("id, thread_id, amount_cents, currency, status, starter_id, recipient_id, created_at")
         .in("thread_id", threadIds)
-        .in("status", ["pending", "countered"]);
+        .in("status", ["pending", "countered"])
+        .order("created_at", { ascending: false });
       if (!offerError && offerRows) {
         offerRows.forEach((offer) => {
-          if (!offerMap.has(offer.thread_id)) {
-            offerMap.set(offer.thread_id, offer as any);
+          const existing = offerMap.get(offer.thread_id);
+          if (!existing) {
+            offerMap.set(offer.thread_id, offer as OfferMeta);
+            return;
+          }
+          const existingTs = existing.created_at ? Date.parse(existing.created_at) : 0;
+          const currentTs = offer.created_at ? Date.parse(offer.created_at) : 0;
+          if (currentTs > existingTs) {
+            offerMap.set(offer.thread_id, offer as OfferMeta);
           }
         });
       } else if (offerError) {
@@ -216,6 +233,9 @@ export async function GET(req: Request) {
               status: openOffer.status,
               amountCents: openOffer.amount_cents,
               currency: openOffer.currency,
+              fromSelf: openOffer.starter_id === user.id,
+              needsResponse: openOffer.recipient_id === user.id && openOffer.status === "pending",
+              createdAt: openOffer.created_at,
             }
           : null,
         createdAt: t.created_at || new Date().toISOString(),
