@@ -117,7 +117,7 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
       <BusinessHeader business={business} isOwner={isOwner} onColorsDetected={handleColorsDetected} />
 
       {/* Stats Bar */}
-      <div className="relative -mt-4 md:-mt-10 px-4">
+      <div className="relative mt-4 md:mt-12 px-4">
         <div className="max-w-7xl mx-auto">
           <BusinessStats business={business} className="rounded-3xl shadow-2xl border border-white/10 overflow-hidden" />
         </div>

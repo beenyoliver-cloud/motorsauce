@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Package, Search, Star, Flame, Sparkles } from "lucide-react";
+import { Package, Search, Star, Flame, Sparkles, UploadCloud } from "lucide-react";
+import BulkUploadDialog from "./BulkUploadDialog";
 
 type Props = {
   businessId: string;
@@ -30,6 +31,8 @@ export default function BusinessCatalogue({ businessId, isOwner }: Props) {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -55,7 +58,12 @@ export default function BusinessCatalogue({ businessId, isOwner }: Props) {
       }
     }
     fetchData();
-  }, [businessId]);
+  }, [businessId, refreshKey]);
+
+  const handleUploadComplete = () => {
+    setUploadOpen(false);
+    setRefreshKey((key) => key + 1);
+  };
 
   function getPromotion(listingId: string) {
     return promotions.find((p) => p.listing_id === listingId);
@@ -91,8 +99,8 @@ export default function BusinessCatalogue({ businessId, isOwner }: Props) {
   return (
     <div>
       {/* Search and Filters */}
-      <div className="mb-6 flex items-center gap-4">
-        <div className="flex-1 relative">
+      <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="flex-1 relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="text"
@@ -102,6 +110,15 @@ export default function BusinessCatalogue({ businessId, isOwner }: Props) {
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
           />
         </div>
+        {isOwner && (
+          <button
+            onClick={() => setUploadOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm hover:border-yellow-400 hover:text-yellow-600 transition"
+          >
+            <UploadCloud className="h-4 w-4" />
+            Bulk upload parts
+          </button>
+        )}
       </div>
 
       {/* Listings Grid */}
@@ -161,6 +178,13 @@ export default function BusinessCatalogue({ businessId, isOwner }: Props) {
             );
           })}
         </div>
+      )}
+      {isOwner && (
+        <BulkUploadDialog
+          open={uploadOpen}
+          onClose={() => setUploadOpen(false)}
+          onUploaded={handleUploadComplete}
+        />
       )}
     </div>
   );

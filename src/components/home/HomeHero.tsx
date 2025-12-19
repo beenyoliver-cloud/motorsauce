@@ -141,17 +141,15 @@ export default function HomeHero() {
             }`}
           >
             <label className="text-xs font-semibold text-gray-800 md:pr-2">Search by registration</label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center w-full">
               <div
-                className={`relative flex-1 flex items-stretch transition-shadow duration-300 ${
-                  plateFocused ? "shadow-[0_0_25px_rgba(250,204,21,0.55)]" : "shadow-none"
+                className={`flex w-full max-w-[520px] items-stretch rounded-lg border-[6px] border-black bg-[#FFD038] shadow-[0_15px_35px_rgba(0,0,0,0.45)] transition-all duration-300 min-h-[72px] sm:min-h-[88px] ${
+                  plateFocused ? "ring-4 ring-yellow-200/70" : ""
                 }`}
               >
-                <div className="flex flex-col items-center justify-center bg-[#003399] text-white px-1.5 py-1 rounded-l-md">
-                  <div className="flex flex-col items-center leading-none">
-                    <span className="text-[8px] font-bold">🇬🇧</span>
-                    <span className="text-[8px] font-bold tracking-tight">UK</span>
-                  </div>
+                <div className="flex flex-col items-center justify-center bg-[#003399] text-white px-2 sm:px-3 py-2 sm:py-3 rounded-l-[4px] border-r-[6px] border-black min-w-[48px] sm:min-w-[56px]">
+                  <span className="text-[10px] font-semibold">🇬🇧</span>
+                  <span className="text-[9px] sm:text-[10px] font-bold tracking-tight -mt-0.5">UK</span>
                 </div>
                 <input
                   value={plate}
@@ -159,10 +157,9 @@ export default function HomeHero() {
                   onBlur={() => setPlateFocused(false)}
                   onChange={(e) => setPlate(e.target.value.toUpperCase())}
                   placeholder="AB12 CDE"
-                  className="flex-1 border-2 border-l-0 border-black bg-[#FFD038] text-black placeholder:text-gray-600 px-3 py-2 text-base sm:text-lg uppercase tracking-wider focus:outline-none rounded-r-md font-bold"
+                  className="flex-1 bg-transparent text-black placeholder:text-black/35 px-4 sm:px-6 text-2xl sm:text-[2.4rem] uppercase tracking-[0.35em] focus:outline-none font-extrabold text-center caret-black"
                   style={{
                     fontFamily: "'UK Number Plate', 'Charles Wright', 'Courier New', monospace",
-                    letterSpacing: '0.15em',
                   }}
                 />
               </div>

@@ -1,0 +1,3 @@
+Title,Price,Condition,Category,Description,Make,Model,Year From,Year To,OEM,Image URLs
+"OEM Air Filter",24.50,New,OEM,"Brand-new OEM filter in sealed box.",Toyota,Corolla,2015,2018,17801-0D020,https://example.com/air-filter.jpg
+"Bilstein B8 Dampers",489.00,"Used - Good",Aftermarket,"Pair of Bilstein B8 dampers removed from demo car.",BMW,3 Series,2019,2022,,https://example.com/damper-front.jpg;https://example.com/damper-rear.jpg
