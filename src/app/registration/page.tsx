@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   Filter,
 } from "lucide-react";
+import { manualVehicleMakes, manualVehicleModels, getYearsForModel } from "@/data/manualVehicleOptions";
 
 /* ========================= Types ========================= */
 type Vehicle = {
@@ -110,37 +111,6 @@ function normalizeRegInput(raw: string) {
 function regKey(reg: string) {
   return reg.toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
-
-/* ---- Simple brand/model presets for manual fallback (extend any time) ---- */
-const MAKES = [
-  "Audi",
-  "BMW",
-  "Volkswagen",
-  "Mercedes-Benz",
-  "Ford",
-  "Vauxhall",
-  "Toyota",
-  "Nissan",
-  "Honda",
-  "Kia",
-  "Hyundai",
-  "Peugeot",
-];
-
-const MODELS: Record<string, string[]> = {
-  Audi: ["A3", "A4", "A6", "Q3", "Q5"],
-  BMW: ["1 Series", "2 Series", "3 Series", "4 Series", "5 Series"],
-  Volkswagen: ["Golf", "Polo", "Passat", "Tiguan"],
-  "Mercedes-Benz": ["A-Class", "C-Class", "E-Class", "GLA"],
-  Ford: ["Fiesta", "Focus", "Mondeo", "Kuga"],
-  Vauxhall: ["Corsa", "Astra", "Insignia", "Mokka"],
-  Toyota: ["Yaris", "Corolla", "Auris", "CHR"],
-  Nissan: ["Micra", "Qashqai", "Juke", "Leaf"],
-  Honda: ["Civic", "Jazz", "CR-V"],
-  Kia: ["Rio", "Ceed", "Sportage"],
-  Hyundai: ["i10", "i20", "i30", "Tucson"],
-  Peugeot: ["208", "308", "3008"],
-};
 
 /* ========================= Data loading ========================= */
 async function loadListings(): Promise<Listing[]> {
@@ -265,7 +235,19 @@ export default function RegistrationPage() {
   const [mMake, setMMake] = useState<string>("");
   const [mModel, setMModel] = useState<string>("");
   const [mYear, setMYear] = useState<number | undefined>(undefined);
-  const modelOptions = useMemo(() => (mMake && MODELS[mMake] ? MODELS[mMake] : []), [mMake]);
+  const modelOptions = useMemo(
+    () => (mMake && manualVehicleModels[mMake] ? manualVehicleModels[mMake] : []),
+    [mMake]
+  );
+  // Get valid years for the selected make/model
+  const yearOptions = useMemo(() => {
+    if (mMake && mModel) {
+      return getYearsForModel(mMake, mModel);
+    }
+    // Default to last 40 years if no model selected
+    const thisYear = new Date().getFullYear();
+    return Array.from({ length: 40 }, (_, i) => thisYear - i);
+  }, [mMake, mModel]);
 
   useEffect(() => {
     let alive = true;
@@ -406,7 +388,7 @@ export default function RegistrationPage() {
                     onChange={(e) => { setMMake(e.target.value); setMModel(""); }}
                   >
                     <option value="">Select make</option>
-                    {MAKES.map((m) => <option key={m} value={m}>{m}</option>)}
+                    {manualVehicleMakes.map((m) => <option key={m} value={m}>{m}</option>)}
                   </select>
 
                   <select
@@ -425,10 +407,9 @@ export default function RegistrationPage() {
                     onChange={(e) => setMYear(e.target.value ? parseInt(e.target.value, 10) : undefined)}
                   >
                     <option value="">Year (optional)</option>
-                    {Array.from({ length: 40 }).map((_, i) => {
-                      const y = 2025 - i; // recent 40 years
-                      return <option key={y} value={y}>{y}</option>;
-                    })}
+                    {yearOptions.map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
                   </select>
                 </div>
 

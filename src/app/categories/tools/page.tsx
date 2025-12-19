@@ -14,6 +14,13 @@ import {
   ShieldCheck,
   Hammer,
 } from "lucide-react";
+import {
+  CategoryStats,
+  PopularSearches,
+  RecentlySold,
+  SellerSpotlight,
+  FeaturedListings,
+} from "@/components/category";
 
 export const metadata = {
   title: "Tools & Accessories | Motorsource",
@@ -75,6 +82,12 @@ export default function ToolsAccessoriesPage() {
         </div>
       </div>
 
+      {/* Category Stats */}
+      <CategoryStats category="Tools" />
+
+      {/* Featured Listings */}
+      <FeaturedListings category="Tools" />
+
       {/* Shop by Type */}
       <section className="mt-10">
         <div className="flex items-center justify-between">
@@ -121,6 +134,9 @@ export default function ToolsAccessoriesPage() {
         </div>
       </section>
 
+      {/* Popular Searches */}
+      <PopularSearches category="Tools" />
+
       {/* Quick Filters */}
       <section className="mt-10">
         <h2 className="text-xl md:text-2xl font-bold text-black">Quick filters</h2>
@@ -139,6 +155,12 @@ export default function ToolsAccessoriesPage() {
           ))}
         </div>
       </section>
+
+      {/* Recently Sold */}
+      <RecentlySold category="Tools" />
+
+      {/* Seller Spotlight */}
+      <SellerSpotlight category="Tools" />
 
       {/* Info / Tips */}
       <section className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">

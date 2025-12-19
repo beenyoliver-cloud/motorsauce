@@ -11,6 +11,7 @@ import SellCta from "@/components/home/SellCta";
 import LiveActivityFeed from "@/components/home/LiveActivityFeed";
 import JustSoldTicker from "@/components/home/JustSoldTicker";
 import TrustSignals from "@/components/home/TrustSignals";
+import WrenchingWall from "@/components/home/WrenchingWall";
 
 import SEOJsonLd from "@/components/SEOJsonLd";
 
@@ -49,6 +50,7 @@ export default function Home() {
       {/* Featured rows */}
       <FeaturedRow title="New this week" variant="new" />
       <FeaturedRow title="Under £250" variant="under250" />
+      <WrenchingWall />
       <FeaturedRow title="Under £20" variant="under20" />
 
       {/* Suggested parts (personalized via API) */}

@@ -131,6 +131,33 @@ body {
   }
 }
 
+@keyframes heroGradient {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, -20px, 0);
+  }
+}
+
+@keyframes heroOrbit {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes trustbandMarquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
 .animate-fadeIn {
   animation: fadeIn 0.6s ease-out forwards;
   opacity: 0;
@@ -159,4 +186,88 @@ body {
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+.home-hero-gradient {
+  position: absolute;
+  inset: -60px;
+  background:
+    radial-gradient(circle at 10% 20%, rgba(250, 204, 21, 0.2), transparent 55%),
+    radial-gradient(circle at 80% 0%, rgba(56, 189, 248, 0.25), transparent 45%),
+    linear-gradient(140deg, #020617 0%, #0f172a 35%, #111827 100%);
+  animation: heroGradient 12s ease-in-out infinite alternate;
+}
+
+.home-hero-orbit {
+  position: absolute;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  animation: heroOrbit 30s linear infinite;
+}
+
+.home-hero-orbit--one {
+  width: 420px;
+  height: 420px;
+  top: -120px;
+  right: -140px;
+}
+
+.home-hero-orbit--two {
+  width: 520px;
+  height: 520px;
+  top: 40px;
+  right: -220px;
+  animation-duration: 45s;
+}
+
+.home-hero-ghost-car {
+  position: absolute;
+  right: -40px;
+  bottom: -20px;
+  width: 320px;
+  height: 220px;
+  background-image: url("https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=900&q=80");
+  background-size: cover;
+  background-position: center;
+  opacity: 0.18;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  filter: blur(0.5px);
+}
+
+@media (max-width: 640px) {
+  .home-hero-ghost-car {
+    display: none;
+  }
+}
+
+.trustband-diagonal {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(125deg, transparent 0%, transparent 55%, rgba(250, 204, 21, 0.4) 60%, rgba(250, 204, 21, 0.9) 100%);
+  mix-blend-mode: screen;
+}
+
+.trustband-marquee {
+  overflow: hidden;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  padding-top: 0.75rem;
+}
+
+.trustband-marquee__track {
+  display: flex;
+  gap: 1rem;
+  width: max-content;
+  animation: trustbandMarquee 20s linear infinite;
+}
+
+.trustband-pill {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
 }

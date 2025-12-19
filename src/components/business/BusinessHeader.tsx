@@ -13,6 +13,9 @@ type Props = {
 export default function BusinessHeader({ business, isOwner }: Props) {
   const [bannerError, setBannerError] = useState(false);
   const [logoError, setLogoError] = useState(false);
+  const primary = business.brand_primary_color || "#facc15";
+  const secondary = business.brand_secondary_color || "#0f172a";
+  const accent = business.brand_accent_color || "#fde68a";
   
   const bannerUrl = business.banner_url;
   const logoUrl = business.logo_url || business.avatar;
@@ -20,7 +23,10 @@ export default function BusinessHeader({ business, isOwner }: Props) {
   return (
     <div className="bg-white">
       {/* Banner Image - Reduced height on mobile for better UX */}
-      <div className="relative h-[180px] md:h-[320px] w-full bg-gradient-to-r from-gray-800 to-gray-600 border-b border-gray-200 overflow-hidden">
+      <div
+        className="relative h-[180px] md:h-[320px] w-full border-b border-gray-200 overflow-hidden"
+        style={{ background: `linear-gradient(120deg, ${secondary}, #020617)` }}
+      >
         {bannerUrl && !bannerError && (
           <img
             src={bannerUrl}
@@ -29,7 +35,7 @@ export default function BusinessHeader({ business, isOwner }: Props) {
             onError={() => setBannerError(true)}
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-black/60" />
         {isOwner && (
           <div className="absolute top-2 right-2 flex items-center gap-2">
             <Link
@@ -78,7 +84,10 @@ export default function BusinessHeader({ business, isOwner }: Props) {
                     {business.business_name}
                   </h1>
                   {business.business_verified && (
-                    <div className="flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-0.5 md:py-1 rounded-full text-xs font-medium w-fit">
+                    <div
+                      className="flex items-center gap-1 px-2 py-0.5 md:py-1 rounded-full text-xs font-medium w-fit"
+                      style={{ backgroundColor: primary, color: secondary }}
+                    >
                       <CheckCircle className="w-3 h-3" />
                       <span className="hidden sm:inline">Verified</span>
                       <span className="sm:hidden">✓</span>
@@ -106,7 +115,8 @@ export default function BusinessHeader({ business, isOwner }: Props) {
                 {business.specialties.map((specialty, idx) => (
                   <span
                     key={idx}
-                    className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium"
+                    className="px-3 py-1 rounded-full text-xs font-medium"
+                    style={{ backgroundColor: accent, color: secondary }}
                   >
                     {specialty}
                   </span>

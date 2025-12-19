@@ -12,6 +12,14 @@ import {
   Settings2,
   CheckCircle2,
 } from "lucide-react";
+import {
+  CategoryStats,
+  PopularSearches,
+  RecentlySold,
+  SellerSpotlight,
+  PartsForYourCar,
+  FeaturedListings,
+} from "@/components/category";
 
 export const metadata = {
   title: "Aftermarket Parts | Motorsource",
@@ -79,6 +87,15 @@ export default function AftermarketCategoryPage() {
         </div>
       </div>
 
+      {/* Category Stats */}
+      <CategoryStats category="Aftermarket" />
+
+      {/* Parts For Your Car */}
+      <PartsForYourCar category="Aftermarket" />
+
+      {/* Featured Listings */}
+      <FeaturedListings category="Aftermarket" />
+
       {/* Shop by Part Type */}
       <section className="mt-10">
         <div className="flex items-center justify-between">
@@ -125,6 +142,9 @@ export default function AftermarketCategoryPage() {
         </div>
       </section>
 
+      {/* Popular Searches */}
+      <PopularSearches category="Aftermarket" />
+
       {/* Quick Filters */}
       <section className="mt-10">
         <h2 className="text-xl md:text-2xl font-bold text-black">Quick filters</h2>
@@ -143,6 +163,12 @@ export default function AftermarketCategoryPage() {
           ))}
         </div>
       </section>
+
+      {/* Recently Sold */}
+      <RecentlySold category="Aftermarket" />
+
+      {/* Seller Spotlight */}
+      <SellerSpotlight category="Aftermarket" />
 
       {/* Info / Tips */}
       <section className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">

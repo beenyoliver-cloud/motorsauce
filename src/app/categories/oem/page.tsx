@@ -11,6 +11,14 @@ import {
   Tag,
   Sparkles,
 } from "lucide-react";
+import {
+  CategoryStats,
+  PopularSearches,
+  RecentlySold,
+  SellerSpotlight,
+  PartsForYourCar,
+  FeaturedListings,
+} from "@/components/category";
 
 export const metadata = {
   title: "OEM Parts | Motorsource",
@@ -78,6 +86,15 @@ export default function OEMCategoryPage() {
         </div>
       </div>
 
+      {/* Category Stats */}
+      <CategoryStats category="OEM" />
+
+      {/* Parts For Your Car */}
+      <PartsForYourCar category="OEM" />
+
+      {/* Featured Listings */}
+      <FeaturedListings category="OEM" />
+
       {/* Shop by Part Type */}
       <section className="mt-10">
         <div className="flex items-center justify-between">
@@ -124,6 +141,9 @@ export default function OEMCategoryPage() {
         </div>
       </section>
 
+      {/* Popular Searches */}
+      <PopularSearches category="OEM" />
+
       {/* Quick Filters */}
       <section className="mt-10">
         <h2 className="text-xl md:text-2xl font-bold text-black">Quick filters</h2>
@@ -142,6 +162,12 @@ export default function OEMCategoryPage() {
           ))}
         </div>
       </section>
+
+      {/* Recently Sold */}
+      <RecentlySold category="OEM" />
+
+      {/* Seller Spotlight */}
+      <SellerSpotlight category="OEM" />
 
       {/* Info / Tips */}
       <section className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">

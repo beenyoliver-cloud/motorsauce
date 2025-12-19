@@ -25,7 +25,22 @@ type BusinessInfo = {
     postcode: string;
     country: string;
   } | null;
+  brand_primary_color: string;
+  brand_secondary_color: string;
+  brand_accent_color: string;
 };
+
+const BRANDING_DEFAULTS = {
+  brand_primary_color: "#facc15",
+  brand_secondary_color: "#0f172a",
+  brand_accent_color: "#fde68a",
+};
+
+const BRAND_COLOR_FIELDS: { key: "brand_primary_color" | "brand_secondary_color" | "brand_accent_color"; label: string; helper: string }[] = [
+  { key: "brand_primary_color", label: "Primary", helper: "Buttons & highlights" },
+  { key: "brand_secondary_color", label: "Secondary", helper: "Header gradients" },
+  { key: "brand_accent_color", label: "Accent", helper: "Badges & chips" },
+];
 
 export default function BusinessSettingsPage() {
   const router = useRouter();
@@ -62,6 +77,7 @@ export default function BusinessSettingsPage() {
       sunday: { open: "", close: "", closed: true },
     },
     business_address: null,
+    ...BRANDING_DEFAULTS,
   });
 
   const [specialtyInput, setSpecialtyInput] = useState("");
@@ -162,6 +178,9 @@ export default function BusinessSettingsPage() {
           years_established: data.years_established,
           opening_hours: data.opening_hours || businessInfo.opening_hours,
           business_address: data.business_address,
+          brand_primary_color: data.brand_primary_color || BRANDING_DEFAULTS.brand_primary_color,
+          brand_secondary_color: data.brand_secondary_color || BRANDING_DEFAULTS.brand_secondary_color,
+          brand_accent_color: data.brand_accent_color || BRANDING_DEFAULTS.brand_accent_color,
         };
         setBusinessInfo(loadedInfo);
         setInitialBusinessInfo(loadedInfo);
@@ -499,6 +518,67 @@ export default function BusinessSettingsPage() {
                   <p className="text-xs text-gray-500 mt-2">
                     Upload an image or paste a URL. Wide banner recommended (1920x400px). Max 5MB (JPEG, PNG, WebP)
                   </p>
+                </div>
+              </div>
+
+              <div className="border border-dashed border-gray-200 rounded-xl p-4 space-y-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-800">Brand colours</p>
+                  <p className="text-xs text-gray-500">
+                    Tune the storefront theme. Primary powers buttons, secondary sets the backdrop, accent is used for tags and badges.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {BRAND_COLOR_FIELDS.map((field) => (
+                    <div key={field.key} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={businessInfo[field.key] || "#000000"}
+                          onChange={(e) =>
+                            handleBusinessInfoChange({
+                              [field.key]: e.target.value,
+                            } as Partial<BusinessInfo>)
+                          }
+                          className="h-12 w-12 rounded-lg border border-gray-200"
+                          aria-label={`${field.label} colour`}
+                        />
+                        <div className="flex-1">
+                          <label className="text-sm font-medium text-gray-700">{field.label}</label>
+                          <input
+                            type="text"
+                            value={businessInfo[field.key] || ""}
+                            onChange={(e) =>
+                              handleBusinessInfoChange({
+                                [field.key]: e.target.value,
+                              } as Partial<BusinessInfo>)
+                            }
+                            className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1 text-sm"
+                            placeholder="#FACC15"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">{field.helper}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div
+                    className="h-14 rounded-2xl shadow-inner"
+                    style={{
+                      background: `linear-gradient(120deg, ${businessInfo.brand_primary_color || BRANDING_DEFAULTS.brand_primary_color}, ${
+                        businessInfo.brand_secondary_color || BRANDING_DEFAULTS.brand_secondary_color
+                      })`,
+                    }}
+                  />
+                  <div
+                    className="h-14 rounded-2xl border border-gray-200 shadow-inner"
+                    style={{ backgroundColor: businessInfo.brand_secondary_color || BRANDING_DEFAULTS.brand_secondary_color }}
+                  />
+                  <div
+                    className="h-14 rounded-2xl border border-gray-200 shadow-inner"
+                    style={{ backgroundColor: businessInfo.brand_accent_color || BRANDING_DEFAULTS.brand_accent_color }}
+                  />
                 </div>
               </div>
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { CSSProperties, useState } from "react";
 import BusinessHeader from "./BusinessHeader";
 import BusinessStats from "./BusinessStats";
 import BusinessAbout from "./BusinessAbout";
@@ -32,6 +32,9 @@ export type BusinessProfile = {
   about_business: string | null;
   specialties: string[] | null;
   years_established: number | null;
+  brand_primary_color?: string | null;
+  brand_secondary_color?: string | null;
+  brand_accent_color?: string | null;
   
   // Aggregated ratings
   avg_rating: number;
@@ -52,6 +55,11 @@ type Props = {
 
 export default function BusinessStorefront({ business, isOwner }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('catalogue');
+  const themeStyles: CSSProperties = {
+    "--brand-primary": business.brand_primary_color || "#facc15",
+    "--brand-secondary": business.brand_secondary_color || "#0f172a",
+    "--brand-accent": business.brand_accent_color || "#fde68a",
+  } as CSSProperties;
 
   const tabs: { id: Tab; label: string; icon: string }[] = [
     { id: 'catalogue', label: 'Catalogue', icon: '' },
@@ -78,7 +86,7 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white" style={themeStyles}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* Business Header with Banner */}
       <BusinessHeader business={business} isOwner={isOwner} />
@@ -96,9 +104,10 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
                 onClick={() => setActiveTab(tab.id)}
                 className={`py-4 px-2 font-medium text-sm border-b-2 whitespace-nowrap transition-colors ${
                   activeTab === tab.id
-                    ? 'border-yellow-500 text-yellow-600'
+                    ? 'text-[var(--brand-primary)]'
                     : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
                 }`}
+                style={{ borderColor: activeTab === tab.id ? "var(--brand-primary)" : undefined }}
               >
                 <span className="mr-2">{tab.icon}</span>
                 {tab.label}
