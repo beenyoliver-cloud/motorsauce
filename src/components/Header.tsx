@@ -294,7 +294,11 @@ export default function Header() {
           </button>
 
           {/* Center: Logo */}
-          <Link href="/" aria-label="Motorsource home" className="absolute left-1/2 -translate-x-1/2">
+          <Link
+            href="/"
+            aria-label="Motorsource home"
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 inline-flex items-center justify-center px-1"
+          >
             <img
               src="/images/MSlogoreal.png"
               alt="Motorsauce"
@@ -349,7 +353,11 @@ export default function Header() {
           <div className="fixed inset-0 bg-white z-[110] overflow-y-auto flex flex-col">
             {/* Menu Header with Logo and Close */}
             <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between shrink-0">
-              <Link href="/" aria-label="Motorsource home">
+              <Link
+                href="/"
+                aria-label="Motorsource home"
+                className="inline-flex items-center"
+              >
                 <img
                   src="/images/MSlogoreal.png"
                   alt="Motorsauce"
@@ -548,7 +556,7 @@ export default function Header() {
 
       {/* Desktop header (>= md) */}
       <nav className="hidden md:flex w-full h-[64px] bg-white border-b border-gray-200 items-center justify-between px-6 shadow-sm fixed top-0 z-40">
-        <Link href="/" aria-label="Motorsauce home" className="flex-shrink-0">
+        <Link href="/" aria-label="Motorsauce home" className="flex-shrink-0 inline-flex items-center h-full">
           <img
             src="/images/MSlogoreal.png"
             alt="Motorsauce"

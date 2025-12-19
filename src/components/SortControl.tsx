@@ -7,6 +7,7 @@ const SORTS = [
   ["price_asc", "Price: Low to High"],
   ["price_desc", "Price: High to Low"],
   ["newest", "Newest"],
+  ["nearest", "Nearest"],
 ] as const;
 
 export default function SortControl() {

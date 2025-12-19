@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, Suspense } from "react";
+import { useEffect, useMemo, useState, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import SafeImage from "@/components/SafeImage";
@@ -13,7 +13,8 @@ import { SearchResultSkeleton, SellerCardSkeleton } from "@/components/skeletons
 import QuickViewModal from "@/components/QuickViewModal";
 import Breadcrumb from "@/components/Breadcrumb";
 import ActiveFilters from "@/components/ActiveFilters";
-import { Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import LiveActivityFeed from "@/components/home/LiveActivityFeed";
+import { Eye, Heart, ChevronRight } from "lucide-react";
 import { nsKey } from "@/lib/auth";
 import SaveSearchButton from "@/components/SaveSearchButton";
 import { searchListing, normalizeSearchTerm } from "@/lib/searchHelpers";
@@ -44,6 +45,7 @@ type Listing = {
   yearTo?: number;
   main_category?: string;
   part_type?: string;
+  viewCount?: number;
   // Multi-vehicle support
   vehicles?: Array<{ make: string; model: string; year?: number; universal?: boolean }>;
 };
@@ -72,6 +74,41 @@ const GARAGE_KEYS = [
   "ms_garage_favourite",
   "garage_favourite",
 ] as const;
+
+const WATCH_KEY = "ms:watchlist";
+
+const TRENDING_QUERIES = [
+  "coilovers",
+  "carbon mirror caps",
+  "stage 1 tune",
+  "M Performance",
+  "brake upgrade",
+];
+
+type FavouriteGarage = ReturnType<typeof readFavouriteGarage>;
+
+function matchesFavourite(listing: Listing, fav: FavouriteGarage): boolean {
+  if (!fav) return true;
+  const normalized = (value?: string) => value?.toLowerCase().trim();
+  const favMake = normalized(fav.make);
+  const favModel = normalized(fav.model);
+  const favGen = normalized(fav.generation);
+  const favEngine = normalized(fav.engine);
+
+  const vehicles = Array.isArray(listing.vehicles) && listing.vehicles.length > 0
+    ? listing.vehicles
+    : [{ make: listing.make, model: listing.model, year: listing.year, universal: false }];
+
+  return vehicles.some((vehicle) => {
+    if (!vehicle) return false;
+    if (vehicle.universal) return true;
+    const makeMatch = favMake ? normalized(vehicle.make) === favMake : true;
+    const modelMatch = favModel ? normalized(vehicle.model) === favModel : true;
+    const genMatch = favGen ? normalized(listing.genCode) === favGen : true;
+    const engineMatch = favEngine ? normalized(listing.engine) === favEngine : true;
+    return makeMatch && modelMatch && genMatch && engineMatch;
+  });
+}
 
 function readFavouriteGarage():
   | { make?: string; model?: string; generation?: string; engine?: string; yearFrom?: number; yearTo?: number }
@@ -110,10 +147,37 @@ function SearchPageInner() {
   const [recent, setRecent] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<"parts" | "sellers">("parts");
   const [quickViewListingId, setQuickViewListingId] = useState<string | null>(null);
+  const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [visibleCount, setVisibleCount] = useState(30);
+  const [favouriteGarage, setFavouriteGarage] = useState<FavouriteGarage>(null);
+  const [sellerSort, setSellerSort] = useState<"featured" | "rating" | "listings">("featured");
 
   const sp = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+
+  const updateParam = useCallback(
+    (key: string, value?: string) => {
+      const params = new URLSearchParams(sp.toString());
+      if (!value) params.delete(key);
+      else params.set(key, value);
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [router, pathname, sp]
+  );
+
+  const toggleWatch = useCallback((id: string) => {
+    setWatchlist((prev) => {
+      const exists = prev.includes(id);
+      const next = exists ? prev.filter((entry) => entry !== id) : [...prev, id];
+      try {
+        localStorage.setItem(WATCH_KEY, JSON.stringify(next));
+      } catch {
+        // ignore storage failures
+      }
+      return next;
+    });
+  }, []);
 
   // Auto-apply favourite garage on first load if no filters are set
   useEffect(() => {
@@ -147,6 +211,10 @@ function SearchPageInner() {
     router.replace(`${pathname}?${next.toString()}`, { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once
+
+  useEffect(() => {
+    setFavouriteGarage(readFavouriteGarage());
+  }, []);
 
   /* Fetch all listings (base + local) and calculate distances */
   useEffect(() => {
@@ -216,6 +284,19 @@ function SearchPageInner() {
     } catch {}
   }, []);
 
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(WATCH_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        setWatchlist(parsed.map(String));
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
   /* Read live filters from URL */
   const q =
     (sp.get("q") && String(sp.get("q"))) ||
@@ -259,6 +340,8 @@ function SearchPageInner() {
   const engines = arrify(sp.getAll("engine"));
   const mainCategory = sp.get("mainCategory") || "";
   const subcategory = sp.get("subcategory") || "";
+  const garageOnly = sp.get("garageOnly") === "1";
+  const universalOnly = sp.get("universalOnly") === "1";
 
   const yearMin = toNum(sp.get("yearMin"));
   const yearMax = toNum(sp.get("yearMax"));
@@ -297,6 +380,12 @@ function SearchPageInner() {
         if (genCodes.length && (!l.genCode || !genCodes.includes(l.genCode))) return false;
         if (engines.length && (!l.engine || !engines.includes(l.engine))) return false;
 
+        if (universalOnly) {
+          const veh = Array.isArray(l.vehicles) ? l.vehicles : [];
+          const hasUniversal = veh.some((v) => v?.universal);
+          if (!hasUniversal) return false;
+        }
+
         if (typeof yearMin === "number" && (l.year ?? l.yearFrom ?? 0) < yearMin) return false;
         if (typeof yearMax === "number" && (l.year ?? l.yearTo ?? 9999) > yearMax) return false;
 
@@ -326,13 +415,17 @@ function SearchPageInner() {
             return false;
           }
         }
+
+        if (garageOnly && favouriteGarage && !matchesFavourite(l, favouriteGarage)) {
+          return false;
+        }
         return true;
       }),
-    [all, categories, mainCategory, subcategory, makes, models, genCodes, engines, yearMin, yearMax, priceMin, priceMax, q, seller]
+    [all, categories, mainCategory, subcategory, makes, models, genCodes, engines, yearMin, yearMax, priceMin, priceMax, q, seller, garageOnly, universalOnly, favouriteGarage]
   );
 
   // Sorting
-  const sortKey = sp.get("sort") || "relevance"; // relevance | price_asc | price_desc | newest
+  const sortKey = sp.get("sort") || "relevance"; // includes nearest
   const sortedResults = useMemo(() => {
     const arr = results.slice();
     if (sortKey === "price_asc") {
@@ -341,27 +434,32 @@ function SearchPageInner() {
       arr.sort((a, b) => priceNumber(b.price) - priceNumber(a.price));
     } else if (sortKey === "newest") {
       arr.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else if (sortKey === "nearest") {
+      arr.sort((a, b) => {
+        const da = typeof a.distanceKm === "number" ? a.distanceKm : Number.POSITIVE_INFINITY;
+        const db = typeof b.distanceKm === "number" ? b.distanceKm : Number.POSITIVE_INFINITY;
+        return da - db;
+      });
     } // relevance = original order
     return arr;
   }, [results, sortKey]);
 
-  // Pagination
-  const ITEMS_PER_PAGE = 50;
-  const currentPage = toNum(sp.get("page")) || 1;
-  const totalPages = Math.ceil(sortedResults.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const paginatedResults = sortedResults.slice(startIndex, endIndex);
+  useEffect(() => {
+    setVisibleCount(30);
+  }, [sortedResults]);
 
-  function goToPage(page: number) {
-    const params = new URLSearchParams(sp.toString());
-    if (page <= 1) {
-      params.delete("page");
-    } else {
-      params.set("page", String(page));
+  const visibleResults = sortedResults.slice(0, visibleCount);
+  const hasMoreResults = visibleCount < sortedResults.length;
+
+  const sortedSellersList = useMemo(() => {
+    if (sellerSort === "rating") {
+      return sellers.slice().sort((a, b) => (b.rating || 0) - (a.rating || 0));
     }
-    router.push(`${pathname}?${params.toString()}`, { scroll: true });
-  }
+    if (sellerSort === "listings") {
+      return sellers.slice().sort((a, b) => (b.listingsCount || 0) - (a.listingsCount || 0));
+    }
+    return sellers;
+  }, [sellers, sellerSort]);
 
   const makeOptions = uniq(all.map((l) => l.make));
   const modelOptions = uniq(all.map((l) => l.model));
@@ -502,6 +600,28 @@ function SearchPageInner() {
           {/* Active Filters */}
           <ActiveFilters />
 
+          {/* Quick toggles */}
+          <div className="flex flex-wrap gap-2 text-xs sm:text-sm">
+            {favouriteGarage && (
+              <button
+                onClick={() => updateParam("garageOnly", garageOnly ? undefined : "1")}
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 ${
+                  garageOnly ? "border-yellow-500 bg-yellow-100 text-yellow-900" : "border-gray-300 text-gray-700 hover:border-yellow-400"
+                }`}
+              >
+                {garageOnly ? "Showing my garage" : `Only ${favouriteGarage.make || "my car"}`}
+              </button>
+            )}
+            <button
+              onClick={() => updateParam("universalOnly", universalOnly ? undefined : "1")}
+              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 ${
+                universalOnly ? "border-blue-500 bg-blue-50 text-blue-900" : "border-gray-300 text-gray-700 hover:border-blue-400"
+              }`}
+            >
+              Universal fit
+            </button>
+          </div>
+
           {/* Summary + sort + save search */}
           <div className="rounded-xl border border-gray-200 bg-white p-5">
             <div className="flex items-start justify-between gap-3">
@@ -529,7 +649,52 @@ function SearchPageInner() {
                     <SortControl />
                   </div>
                 )}
+                {activeTab === "sellers" && (
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    Sort
+                    <select
+                      value={sellerSort}
+                      onChange={(e) => setSellerSort(e.target.value as any)}
+                      className="border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    >
+                      <option value="featured">Featured</option>
+                      <option value="rating">Highest rating</option>
+                      <option value="listings">Most listings</option>
+                    </select>
+                  </div>
+                )}
               </div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                Trending searches
+                <span className="text-[10px] uppercase tracking-[0.2em] text-gray-400">Hot right now</span>
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {TRENDING_QUERIES.map((term) => (
+                  <button
+                    key={term}
+                    onClick={() => updateParam("q", term)}
+                    className="px-3 py-1.5 rounded-full border border-gray-200 text-xs font-medium text-gray-700 hover:border-yellow-400 hover:text-yellow-600 transition"
+                  >
+                    {term}
+                  </button>
+                ))}
+                {recent.length > 0 && (
+                  <button
+                    onClick={() => updateParam("q", recent[0])}
+                    className="px-3 py-1.5 rounded-full bg-black text-white text-xs font-medium"
+                  >
+                    Resume "{recent[0]}"
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="hidden md:block">
+              <LiveActivityFeed />
             </div>
           </div>
 
@@ -541,9 +706,9 @@ function SearchPageInner() {
           )}
 
           {/* Seller Results */}
-          {activeTab === "sellers" && sellers.length > 0 && (
+          {activeTab === "sellers" && sortedSellersList.length > 0 && (
             <div className="space-y-4">
-              {sellers.map((seller) => (
+              {sortedSellersList.map((seller) => (
                 <SellerCard
                   key={seller.id}
                   id={seller.id}
@@ -557,7 +722,7 @@ function SearchPageInner() {
           )}
 
           {/* No sellers found */}
-          {activeTab === "sellers" && !sellersLoading && sellers.length === 0 && (
+          {activeTab === "sellers" && !sellersLoading && sortedSellersList.length === 0 && (
             <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
               <p className="text-gray-800">
                 {q ? `No sellers found matching "${q}".` : "No sellers available."}
@@ -583,11 +748,33 @@ function SearchPageInner() {
               <div className="mt-4 text-sm text-gray-600">
                 Quick tips: search by <em>part name</em>, <em>OEM ref</em>, or <em>make/model/generation</em>.
               </div>
+              <div className="mt-6 flex flex-wrap justify-center gap-2">
+                {recent.slice(0, 3).map((term) => (
+                  <button
+                    key={term}
+                    onClick={() => updateParam("q", term)}
+                    className="px-3 py-1.5 text-xs rounded-full border border-gray-200 text-gray-700 hover:border-yellow-400 hover:text-yellow-600"
+                  >
+                    Try "{term}"
+                  </button>
+                ))}
+                {TRENDING_QUERIES.slice(0, 3).map((term) => (
+                  <button
+                    key={term}
+                    onClick={() => updateParam("q", term)}
+                    className="px-3 py-1.5 text-xs rounded-full border border-gray-200 text-gray-700 hover:border-yellow-400 hover:text-yellow-600"
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
             </div>
           ) : activeTab === "parts" && sortedResults.length > 0 ? (
             <>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 lg:gap-6">
-                {paginatedResults.map((l) => (
+                {visibleResults.map((l) => {
+                  const watched = watchlist.includes(l.id);
+                  return (
                   <div
                     key={l.id}
                     data-listing-card={String(l.id)}
@@ -643,104 +830,54 @@ function SearchPageInner() {
                         {/* Trust badge placeholder (data to be wired) */}
                         <TrustBadge soldCount={undefined} />
                       </div>
-                      <div className="text-sm sm:text-base font-bold text-gray-900">{l.price}</div>
+                      <div className="text-right">
+                        <div className="text-sm sm:text-base font-bold text-gray-900">{l.price}</div>
+                        <div className="text-[10px] text-gray-500">
+                          {typeof l.viewCount === "number" && l.viewCount > 0 ? `${l.viewCount}+ views` : "Fresh listing"}
+                          {watched && <span className="ml-1 text-yellow-700 font-semibold">• Watching</span>}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </Link>
                 
-                {/* Quick View Button - hidden on mobile */}
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setQuickViewListingId(l.id);
-                  }}
-                  className="hidden sm:block absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-2 bg-white/90 hover:bg-white rounded-lg shadow-lg"
-                  aria-label="Quick view"
-                >
-                  <Eye className="h-4 w-4 text-gray-900" />
-                </button>
+                {/* Quick View & Watch Buttons - hidden on mobile */}
+                <div className="hidden sm:flex flex-col gap-2 absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setQuickViewListingId(l.id);
+                    }}
+                    className="p-2 bg-white/90 hover:bg-white rounded-lg shadow-lg"
+                    aria-label="Quick view"
+                  >
+                    <Eye className="h-4 w-4 text-gray-900" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggleWatch(l.id);
+                    }}
+                    aria-pressed={watched}
+                    className={`p-2 rounded-lg shadow-lg ${watched ? "bg-yellow-500 text-black" : "bg-white/90 text-gray-900 hover:bg-white"}`}
+                    aria-label={watched ? "Remove from watchlist" : "Watch listing"}
+                  >
+                    <Heart className={`h-4 w-4 ${watched ? "fill-current" : ""}`} />
+                  </button>
+                </div>
               </div>
-              ))}
+              )})}
             </div>
             
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex flex-col items-center gap-4 mt-8 pb-4">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => goToPage(currentPage - 1)}
-                    disabled={currentPage <= 1}
-                    className="inline-flex items-center gap-1 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Previous
-                  </button>
-                  
-                  <div className="flex items-center gap-1">
-                    {/* Show first page */}
-                    {currentPage > 3 && (
-                      <>
-                        <button
-                          onClick={() => goToPage(1)}
-                          className="w-10 h-10 rounded-lg border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 transition-colors"
-                        >
-                          1
-                        </button>
-                        {currentPage > 4 && (
-                          <span className="px-2 text-gray-600">...</span>
-                        )}
-                      </>
-                    )}
-                    
-                    {/* Show pages around current */}
-                    {Array.from({ length: totalPages }, (_, i) => i + 1)
-                      .filter(page => {
-                        const distance = Math.abs(page - currentPage);
-                        return distance <= 2;
-                      })
-                      .map(page => (
-                        <button
-                          key={page}
-                          onClick={() => goToPage(page)}
-                          className={`w-10 h-10 rounded-lg border transition-colors ${
-                            page === currentPage
-                              ? "border-yellow-500 bg-yellow-500 text-black font-semibold"
-                              : "border-gray-300 bg-white text-gray-900 hover:bg-gray-50"
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      ))}
-                    
-                    {/* Show last page */}
-                    {currentPage < totalPages - 2 && (
-                      <>
-                        {currentPage < totalPages - 3 && (
-                          <span className="px-2 text-gray-600">...</span>
-                        )}
-                        <button
-                          onClick={() => goToPage(totalPages)}
-                          className="w-10 h-10 rounded-lg border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 transition-colors"
-                        >
-                          {totalPages}
-                        </button>
-                      </>
-                    )}
-                  </div>
-                  
-                  <button
-                    onClick={() => goToPage(currentPage + 1)}
-                    disabled={currentPage >= totalPages}
-                    className="inline-flex items-center gap-1 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-                
-                <div className="text-sm text-gray-600">
-                  Showing {startIndex + 1}-{Math.min(endIndex, sortedResults.length)} of {sortedResults.length} results
-                </div>
+            {hasMoreResults && (
+              <div className="flex justify-center mt-6">
+                <button
+                  onClick={() => setVisibleCount((count) => count + 30)}
+                  className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-2 text-sm font-semibold text-gray-900 hover:border-yellow-400 hover:text-yellow-600 transition"
+                >
+                  Load 30 more results
+                  <ChevronRight className="h-4 w-4" />
+                </button>
               </div>
             )}
           </>

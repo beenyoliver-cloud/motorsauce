@@ -104,6 +104,7 @@ export default function HomeHero() {
         params.set("yearMin", String(yearVal));
         params.set("yearMax", String(yearVal));
       }
+      setPlate("");
       router.push(`/search${params.toString() ? '?' + params.toString() : ''}`);
     } catch (e: any) {
       setPlateError(null);
@@ -131,6 +132,8 @@ export default function HomeHero() {
       model: manualModel,
       year: manualYear ? Number(manualYear) : undefined,
     });
+    setPlate("");
+    resetManualFallback();
     router.push(`/search?${params.toString()}`);
   }
 
@@ -261,14 +264,24 @@ export default function HomeHero() {
                 <button
                   type="button"
                   onClick={submitManualVehicle}
-                  className="inline-flex items-center justify-center rounded-md bg-yellow-500 text-black font-semibold px-4 py-2 hover:bg-yellow-600 transition"
+                  className="inline-flex items-center justify-center gap-2 rounded-md bg-yellow-500 text-black font-semibold px-4 py-2 hover:bg-yellow-600 transition"
                 >
                   Continue with these details
                 </button>
                 <button
                   type="button"
+                  onClick={() => {
+                    resetManualFallback();
+                    setPlate("");
+                  }}
+                  className="inline-flex items-center justify-center gap-2 rounded-md border border-yellow-300 text-yellow-900 px-4 py-2 hover:border-yellow-400 transition bg-white"
+                >
+                  Start over
+                </button>
+                <button
+                  type="button"
                   onClick={() => router.push("/search")}
-                  className="inline-flex items-center justify-center rounded-md border border-yellow-300 text-yellow-900 px-4 py-2 hover:border-yellow-400 transition bg-white"
+                  className="inline-flex items-center justify-center gap-2 rounded-md border border-transparent text-yellow-900 px-4 py-2 hover:underline transition"
                 >
                   Browse all parts
                 </button>

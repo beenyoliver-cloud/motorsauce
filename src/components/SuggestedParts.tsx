@@ -97,6 +97,7 @@ export default function SuggestedParts({ limit = 12 }: Props) {
     () => listings.filter((listing) => matchesFilter(listing, activeFilter)),
     [listings, activeFilter]
   );
+  const visibleListings = filteredListings.slice(0, 5);
 
   useEffect(() => {
     if (!addedId) return;
@@ -162,17 +163,17 @@ export default function SuggestedParts({ limit = 12 }: Props) {
 
       {quickAddError && <div className="text-xs text-red-600">{quickAddError}</div>}
 
-      <div className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2">
-        {filteredListings.length === 0 ? (
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {visibleListings.length === 0 ? (
           <div className="text-sm text-gray-600 py-4">
             Nothing in this filter yet. Try another chip above.
           </div>
         ) : (
-          filteredListings.map((p) => (
+          visibleListings.map((p) => (
             <article
               key={p.id}
               data-listing-card={String(p.id)}
-              className="min-w-[230px] max-w-[260px] snap-start rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all flex flex-col"
+              className="rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all flex flex-col"
             >
               <Link href={`/listing/${p.id}`} className="block relative aspect-[4/3] overflow-hidden rounded-t-2xl">
                 <SafeImage src={p.image} alt={p.title} className="absolute inset-0 w-full h-full object-cover" />

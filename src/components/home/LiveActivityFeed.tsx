@@ -91,16 +91,33 @@ export default function LiveActivityFeed() {
   return (
     <Link 
       href={`/listing/${listingId}`}
-      className="block bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all"
+      className="block h-full bg-white border border-gray-200 rounded-2xl p-5 hover:border-gray-300 hover:shadow-md transition-all"
     >
       {/* Header */}
-      <div className="flex items-center gap-2 mb-2">
-        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-        <span className="text-xs font-medium text-gray-500">Live Activity</span>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
+          <span className="text-xs font-semibold text-gray-500 tracking-wide uppercase">Live activity</span>
+        </div>
+        <span className="text-xs text-gray-400">{timeAgo(current.timestamp)}</span>
+      </div>
+
+      <div className="bg-gray-50 rounded-xl overflow-hidden mb-3 aspect-[5/3] flex items-center justify-center">
+        {current.image ? (
+          <img
+            src={current.image}
+            alt={current.title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="text-center px-4 text-gray-400 text-xs">
+            Recent activity from {current.sellerName}
+          </div>
+        )}
       </div>
 
       {/* Activity message */}
-      <p className="text-sm text-gray-700 leading-snug">
+      <p className="text-sm text-gray-800 leading-snug">
         {current.type === "sale" ? (
           <>
             <span className="text-green-600 font-medium">Sold: </span>
@@ -113,17 +130,14 @@ export default function LiveActivityFeed() {
         )}
       </p>
 
-      {/* Timestamp */}
-      <p className="text-xs text-gray-400 mt-1">{timeAgo(current.timestamp)}</p>
-
       {/* Dots indicator - only show if multiple activities */}
       {activities.length > 1 && (
-        <div className="flex justify-center gap-1 mt-3">
+        <div className="flex justify-center gap-1.5 mt-4">
           {activities.slice(0, Math.min(5, activities.length)).map((_, i) => (
             <span
               key={i}
-              className={`w-1 h-1 rounded-full transition-colors ${
-                i === currentIndex % Math.min(5, activities.length) ? "bg-gray-400" : "bg-gray-200"
+              className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                i === currentIndex % Math.min(5, activities.length) ? "bg-gray-500" : "bg-gray-200"
               }`}
             />
           ))}
