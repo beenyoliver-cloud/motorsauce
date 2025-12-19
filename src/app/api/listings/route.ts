@@ -44,6 +44,7 @@ type Listing = {
   status?: "active" | "draft" | "sold";
   markedSoldAt?: string;
   viewCount?: number;
+  vehicles?: Array<{ make?: string; model?: string; year?: number; universal?: boolean }>;
 };
 
 // Raw row as returned from Supabase including JOIN alias fields
@@ -80,6 +81,7 @@ type RawListingRow = {
   status?: "active" | "draft" | "sold" | null;
   marked_sold_at?: string | null;
   view_count?: number | null;
+  vehicles?: any[] | string | null;
 };
 
 // Format £ from cents or accept preformatted string
@@ -105,6 +107,19 @@ function mapDbRow(row: RawListingRow): Listing {
       ? [row.image_url]
       : row.image
       ? [row.image]
+      : [];
+  const vehicles: Array<{ make?: string; model?: string; year?: number; universal?: boolean }> =
+    Array.isArray(row.vehicles)
+      ? row.vehicles
+      : typeof row.vehicles === "string"
+      ? (() => {
+          try {
+            const parsed = JSON.parse(row.vehicles);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        })()
       : [];
 
   // Supabase join may return array or object; normalise
@@ -157,6 +172,7 @@ function mapDbRow(row: RawListingRow): Listing {
     status: row.status ?? "active",
     markedSoldAt: row.marked_sold_at ?? undefined,
     viewCount: typeof row.view_count === "number" ? row.view_count : 0,
+    vehicles: vehicles.length ? vehicles : undefined,
   };
 }
 

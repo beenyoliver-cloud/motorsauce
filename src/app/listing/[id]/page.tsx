@@ -64,6 +64,21 @@ type Listing = {
   viewCount?: number;
 };
 
+type FitmentKnowledgeEntry = {
+  patterns: RegExp[];
+  make: string;
+  model: string;
+  yearRange?: [number, number];
+  universal?: boolean;
+};
+
+type BMWChassisMeta = {
+  make: string;
+  defaultModel: string;
+  yearRange: [number, number];
+  performance?: Record<string, string>;
+};
+
 type SellerInsights = {
   id?: string;
   accountType?: string | null;
@@ -222,6 +237,18 @@ async function fetchListingFromSupabase(id: string): Promise<Listing | null> {
       yearFrom: typeof listing.year_from === "number" ? listing.year_from : listing.year_from ? Number(listing.year_from) : undefined,
       yearTo: typeof listing.year_to === "number" ? listing.year_to : listing.year_to ? Number(listing.year_to) : undefined,
       viewCount: typeof listing.view_count === "number" ? listing.view_count : undefined,
+      vehicles: Array.isArray(listing.vehicles)
+        ? listing.vehicles
+        : typeof listing.vehicles === "string"
+        ? (() => {
+            try {
+              const parsed = JSON.parse(listing.vehicles);
+              return Array.isArray(parsed) ? parsed : undefined;
+            } catch {
+              return undefined;
+            }
+          })()
+        : undefined,
     };
 
     console.log(`[listing page] direct Supabase fetch success for id=${id}`);
@@ -393,6 +420,128 @@ async function detectPriceAnomaly(listing: Listing): Promise<PriceAnomalyResult>
   }
 }
 
+const FITMENT_KNOWLEDGE_BASE: FitmentKnowledgeEntry[] = [
+  { patterns: [/e39/i, /\bm5\b/i], make: "BMW", model: "M5", yearRange: [1998, 2003] },
+  { patterns: [/e46/i, /\bm3\b/i], make: "BMW", model: "M3", yearRange: [2000, 2006] },
+  { patterns: [/e36/i, /\bm3\b/i], make: "BMW", model: "M3", yearRange: [1992, 1999] },
+  { patterns: [/e30/i, /\bm3\b/i], make: "BMW", model: "M3", yearRange: [1986, 1991] },
+  { patterns: [/e60/i, /\bm5\b/i], make: "BMW", model: "M5", yearRange: [2005, 2010] },
+  { patterns: [/golf/i, /\bmk7\b/i], make: "Volkswagen", model: "Golf", yearRange: [2013, 2020] },
+  { patterns: [/golf/i, /\bmk6\b/i], make: "Volkswagen", model: "Golf", yearRange: [2009, 2012] },
+  { patterns: [/golf/i, /\bmk5\b/i], make: "Volkswagen", model: "Golf", yearRange: [2004, 2009] },
+  { patterns: [/rs4\b/i, /\bb7\b/i], make: "Audi", model: "RS4", yearRange: [2006, 2008] },
+  { patterns: [/s4\b/i, /\bb8\b/i], make: "Audi", model: "S4", yearRange: [2009, 2016] },
+  { patterns: [/rs3\b/i, /\b8v\b/i], make: "Audi", model: "RS3", yearRange: [2015, 2020] },
+  { patterns: [/focus\b/i, /\bmk2\b/i, /\brs\b/i], make: "Ford", model: "Focus RS", yearRange: [2009, 2011] },
+  { patterns: [/focus\b/i, /\bmk3\b/i, /\brs\b/i], make: "Ford", model: "Focus RS", yearRange: [2016, 2018] },
+  { patterns: [/wrx\b/i, /\bgd\b/i], make: "Subaru", model: "WRX", yearRange: [2000, 2007] },
+  { patterns: [/civic\b/i, /\bek\b/i], make: "Honda", model: "Civic", yearRange: [1996, 2000] },
+  { patterns: [/supra\b/i, /\ba80\b/i], make: "Toyota", model: "Supra", yearRange: [1993, 2002] },
+];
+
+const BMW_CHASSIS_CODES: Record<string, BMWChassisMeta> = {
+  e30: { make: "BMW", defaultModel: "3 Series", yearRange: [1982, 1994], performance: { m3: "M3" } },
+  e36: { make: "BMW", defaultModel: "3 Series", yearRange: [1990, 2000], performance: { m3: "M3" } },
+  e38: { make: "BMW", defaultModel: "7 Series", yearRange: [1994, 2001] },
+  e39: { make: "BMW", defaultModel: "5 Series", yearRange: [1995, 2003], performance: { m5: "M5" } },
+  e46: { make: "BMW", defaultModel: "3 Series", yearRange: [1998, 2006], performance: { m3: "M3" } },
+  e60: { make: "BMW", defaultModel: "5 Series", yearRange: [2003, 2010], performance: { m5: "M5" } },
+  e63: { make: "BMW", defaultModel: "6 Series", yearRange: [2004, 2010], performance: { m6: "M6" } },
+  e90: { make: "BMW", defaultModel: "3 Series", yearRange: [2005, 2011], performance: { m3: "M3" } },
+  e92: { make: "BMW", defaultModel: "3 Series", yearRange: [2006, 2013], performance: { m3: "M3" } },
+  f10: { make: "BMW", defaultModel: "5 Series", yearRange: [2010, 2016], performance: { m5: "M5" } },
+  f80: { make: "BMW", defaultModel: "3 Series", yearRange: [2014, 2018], performance: { m3: "M3" } },
+  f82: { make: "BMW", defaultModel: "4 Series", yearRange: [2014, 2020], performance: { m4: "M4" } },
+  g80: { make: "BMW", defaultModel: "3 Series", yearRange: [2020, 2025], performance: { m3: "M3" } },
+  g82: { make: "BMW", defaultModel: "4 Series", yearRange: [2021, 2025], performance: { m4: "M4" } },
+};
+
+function expandVehicleRange(make: string, model: string, yearRange?: [number, number], universal?: boolean): Vehicle[] {
+  if (universal) {
+    return [{ make, model, universal: true }];
+  }
+  if (yearRange && Number.isFinite(yearRange[0]) && Number.isFinite(yearRange[1])) {
+    const [from, to] = yearRange;
+    const vehicles: Vehicle[] = [];
+    for (let year = from; year <= to; year++) {
+      vehicles.push({ make, model, year });
+      if (vehicles.length >= 30) break;
+    }
+    return vehicles;
+  }
+  return [{ make, model }];
+}
+
+function inferVehiclesFromTitle(listing: Listing): Vehicle[] {
+  const text = [
+    listing.title,
+    listing.description,
+    listing.make,
+    listing.model,
+    listing.genCode,
+    listing.engine,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  if (!text) return [];
+
+  const matches: Vehicle[] = [];
+  for (const entry of FITMENT_KNOWLEDGE_BASE) {
+    if (entry.patterns.every((pattern) => pattern.test(text))) {
+      matches.push(...expandVehicleRange(entry.make, entry.model, entry.yearRange, entry.universal));
+    }
+  }
+
+  const chassisCodes = text.match(/\b[efg]\d{2}\b/g) || [];
+  chassisCodes.forEach((codeRaw) => {
+    const meta = BMW_CHASSIS_CODES[codeRaw.toLowerCase()];
+    if (!meta) return;
+    let model = meta.defaultModel;
+    if (meta.performance) {
+      for (const [hint, label] of Object.entries(meta.performance)) {
+        if (new RegExp(`\\b${hint}\\b`, "i").test(text)) {
+          model = label;
+          break;
+        }
+      }
+    }
+    matches.push(...expandVehicleRange(meta.make, model, meta.yearRange));
+  });
+
+  if (!matches.length && listing.make && listing.model) {
+    if (listing.yearFrom && listing.yearTo) {
+      matches.push(...expandVehicleRange(listing.make, listing.model, [listing.yearFrom, listing.yearTo]));
+    } else if (listing.year) {
+      matches.push({ make: listing.make, model: listing.model, year: listing.year });
+    }
+  }
+
+  return matches;
+}
+
+function mergeVehicles(base?: Vehicle[] | null, extra?: Vehicle[] | null): Vehicle[] {
+  const merged: Vehicle[] = [];
+  const seen = new Set<string>();
+  const add = (vehicle?: Vehicle | null) => {
+    if (!vehicle) return;
+    const make = vehicle.make?.trim();
+    const model = vehicle.model?.trim();
+    if (!make && !model && !vehicle.universal) return;
+    const key = [
+      (make || "").toLowerCase(),
+      (model || "").toLowerCase(),
+      vehicle.universal ? "universal" : vehicle.year ?? "any",
+    ].join("|");
+    if (seen.has(key)) return;
+    seen.add(key);
+    merged.push(vehicle);
+  };
+  (base || []).forEach(add);
+  (extra || []).forEach(add);
+  return merged;
+}
+
 
 /* ========== Metadata ========== */
 export async function generateMetadata({
@@ -471,6 +620,12 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
   // If listing is sold or draft and user is NOT the owner, show 404
   if ((listing.status === "sold" || listing.status === "draft") && !isOwner) {
     notFound();
+  }
+
+  const inferredVehicles = inferVehiclesFromTitle(listing);
+  const mergedVehicles = mergeVehicles(listing.vehicles, inferredVehicles);
+  if (mergedVehicles.length) {
+    listing = { ...listing, vehicles: mergedVehicles };
   }
 
   const [sellerInsights, priceAnomaly] = await Promise.all([
@@ -663,7 +818,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
                   listingTitle={listing.title}
                   listingImage={gallery[0] || listing.image}
                   listingPrice={Number(String(listing.price).replace(/[^\d.]/g, "")) || 0}
-                  className="w-full justify-center rounded-xl border-2 border-yellow-500 bg-white text-yellow-700 hover:bg-yellow-50"
+                  className="w-full justify-center rounded-xl border-2 border-yellow-500 bg-white text-gray-900 hover:bg-yellow-50"
                 />
                 <ContactSellerButton
                   sellerName={listing.seller?.name || "Seller"}
@@ -676,11 +831,11 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               <div className="flex flex-wrap gap-2">
                 <FavoriteButton
                   listingId={String(listing.id)}
-                  className="flex-1 min-w-[140px] justify-center text-sm font-semibold"
+                  className="flex-1 min-w-[140px] justify-center text-sm font-semibold bg-white text-gray-900 border-gray-300 hover:bg-gray-50"
                 />
                 <ReportListingButton
                   listingId={listing.id}
-                  className="flex-1 min-w-[140px] border-red-200 text-red-700 hover:bg-red-50"
+                  className="flex-1 min-w-[140px] justify-center text-sm font-semibold border-red-200 text-red-700 bg-white hover:bg-red-50"
                 />
               </div>
             </div>

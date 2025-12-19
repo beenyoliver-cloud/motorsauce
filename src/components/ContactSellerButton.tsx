@@ -61,11 +61,15 @@ export default function ContactSellerButton({
     <button
       onClick={handleClick}
       disabled={isOwn}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg border-2 border-gray-900 bg-white px-5 py-2.5 font-semibold text-gray-900 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold transition border border-transparent ${
+        isOwn
+          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+          : "bg-gray-900 text-white hover:bg-black"
+      } ${className}`}
       title={isOwn ? "You can't message yourself" : "Contact seller"}
     >
       <MessageCircle size={18} />
-      Contact Seller
+      Contact seller
     </button>
   );
 }

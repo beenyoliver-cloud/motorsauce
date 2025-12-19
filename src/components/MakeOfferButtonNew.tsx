@@ -73,10 +73,10 @@ export default function MakeOfferButtonNew({
     <>
       <button
         onClick={handleClick}
-        className={`rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
+        className={`inline-flex items-center justify-center gap-2 rounded-xl border-2 px-4 py-2.5 text-sm font-semibold transition ${
           isOwnListing
-            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-            : "bg-yellow-500 text-black hover:bg-yellow-600"
+            ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200"
+            : "bg-white text-gray-900 border-yellow-500 hover:bg-yellow-50"
         } ${className}`}
         disabled={isOwnListing}
         title={
@@ -85,7 +85,7 @@ export default function MakeOfferButtonNew({
             : "Make an offer on this listing"
         }
       >
-        {isOwnListing ? "Your Listing" : "Make an Offer"}
+        {isOwnListing ? "Your Listing" : "Make an offer"}
       </button>
 
       <MakeOfferModal

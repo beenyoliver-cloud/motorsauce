@@ -283,7 +283,7 @@ export default function Header() {
       {/* Mobile header (md:hidden) - Compact two-row design */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         {/* Top row: Menu, Logo, Icons */}
-        <div className="h-11 flex items-center justify-between px-2">
+        <div className="relative h-11 flex items-center justify-between px-2">
           {/* Left: Menu button */}
           <button
             className="flex items-center justify-center text-black hover:text-yellow-500 w-9 h-9"
