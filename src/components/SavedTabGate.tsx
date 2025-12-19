@@ -12,13 +12,14 @@ function TabLink({ href, label, isActive }: { href: string; label: string; isAct
     <Link
       href={href}
       aria-current={isActive ? "page" : undefined}
-      className={`px-4 py-2 text-sm rounded-2xl border transition shadow-sm ${
+      className={`flex min-w-[140px] items-center justify-between rounded-2xl border px-4 py-2 text-sm font-semibold transition ${
         isActive
-          ? "bg-slate-900 text-white border-slate-900 shadow-slate-900/20"
-          : "bg-white/90 text-gray-700 border-gray-200 hover:border-yellow-400"
+          ? "bg-gray-900 text-white border-gray-900 shadow-lg"
+          : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
       }`}
     >
-      {label}
+      <span className="truncate">{label}</span>
+      {isActive && <span className="text-[10px] uppercase tracking-wide text-white/70 ml-3">Active</span>}
     </Link>
   );
 }
@@ -98,7 +99,7 @@ export default function SavedTabGate({
   return (
     <>
       {/* Tabs row */}
-      <div className="mt-6 flex flex-wrap gap-2">
+      <div className="mt-6 flex gap-2 overflow-x-auto sm:flex-wrap sm:overflow-visible pb-1">
         {me && <TabLink href={`${baseHref}?tab=saved`} label="Saved" isActive={activeTab === "saved"} />}
         <TabLink href={`${baseHref}?tab=my`} label={listingsLabel} isActive={activeTab === "my"} />
         {me && <TabLink href={`${baseHref}?tab=drafts`} label={`Drafts${draftCount > 0 ? ` (${draftCount})` : ''}`} isActive={activeTab === "drafts"} />}

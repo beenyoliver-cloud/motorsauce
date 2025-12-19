@@ -659,14 +659,14 @@ export default function ThreadClientNew({
       </div>
 
       {/* Composer */}
-  <div ref={composerRef} className="border-t border-gray-200 p-3 bg-white shrink-0">
-        <div className="mb-2 flex flex-wrap gap-2">
+      <div ref={composerRef} className="border-t border-gray-200 p-2 sm:p-3 bg-white shrink-0">
+        <div className="mb-2 flex gap-2 overflow-x-auto sm:flex-wrap sm:overflow-visible pb-1">
           {QUICK_REPLIES.map((reply) => (
             <button
               key={reply}
               type="button"
               onClick={() => handleQuickReply(reply)}
-              className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs text-gray-600 hover:border-yellow-400 hover:text-yellow-800 transition"
+              className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] sm:text-xs text-gray-600 hover:border-yellow-400 hover:text-yellow-800 transition whitespace-nowrap"
             >
               {reply}
             </button>

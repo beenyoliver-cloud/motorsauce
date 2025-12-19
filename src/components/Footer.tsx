@@ -36,7 +36,7 @@ export default function Footer() {
             <img
               src="/images/MSlogoreal.png"
               alt="Motorsource"
-              className="h-10 w-auto"
+              className="h-20 w-auto"
               loading="lazy"
             />
           </Link>

@@ -94,7 +94,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
   const infoTags: Array<{ icon: ReactNode; label: string }> = [];
   if (sellerMetrics.county || sellerMetrics.country) {
     infoTags.push({
-      icon: <MapPin className="h-4 w-4 text-white/70" />,
+    icon: <MapPin className="h-4 w-4 text-gray-500" />,
       label:
         sellerMetrics.county && sellerMetrics.country
           ? `${sellerMetrics.county}, ${sellerMetrics.country}`
@@ -102,7 +102,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
     });
   }
   infoTags.push({
-    icon: <Store className="h-4 w-4 text-white/70" />,
+    icon: <Store className="h-4 w-4 text-gray-500" />,
     label: formatJoined(sellerMetrics.created_at),
   });
 
@@ -111,19 +111,19 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
       label: "Response time",
       value: formatResponseTime(sellerMetrics.avg_response_time_minutes),
       helper: sellerMetrics.avg_response_time_minutes ? "avg reply" : "new to messaging",
-      icon: <Clock3 className="h-4 w-4 text-white/70" />,
+      icon: <Clock3 className="h-4 w-4 text-gray-500" />,
     },
     {
       label: "Response rate",
       value: sellerMetrics.response_rate ? `${sellerMetrics.response_rate}%` : "Building trust",
       helper: "last 30 days",
-      icon: <MessageCircle className="h-4 w-4 text-white/70" />,
+      icon: <MessageCircle className="h-4 w-4 text-gray-500" />,
     },
     {
       label: "Enquiries answered",
       value: sellerMetrics.total_responses ?? 0,
       helper: "lifetime",
-      icon: <Star className="h-4 w-4 text-white/70" />,
+      icon: <Star className="h-4 w-4 text-gray-500" />,
     },
   ];
 
@@ -134,72 +134,74 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
 
   return (
     <section className="max-w-6xl mx-auto px-2 sm:px-4 py-4 md:py-6 space-y-6">
-      <div className="relative overflow-hidden rounded-3xl border border-slate-900/10 bg-slate-950 text-white shadow-2xl">
-        <div className="absolute inset-0">
+      <div className="rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="relative h-32 sm:h-40 bg-gray-100">
           <EditableBackground
             displayName={displayName}
             backgroundUrl={sellerMetrics.background_image}
-            className="absolute inset-0 opacity-40"
+            className="absolute inset-0 object-cover"
             heightClass="h-full"
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-slate-900/40" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-transparent" />
         </div>
-        <div className="relative z-10 px-4 py-6 sm:px-6 md:px-10 md:py-10 space-y-6">
-          <div className="flex flex-col lg:flex-row gap-6">
-            <div className="flex flex-1 items-start gap-4">
-              <EditableAvatar
-                displayName={displayName}
-                avatarUrl={sellerMetrics.avatar}
-                className="ring-offset-slate-900 drop-shadow-2xl"
-              />
-              <div className="space-y-2 min-w-0">
-                <p className="text-[11px] uppercase tracking-[0.4em] text-white/70">Seller profile</p>
-                <h1 className="text-2xl sm:text-3xl font-bold leading-tight">{displayName}</h1>
-                <div className="flex flex-wrap gap-2 text-sm text-white/80">
-                  {infoTags.map(({ icon, label }) => (
-                    <span key={label} className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 backdrop-blur">
-                      {icon}
-                      {label}
-                    </span>
-                  ))}
+        <div className="px-4 sm:px-6 md:px-10 pb-6">
+          <div className="-mt-12 flex flex-col gap-4 lg:flex-row lg:items-end">
+            <EditableAvatar
+              displayName={displayName}
+              avatarUrl={sellerMetrics.avatar}
+              className="h-24 w-24 ring-4 ring-white shadow-xl"
+            />
+            <div className="flex-1 min-w-0 space-y-2">
+              <p className="text-[11px] uppercase tracking-[0.3em] text-gray-500">Seller profile</p>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div className="space-y-1 min-w-0">
+                  <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 leading-tight truncate">{displayName}</h1>
+                  <div className="flex flex-wrap gap-2 text-sm text-gray-600">
+                    {infoTags.map(({ icon, label }) => (
+                      <span key={label} className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-gray-700 border border-gray-200">
+                        {icon}
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ProfileActions
+                    shareText={`Check out ${displayName} on Motorsource`}
+                    shareUrl={baseHref}
+                    toUsername={displayName}
+                    toUserId={sellerMetrics.id}
+                  />
+                  {sellerMetrics.id && <ReportUserButton sellerName={displayName} sellerId={sellerMetrics.id} />}
                 </div>
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-              <ProfileActions
-                shareText={`Check out ${displayName} on Motorsource`}
-                shareUrl={baseHref}
-                toUsername={displayName}
-                toUserId={sellerMetrics.id}
-              />
-              {sellerMetrics.id && <ReportUserButton sellerName={displayName} sellerId={sellerMetrics.id} />}
-              <EditProfileTopButton displayName={displayName} baseHref={baseHref} />
-            </div>
+            <EditProfileTopButton displayName={displayName} baseHref={baseHref} />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="rounded-2xl bg-white/10 backdrop-blur px-4 py-3">
-              <div className="text-xs uppercase tracking-wide text-white/70">Listings live</div>
-              <SellerListingCount sellerName={displayName} className="mt-1 text-3xl font-bold text-white" />
-              <p className="text-xs text-white/70 mt-0.5">Active listings across the marketplace</p>
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
+              <div className="text-xs uppercase tracking-wide text-gray-500">Listings live</div>
+              <SellerListingCount sellerName={displayName} className="mt-1 text-2xl font-bold text-gray-900" />
+              <p className="text-xs text-gray-500 mt-0.5">Active listings</p>
             </div>
             {stats.map((stat) => (
-              <div key={stat.label} className="rounded-2xl bg-white/10 backdrop-blur px-4 py-3 flex flex-col gap-1">
-                <div className="flex items-center gap-2 text-white/70 text-xs uppercase tracking-wide">
+              <div key={stat.label} className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 flex flex-col gap-1">
+                <div className="flex items-center gap-2 text-gray-500 text-xs uppercase tracking-wide">
                   {stat.icon}
                   {stat.label}
                 </div>
-                <div className="text-2xl font-semibold text-white">{stat.value}</div>
-                <p className="text-xs text-white/70">{stat.helper}</p>
+                <div className="text-xl font-semibold text-gray-900">{stat.value}</div>
+                <p className="text-xs text-gray-500">{stat.helper}</p>
               </div>
             ))}
           </div>
 
-          <div className="rounded-2xl bg-white/10 border border-white/20 p-4 text-sm leading-relaxed text-white/90 flex flex-col gap-2">
+          <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm leading-relaxed text-gray-700 flex flex-col gap-2">
             <p>{aboutPreview}</p>
-            <div className="flex items-center justify-between text-xs text-white/70">
-              <span>Tap into the About tab to read the full story.</span>
-              <Link href={`${baseHref}?tab=about`} className="text-white hover:text-yellow-200 underline">
+            <div className="flex items-center justify-between text-xs text-gray-500">
+              <span>Tap the About tab to read the full story.</span>
+              <Link href={`${baseHref}?tab=about`} className="text-yellow-600 hover:text-yellow-700 font-semibold">
                 Open About
               </Link>
             </div>

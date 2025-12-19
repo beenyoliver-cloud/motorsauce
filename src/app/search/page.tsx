@@ -489,7 +489,7 @@ function SearchPageInner() {
       />
 
       {/* Results column */}
-      <section className="pt-3 sm:pt-4">
+      <section className="pt-6 sm:pt-4">
         {/* Mobile header (no filters button) */}
         <div className="md:hidden mb-2 px-3">
           <h1 className="text-lg font-bold text-black">Search</h1>

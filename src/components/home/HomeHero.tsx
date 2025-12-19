@@ -151,7 +151,7 @@ export default function HomeHero() {
           <Zap className="h-3.5 w-3.5 text-yellow-300" />
           Live vehicle-matching
         </div>
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight drop-shadow-[0_8px_25px_rgba(0,0,0,0.35)]">
+        <h1 className="text-xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight drop-shadow-[0_8px_25px_rgba(0,0,0,0.35)]">
           Find the right part for your ride faster than your pit crew.
         </h1>
         <p className="text-sm sm:text-base text-white/80 max-w-2xl">
@@ -164,10 +164,10 @@ export default function HomeHero() {
               plateFocused ? "ring-2 ring-offset-2 ring-offset-slate-900 ring-yellow-300" : ""
             }`}
           >
-            <label className="text-xs font-semibold text-gray-800 md:pr-2">Search by registration</label>
+            <label className="text-[10px] font-semibold uppercase tracking-wide text-gray-600 md:pr-2">Search by registration</label>
             <div className="flex flex-col items-center justify-center w-full">
               <div
-                className={`relative flex w-full max-w-[480px] items-stretch rounded-lg border-2 border-[#1c1b18] bg-[#F9D548] shadow-[0_14px_22px_rgba(0,0,0,0.35)] transition-all duration-300 min-h-[64px] sm:min-h-[78px] ${
+                className={`relative flex w-full max-w-[480px] items-stretch rounded-lg border-2 border-[#1c1b18] bg-[#F9D548] shadow-[0_12px_18px_rgba(0,0,0,0.28)] transition-all duration-300 min-h-[56px] sm:min-h-[76px] ${
                   plateFocused ? "ring-2 ring-offset-2 ring-offset-slate-900 ring-yellow-200/60" : ""
                 }`}
               >
@@ -187,7 +187,7 @@ export default function HomeHero() {
                     }
                   }}
                   placeholder="AB12 CDE"
-                  className="flex-1 bg-transparent text-black placeholder:text-black/40 px-4 sm:px-6 text-[1.4rem] sm:text-[1.9rem] uppercase tracking-[0.18em] focus:outline-none font-semibold text-center caret-black"
+                  className="flex-1 bg-transparent text-black placeholder:text-black/40 px-4 sm:px-6 text-[1.2rem] sm:text-[1.9rem] uppercase tracking-[0.18em] focus:outline-none font-semibold text-center caret-black"
                   style={{
                     fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif",
                   }}
