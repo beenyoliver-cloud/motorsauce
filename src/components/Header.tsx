@@ -298,7 +298,7 @@ export default function Header() {
             <img
               src="/images/MSlogoreal.png"
               alt="Motorsauce"
-              className="h-[28px] w-auto"
+              className="h-[34px] w-auto"
             />
           </Link>
 
@@ -353,7 +353,7 @@ export default function Header() {
                 <img
                   src="/images/MSlogoreal.png"
                   alt="Motorsauce"
-                  className="h-[34px] w-auto"
+                  className="h-[40px] w-auto"
                 />
               </Link>
               <button
@@ -552,7 +552,7 @@ export default function Header() {
           <img
             src="/images/MSlogoreal.png"
             alt="Motorsauce"
-            className="h-[42px] w-auto"
+            className="h-[52px] w-auto"
           />
         </Link>
 

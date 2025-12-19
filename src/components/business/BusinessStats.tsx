@@ -48,7 +48,7 @@ export default function BusinessStats({ business, className = "" }: Props) {
       className={`text-white bg-gradient-to-br from-[var(--brand-secondary,#0f172a)] to-[#020617] ${className}`}
     >
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat, idx) => {
             const Icon = stat.icon;
             return (

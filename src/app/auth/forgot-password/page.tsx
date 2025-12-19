@@ -28,19 +28,24 @@ export default function ForgotPasswordPage() {
 
       if (error) {
         const message = error.message?.toLowerCase() || "";
-        if (message.includes("rate limit") || message.includes("too many")) {
+        if (message.includes("rate limit") || message.includes("too many") || error.status === 429) {
           throw new Error("Too many requests. Please wait a few minutes before trying again.");
         }
-        throw new Error(error.message || "Failed to send reset email. Please try again.");
+        const friendlyMessage =
+          error.message && error.message.trim() && error.message.trim() !== "{}"
+            ? error.message
+            : "Failed to send reset email. Please try again.";
+        throw new Error(friendlyMessage);
       }
 
       setSuccess(true);
     } catch (e) {
       const message = e instanceof Error ? e.message : "Failed to send reset email. Please try again.";
-      if (message.toLowerCase().includes("rate limit") || message.toLowerCase().includes("too many")) {
+      const normalized = message.trim().toLowerCase();
+      if (normalized.includes("rate limit") || normalized.includes("too many")) {
         setErr("Too many attempts. Please wait a few minutes before trying again.");
       } else {
-        setErr(message);
+        setErr(message && message !== "{}" ? message : "Failed to send reset email. Please try again.");
       }
     } finally {
       setBusy(false);
