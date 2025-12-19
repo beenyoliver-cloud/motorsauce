@@ -16,6 +16,7 @@ export default function HomeHero() {
   const [manualMake, setManualMake] = useState("");
   const [manualModel, setManualModel] = useState("");
   const [manualYear, setManualYear] = useState("");
+  const [fallbackMessage, setFallbackMessage] = useState("");
   const manualModelOptions = useMemo(
     () => (manualMake && manualVehicleModels[manualMake] ? manualVehicleModels[manualMake] : []),
     [manualMake]
@@ -50,6 +51,7 @@ export default function HomeHero() {
     setManualMake("");
     setManualModel("");
     setManualYear("");
+    setFallbackMessage("");
   }
 
   async function submitPlateSearch() {
@@ -68,25 +70,44 @@ export default function HomeHero() {
         throw new Error(data?.error || "Lookup failed");
       }
 
+      const makeVal = typeof data.make === "string" ? data.make.trim() : "";
+      const modelVal = typeof data.model === "string" ? data.model.trim() : "";
+      const yearVal =
+        typeof data.year === "number" && Number.isFinite(data.year) ? data.year : undefined;
+
       // Persist last successful lookup to help My Garage prefill
       persistLastLookup({
-        make: data.make,
-        model: data.model,
-        year: data.year,
+        make: makeVal,
+        model: modelVal,
+        year: yearVal,
         trim: data.trim,
         reg,
       });
 
+      if (!modelVal) {
+        setManualMake(makeVal);
+        setManualModel("");
+        setManualYear(yearVal ? String(yearVal) : "");
+        setFallbackMessage(
+          makeVal
+            ? `Select your ${makeVal} model to finish matching.`
+            : "Pick your exact model so we can finish matching your vehicle."
+        );
+        setShowManualFallback(true);
+        return;
+      }
+
       const params = new URLSearchParams();
-      if (data.make) params.set("make", data.make);
-      if (data.model) params.set("model", data.model);
-      if (typeof data.year === "number" && Number.isFinite(data.year)) {
-        params.set("yearMin", String(data.year));
-        params.set("yearMax", String(data.year));
+      if (makeVal) params.set("make", makeVal);
+      if (modelVal) params.set("model", modelVal);
+      if (yearVal) {
+        params.set("yearMin", String(yearVal));
+        params.set("yearMax", String(yearVal));
       }
       router.push(`/search${params.toString() ? '?' + params.toString() : ''}`);
     } catch (e: any) {
-      setPlateError("Sorry, we can't find this vehicle. Add the details below to carry on.");
+      setPlateError(null);
+      setFallbackMessage("Add your vehicle details so we can finish matching.");
       setShowManualFallback(true);
     } finally {
       setPlateLoading(false);
@@ -169,9 +190,6 @@ export default function HomeHero() {
                   }}
                 />
               </div>
-              <p className="mt-2 text-xs text-white/80 text-center max-w-[480px]">
-                Heads up: we can’t fetch your car model automatically, so add it on the next screen to tighten the results.
-              </p>
             </div>
             <button
               type="button"
@@ -200,7 +218,9 @@ export default function HomeHero() {
 
           {showManualFallback && (
             <div className="mt-3 rounded-2xl border border-yellow-200/70 bg-yellow-50 p-4 space-y-3 text-sm text-yellow-900 shadow-lg">
-              <p className="font-semibold text-base">Sorry, we can't find this vehicle. Tell us what you're driving instead.</p>
+              <p className="font-semibold text-base">
+                {fallbackMessage || "Tell us what you're driving so we can tailor the results."}
+              </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <select
                   className="border border-yellow-300 rounded-md px-3 py-2 bg-white text-sm text-gray-900 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
