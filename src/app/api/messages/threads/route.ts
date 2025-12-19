@@ -38,6 +38,11 @@ type ProfileRow = {
   name: string;
   email: string;
   avatar: string | null;
+  account_type?: string | null;
+  business_verified?: boolean | null;
+  total_sales?: number | null;
+  avg_response_time_minutes?: number | null;
+  response_rate?: number | null;
 };
 
 // GET /api/messages/threads - List all threads for the authenticated user
@@ -97,7 +102,7 @@ export async function GET(req: Request) {
 
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id, name, email, avatar")
+      .select("id, name, email, avatar, account_type, business_verified, total_sales, avg_response_time_minutes, response_rate")
       .in("id", Array.from(participantIds));
 
     const profileMap = new Map<string, ProfileRow>();
@@ -135,6 +140,44 @@ export async function GET(req: Request) {
 
     const readSet = new Set((readStatus || []).map((r: { thread_id: string }) => r.thread_id));
 
+    const threadIds = visibleThreads.map((t: ThreadRow) => t.id);
+
+    // Determine last message sender for "needs reply"
+    const lastSenderMap = new Map<string, { from_user_id?: string | null; sender?: string | null }>();
+    if (threadIds.length > 0) {
+      const { data: lastRows, error: lastErr } = await supabase
+        .from("messages")
+        .select("thread_id, from_user_id, sender, created_at")
+        .in("thread_id", threadIds)
+        .order("created_at", { ascending: false });
+      if (!lastErr && lastRows) {
+        for (const row of lastRows) {
+          if (!lastSenderMap.has(row.thread_id)) lastSenderMap.set(row.thread_id, row);
+        }
+      } else if (lastErr) {
+        console.warn("[threads API] Unable to fetch last message senders:", lastErr);
+      }
+    }
+
+    // Fetch open offers for quick filtering
+    const offerMap = new Map<string, { id: string; amount_cents: number; currency: string; status: string }>();
+    if (threadIds.length > 0) {
+      const { data: offerRows, error: offerError } = await supabase
+        .from("offers")
+        .select("id, thread_id, amount_cents, currency, status")
+        .in("thread_id", threadIds)
+        .in("status", ["pending", "countered"]);
+      if (!offerError && offerRows) {
+        offerRows.forEach((offer) => {
+          if (!offerMap.has(offer.thread_id)) {
+            offerMap.set(offer.thread_id, offer as any);
+          }
+        });
+      } else if (offerError) {
+        console.warn("[threads API] Unable to fetch offers:", offerError);
+      }
+    }
+
     // Build response
     const enriched = visibleThreads.map((t: ThreadRow) => {
       const p1 = t.participant_1_id || t.a_user!;
@@ -142,6 +185,11 @@ export async function GET(req: Request) {
       const peerId = p1 === user.id ? p2 : p1;
       const peer = profileMap.get(peerId);
       const listing = t.listing_ref ? listingMap.get(t.listing_ref) : null;
+      const lastMeta = lastSenderMap.get(t.id);
+      const lastSenderId = lastMeta?.from_user_id || lastMeta?.sender || null;
+      const lastMessageFromSelf = lastSenderId ? lastSenderId === user.id : false;
+      const openOffer = offerMap.get(t.id) || null;
+      const needsReply = !readSet.has(t.id) && !lastMessageFromSelf;
       return {
         id: t.id,
         peer: {
@@ -149,12 +197,27 @@ export async function GET(req: Request) {
           name: peer?.name || "Unknown",
           email: peer?.email,
           avatar: peer?.avatar,
+          accountType: peer?.account_type || null,
+          businessVerified: Boolean(peer?.business_verified),
+          totalSales: peer?.total_sales || null,
+          avgResponseMinutes: peer?.avg_response_time_minutes || null,
+          responseRate: peer?.response_rate || null,
         },
         listingRef: t.listing_ref || null,
         listing: listing,
         lastMessage: t.last_message_text || null,
         lastMessageAt: t.last_message_at || t.created_at || new Date().toISOString(),
         isRead: readSet.has(t.id),
+        needsReply,
+        lastMessageFromSelf,
+        openOffer: openOffer
+          ? {
+              id: openOffer.id,
+              status: openOffer.status,
+              amountCents: openOffer.amount_cents,
+              currency: openOffer.currency,
+            }
+          : null,
         createdAt: t.created_at || new Date().toISOString(),
       };
     });

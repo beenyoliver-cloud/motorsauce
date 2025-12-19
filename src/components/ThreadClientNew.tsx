@@ -4,7 +4,7 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { User, Calendar, Trash2, Mail, ShieldAlert } from "lucide-react";
+import { User, Calendar, Trash2, Mail, ShieldAlert, ShoppingBag, Shield } from "lucide-react";
 import {
   fetchMessages,
   sendMessage,
@@ -20,12 +20,33 @@ import OfferCard from "@/components/OfferCard";
 import { ReviewMessage } from "@/components/ReviewMessage";
 import { analyzeMessageSafety } from "@/lib/messagingSafety";
 
+const QUICK_REPLIES = [
+  "Thanks for reaching out! This part is still available.",
+  "Happy to arrange collection or courier - let me know what works for you.",
+  "Can you share your reg or VIN so I can double-check fitment?",
+  "I'll send an offer through Motorsource so we're both protected.",
+];
+
 type PeerProfile = {
   id: string;
   name: string;
   email: string;
   created_at: string;
   avatar?: string;
+  account_type?: string | null;
+  business_verified?: boolean;
+  total_sales?: number | null;
+  avg_response_time_minutes?: number | null;
+  response_rate?: number | null;
+};
+
+type ThreadListing = {
+  id: string;
+  title: string;
+  price?: number | string | null;
+  image?: string | null;
+  category?: string | null;
+  location?: string | null;
 };
 
 export default function ThreadClientNew({
@@ -38,6 +59,7 @@ export default function ThreadClientNew({
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [peerProfile, setPeerProfile] = useState<PeerProfile | null>(null);
+  const [threadListing, setThreadListing] = useState<ThreadListing | null>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +73,7 @@ export default function ThreadClientNew({
   const composerRef = useRef<HTMLDivElement | null>(null);
   const [viewportAdjustedHeight, setViewportAdjustedHeight] = useState<string | null>(null);
   const isSendingRef = useRef(false); // Prevent polling during send
+  const threadMetaFetched = useRef(false);
   const safetyInsights = useMemo(() => analyzeMessageSafety(draft), [draft]);
   const isBlockedBySafety = Boolean(safetyInsights.blockReason);
 
@@ -125,17 +148,39 @@ export default function ThreadClientNew({
         // Derive peer from messages if any
         let peerId = msgs.find(m => m.from.id !== currentUserId)?.from.id;
 
-        // Fallback: fetch thread participants if no messages yet (new conversation)
-        if (!peerId) {
+        // Load thread metadata (participants/listing) once
+        if (!threadMetaFetched.current) {
           const { data: threadRow, error: threadErr } = await supabase
             .from("threads")
-            .select("participant_1_id, participant_2_id")
+            .select("participant_1_id, participant_2_id, listing_ref")
             .eq("id", threadId)
             .single();
           if (!threadErr && threadRow) {
-            const { participant_1_id, participant_2_id } = threadRow as any;
-            if (participant_1_id && participant_2_id) {
+            threadMetaFetched.current = true;
+            const { participant_1_id, participant_2_id, listing_ref } = threadRow as any;
+            if (!peerId && participant_1_id && participant_2_id) {
               peerId = participant_1_id === currentUserId ? participant_2_id : participant_1_id;
+            }
+            if (listing_ref && !threadListing) {
+              const { data: listingData } = await supabase
+                .from("listings")
+                .select("id, title, price, images, category, location")
+                .eq("id", listing_ref)
+                .single();
+              if (listingData) {
+                const image =
+                  Array.isArray(listingData.images) && listingData.images.length > 0
+                    ? listingData.images[0]?.url || listingData.images[0]
+                    : null;
+                setThreadListing({
+                  id: listingData.id,
+                  title: listingData.title,
+                  price: listingData.price,
+                  image,
+                  category: listingData.category ?? null,
+                  location: listingData.location ?? null,
+                });
+              }
             }
           }
         }
@@ -143,7 +188,7 @@ export default function ThreadClientNew({
         if (peerId) {
           const { data: profileData } = await supabase
             .from("profiles")
-            .select("id, name, email, created_at, avatar")
+            .select("id, name, email, created_at, avatar, account_type, business_verified, total_sales, avg_response_time_minutes, response_rate")
             .eq("id", peerId)
             .single();
           if (profileData) setPeerProfile(profileData);
@@ -309,8 +354,22 @@ export default function ThreadClientNew({
   const showEmptyState = messages.length === 0 && !hasHadMessages;
 
   const memberSince = peerProfile?.created_at
-    ? new Date(peerProfile.created_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+    ? new Date(peerProfile.created_at).toLocaleDateString("en-GB", { month: "long", year: "numeric" })
     : null;
+
+  const formatPrice = (price: ThreadListing["price"]) => {
+    if (price === null || price === undefined) return null;
+    if (typeof price === "number") {
+      return `£${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    const trimmed = price.toString().trim();
+    return trimmed.startsWith("£") ? trimmed : `£${trimmed}`;
+  };
+
+  const handleQuickReply = (reply: string) => {
+    setDraft(reply);
+    setSendError(null);
+  };
 
   // Group messages by day
   const grouped: Array<{ day: string; msgs: Message[] }> = [];
@@ -386,6 +445,71 @@ export default function ThreadClientNew({
           </div>
         </div>
       </div>
+
+      {(peerProfile || threadListing) && (
+        <div className="border-b border-gray-100 bg-gray-50 px-3 py-3 md:px-4 grid gap-3 md:grid-cols-2">
+          {peerProfile && (
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <Shield className={`h-4 w-4 ${peerProfile.business_verified ? "text-green-600" : "text-gray-400"}`} />
+                <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Buyer profile</p>
+              </div>
+              <div className="text-sm text-gray-900 font-semibold truncate">{displayName(peerProfile.name)}</div>
+              <dl className="grid grid-cols-2 gap-3 text-xs text-gray-600">
+                <div>
+                  <dt className="uppercase tracking-widest text-[10px] text-gray-400">Sales</dt>
+                  <dd className="text-sm font-semibold text-gray-900">{peerProfile.total_sales ?? "—"}</dd>
+                </div>
+                <div>
+                  <dt className="uppercase tracking-widest text-[10px] text-gray-400">Response rate</dt>
+                  <dd className="text-sm font-semibold text-gray-900">
+                    {peerProfile.response_rate ? `${peerProfile.response_rate}%` : "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="uppercase tracking-widest text-[10px] text-gray-400">Avg. reply</dt>
+                  <dd className="text-sm font-semibold text-gray-900">
+                    {peerProfile.avg_response_time_minutes ? `${peerProfile.avg_response_time_minutes}m` : "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="uppercase tracking-widest text-[10px] text-gray-400">Account</dt>
+                  <dd className="text-sm font-semibold text-gray-900">
+                    {peerProfile.account_type === "business" ? "Business" : "Individual"}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          )}
+          {threadListing && (
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm flex items-center gap-3">
+              <div className="h-12 w-12 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden">
+                {threadListing.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={threadListing.image} alt={threadListing.title} className="h-full w-full object-cover" />
+                ) : (
+                  <ShoppingBag className="h-5 w-5 text-gray-500" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-900 truncate">{threadListing.title}</p>
+                {formatPrice(threadListing.price) && (
+                  <p className="text-xs text-gray-600">{formatPrice(threadListing.price)}</p>
+                )}
+                <p className="text-[11px] text-gray-500 truncate">
+                  {threadListing.category || "Parts"} {threadListing.location ? `• ${threadListing.location}` : ""}
+                </p>
+                <Link
+                  href={`/listing/${threadListing.id}`}
+                  className="text-[11px] font-semibold text-yellow-700 hover:text-yellow-900"
+                >
+                  View listing →
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Messages / Empty state */}
       <div
@@ -536,6 +660,18 @@ export default function ThreadClientNew({
 
       {/* Composer */}
   <div ref={composerRef} className="border-t border-gray-200 p-3 bg-white shrink-0">
+        <div className="mb-2 flex flex-wrap gap-2">
+          {QUICK_REPLIES.map((reply) => (
+            <button
+              key={reply}
+              type="button"
+              onClick={() => handleQuickReply(reply)}
+              className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs text-gray-600 hover:border-yellow-400 hover:text-yellow-800 transition"
+            >
+              {reply}
+            </button>
+          ))}
+        </div>
         <form
           onSubmit={(e) => {
             e.preventDefault();

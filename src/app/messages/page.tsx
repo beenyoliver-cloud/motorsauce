@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { MessageCircle, CheckSquare, Square, Trash2, X, Search, Filter, ShieldAlert } from "lucide-react";
-import { fetchThreads, Thread, deleteThread } from "@/lib/messagesClient";
+import { MessageCircle, CheckSquare, Square, Trash2, X, Search, ShieldAlert } from "lucide-react";
+import { fetchThreads, Thread, deleteThread, markThreadRead, markThreadUnread } from "@/lib/messagesClient";
 import { displayName } from "@/lib/names";
 import { supabaseBrowser } from "@/lib/supabase";
 
@@ -17,21 +17,24 @@ export default function MessagesPage() {
   const [selectedThreads, setSelectedThreads] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterUnread, setFilterUnread] = useState(false);
+  type InboxFilter = "all" | "unread" | "needsReply" | "offers" | "business";
+  const [viewFilter, setViewFilter] = useState<InboxFilter>("all");
+  const FILTER_CHIPS: { id: InboxFilter; label: string; helper?: string }[] = [
+    { id: "all", label: "All" },
+    { id: "unread", label: "Unread" },
+    { id: "needsReply", label: "Needs reply" },
+    { id: "offers", label: "Offers" },
+    { id: "business", label: "Business buyers" },
+  ];
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Initial fetch + realtime updates (replaces polling)
-  useEffect(() => {
-    if (!mounted) return;
-
-    let isActive = true;
-    const supabase = supabaseBrowser();
-    const refresh = async () => {
+  const refreshThreads = useCallback(async () => {
+    try {
       const t = await fetchThreads();
-      if (!isActive) return;
+      setThreads(t);
       setThreads(t);
       setLoading(false);
       
@@ -43,10 +46,25 @@ export default function MessagesPage() {
       } catch (err) {
         console.error("[MessagesPage] Failed to update unread count:", err);
       }
+    } catch (err) {
+      console.error("[MessagesPage] Failed to refresh threads:", err);
+    }
+  }, []);
+
+  // Initial fetch + realtime updates (replaces polling)
+  useEffect(() => {
+    if (!mounted) return;
+
+    let isActive = true;
+    const supabase = supabaseBrowser();
+
+    const refreshSafe = async () => {
+      if (!isActive) return;
+      await refreshThreads();
     };
 
     setLoading(true);
-    refresh();
+    refreshSafe();
 
     // Coalesce rapid events
     const refreshPending = { current: false } as { current: boolean };
@@ -54,7 +72,7 @@ export default function MessagesPage() {
       if (refreshPending.current) return;
       refreshPending.current = true;
       setTimeout(async () => {
-        await refresh();
+        await refreshSafe();
         refreshPending.current = false;
       }, 300);
     };
@@ -89,7 +107,7 @@ export default function MessagesPage() {
       try { supabase.removeChannel(channel); } catch {}
       window.removeEventListener("focus", onFocus);
     };
-  }, [mounted]);
+  }, [mounted, refreshThreads]);
 
   const toggleSelectMode = () => {
     setSelectMode(!selectMode);
@@ -114,6 +132,32 @@ export default function MessagesPage() {
     setSelectedThreads(new Set());
   };
 
+  const handleToggleReadState = async (thread: Thread, e: React.MouseEvent) => {
+    e.preventDefault();
+    if (thread.isRead) {
+      await markThreadUnread(thread.id);
+      setThreads((prev) =>
+        prev.map((t) => (t.id === thread.id ? { ...t, isRead: false, needsReply: true } : t))
+      );
+    } else {
+      await markThreadRead(thread.id);
+      setThreads((prev) =>
+        prev.map((t) => (t.id === thread.id ? { ...t, isRead: true, needsReply: false } : t))
+      );
+    }
+    window.dispatchEvent(new Event("ms:unread"));
+  };
+
+  const handleArchiveThread = async (threadId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    const confirmed = window.confirm("Archive this conversation? You can still see it if the buyer replies.");
+    if (!confirmed) return;
+    const success = await deleteThread(threadId);
+    if (success) {
+      await refreshThreads();
+    }
+  };
+
   const handleBulkDelete = async () => {
     if (selectedThreads.size === 0) return;
     
@@ -129,9 +173,7 @@ export default function MessagesPage() {
         Array.from(selectedThreads).map(threadId => deleteThread(threadId))
       );
       
-      // Refresh threads
-      const t = await fetchThreads();
-      setThreads(t);
+      await refreshThreads();
       setSelectedThreads(new Set());
       setSelectMode(false);
     } catch (error) {
@@ -146,11 +188,31 @@ export default function MessagesPage() {
     const matchesSearch = searchQuery === "" || 
       displayName(t.peer.name).toLowerCase().includes(searchQuery.toLowerCase()) ||
       (t.lastMessage || "").toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesFilter = !filterUnread || !t.isRead;
-    
+
+    let matchesFilter = true;
+    switch (viewFilter) {
+      case "unread":
+        matchesFilter = !t.isRead;
+        break;
+      case "needsReply":
+        matchesFilter = Boolean(t.needsReply);
+        break;
+      case "offers":
+        matchesFilter = Boolean(t.openOffer);
+        break;
+      case "business":
+        matchesFilter = t.peer.accountType === "business" || Boolean(t.peer.businessVerified);
+        break;
+      default:
+        matchesFilter = true;
+    }
+
     return matchesSearch && matchesFilter;
   });
+
+  const unreadCount = threads.filter(t => !t.isRead).length;
+  const needsReplyCount = threads.filter(t => t.needsReply).length;
+  const openOfferCount = threads.filter(t => t.openOffer).length;
 
   if (!mounted || loading) {
     return (
@@ -210,10 +272,13 @@ export default function MessagesPage() {
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm">
-          <div className="border-b border-gray-200 px-4 py-3">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xl font-bold text-black">Messages</h2>
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="border-b border-gray-200 px-4 py-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Inbox</p>
+                <h2 className="text-xl font-bold text-gray-900">Conversations</h2>
+              </div>
               <div className="flex items-center gap-2">
                 {selectMode ? (
                   <>
@@ -221,10 +286,10 @@ export default function MessagesPage() {
                       <button
                         onClick={handleBulkDelete}
                         disabled={deleting}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                        className="flex items-center gap-1 px-3 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed transition"
                       >
                         <Trash2 size={16} />
-                        Delete ({selectedThreads.size})
+                        Archive ({selectedThreads.size})
                       </button>
                     )}
                     <button
@@ -247,32 +312,59 @@ export default function MessagesPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                 <input
                   type="text"
-                  placeholder="Search conversations..."
+                  placeholder="Search buyer, listing, or notes…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                 />
               </div>
               <button
-                onClick={() => setFilterUnread(!filterUnread)}
-                className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition ${
-                  filterUnread
-                    ? "bg-yellow-500 text-black"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+                onClick={() => setSearchQuery("")}
+                className="px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:border-yellow-400 hover:text-yellow-700 transition"
               >
-                <Filter size={16} />
-                Unread
+                Clear
               </button>
             </div>
 
+            <div className="flex flex-wrap gap-2">
+              {FILTER_CHIPS.map((chip) => {
+                const active = viewFilter === chip.id;
+                const count =
+                  chip.id === "unread"
+                    ? unreadCount
+                    : chip.id === "needsReply"
+                    ? needsReplyCount
+                    : chip.id === "offers"
+                    ? openOfferCount
+                    : undefined;
+                return (
+                  <button
+                    key={chip.id}
+                    onClick={() => setViewFilter(chip.id)}
+                    className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                      active
+                        ? "bg-yellow-500 text-black border-yellow-500"
+                        : "bg-gray-50 text-gray-600 border-gray-200 hover:border-yellow-300"
+                    }`}
+                  >
+                    {chip.label}
+                    {typeof count === "number" && count > 0 && (
+                      <span className="inline-flex items-center justify-center rounded-full bg-black/80 text-white text-[10px] px-2 py-0.5">
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
             {selectMode && (
-              <div className="mt-2 flex items-center gap-2 text-sm">
+              <div className="pt-1 flex items-center gap-2 text-xs text-gray-600">
                 <button onClick={selectAll} className="text-yellow-600 hover:text-yellow-700 font-medium">
                   Select all
                 </button>
@@ -285,10 +377,10 @@ export default function MessagesPage() {
             )}
           </div>
 
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-gray-100">
             {filteredThreads.length === 0 && !loading ? (
               <div className="p-8 text-center text-sm text-gray-500">
-                {searchQuery || filterUnread ? "No conversations found" : "No messages yet"}
+                {searchQuery || viewFilter !== "all" ? "No conversations found" : "No messages yet"}
               </div>
             ) : (
               filteredThreads.map((t) => {
@@ -300,50 +392,35 @@ export default function MessagesPage() {
                   hour: "2-digit",
                   minute: "2-digit",
                 });
+                const badges: string[] = [];
+                if (t.needsReply) badges.push("Needs reply");
+                if (t.openOffer) badges.push("Offer pending");
+                if (t.peer.businessVerified) badges.push("Verified seller");
 
-                const content = (
-                  <>
-                    {selectMode ? (
+                const Avatar = () => {
+                  if (selectMode) {
+                    return (
                       <div className="flex items-center justify-center w-12 h-12">
-                        {isSelected ? (
-                          <CheckSquare size={24} className="text-yellow-600" />
-                        ) : (
-                          <Square size={24} className="text-gray-400" />
-                        )}
+                        {isSelected ? <CheckSquare size={24} className="text-yellow-600" /> : <Square size={24} className="text-gray-400" />}
                       </div>
-                    ) : t.peer.avatar ? (
+                    );
+                  }
+                  if (t.peer.avatar) {
+                    return (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={t.peer.avatar}
                         alt={displayName(t.peer.name)}
                         className="h-12 w-12 rounded-full object-cover bg-gray-100 border-2 border-gray-200"
                       />
-                    ) : (
-                      <div className="h-12 w-12 rounded-full bg-yellow-500 flex items-center justify-center text-black font-bold text-sm border-2 border-yellow-600">
-                        {(t.peer.name || "?").slice(0, 2).toUpperCase()}
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3
-                          className={`text-sm truncate ${unread ? "font-bold text-black" : "font-semibold text-gray-900"}`}
-                        >
-                          {displayName(t.peer.name)}
-                        </h3>
-                        <span className="text-xs text-gray-500 whitespace-nowrap ml-2">{timestamp}</span>
-                      </div>
-                      <p className={`text-sm truncate ${unread ? "text-gray-900 font-medium" : "text-gray-600"}`}>
-                        {t.lastMessage || "New conversation"}
-                      </p>
-                      {t.listingRef && (
-                        <span className="text-xs text-gray-500 truncate block mt-0.5">About: Listing #{t.listingRef}</span>
-                      )}
+                    );
+                  }
+                  return (
+                    <div className="h-12 w-12 rounded-full bg-yellow-500 flex items-center justify-center text-black font-bold text-sm border-2 border-yellow-600">
+                      {(t.peer.name || "?").slice(0, 2).toUpperCase()}
                     </div>
-                    {!selectMode && unread && (
-                      <div className="h-2.5 w-2.5 rounded-full bg-yellow-500 border border-yellow-600" />
-                    )}
-                  </>
-                );
+                  );
+                };
 
                 if (selectMode) {
                   return (
@@ -354,7 +431,18 @@ export default function MessagesPage() {
                         isSelected ? "bg-yellow-50" : unread ? "bg-yellow-50/50" : "bg-white"
                       }`}
                     >
-                      {content}
+                      <Avatar />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className={`text-sm truncate ${unread ? "font-bold text-black" : "font-semibold text-gray-900"}`}>
+                            {displayName(t.peer.name)}
+                          </h3>
+                          <span className="text-xs text-gray-500 whitespace-nowrap ml-2">{timestamp}</span>
+                        </div>
+                        <p className={`text-sm truncate ${unread ? "text-gray-900 font-medium" : "text-gray-600"}`}>
+                          {t.lastMessage || "New conversation"}
+                        </p>
+                      </div>
                     </button>
                   );
                 }
@@ -363,9 +451,52 @@ export default function MessagesPage() {
                   <Link
                     key={t.id}
                     href={`/messages/${encodeURIComponent(t.id)}`}
-                    className={`flex items-center gap-3 p-4 hover:bg-gray-50 transition ${unread ? "bg-yellow-50" : "bg-white"}`}
+                    className={`group flex items-center gap-3 p-4 transition ${
+                      unread ? "bg-yellow-50" : "bg-white hover:bg-gray-50"
+                    }`}
                   >
-                    {content}
+                    <Avatar />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <h3 className={`text-sm truncate ${unread ? "font-bold text-black" : "font-semibold text-gray-900"}`}>
+                            {displayName(t.peer.name)}
+                          </h3>
+                          <p className={`text-sm truncate ${unread ? "text-gray-900 font-medium" : "text-gray-600"}`}>
+                            {t.lastMessage || "New conversation"}
+                          </p>
+                        </div>
+                        <span className="text-xs text-gray-500 whitespace-nowrap">{timestamp}</span>
+                      </div>
+                      {badges.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {badges.map((badge) => (
+                            <span key={badge} className="text-[10px] uppercase tracking-wide bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full border border-gray-200">
+                              {badge}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {t.listing?.title && (
+                        <p className="text-xs text-gray-500 mt-1 truncate">
+                          About: {t.listing.title}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition">
+                      <button
+                        onClick={(e) => handleToggleReadState(t, e)}
+                        className="text-xs text-gray-500 hover:text-gray-900"
+                      >
+                        {t.isRead ? "Mark unread" : "Mark read"}
+                      </button>
+                      <button
+                        onClick={(e) => handleArchiveThread(t.id, e)}
+                        className="text-xs text-gray-500 hover:text-gray-900"
+                      >
+                        Archive
+                      </button>
+                    </div>
                   </Link>
                 );
               })
@@ -376,4 +507,3 @@ export default function MessagesPage() {
     </section>
   );
 }
-

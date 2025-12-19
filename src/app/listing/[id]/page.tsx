@@ -18,9 +18,11 @@ import VehicleCompatibilityChecker from "@/components/VehicleCompatibilityChecke
 import ListingImageGallery from "@/components/ListingImageGallery";
 import SellerActionsBar from "@/components/SellerActionsBar";
 import { getCurrentUser } from "@/lib/auth";
+import SellerResponseTimeBadge from "@/components/SellerResponseTimeBadge";
 // Temporarily disabled: import PriceReducedBadge from "@/components/PriceReducedBadge";
 // Temporarily disabled: import PriceHistoryChart from "@/components/PriceHistoryChart";
 import { createClient } from "@supabase/supabase-js";
+import { AlertTriangle, Clock3, ListChecks, MapPin, ShieldCheck, TrendingUp } from "lucide-react";
 
 // Ensure this page always renders dynamically at runtime on Vercel
 export const dynamic = "force-dynamic";
@@ -52,13 +54,36 @@ type Listing = {
   description?: string;
   createdAt: string;
   sellerId?: string;
-  seller: { name: string; avatar: string; rating: number };
+  seller: { name: string; avatar: string; rating: number; county?: string };
   status?: "active" | "draft" | "sold";
   markedSoldAt?: string;
   vin?: string;
   yearFrom?: number;
   yearTo?: number;
   vehicles?: Vehicle[];
+  viewCount?: number;
+};
+
+type SellerInsights = {
+  id?: string;
+  accountType?: string | null;
+  businessVerified?: boolean;
+  totalSales?: number | null;
+  avgResponseTimeMinutes?: number | null;
+  responseRate?: number | null;
+  totalResponses?: number | null;
+  totalInquiries?: number | null;
+  county?: string | null;
+  country?: string | null;
+  createdAt?: string | null;
+  specialties?: string[] | null;
+};
+
+type PriceAnomalyResult = {
+  flagged: boolean;
+  medianPrice?: number;
+  sampleSize: number;
+  priceGapPct?: number;
 };
 
 /* ========== Utils ========== */
@@ -196,6 +221,7 @@ async function fetchListingFromSupabase(id: string): Promise<Listing | null> {
       vin: listing.vin ?? undefined,
       yearFrom: typeof listing.year_from === "number" ? listing.year_from : listing.year_from ? Number(listing.year_from) : undefined,
       yearTo: typeof listing.year_to === "number" ? listing.year_to : listing.year_to ? Number(listing.year_to) : undefined,
+      viewCount: typeof listing.view_count === "number" ? listing.view_count : undefined,
     };
 
     console.log(`[listing page] direct Supabase fetch success for id=${id}`);
@@ -205,6 +231,168 @@ async function fetchListingFromSupabase(id: string): Promise<Listing | null> {
     return null;
   }
 }
+
+const gbpFormatter = new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" });
+
+function formatGBP(amount?: number | null) {
+  if (typeof amount !== "number" || Number.isNaN(amount)) return null;
+  return gbpFormatter.format(amount);
+}
+
+function priceToNumber(price?: string | number | null) {
+  if (typeof price === "number") return price;
+  if (!price) return NaN;
+  const value = Number(String(price).replace(/[^\d.]/g, ""));
+  return Number.isFinite(value) ? value : NaN;
+}
+
+function formatResponseTime(minutes?: number | null) {
+  if (!minutes || minutes <= 0) return "New seller";
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.max(1, Math.round(hours / 24));
+  return `${days}d`;
+}
+
+function formatSales(totalSales?: number | null) {
+  if (!totalSales || totalSales <= 0) return "—";
+  if (totalSales >= 1000) return `${(totalSales / 1000).toFixed(1)}k`;
+  return totalSales.toLocaleString("en-GB");
+}
+
+function summariseFitment(listing: Listing) {
+  const chips = new Set<string>();
+  if (listing.make) chips.add(listing.make);
+  if (listing.model) chips.add(listing.model);
+  if (listing.genCode) chips.add(`Gen ${listing.genCode}`);
+  if (listing.engine) chips.add(listing.engine);
+  if (listing.yearFrom && listing.yearTo) chips.add(`${listing.yearFrom}-${listing.yearTo}`);
+  else if (listing.year) chips.add(String(listing.year));
+  if (listing.oem) chips.add(`OEM ${listing.oem}`);
+  if (listing.vin) chips.add(`VIN ${listing.vin}`);
+  if (Array.isArray(listing.vehicles)) {
+    listing.vehicles.slice(0, 3).forEach((vehicle) => {
+      const label = [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(" ");
+      if (label) chips.add(label);
+    });
+  }
+
+  const helperParts: string[] = [];
+  if (listing.vehicles?.length) {
+    helperParts.push(`${listing.vehicles.length}+ vehicle${listing.vehicles.length > 1 ? "s" : ""} verified`);
+  } else if (listing.make || listing.model) {
+    helperParts.push("Seller provided fitment specifications");
+  }
+  if (listing.yearFrom && listing.yearTo) helperParts.push(`Covers ${listing.yearFrom}–${listing.yearTo}`);
+  if (listing.year && !listing.yearFrom) helperParts.push(`Year ${listing.year}`);
+  if (listing.oem) helperParts.push(`OEM ${listing.oem}`);
+  const helper =
+    helperParts.length > 0
+      ? helperParts.join(" • ")
+      : "The seller hasn't supplied compatibility data yet.";
+
+  const universal = listing.vehicles?.some((v) => v.universal);
+  const confidence = universal
+    ? { label: "Universal fit", tone: "bg-emerald-50 text-emerald-800 border border-emerald-200" }
+    : listing.vehicles?.length
+    ? { label: "Seller confirmed", tone: "bg-blue-50 text-blue-800 border border-blue-200" }
+    : listing.make || listing.model
+    ? { label: "Specs provided", tone: "bg-amber-50 text-amber-800 border border-amber-200" }
+    : { label: "Fitment unknown", tone: "bg-gray-50 text-gray-700 border border-gray-200" };
+
+  return {
+    chips: Array.from(chips).slice(0, 8),
+    helper,
+    confidence,
+  };
+}
+
+async function fetchSellerInsights(sellerId?: string | null): Promise<SellerInsights | null> {
+  if (!sellerId) return null;
+  try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !key) return null;
+    const supabase = createClient(url, key, { auth: { persistSession: false } });
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select(
+        "id, account_type, business_verified, total_sales, avg_response_time_minutes, response_rate, total_responses, total_inquiries_received, county, country, created_at"
+      )
+      .eq("id", sellerId)
+      .maybeSingle();
+    if (error || !profile) {
+      console.warn("[listing page] No seller profile for insights", { sellerId, error: error?.message });
+      return null;
+    }
+    let specialties: string[] | null = null;
+    if (profile.account_type === "business") {
+      const { data: businessInfo } = await supabase
+        .from("business_info")
+        .select("specialties")
+        .eq("profile_id", sellerId)
+        .maybeSingle();
+      if (businessInfo?.specialties && Array.isArray(businessInfo.specialties)) {
+        specialties = businessInfo.specialties.filter((entry: unknown): entry is string => typeof entry === "string");
+      }
+    }
+    return {
+      id: profile.id,
+      accountType: profile.account_type,
+      businessVerified: Boolean(profile.business_verified),
+      totalSales: profile.total_sales ?? null,
+      avgResponseTimeMinutes: profile.avg_response_time_minutes ?? null,
+      responseRate: profile.response_rate ?? null,
+      totalResponses: profile.total_responses ?? null,
+      totalInquiries: profile.total_inquiries_received ?? null,
+      county: profile.county ?? null,
+      country: profile.country ?? null,
+      createdAt: profile.created_at ?? null,
+      specialties,
+    };
+  } catch (error) {
+    console.error("[listing page] Seller insights fetch failed", error);
+    return null;
+  }
+}
+
+async function detectPriceAnomaly(listing: Listing): Promise<PriceAnomalyResult> {
+  const priceValue = priceToNumber(listing.price);
+  if (!Number.isFinite(priceValue)) {
+    return { flagged: false, sampleSize: 0 };
+  }
+  try {
+    const url = `${baseUrl()}/api/listings/similar?id=${encodeURIComponent(String(listing.id))}&limit=8`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) {
+      return { flagged: false, sampleSize: 0 };
+    }
+    const data = (await res.json()) as { similar?: Array<{ price?: string | number }> };
+    const prices = (data.similar || [])
+      .map((item) => priceToNumber(item.price))
+      .filter((value) => Number.isFinite(value)) as number[];
+
+    if (prices.length < 3) {
+      return { flagged: false, sampleSize: prices.length };
+    }
+    prices.sort((a, b) => a - b);
+    const mid = Math.floor(prices.length / 2);
+    const median = prices.length % 2 === 0 ? (prices[mid - 1] + prices[mid]) / 2 : prices[mid];
+    const priceGapPct = median > 0 ? (median - priceValue) / median : 0;
+    const flagged = priceGapPct >= 0.3; // 30% cheaper than peers
+    return {
+      flagged,
+      sampleSize: prices.length,
+      medianPrice: median,
+      priceGapPct,
+    };
+  } catch (error) {
+    console.error("[listing page] Price anomaly detection failed", error);
+    return { flagged: false, sampleSize: 0 };
+  }
+}
+
 
 /* ========== Metadata ========== */
 export async function generateMetadata({
@@ -285,7 +473,101 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
     notFound();
   }
 
-  const gallery = listing.images?.length ? listing.images : [listing.image];
+  const [sellerInsights, priceAnomaly] = await Promise.all([
+    fetchSellerInsights(listing.sellerId),
+    detectPriceAnomaly(listing),
+  ]);
+
+  const gallery = listing.images?.length
+    ? listing.images
+    : listing.image
+    ? [listing.image]
+    : ["/images/placeholder.jpg"];
+
+  const fitmentSummary = summariseFitment(listing);
+  const sellerLocation = sellerInsights?.county || listing.seller?.county || sellerInsights?.country || null;
+  const listingPublished = listing.createdAt ? new Date(listing.createdAt) : null;
+  const listingMetrics = [
+    {
+      label: "Views",
+      value: typeof listing.viewCount === "number" ? listing.viewCount.toLocaleString("en-GB") : "—",
+      helper: "Lifetime on Motorsource",
+    },
+    {
+      label: "Response rate",
+      value: sellerInsights?.responseRate ? `${sellerInsights.responseRate}%` : "Building trust",
+      helper: "Last 30 days",
+    },
+    {
+      label: "Avg reply",
+      value: formatResponseTime(sellerInsights?.avgResponseTimeMinutes),
+      helper: sellerInsights?.avgResponseTimeMinutes ? "Seller messaging speed" : "New seller metric",
+    },
+    {
+      label: "Posted",
+      value: listingPublished
+        ? listingPublished.toLocaleDateString("en-GB", { month: "short", day: "numeric", year: "numeric" })
+        : "—",
+      helper: listingPublished ? "Listing age" : "",
+    },
+  ];
+
+  const priceGapPercent = typeof priceAnomaly.priceGapPct === "number" ? Math.round(priceAnomaly.priceGapPct * 100) : null;
+  const medianPriceLabel = formatGBP(priceAnomaly.medianPrice) || undefined;
+
+  const shippingHighlights = [
+    {
+      title: "Ships from",
+      body: sellerLocation || "United Kingdom",
+      helper: sellerLocation ? "Verified via seller profile" : "Seller location not provided",
+      icon: MapPin,
+    },
+    {
+      title: "Dispatch updates",
+      body: sellerInsights?.avgResponseTimeMinutes
+        ? `Replies in ~${formatResponseTime(sellerInsights.avgResponseTimeMinutes)}`
+        : "Seller confirms dispatch over chat",
+      helper: "Stay in Motorsource Messages for delivery updates",
+      icon: Clock3,
+    },
+    {
+      title: "Returns",
+      body: "Seller-led returns within 14 days",
+      helper: "Message the seller to start a return so we can review it",
+      icon: ListChecks,
+    },
+    {
+      title: "Buyer protection",
+      body: "Funds held until you confirm delivery",
+      helper: "Secure checkout + dispute assistance",
+      icon: ShieldCheck,
+    },
+  ];
+  const sellerDisplayName = listing.seller?.name || "Seller";
+  const sellerAvatar = listing.seller?.avatar || "/images/seller1.jpg";
+  const sellerMemberSince = sellerInsights?.createdAt
+    ? new Date(sellerInsights.createdAt).toLocaleDateString("en-GB", { month: "short", year: "numeric" })
+    : null;
+  const sellerStats = [
+    {
+      label: "Total sales",
+      value: formatSales(sellerInsights?.totalSales),
+      helper: "Across Motorsource",
+    },
+    {
+      label: "Enquiries answered",
+      value:
+        typeof sellerInsights?.totalResponses === "number"
+          ? sellerInsights.totalResponses.toLocaleString("en-GB")
+          : "—",
+      helper: "Lifetime",
+    },
+    {
+      label: "Member since",
+      value: sellerMemberSince || "—",
+      helper: "Profile age",
+    },
+  ];
 
   return (
     <section className="mx-auto max-w-6xl px-3 sm:px-4 py-4 sm:py-8">
@@ -406,60 +688,133 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             </div>
           )}
 
+          {/* Price anomaly / verification warning */}
+          {priceAnomaly.flagged && (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 flex gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-700 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-amber-900">Flagged for manual verification</p>
+                <p className="text-sm text-amber-900/80">
+                  {priceGapPercent && medianPriceLabel
+                    ? `This part is ${priceGapPercent}% cheaper than the median ${medianPriceLabel} across ${priceAnomaly.sampleSize} comparable listings.`
+                    : "This part is priced significantly lower than similar listings on Motorsource."}
+                </p>
+                <p className="mt-2 text-xs text-amber-800">
+                  Our trust team is double-checking the images, seller history, and paperwork before promoting it elsewhere.
+                  You can still buy it today—funds remain in escrow until you confirm delivery.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Fitment + analytics */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2">
+                  <ListChecks className="h-5 w-5 text-gray-800 flex-shrink-0" />
+                  <div>
+                    <h3 className="text-sm font-semibold text-black">Vehicle fitment</h3>
+                    <p className="text-xs text-gray-600">{fitmentSummary.helper}</p>
+                  </div>
+                </div>
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${fitmentSummary.confidence.tone}`}>
+                  {fitmentSummary.confidence.label}
+                </span>
+              </div>
+              {fitmentSummary.chips.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {fitmentSummary.chips.map((chip) => (
+                    <span key={chip} className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-800">
+                      {chip}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <Link
+                href="#fitment-checker"
+                className="mt-3 inline-flex items-center text-xs font-semibold text-yellow-700 hover:text-yellow-800"
+              >
+                Deep compatibility check →
+              </Link>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <div className="flex items-start gap-2">
+                <TrendingUp className="h-5 w-5 text-gray-800 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm font-semibold text-black">Listing insights</h3>
+                  <p className="text-xs text-gray-600">Live marketplace telemetry</p>
+                </div>
+              </div>
+              <dl className="mt-4 grid grid-cols-2 gap-3">
+                {listingMetrics.map((metric) => (
+                  <div key={metric.label} className="rounded-lg border border-gray-100 bg-gray-50/70 px-3 py-2">
+                    <dt className="text-[11px] uppercase tracking-wide text-gray-500">{metric.label}</dt>
+                    <dd className="text-base font-semibold text-gray-900">{metric.value}</dd>
+                    {metric.helper && <p className="text-[11px] text-gray-500 mt-0.5">{metric.helper}</p>}
+                  </div>
+                ))}
+              </dl>
+            </div>
+          </div>
+
           {/* Shipping & returns */}
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <h2 className="mb-3 text-sm font-semibold text-black">Shipping & returns</h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 h-2.5 w-2.5 rounded-full bg-gray-900" />
-                <div>
-                  <div className="text-sm font-medium text-gray-900">Shipping</div>
-                  <div className="text-sm text-gray-700">Calculated at checkout • Tracked delivery</div>
+              {shippingHighlights.map((item) => (
+                <div key={item.title} className="flex items-start gap-3">
+                  <item.icon className="h-5 w-5 text-gray-800 flex-shrink-0" />
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900">{item.title}</div>
+                    <div className="text-sm text-gray-700">{item.body}</div>
+                    <p className="text-xs text-gray-500 mt-0.5">{item.helper}</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 h-2.5 w-2.5 rounded-full bg-gray-900" />
-                <div>
-                  <div className="text-sm font-medium text-gray-900">Delivery time</div>
-                  <div className="text-sm text-gray-700">Typically 2–5 business days (seller dispatch varies)</div>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 h-2.5 w-2.5 rounded-full bg-gray-900" />
-                <div>
-                  <div className="text-sm font-medium text-gray-900">Returns</div>
-                  <div className="text-sm text-gray-700">Seller-led returns • Contact seller via Messages</div>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 h-2.5 w-2.5 rounded-full bg-gray-900" />
-                <div>
-                  <div className="text-sm font-medium text-gray-900">Buyer protection</div>
-                  <div className="text-sm text-gray-700">Secure checkout • Funds released after you confirm</div>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 
-          {/* Seller card */}
+          {/* Marketplace safeguards */}
           <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <h2 className="mb-3 text-sm font-semibold text-black">Seller</h2>
+            <div className="flex items-start gap-2">
+              <ShieldCheck className="h-5 w-5 text-gray-800 flex-shrink-0" />
+              <div>
+                <h2 className="text-sm font-semibold text-black">Safety & messaging safeguards</h2>
+                <p className="text-xs text-gray-600">Stay inside Motorsource to keep payment protection active.</p>
+              </div>
+            </div>
+            <ul className="mt-3 space-y-2 text-sm text-gray-700">
+              <li>• Payments stay in escrow until you confirm delivery or raise a dispute.</li>
+              <li>• We monitor chats for off-platform payment requests and intervene on repeat offenders.</li>
+              <li>
+                • Use the <span className="font-semibold">Report listing</span> button above if anything feels off—the trust desk reviews reports within hours.
+              </li>
+              {priceAnomaly.flagged && (
+                <li>• This listing is already queued for a manual check because of its unusual price.</li>
+              )}
+            </ul>
+          </div>
+
+          {/* Seller card */}
+          <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
             <div className="flex items-start gap-3">
-              {/* Avatar + name clickable; prefers /profile/{id} if sellerId present */}
               <SellerLink
-                sellerName={listing.seller.name}
+                sellerName={sellerDisplayName}
                 sellerId={listing.sellerId}
                 className="flex items-start gap-3 group flex-1"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={listing.seller.avatar}
-                  alt={listing.seller.name}
+                <SafeImage
+                  src={sellerAvatar}
+                  alt={sellerDisplayName}
                   className="h-12 w-12 rounded-full object-cover flex-shrink-0"
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold text-black group-hover:underline truncate">
-                    {listing.seller.name}
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-semibold text-black group-hover:underline truncate">
+                      {sellerDisplayName}
+                    </div>
+                    <TrustBadge soldCount={sellerInsights?.totalSales} />
                   </div>
                   <div className="text-xs text-gray-600 flex items-center gap-2 mt-0.5">
                     <span className="flex items-center gap-0.5">
@@ -468,33 +823,71 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
                       </svg>
                       {Number(listing.seller.rating).toFixed(1)}
                     </span>
-                    {/* Trust badge placeholder; soldCount to be wired from metrics later */}
-                    <TrustBadge soldCount={undefined} />
+                    {sellerLocation && (
+                      <span className="inline-flex items-center gap-1 text-gray-600">
+                        <MapPin className="h-3 w-3" />
+                        {sellerLocation}
+                      </span>
+                    )}
+                    {sellerInsights?.businessVerified && (
+                      <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">
+                        Verified business
+                      </span>
+                    )}
                   </div>
-                  <div className="mt-2 space-y-1 text-xs text-gray-600">
-                    <div className="flex items-center gap-1.5">
-                      <svg className="h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>Usually responds within 24 hours</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <svg className="h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>Active seller since {new Date(listing.createdAt).getFullYear()}</span>
-                    </div>
+                  <div className="mt-2 flex flex-wrap gap-2 text-[11px] uppercase tracking-wide text-gray-500">
+                    {sellerInsights?.accountType && (
+                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-gray-700">
+                        {sellerInsights.accountType === "business" ? "Business seller" : "Individual seller"}
+                      </span>
+                    )}
+                    {typeof sellerInsights?.totalInquiries === "number" && (
+                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-gray-700">
+                        {sellerInsights.totalInquiries.toLocaleString("en-GB")} inquiries handled
+                      </span>
+                    )}
                   </div>
                 </div>
               </SellerLink>
             </div>
-            <div className="mt-3 pt-3 border-t border-gray-100">
+            {sellerInsights?.avgResponseTimeMinutes !== null && sellerInsights?.avgResponseTimeMinutes !== undefined && (
+              <SellerResponseTimeBadge
+                avgResponseTimeMinutes={sellerInsights.avgResponseTimeMinutes}
+                responseRate={sellerInsights.responseRate}
+                size="sm"
+              />
+            )}
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {sellerStats.map((stat) => (
+                <div key={stat.label} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                  <div className="text-[11px] uppercase tracking-wide text-gray-500">{stat.label}</div>
+                  <div className="text-base font-semibold text-gray-900">{stat.value}</div>
+                  <p className="text-[11px] text-gray-500">{stat.helper}</p>
+                </div>
+              ))}
+            </div>
+            {sellerInsights?.specialties && sellerInsights.specialties.length > 0 && (
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-gray-500">Specialties</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {sellerInsights.specialties.slice(0, 6).map((topic) => (
+                    <span key={topic} className="inline-flex items-center rounded-full border border-gray-200 px-2 py-0.5 text-xs text-gray-700">
+                      {topic}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
               <Link
-                href={`/profile/${encodeURIComponent(listing.seller.name)}`}
-                className="text-xs font-medium text-yellow-600 hover:text-yellow-700 hover:underline"
+                href={`/profile/${encodeURIComponent(sellerDisplayName)}`}
+                className="text-xs font-semibold text-yellow-700 hover:text-yellow-800"
               >
                 View seller profile →
               </Link>
+              {sellerInsights?.businessVerified && (
+                <span className="text-[11px] text-gray-500">Docs verified by Motorsource</span>
+              )}
             </div>
           </div>
 
@@ -508,10 +901,12 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
 
           {/* Vehicle Compatibility Checker */}
           {(listing.vehicles?.length || listing.make || listing.model) && (
-            <VehicleCompatibilityChecker
-              vehicles={listing.vehicles}
-              universal={listing.vehicles?.some(v => v.universal)}
-            />
+            <div id="fitment-checker" className="scroll-mt-24">
+              <VehicleCompatibilityChecker
+                vehicles={listing.vehicles}
+                universal={listing.vehicles?.some(v => v.universal)}
+              />
+            </div>
           )}
 
           {/* Price History Chart */}

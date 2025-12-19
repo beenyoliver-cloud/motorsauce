@@ -13,6 +13,11 @@ export type Thread = {
     name: string;
     email?: string;
     avatar?: string;
+    accountType?: string | null;
+    businessVerified?: boolean;
+    totalSales?: number | null;
+    avgResponseMinutes?: number | null;
+    responseRate?: number | null;
   };
   listingRef?: string | null;
   listing?: {
@@ -23,6 +28,14 @@ export type Thread = {
   lastMessage?: string | null;
   lastMessageAt: string;
   isRead: boolean;
+  needsReply?: boolean;
+  lastMessageFromSelf?: boolean;
+  openOffer?: {
+    id: string;
+    status: string;
+    amountCents: number;
+    currency: string;
+  } | null;
   createdAt: string;
 };
 
