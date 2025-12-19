@@ -50,7 +50,6 @@ export default function Home() {
       {/* Featured rows */}
       <FeaturedRow title="New this week" variant="new" />
       <FeaturedRow title="Under £250" variant="under250" />
-      <WrenchingWall />
       <FeaturedRow title="Under £20" variant="under20" />
 
       {/* Suggested parts (personalized via API) */}
@@ -80,6 +79,8 @@ export default function Home() {
       {/* Recently viewed */}
       {/* @ts-ignore Server -> Client import allowed */}
       <RecentlyViewedRow />
+
+      <WrenchingWall />
 
       {/* Trust band */}
       <TrustBand />

@@ -143,13 +143,13 @@ export default function HomeHero() {
             <label className="text-xs font-semibold text-gray-800 md:pr-2">Search by registration</label>
             <div className="flex items-center justify-center w-full">
               <div
-                className={`flex w-full max-w-[520px] items-stretch rounded-lg border-[6px] border-black bg-[#FFD038] shadow-[0_15px_35px_rgba(0,0,0,0.45)] transition-all duration-300 min-h-[72px] sm:min-h-[88px] ${
-                  plateFocused ? "ring-4 ring-yellow-200/70" : ""
+                className={`relative flex w-full max-w-[520px] items-stretch rounded-lg border-2 border-[#1c1b18] bg-[#F9D548] shadow-[0_18px_30px_rgba(0,0,0,0.35)] transition-all duration-300 min-h-[70px] sm:min-h-[84px] ${
+                  plateFocused ? "ring-2 ring-offset-2 ring-offset-slate-900 ring-yellow-200/70" : ""
                 }`}
               >
-                <div className="flex flex-col items-center justify-center bg-[#003399] text-white px-2 sm:px-3 py-2 sm:py-3 rounded-l-[4px] border-r-[6px] border-black min-w-[48px] sm:min-w-[56px]">
+                <div className="flex flex-col items-center justify-center bg-[#003399] text-white px-2 sm:px-3 py-2 sm:py-3 rounded-l-md border-r-2 border-[#1c1b18] min-w-[46px] sm:min-w-[54px]">
                   <span className="text-[10px] font-semibold">🇬🇧</span>
-                  <span className="text-[9px] sm:text-[10px] font-bold tracking-tight -mt-0.5">UK</span>
+                  <span className="text-[9px] sm:text-[10px] font-semibold tracking-tight -mt-0.5">UK</span>
                 </div>
                 <input
                   value={plate}
@@ -157,9 +157,9 @@ export default function HomeHero() {
                   onBlur={() => setPlateFocused(false)}
                   onChange={(e) => setPlate(e.target.value.toUpperCase())}
                   placeholder="AB12 CDE"
-                  className="flex-1 bg-transparent text-black placeholder:text-black/35 px-4 sm:px-6 text-2xl sm:text-[2.4rem] uppercase tracking-[0.35em] focus:outline-none font-extrabold text-center caret-black"
+                  className="flex-1 bg-transparent text-black placeholder:text-black/40 px-4 sm:px-6 text-[1.6rem] sm:text-[2rem] uppercase tracking-[0.2em] focus:outline-none font-semibold text-center caret-black"
                   style={{
-                    fontFamily: "'UK Number Plate', 'Charles Wright', 'Courier New', monospace",
+                    fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif",
                   }}
                 />
               </div>
