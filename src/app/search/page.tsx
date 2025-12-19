@@ -14,7 +14,7 @@ import QuickViewModal from "@/components/QuickViewModal";
 import Breadcrumb from "@/components/Breadcrumb";
 import ActiveFilters from "@/components/ActiveFilters";
 import LiveActivityFeed from "@/components/home/LiveActivityFeed";
-import { Eye, Heart, ChevronRight } from "lucide-react";
+import { Eye, Heart, ChevronRight, Sparkles, Gauge, MapPin } from "lucide-react";
 import { nsKey } from "@/lib/auth";
 import SaveSearchButton from "@/components/SaveSearchButton";
 import { searchListing, normalizeSearchTerm } from "@/lib/searchHelpers";
@@ -605,44 +605,60 @@ function SearchPageInner() {
             {favouriteGarage && (
               <button
                 onClick={() => updateParam("garageOnly", garageOnly ? undefined : "1")}
-                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 ${
-                  garageOnly ? "border-yellow-500 bg-yellow-100 text-yellow-900" : "border-gray-300 text-gray-700 hover:border-yellow-400"
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 shadow-sm transition ${
+                  garageOnly ? "border-yellow-500 bg-yellow-100 text-yellow-900 shadow-yellow-200" : "border-gray-300 text-gray-700 hover:border-yellow-400"
                 }`}
               >
+                <Gauge className="h-3.5 w-3.5" />
                 {garageOnly ? "Showing my garage" : `Only ${favouriteGarage.make || "my car"}`}
               </button>
             )}
             <button
               onClick={() => updateParam("universalOnly", universalOnly ? undefined : "1")}
-              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 ${
-                universalOnly ? "border-blue-500 bg-blue-50 text-blue-900" : "border-gray-300 text-gray-700 hover:border-blue-400"
+              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 shadow-sm transition ${
+                universalOnly ? "border-blue-500 bg-blue-50 text-blue-900 shadow-blue-100" : "border-gray-300 text-gray-700 hover:border-blue-400"
               }`}
             >
+              <MapPin className="h-3.5 w-3.5" />
               Universal fit
             </button>
           </div>
 
           {/* Summary + sort + save search */}
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="flex items-start justify-between gap-3">
+          <div className="rounded-2xl border border-gray-200 bg-gradient-to-r from-white via-yellow-50 to-white p-5 shadow-sm">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-black">
-                  {activeTab === "sellers" ? "Sellers" : "Parts"}
-                </h2>
-                <p className="mt-1 text-sm text-gray-700">
-                  {activeTab === "sellers" 
-                    ? `${sellers.length.toLocaleString()} seller${sellers.length === 1 ? "" : "s"}`
-                    : `${sortedResults.length.toLocaleString()} part${sortedResults.length === 1 ? "" : "s"}`
-                  }
-                  {q ? (
-                    <> • Query: <strong>{q}</strong></>
-                  ) : null}
-                  {seller ? (
-                    <> • Seller: <strong>{seller}</strong></>
-                  ) : null}
+                <p className="text-[11px] uppercase tracking-[0.3em] text-gray-500 flex items-center gap-2">
+                  <Sparkles className="h-3 w-3 text-yellow-500" />
+                  {activeTab === "sellers" ? "Seller search" : "Parts search"}
                 </p>
+                <h2 className="text-2xl font-black text-gray-900 mt-1">
+                  {activeTab === "sellers"
+                    ? `${sellers.length.toLocaleString()} sellers live`
+                    : `${sortedResults.length.toLocaleString()} matching parts`}
+                </h2>
+                <div className="mt-2 flex flex-wrap gap-2 text-xs text-gray-600">
+                  {q && (
+                    <span className="px-3 py-1 rounded-full bg-white border border-gray-200">
+                      Query: <strong>{q}</strong>
+                    </span>
+                  )}
+                  {seller && (
+                    <span className="px-3 py-1 rounded-full bg-white border border-gray-200">
+                      Seller: <strong>{seller}</strong>
+                    </span>
+                  )}
+                  {!q && recent[0] && (
+                    <button
+                      onClick={() => updateParam("q", recent[0])}
+                      className="px-3 py-1 rounded-full bg-black text-white"
+                    >
+                      Jump back to “{recent[0]}”
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-3 justify-end">
                 {activeTab !== "sellers" && <SaveSearchButton />}
                 {activeTab !== "sellers" && (
                   <div className="pt-1">
@@ -650,12 +666,12 @@ function SearchPageInner() {
                   </div>
                 )}
                 {activeTab === "sellers" && (
-                  <div className="flex items-center gap-2 text-sm text-gray-700">
-                    Sort
+                  <div className="flex items-center gap-2 text-sm text-gray-700 bg-white rounded-full border border-gray-200 px-3 py-1.5 shadow-inner">
+                    Sort sellers
                     <select
                       value={sellerSort}
                       onChange={(e) => setSellerSort(e.target.value as any)}
-                      className="border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                      className="bg-transparent text-sm text-gray-900 focus:outline-none"
                     >
                       <option value="featured">Featured</option>
                       <option value="rating">Highest rating</option>
@@ -668,30 +684,35 @@ function SearchPageInner() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-yellow-500" />
                 Trending searches
                 <span className="text-[10px] uppercase tracking-[0.2em] text-gray-400">Hot right now</span>
               </h3>
-              <div className="flex flex-wrap gap-2">
+              <div className="mt-3 grid grid-cols-2 gap-2">
                 {TRENDING_QUERIES.map((term) => (
                   <button
                     key={term}
                     onClick={() => updateParam("q", term)}
-                    className="px-3 py-1.5 rounded-full border border-gray-200 text-xs font-medium text-gray-700 hover:border-yellow-400 hover:text-yellow-600 transition"
+                    className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-800 hover:border-yellow-300 hover:bg-white transition"
                   >
                     {term}
+                    <ChevronRight className="h-3 w-3 text-gray-400" />
                   </button>
                 ))}
-                {recent.length > 0 && (
+              </div>
+              {recent.length > 0 && (
+                <div className="mt-3 p-3 rounded-xl bg-black text-white text-xs flex items-center justify-between">
+                  <span>Resume “{recent[0]}”</span>
                   <button
                     onClick={() => updateParam("q", recent[0])}
-                    className="px-3 py-1.5 rounded-full bg-black text-white text-xs font-medium"
+                    className="underline"
                   >
-                    Resume "{recent[0]}"
+                    Load
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
             <div className="hidden md:block">
               <LiveActivityFeed />
