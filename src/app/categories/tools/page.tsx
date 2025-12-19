@@ -83,7 +83,9 @@ export default function ToolsAccessoriesPage() {
       </div>
 
       {/* Category Stats */}
-      <CategoryStats category="Tools" />
+      <div className="mt-8">
+        <CategoryStats category="Tools" />
+      </div>
 
       {/* Featured Listings */}
       <FeaturedListings category="Tools" />

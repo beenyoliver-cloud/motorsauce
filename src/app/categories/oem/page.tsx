@@ -87,7 +87,9 @@ export default function OEMCategoryPage() {
       </div>
 
       {/* Category Stats */}
-      <CategoryStats category="OEM" />
+      <div className="mt-8">
+        <CategoryStats category="OEM" />
+      </div>
 
       {/* Parts For Your Car */}
       <PartsForYourCar category="OEM" />

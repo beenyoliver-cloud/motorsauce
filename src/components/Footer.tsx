@@ -28,8 +28,17 @@ export default function Footer() {
         
         {/* Brand */}
         <div>
-          <Link href="/" className="text-2xl font-extrabold text-yellow-500 tracking-tight">
-            Motorsource
+          <Link
+            href="/"
+            aria-label="Motorsource home"
+            className="inline-flex items-center"
+          >
+            <img
+              src="/images/MSlogoreal.png"
+              alt="Motorsource"
+              className="h-10 w-auto"
+              loading="lazy"
+            />
           </Link>
           <p className="mt-2 text-sm text-gray-600">
             Buy and sell automotive parts with confidence.

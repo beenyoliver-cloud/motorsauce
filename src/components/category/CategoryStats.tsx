@@ -24,24 +24,31 @@ export default function CategoryStats({ category, make }: Props) {
   const normalizedCategory = category.toLowerCase() as "oem" | "aftermarket" | "tools";
 
   useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setStats(null);
+
     const fetchStats = async () => {
       try {
         const params = new URLSearchParams({ category: normalizedCategory });
         if (make) params.set("make", make);
         
         const res = await fetch(`/api/categories/stats?${params.toString()}`);
-        if (res.ok) {
+        if (res.ok && !cancelled) {
           const data = await res.json();
           setStats(data);
         }
       } catch (err) {
         console.error("Failed to fetch category stats:", err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchStats();
+    return () => {
+      cancelled = true;
+    };
   }, [normalizedCategory, make]);
 
   if (loading) {
@@ -55,6 +62,8 @@ export default function CategoryStats({ category, make }: Props) {
   }
 
   if (!stats) return null;
+
+  const hasRating = typeof stats.avgRating === "number" && !Number.isNaN(stats.avgRating);
 
   const statItems = [
     {
@@ -79,15 +88,15 @@ export default function CategoryStats({ category, make }: Props) {
       bgColor: "bg-purple-50",
     },
     {
-      icon: stats.avgRating ? Star : DollarSign,
-      label: stats.avgRating ? "Avg. rating" : "Price range",
-      value: stats.avgRating 
-        ? `${stats.avgRating}★` 
-        : stats.priceRange 
+      icon: hasRating ? Star : DollarSign,
+      label: hasRating ? "Avg. rating" : "Price range",
+      value: hasRating
+        ? `${stats.avgRating?.toFixed(1)}★`
+        : stats.priceRange
           ? `£${stats.priceRange.min}–£${stats.priceRange.max}`
           : "N/A",
-      color: stats.avgRating ? "text-yellow-600" : "text-emerald-600",
-      bgColor: stats.avgRating ? "bg-yellow-50" : "bg-emerald-50",
+      color: hasRating ? "text-yellow-600" : "text-emerald-600",
+      bgColor: hasRating ? "bg-yellow-50" : "bg-emerald-50",
     },
   ];
 

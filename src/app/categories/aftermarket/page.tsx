@@ -88,7 +88,9 @@ export default function AftermarketCategoryPage() {
       </div>
 
       {/* Category Stats */}
-      <CategoryStats category="Aftermarket" />
+      <div className="mt-8">
+        <CategoryStats category="Aftermarket" />
+      </div>
 
       {/* Parts For Your Car */}
       <PartsForYourCar category="Aftermarket" />
