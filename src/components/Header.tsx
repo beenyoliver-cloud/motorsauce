@@ -336,7 +336,7 @@ export default function Header() {
         </div>
 
         {/* Search bar - always visible */}
-        <div className="px-2 pb-2">
+        <div className="px-2 pt-2 pb-3">
           <SearchBar placeholder="Search parts or sellers…" compact />
         </div>
       </div>

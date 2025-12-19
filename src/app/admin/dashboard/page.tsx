@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Package, Users, DollarSign, Shield, AlertTriangle, TrendingUp, Ban, AlertCircle } from "lucide-react";
+import { Package, Users, DollarSign, Shield, AlertTriangle, TrendingUp, Ban, AlertCircle, ShieldCheck } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase";
 
 interface Metrics {
@@ -180,6 +180,10 @@ export default function AdminDashboard() {
           <Link href="/admin/moderation" className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow flex items-center gap-4">
             <div className="p-3 bg-red-100 rounded-lg"><Ban className="h-6 w-6 text-red-600" /></div>
             <div><h3 className="font-semibold text-gray-900">Moderation Log</h3><p className="text-sm text-gray-600">View moderation history</p></div>
+          </Link>
+          <Link href="/admin/verification" className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow flex items-center gap-4">
+            <div className="p-3 bg-emerald-100 rounded-lg"><ShieldCheck className="h-6 w-6 text-emerald-600" /></div>
+            <div><h3 className="font-semibold text-gray-900">Verify Sellers</h3><p className="text-sm text-gray-600">Review compliance documents</p></div>
           </Link>
         </div>
       </div>

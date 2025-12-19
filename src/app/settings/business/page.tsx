@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import type { ComponentType } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { supabaseBrowser } from "@/lib/supabase";
-import { Building2, Upload, Loader2, Image as ImageIcon, X, Check } from "lucide-react";
+import { uploadComplianceDocument } from "@/lib/storage";
+import { Building2, Upload, Loader2, Image as ImageIcon, X, Check, ShieldCheck, AlertTriangle, Clock3, FileCheck2 } from "lucide-react";
 import Cropper from "react-easy-crop";
 
 type BusinessInfo = {
@@ -30,11 +32,30 @@ type BusinessInfo = {
   brand_accent_color: string;
 };
 
+type SellerVerificationStatus = "approved" | "pending" | "rejected" | "unverified";
+
+type VerificationRequest = {
+  id: string;
+  status: SellerVerificationStatus | string;
+  document_type?: string | null;
+  review_notes?: string | null;
+  created_at: string;
+  document_url?: string | null;
+};
+
 const BRANDING_DEFAULTS = {
   brand_primary_color: "#facc15",
   brand_secondary_color: "#0f172a",
   brand_accent_color: "#fde68a",
 };
+
+const MAX_VERIFICATION_FILE = 15 * 1024 * 1024; // 15MB
+
+const VERIFICATION_DOC_OPTIONS = [
+  { value: "id", label: "Government-issued ID" },
+  { value: "business", label: "Business registration / VAT" },
+  { value: "address", label: "Proof of trading address" },
+];
 
 const BRAND_COLOR_FIELDS: { key: "brand_primary_color" | "brand_secondary_color" | "brand_accent_color"; label: string; helper: string }[] = [
   { key: "brand_primary_color", label: "Primary", helper: "Buttons & highlights" },
@@ -52,9 +73,21 @@ export default function BusinessSettingsPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [initialBusinessInfo, setInitialBusinessInfo] = useState<BusinessInfo | null>(null);
   const [showInActivityFeed, setShowInActivityFeed] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<SellerVerificationStatus>("unverified");
+  const [verificationNote, setVerificationNote] = useState<string | null>(null);
+  const [latestVerification, setLatestVerification] = useState<VerificationRequest | null>(null);
+  const [verificationLoading, setVerificationLoading] = useState(true);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [verificationFile, setVerificationFile] = useState<File | null>(null);
+  const [verificationDocType, setVerificationDocType] = useState<"id" | "business" | "address">("id");
+  const [verificationMessage, setVerificationMessage] = useState("");
+  const [verificationSuccess, setVerificationSuccess] = useState<string | null>(null);
+  const [submittingVerification, setSubmittingVerification] = useState(false);
   
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+  const verificationInputRef = useRef<HTMLInputElement>(null);
   
   const [businessInfo, setBusinessInfo] = useState<BusinessInfo>({
     business_name: "",
@@ -137,6 +170,7 @@ export default function BusinessSettingsPage() {
 
   async function loadBusinessInfo() {
     try {
+      setVerificationLoading(true);
       const user = await getCurrentUser();
       if (!user) {
         router.push("/auth/login?next=/settings/business");
@@ -144,9 +178,10 @@ export default function BusinessSettingsPage() {
       }
 
       const supabase = supabaseBrowser();
+      setCurrentUserId(user.id);
       const { data: profile } = await supabase
         .from("profiles")
-        .select("account_type, show_in_activity_feed")
+        .select("account_type, show_in_activity_feed, business_verified, verification_status, verification_notes")
         .eq("id", user.id)
         .single();
 
@@ -157,6 +192,12 @@ export default function BusinessSettingsPage() {
 
       // Load activity feed preference from profile
       setShowInActivityFeed(profile.show_in_activity_feed !== false);
+      const profileStatus: SellerVerificationStatus =
+        profile?.business_verified
+          ? "approved"
+          : (profile?.verification_status as SellerVerificationStatus) || "unverified";
+      setVerificationStatus(profileStatus);
+      setVerificationNote(profile?.verification_notes ?? null);
 
       const { data, error } = await supabase
         .from("business_info")
@@ -185,11 +226,71 @@ export default function BusinessSettingsPage() {
         setBusinessInfo(loadedInfo);
         setInitialBusinessInfo(loadedInfo);
       }
+
+      const { data: verificationRows } = await supabase
+        .from("seller_verifications")
+        .select("id,status,document_type,review_notes,created_at,document_url")
+        .eq("profile_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (verificationRows && verificationRows.length > 0) {
+        setLatestVerification(verificationRows[0] as VerificationRequest);
+        if (!profile?.business_verified && verificationRows[0].status) {
+          setVerificationStatus(verificationRows[0].status as SellerVerificationStatus);
+        }
+      } else {
+        setLatestVerification(null);
+      }
+      setVerificationError(null);
     } catch (err) {
       console.error("Error loading business info:", err);
       setError("Failed to load business information");
+      setVerificationError("Unable to load verification info");
     } finally {
       setLoading(false);
+      setVerificationLoading(false);
+    }
+  }
+
+  async function refreshVerificationStatus() {
+    if (!currentUserId) return;
+    try {
+      setVerificationLoading(true);
+      const supabase = supabaseBrowser();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("business_verified, verification_status, verification_notes")
+        .eq("id", currentUserId)
+        .single();
+      const profileStatus: SellerVerificationStatus =
+        profile?.business_verified
+          ? "approved"
+          : (profile?.verification_status as SellerVerificationStatus) || "unverified";
+      setVerificationStatus(profileStatus);
+      setVerificationNote(profile?.verification_notes ?? null);
+
+      const { data: verificationRows } = await supabase
+        .from("seller_verifications")
+        .select("id,status,document_type,review_notes,created_at,document_url")
+        .eq("profile_id", currentUserId)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (verificationRows && verificationRows.length > 0) {
+        setLatestVerification(verificationRows[0] as VerificationRequest);
+        if (!profile?.business_verified && verificationRows[0].status) {
+          setVerificationStatus(verificationRows[0].status as SellerVerificationStatus);
+        }
+      } else {
+        setLatestVerification(null);
+      }
+      setVerificationError(null);
+    } catch (err) {
+      console.error("Failed to refresh verification status", err);
+      setVerificationError("Unable to refresh verification status");
+    } finally {
+      setVerificationLoading(false);
     }
   }
 
@@ -336,7 +437,89 @@ export default function BusinessSettingsPage() {
     }
   }
 
+  function handleVerificationFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    setVerificationError(null);
+    if (!file) {
+      setVerificationFile(null);
+      return;
+    }
+    if (file.size > MAX_VERIFICATION_FILE) {
+      setVerificationError("Document too large. Max 15MB.");
+      return;
+    }
+    setVerificationFile(file);
+  }
+
+  async function submitVerificationRequest() {
+    if (!currentUserId) {
+      setVerificationError("You need to be signed in.");
+      return;
+    }
+    if (!verificationFile) {
+      setVerificationError("Upload a document to continue.");
+      return;
+    }
+    setVerificationError(null);
+    setVerificationSuccess(null);
+    setSubmittingVerification(true);
+    try {
+      const url = await uploadComplianceDocument(verificationFile);
+      const supabase = supabaseBrowser();
+      const { error } = await supabase
+        .from("seller_verifications")
+        .insert({
+          profile_id: currentUserId,
+          status: "pending",
+          document_url: url,
+          document_type: verificationDocType,
+          notes: verificationMessage || null,
+        });
+      if (error) throw error;
+      setVerificationFile(null);
+      if (verificationInputRef.current) {
+        verificationInputRef.current.value = "";
+      }
+      setVerificationMessage("");
+      setVerificationStatus("pending");
+      setVerificationSuccess("Documents submitted. We'll review them shortly.");
+      await refreshVerificationStatus();
+    } catch (err) {
+      console.error("Verification submission failed", err);
+      setVerificationError(err instanceof Error ? err.message : "Failed to submit documents.");
+    } finally {
+      setSubmittingVerification(false);
+    }
+  }
+
   const inputClass = "w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500";
+
+  const verificationStatusMeta: Record<SellerVerificationStatus, { label: string; className: string; icon: ComponentType<{ className?: string }>; helper: string }> = {
+    approved: {
+      label: "Verified seller",
+      className: "bg-green-50 text-green-700 border border-green-200",
+      icon: ShieldCheck,
+      helper: "Your listings go live instantly.",
+    },
+    pending: {
+      label: "Under review",
+      className: "bg-yellow-50 text-yellow-800 border border-yellow-200",
+      icon: Clock3,
+      helper: "Our trust team is reviewing your documents.",
+    },
+    rejected: {
+      label: "Needs attention",
+      className: "bg-red-50 text-red-700 border border-red-200",
+      icon: AlertTriangle,
+      helper: "Update your documents to continue.",
+    },
+    unverified: {
+      label: "Verification required",
+      className: "bg-gray-100 text-gray-700 border border-gray-200",
+      icon: FileCheck2,
+      helper: "Submit compliance documents to unlock selling.",
+    },
+  };
 
   if (loading) {
     return (
@@ -370,6 +553,163 @@ export default function BusinessSettingsPage() {
         )}
 
         <div className="space-y-6">
+          {/* Seller Verification */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Seller verification</h2>
+                <p className="text-sm text-gray-600">
+                  Upload compliance documents so the trust team can approve your storefront.
+                </p>
+              </div>
+              {verificationStatusMeta[verificationStatus] && (
+                <div className="text-right">
+                  <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold ${verificationStatusMeta[verificationStatus].className}`}>
+                    <verificationStatusMeta[verificationStatus].icon className="h-4 w-4" />
+                    {verificationStatusMeta[verificationStatus].label}
+                  </span>
+                  <p className="mt-1 text-xs text-gray-500">{verificationStatusMeta[verificationStatus].helper}</p>
+                </div>
+              )}
+            </div>
+
+            {verificationLoading && (
+              <p className="mt-4 text-sm text-gray-500">Checking your verification status…</p>
+            )}
+
+            {!verificationLoading && (
+              <>
+                {verificationNote && (
+                  <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-900">
+                    {verificationNote}
+                  </div>
+                )}
+                {verificationError && (
+                  <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                    {verificationError}
+                  </div>
+                )}
+                {verificationSuccess && (
+                  <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+                    {verificationSuccess}
+                  </div>
+                )}
+                {latestVerification && (
+                  <div className="mt-4 text-sm text-gray-600">
+                    <p>
+                      Last submission:{" "}
+                      <strong>{new Date(latestVerification.created_at).toLocaleString()}</strong>
+                    </p>
+                    {latestVerification.document_type && (
+                      <p className="mt-1">
+                        Document type:{" "}
+                        <span className="capitalize">{latestVerification.document_type.replace(/_/g, " ")}</span>
+                      </p>
+                    )}
+                    {latestVerification.review_notes && (
+                      <p className="mt-1 text-red-700">
+                        Review note: {latestVerification.review_notes}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {verificationStatus === "approved" ? (
+                  <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-900">
+                    You're fully verified. Future listings will go live as soon as they pass the standard listing checks.
+                  </div>
+                ) : (
+                  <div className="mt-5 space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Document type
+                      </label>
+                      <select
+                        value={verificationDocType}
+                        onChange={(e) => setVerificationDocType(e.target.value as "id" | "business" | "address")}
+                        className={inputClass}
+                      >
+                        {VERIFICATION_DOC_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Upload document
+                      </label>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => verificationInputRef.current?.click()}
+                          className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-800 hover:border-yellow-400 hover:text-yellow-700"
+                        >
+                          <Upload size={16} />
+                          Select file
+                        </button>
+                        <input
+                          ref={verificationInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,application/pdf"
+                          className="hidden"
+                          onChange={handleVerificationFileChange}
+                        />
+                        {verificationFile && (
+                          <span className="text-sm text-gray-600 truncate max-w-xs">
+                            {verificationFile.name}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-2 text-xs text-gray-500">
+                        Accepts PDF or JPG/PNG files. Max 15MB. Make sure details are clear and legible.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Notes for reviewers (optional)
+                      </label>
+                      <textarea
+                        value={verificationMessage}
+                        onChange={(e) => setVerificationMessage(e.target.value)}
+                        rows={3}
+                        className={inputClass}
+                        placeholder="List any additional context, trading names, or links that help us verify you."
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={submitVerificationRequest}
+                        disabled={submittingVerification || !verificationFile}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {submittingVerification ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Submitting…
+                          </>
+                        ) : (
+                          <>
+                            <ShieldCheck className="h-4 w-4" />
+                            Submit for review
+                          </>
+                        )}
+                      </button>
+                      <p className="text-xs text-gray-500">
+                        Typical review time: under 1 business day.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
           {/* Business Identity */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Business Identity</h2>

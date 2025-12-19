@@ -1,10 +1,10 @@
 // src/components/ThreadClientNew.tsx
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { User, Calendar, Trash2, Mail } from "lucide-react";
+import { User, Calendar, Trash2, Mail, ShieldAlert } from "lucide-react";
 import {
   fetchMessages,
   sendMessage,
@@ -18,6 +18,7 @@ import { displayName } from "@/lib/names";
 import { supabaseBrowser } from "@/lib/supabase";
 import OfferCard from "@/components/OfferCard";
 import { ReviewMessage } from "@/components/ReviewMessage";
+import { analyzeMessageSafety } from "@/lib/messagingSafety";
 
 type PeerProfile = {
   id: string;
@@ -50,6 +51,8 @@ export default function ThreadClientNew({
   const composerRef = useRef<HTMLDivElement | null>(null);
   const [viewportAdjustedHeight, setViewportAdjustedHeight] = useState<string | null>(null);
   const isSendingRef = useRef(false); // Prevent polling during send
+  const safetyInsights = useMemo(() => analyzeMessageSafety(draft), [draft]);
+  const isBlockedBySafety = Boolean(safetyInsights.blockReason);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -220,6 +223,10 @@ export default function ThreadClientNew({
 
   async function handleSend(text: string) {
     if (!text.trim() || isSending) return;
+    if (safetyInsights.blockReason) {
+      setSendError(safetyInsights.blockReason);
+      return;
+    }
     setSendError(null);
     setIsSending(true);
     isSendingRef.current = true; // Block polling during send
@@ -548,7 +555,7 @@ export default function ThreadClientNew({
             />
             <button
               type="submit"
-              disabled={isSending || !draft.trim()}
+              disabled={isSending || !draft.trim() || isBlockedBySafety}
               className="rounded-md bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {isSending && (
@@ -557,6 +564,24 @@ export default function ThreadClientNew({
               {isSending ? "Sending…" : "Send"}
             </button>
           </div>
+          {(safetyInsights.blockReason || safetyInsights.warnings.length > 0) && (
+            <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              <ShieldAlert className="h-4 w-4 flex-shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                {safetyInsights.blockReason && (
+                  <p className="font-semibold">{safetyInsights.blockReason}</p>
+                )}
+                {safetyInsights.warnings.map((w) => (
+                  <p key={w}>{w}</p>
+                ))}
+                {!safetyInsights.blockReason && (
+                  <p className="text-[11px] text-amber-800">
+                    Keep payments and chat inside Motorsource so we can help if something goes wrong.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
           {sendError && (
             <div className="text-xs text-red-600" role="alert" aria-live="polite">{sendError}</div>
           )}

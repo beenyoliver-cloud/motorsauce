@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Upload, X, ChevronDown, Plus } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { Upload, X, ChevronDown, Plus, ShieldAlert, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { uploadImage } from '@/lib/storage';
 import { createListing } from '@/lib/listingsService';
@@ -11,6 +11,7 @@ import { addVehicle, removeVehicle, vehiclesToArray, type SelectedVehicle } from
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { getMainCategories, getSubcategoriesForMain, type MainCategory } from '@/data/partCategories';
+import { supabaseBrowser } from "@/lib/supabase";
 
 type Category = "OEM" | "Aftermarket" | "Tool" | "";
 type Condition = "New" | "Used - Like New" | "Used - Good" | "Used - Fair";
@@ -23,17 +24,94 @@ export default function SellPage() {
   const router = useRouter();
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
+  const [sellerGate, setSellerGate] = useState<{ status: "checking" | "allowed" | "pending" | "blocked"; message?: string; detail?: string }>({ status: "checking" });
+
+  const evaluateSellerStatus = useCallback(async (userId: string) => {
+    try {
+      const supabase = supabaseBrowser();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("account_type, business_verified, verification_status, verification_notes")
+        .eq("id", userId)
+        .single();
+
+      if (!profile) {
+        setSellerGate({ status: "blocked", message: "We couldn't load your profile.", detail: "Try refreshing or contact support." });
+        return;
+      }
+
+      if (profile.business_verified) {
+        setSellerGate({ status: "allowed" });
+        return;
+      }
+
+      if (profile.account_type !== "business") {
+        setSellerGate({
+          status: "blocked",
+          message: "Switch to a business account to list parts.",
+          detail: "Update your account in Settings → Business.",
+        });
+        return;
+      }
+
+      const { data: verificationRows } = await supabase
+        .from("seller_verifications")
+        .select("status, review_notes, created_at")
+        .eq("profile_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      const latest = verificationRows && verificationRows.length > 0 ? verificationRows[0] : null;
+      const statusFromProfile = (profile.verification_status as string) || (latest?.status as string) || "unverified";
+
+      if (latest?.status === "pending" || statusFromProfile === "pending") {
+        setSellerGate({
+          status: "pending",
+          message: "Your documents are being reviewed.",
+          detail: "We'll email you as soon as you're approved.",
+        });
+        return;
+      }
+
+      if (latest?.status === "rejected" || statusFromProfile === "rejected") {
+        setSellerGate({
+          status: "blocked",
+          message: "Your last verification submission needs attention.",
+          detail: latest?.review_notes || profile.verification_notes || "Upload updated documents in Business Settings.",
+        });
+        return;
+      }
+
+      setSellerGate({
+        status: "blocked",
+        message: "Verification required before listing parts.",
+        detail: "Upload documents in Business Settings so we can approve your storefront.",
+      });
+    } catch (err) {
+      console.error("Failed to evaluate seller status", err);
+      setSellerGate({
+        status: "blocked",
+        message: "Unable to confirm your seller status right now.",
+        detail: "Please refresh the page or contact support if this continues.",
+      });
+    }
+  }, []);
 
   useEffect(() => {
     (async () => {
       try {
         const u = await getCurrentUser();
         setIsAuthed(!!u);
+        if (u) {
+          await evaluateSellerStatus(u.id);
+        } else {
+          setSellerGate({ status: "blocked", message: "Sign in to list parts." });
+        }
       } finally {
         setAuthChecked(true);
       }
     })();
-  }, []);
+  }, [evaluateSellerStatus]);
 
   if (!authChecked) {
     return (
@@ -52,6 +130,51 @@ export default function SellPage() {
           <div className="flex flex-wrap gap-3">
             <Link href="/auth/login?next=/sell" className="inline-flex items-center px-4 py-2 rounded-md bg-gold-500 text-black font-semibold hover:bg-gold-600">Sign in</Link>
             <Link href="/auth/register?next=/sell" className="inline-flex items-center px-4 py-2 rounded-md border border-gray-300 text-gray-900 bg-white hover:bg-gray-50">Create account</Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (sellerGate.status === "checking") {
+    return (
+      <section className="mx-auto max-w-3xl px-4 py-12">
+        <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center text-gray-700">
+          <p>Confirming your seller status…</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (sellerGate.status !== "allowed") {
+    return (
+      <section className="mx-auto max-w-3xl px-4 py-12">
+        <div className="rounded-2xl border border-yellow-200 bg-white p-8 text-gray-900 shadow-sm">
+          <div className="flex items-center gap-3 text-yellow-700">
+            {sellerGate.status === "pending" ? (
+              <ShieldCheck className="h-6 w-6" />
+            ) : (
+              <ShieldAlert className="h-6 w-6 text-red-600" />
+            )}
+            <h1 className="text-xl font-semibold">
+              {sellerGate.status === "pending" ? "Verification in progress" : "Verification required"}
+            </h1>
+          </div>
+          <p className="mt-3 text-sm text-gray-700">{sellerGate.message}</p>
+          {sellerGate.detail && <p className="mt-1 text-sm text-gray-500">{sellerGate.detail}</p>}
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link
+              href="/settings/business"
+              className="inline-flex items-center rounded-md bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-400"
+            >
+              Go to Business Settings
+            </Link>
+            <Link
+              href="/contact"
+              className="inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-800 hover:border-yellow-400 hover:text-yellow-700"
+            >
+              Contact support
+            </Link>
           </div>
         </div>
       </section>

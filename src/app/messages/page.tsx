@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { MessageCircle, CheckSquare, Square, Trash2, X, Search, Filter } from "lucide-react";
+import { MessageCircle, CheckSquare, Square, Trash2, X, Search, Filter, ShieldAlert } from "lucide-react";
 import { fetchThreads, Thread, deleteThread } from "@/lib/messagesClient";
 import { displayName } from "@/lib/names";
 import { supabaseBrowser } from "@/lib/supabase";
@@ -189,11 +189,30 @@ export default function MessagesIndex() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto lg:flex lg:gap-6 lg:p-4">
-      {/* Main Messages List */}
-      <div className="flex-1 min-w-0">
-      {/* Header with actions */}
-      <div className="border-b border-gray-200 bg-white px-4 py-3 sticky top-0 z-10">
+    <section className="bg-gray-50 min-h-screen py-6">
+      <div className="max-w-6xl mx-auto px-4 space-y-6">
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-500">Inbox</p>
+            <h1 className="mt-1 text-2xl font-black text-gray-900">Messages</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              Keep deals organised, respond faster, and archive the noise.
+            </p>
+          </div>
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3 text-sm text-amber-900 max-w-md">
+            <ShieldAlert className="h-5 w-5 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold">Stay on Motorsource</p>
+              <p className="text-amber-800">
+                Never move chats to WhatsApp/Telegram or send bank transfers. On-platform records keep you protected.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm">
+          {/* Header with actions */}
+      <div className="border-b border-gray-200 px-4 py-3">
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-xl font-bold text-black">Messages</h1>
           <div className="flex items-center gap-2">
@@ -363,8 +382,8 @@ export default function MessagesIndex() {
             );
           })
         )}
+        </div>
       </div>
-      </div>
-    </div>
+    </section>
   );
 }

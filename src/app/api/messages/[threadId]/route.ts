@@ -1,6 +1,7 @@
 // src/app/api/messages/[threadId]/route.ts
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { analyzeMessageSafety } from "@/lib/messagingSafety";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -208,6 +209,16 @@ export async function POST(
 
     if (type === "text" && !text?.trim()) {
       return NextResponse.json({ error: "Text is required for text messages" }, { status: 400 });
+    }
+
+    if (type === "text" && text) {
+      const safety = analyzeMessageSafety(text);
+      if (safety.blockReason) {
+        return NextResponse.json(
+          { error: safety.blockReason, code: "MESSAGE_BLOCKED" },
+          { status: 400 }
+        );
+      }
     }
 
     if (type === "offer" && (!offerId || !offerAmountCents)) {

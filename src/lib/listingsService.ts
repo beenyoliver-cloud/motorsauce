@@ -134,6 +134,20 @@ export async function createListing(payload: Partial<Listing>): Promise<Listing>
   const { data: { user } } = await supa.auth.getUser();
   if (!user) throw new Error('Must be logged in to create a listing');
 
+  const { data: profile } = await supa
+    .from('profiles')
+    .select('business_verified, account_type, verification_status')
+    .eq('id', user.id)
+    .single();
+
+  if (!profile?.business_verified) {
+    const status = profile?.verification_status;
+    if (status === 'pending') {
+      throw new Error('Your verification is still pending. We will notify you once you can list parts.');
+    }
+    throw new Error('Your seller account must be verified before you can create listings.');
+  }
+
   const listingData = {
     ...payload,
     seller_id: user.id,
