@@ -131,7 +131,7 @@ export default function HomeHero() {
           Find the right part for your ride faster than your pit crew.
         </h1>
         <p className="text-sm sm:text-base text-white/80 max-w-2xl">
-          Drop a UK registration and we’ll auto-fill the make, model, and year, then steer you into parts that actually fit.
+          Drop a UK registration and we’ll auto-fill the make and year, then prompt you to add the exact model so we only surface parts that fit.
         </p>
 
         <div className="mt-2 sm:mt-3 animate-fadeIn" style={{ animationDelay: '200ms' }}>
@@ -141,13 +141,13 @@ export default function HomeHero() {
             }`}
           >
             <label className="text-xs font-semibold text-gray-800 md:pr-2">Search by registration</label>
-            <div className="flex items-center justify-center w-full">
+            <div className="flex flex-col items-center justify-center w-full">
               <div
-                className={`relative flex w-full max-w-[520px] items-stretch rounded-lg border-2 border-[#1c1b18] bg-[#F9D548] shadow-[0_18px_30px_rgba(0,0,0,0.35)] transition-all duration-300 min-h-[70px] sm:min-h-[84px] ${
-                  plateFocused ? "ring-2 ring-offset-2 ring-offset-slate-900 ring-yellow-200/70" : ""
+                className={`relative flex w-full max-w-[480px] items-stretch rounded-lg border-2 border-[#1c1b18] bg-[#F9D548] shadow-[0_14px_22px_rgba(0,0,0,0.35)] transition-all duration-300 min-h-[64px] sm:min-h-[78px] ${
+                  plateFocused ? "ring-2 ring-offset-2 ring-offset-slate-900 ring-yellow-200/60" : ""
                 }`}
               >
-                <div className="flex flex-col items-center justify-center bg-[#003399] text-white px-2 sm:px-3 py-2 sm:py-3 rounded-l-md border-r-2 border-[#1c1b18] min-w-[46px] sm:min-w-[54px]">
+                <div className="flex flex-col items-center justify-center bg-[#003399] text-white px-2 sm:px-3 py-2 sm:py-3 rounded-l-md border-r-2 border-[#1c1b18] min-w-[44px] sm:min-w-[50px]">
                   <span className="text-[10px] font-semibold">🇬🇧</span>
                   <span className="text-[9px] sm:text-[10px] font-semibold tracking-tight -mt-0.5">UK</span>
                 </div>
@@ -156,13 +156,22 @@ export default function HomeHero() {
                   onFocus={() => setPlateFocused(true)}
                   onBlur={() => setPlateFocused(false)}
                   onChange={(e) => setPlate(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      submitPlateSearch();
+                    }
+                  }}
                   placeholder="AB12 CDE"
-                  className="flex-1 bg-transparent text-black placeholder:text-black/40 px-4 sm:px-6 text-[1.6rem] sm:text-[2rem] uppercase tracking-[0.2em] focus:outline-none font-semibold text-center caret-black"
+                  className="flex-1 bg-transparent text-black placeholder:text-black/40 px-4 sm:px-6 text-[1.4rem] sm:text-[1.9rem] uppercase tracking-[0.18em] focus:outline-none font-semibold text-center caret-black"
                   style={{
                     fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif",
                   }}
                 />
               </div>
+              <p className="mt-2 text-xs text-white/80 text-center max-w-[480px]">
+                Heads up: we can’t fetch your car model automatically, so add it on the next screen to tighten the results.
+              </p>
             </div>
             <button
               type="button"
