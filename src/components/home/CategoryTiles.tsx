@@ -20,7 +20,7 @@ const tiles = [
     badge: "Upgrade-ready",
     accentFrom: "#3b0764",
     accentTo: "#9333ea",
-    image: "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&w=800&q=80",
+    image: "/images/race-car2.jpg",
   },
   {
     label: "Brakes",
@@ -38,7 +38,7 @@ const tiles = [
     badge: "Track stance",
     accentFrom: "#052e16",
     accentTo: "#16a34a",
-    image: "https://images.unsplash.com/photo-1471478331149-c72f17e33c73?auto=format&fit=crop&w=800&q=80",
+    image: "/images/shock4.jpeg",
   },
   {
     label: "Exhausts",
@@ -78,27 +78,29 @@ export default function CategoryTiles() {
             }}
           >
             <div className="absolute inset-0 bg-gradient-to-br from-black/30 via-black/10 to-black/50 pointer-events-none" />
-            <div className="relative flex items-center justify-between">
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-[0.3em] text-white/70">
+            <div className="relative flex items-start justify-between gap-2 w-full">
+              <div className="flex flex-col gap-1 min-w-0">
+                <span className="text-[10px] uppercase tracking-[0.3em] text-white/70 whitespace-nowrap">
                   {t.badge}
                 </span>
                 <div className="inline-flex items-center gap-2">
                   <div className="rounded-full bg-white/15 p-2 border border-white/30 backdrop-blur-sm">
                     <Icon size={18} className="text-white" />
                   </div>
-                  <h3 className="text-sm sm:text-base font-semibold">{t.label}</h3>
+                  <h3 className="text-sm sm:text-base font-semibold text-white leading-snug break-words">
+                    {t.label}
+                  </h3>
                 </div>
               </div>
-              <span className="text-xs font-medium text-white/80 group-hover:text-white transition">
+              <span className="text-xs font-medium text-white/80 group-hover:text-white transition shrink-0">
                 Go →
               </span>
             </div>
             <div className="relative mt-4">
-              <div className="h-1 w-2/3 rounded-full bg-white/30">
+              <div className="h-1 w-2/3 rounded-full bg-white/30 overflow-hidden">
                 <div className="h-full rounded-full bg-white group-hover:w-full transition-all duration-500" />
               </div>
-              <p className="mt-2 text-[11px] text-white/80 leading-snug">
+              <p className="mt-2 text-[11px] text-white/80 leading-snug break-words">
                 Tap to jump into curated searches tuned to this category.
               </p>
             </div>
