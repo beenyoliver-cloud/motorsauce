@@ -683,8 +683,8 @@ function SearchPageInner() {
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="grid gap-4 md:grid-cols-[minmax(0,3fr)_minmax(0,1.2fr)]">
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm h-full">
               <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-yellow-500" />
                 Trending searches
@@ -714,7 +714,7 @@ function SearchPageInner() {
                 </div>
               )}
             </div>
-            <div className="hidden md:block">
+            <div className="hidden md:flex">
               <LiveActivityFeed />
             </div>
           </div>
