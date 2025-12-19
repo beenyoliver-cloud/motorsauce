@@ -63,7 +63,7 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
     "--brand-accent": business.brand_accent_color || "#fde68a",
   } as CSSProperties;
 
-  const tabs: Array<{ id: Tab; label: string; icon: JSX.Element }> = [
+  const tabs: Array<{ id: Tab; label: string; icon: React.ReactNode }> = [
     { id: 'catalogue', label: 'Catalogue', icon: <Boxes className="h-4 w-4" /> },
     { id: 'about', label: 'About', icon: <Info className="h-4 w-4" /> },
     { id: 'reviews', label: `Reviews (${business.review_count})`, icon: <StarIcon className="h-4 w-4" /> },
