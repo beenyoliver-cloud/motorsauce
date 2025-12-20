@@ -176,11 +176,6 @@ function mapDbRow(row: RawListingRow): Listing {
   };
 }
 
-// Local fallback currently unused; stub retained for compatibility
-async function findInLocal(_id?: string | null) {
-  return _id ? null : [] as Listing[];
-}
-
 export async function GET(req: Request) {
   const supabase = getSupabase();
   const { searchParams } = new URL(req.url);
@@ -197,38 +192,27 @@ export async function GET(req: Request) {
   const limit = Math.min( Number(limitParam ?? 24) || 24, 100 );
 
   if (id) {
-    console.log("[listings API] Fetching single listing:", { id, idType: typeof id, idLength: id.length });
-    
-    // Fetch ALL listings and filter client-side (workaround for RLS .eq() issue)
-    const { data: allListings, error: listingError } = await supabase
+    console.log("[listings API] Fetching single listing:", { id });
+    const { data: listingData, error: listingError } = await supabase
       .from("listings")
       .select("*")
-      .limit(200);
-
-    const listingData = allListings?.find((l: any) => l.id === id) || null;
-
-    console.log("[listings API] Single listing query result:", {
-      hasData: !!listingData,
-      totalFetched: allListings?.length,
-      hasError: !!listingError,
-      errorMessage: listingError?.message,
-      listingId: listingData?.id
-    });
+      .eq("id", id)
+      .maybeSingle();
 
     if (listingError) {
       console.error("DB error fetching listing", id, listingError);
-      return NextResponse.json({ 
-        error: "Database error", 
-        message: listingError.message,
-        details: listingError.details,
-        hint: listingError.hint 
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: "Database error",
+          message: listingError.message,
+          details: listingError.details,
+          hint: listingError.hint,
+        },
+        { status: 500 }
+      );
     }
 
     if (!listingData) {
-      console.log("[listings API] No listing data found for:", id);
-      const local = await findInLocal(id);
-      if (local) return NextResponse.json(local, { status: 200 });
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 

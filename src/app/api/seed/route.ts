@@ -13,7 +13,7 @@ function assertAdmin(req: Request): NextResponse | null {
 export async function POST(req: Request) {
   const block = assertAdmin(req);
   if (block) return block;
-  const supabase = supabaseServer();
+  const supabase = supabaseServer({ useServiceRole: true });
 
   try {
     // Check if we already have listings

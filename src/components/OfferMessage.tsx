@@ -110,24 +110,7 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
         window.dispatchEvent(new Event("ms:threads"));
       }
       
-      // Send notification to buyer about payment
-      if (buyerId) {
-        try {
-          await fetch("/api/notifications", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId: buyerId,
-              type: "payment_required",
-              title: "Payment Required",
-              message: `Your offer of ${formatGBP(o.amountCents)} was accepted! Please proceed with payment.`,
-              link: `/checkout?offer_id=${o.id}`,
-            }),
-          });
-        } catch (err) {
-          console.error("Failed to send payment notification:", err);
-        }
-      } else {
+      if (!buyerId) {
         console.warn("[OfferMessage] Missing buyer id, unable to send notification");
       }
     } catch (err) {

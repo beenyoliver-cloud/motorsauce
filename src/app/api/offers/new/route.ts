@@ -5,11 +5,13 @@ import { createClient } from "@supabase/supabase-js";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseServiceKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE || null;
+
 function getSupabase(authHeader?: string | null) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  
-  const client = createClient(url, anon, {
+  const client = createClient(supabaseUrl, supabaseAnon, {
     auth: { persistSession: false, autoRefreshToken: false },
     global: {
       headers: authHeader ? { Authorization: authHeader } : {},
@@ -17,6 +19,26 @@ function getSupabase(authHeader?: string | null) {
   });
   
   return client;
+}
+
+async function createNotificationForOffer(offer: any) {
+  if (!supabaseServiceKey) return;
+  try {
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    if (!offer?.starter_id) return;
+    await adminClient.from("notifications").insert({
+      user_id: offer.starter_id,
+      type: "payment_required",
+      title: "Payment required",
+      message: `Your offer of £${(offer.amount_cents / 100).toFixed(2)} was accepted. Complete checkout to finish the purchase.`,
+      link: `/checkout?offer_id=${offer.id}`,
+      read: false,
+    });
+  } catch (err) {
+    console.error("[offers API] Failed to create notification:", err);
+  }
 }
 
 // GET /api/offers?threadId=... - Get offers for a thread or user
@@ -286,6 +308,9 @@ export async function PATCH(req: Request) {
     }
 
     console.log("[offers API] Offer updated successfully:", updatedOffer);
+    if (status === "accepted") {
+      await createNotificationForOffer({ ...offer, ...updatedOffer });
+    }
 
     // Create system message to notify parties
     const systemText = (() => {

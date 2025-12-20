@@ -282,7 +282,7 @@ export default function Header() {
       {/* Mobile header (md:hidden) - Compact two-row design */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         {/* Top row: Menu, Logo, Icons */}
-        <div className="relative h-11 flex items-center justify-between px-2">
+        <div className="relative h-14 flex items-center justify-between px-2">
           {/* Left: Menu button */}
           <button
             className="flex items-center justify-center text-black hover:text-yellow-500 w-9 h-9"
@@ -301,7 +301,7 @@ export default function Header() {
             <img
               src="/images/MSlogoreal.png"
               alt="Motorsauce"
-              className="h-10 w-auto object-contain"
+              className="h-11 w-auto object-contain"
             />
           </Link>
 
@@ -360,7 +360,7 @@ export default function Header() {
                 <img
                   src="/images/MSlogoreal.png"
                   alt="Motorsauce"
-                  className="h-[120px] w-auto"
+                  className="h-16 w-auto object-contain"
                 />
               </Link>
               <button
@@ -539,12 +539,12 @@ export default function Header() {
       )}
 
       {/* Desktop header (>= md) */}
-      <nav className="hidden md:flex w-full h-[64px] bg-white border-b border-gray-200 items-center justify-between px-6 shadow-sm fixed top-0 z-40">
+      <nav className="hidden md:flex w-full bg-white border-b border-gray-200 items-center justify-between px-6 py-3 shadow-sm fixed top-0 z-40 min-h-[86px]">
         <Link href="/" aria-label="Motorsauce home" className="flex-shrink-0 inline-flex items-center h-full">
           <img
             src="/images/MSlogoreal.png"
             alt="Motorsauce"
-            className="h-[156px] w-auto"
+            className="h-16 lg:h-20 w-auto object-contain"
           />
         </Link>
 
