@@ -4,9 +4,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { CheckCircle, XCircle, Clock, Ban, TrendingUp, Package } from "lucide-react";
-import { createOffer, formatGBP } from "@/lib/offersStore";
-import { updateOfferStatus as updateOfferStatusAPI, sendMessage } from "@/lib/messagesClient";
-import { appendOfferMessage } from "@/lib/chatStore";
+import { formatGBP } from "@/lib/offersStore";
+import { updateOfferStatus as updateOfferStatusAPI, sendMessage, createOffer as createOfferAPI } from "@/lib/messagesClient";
 import { displayName } from "@/lib/names";
 import { getCurrentUserSync } from "@/lib/auth";
 
@@ -112,20 +111,24 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
       }
       
       // Send notification to buyer about payment
-      try {
-        await fetch("/api/notifications", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: o.starterId,
-            type: "payment_required",
-            title: "Payment Required",
-            message: `Your offer of ${formatGBP(o.amountCents)} was accepted! Please proceed with payment.`,
-            link: `/checkout?offer=${o.id}`,
-          }),
-        });
-      } catch (err) {
-        console.error("Failed to send payment notification:", err);
+      if (buyerId) {
+        try {
+          await fetch("/api/notifications", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: buyerId,
+              type: "payment_required",
+              title: "Payment Required",
+              message: `Your offer of ${formatGBP(o.amountCents)} was accepted! Please proceed with payment.`,
+              link: `/checkout?offer_id=${o.id}`,
+            }),
+          });
+        } catch (err) {
+          console.error("Failed to send payment notification:", err);
+        }
+      } else {
+        console.warn("[OfferMessage] Missing buyer id, unable to send notification");
       }
     } catch (err) {
       console.error(`[OfferMessage] Error accepting offer:`, err);
@@ -179,11 +182,27 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
 
     setLoading(true);
     try {
-      // 1) Supersede current
-      console.log(`[OfferMessage] Countering offer ${o.id} with £${pounds} for listing ${o.listingId || 'unknown'}`);
-      const result = await updateOfferStatusAPI(o.id, "countered");
+      const counterAmountCents = Math.round(pounds * 100);
+      console.log(
+        `[OfferMessage] Countering offer ${o.id} with £${pounds} for listing ${o.listingId || "unknown"}`
+      );
+
+      if (o.listingId === undefined || o.listingId === null || o.listingId === "") {
+        throw new Error("Missing listing reference for counter offer");
+      }
+
+      const targetRecipientId =
+        (o.starterId && o.starterId !== selfId && o.starterId) ||
+        (o.recipientId && o.recipientId !== selfId && o.recipientId) ||
+        (iAmRecipient ? o.starterId : o.recipientId);
+
+      if (!targetRecipientId) {
+        throw new Error("Unable to determine who should receive the counter offer");
+      }
+
+      const result = await updateOfferStatusAPI(o.id, "countered", counterAmountCents);
       console.log(`[OfferMessage] Offer countered:`, result);
-      await sendSystemMessage(`${displayName(selfName)} countered with ${formatGBP(Math.round(pounds * 100))}.`);
+      await sendSystemMessage(`${displayName(selfName)} countered with ${formatGBP(counterAmountCents)}.`);
 
       // Notify UI to refresh threads and messages
       if (typeof window !== "undefined") {
@@ -191,41 +210,21 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
         window.dispatchEvent(new Event("ms:threads"));
       }
 
-      // 2) New pending from me → back to the other party, keep the listing photo/title
-    const newOffer = createOffer({
-      threadId: msg.threadId,
-      from: "You",
-      amountCents: Math.round(pounds * 100),
-      currency: "GBP",
-      listingId: o.listingId,
-      listingTitle: o.listingTitle || "",
-      listingImage: o.listingImage,
-      peerName: o.peerName || "",
-    });
-
-    // 3) Append the counter card (propagate buyer/seller ids so the next step knows roles)
-    appendOfferMessage(msg.threadId, {
-      id: newOffer.id,
-      amountCents: newOffer.amountCents,
-      currency: newOffer.currency ?? "GBP",
-      status: "pending",
-      starter: selfName,
-      starterId: selfId,
-      recipient: iAmRecipient ? (o.starter || "Unknown") : (o.recipient || "Unknown"),
-      recipientId: iAmRecipient ? o.starterId : o.recipientId,
-      buyerId,
-      sellerId,
-      listingId: o.listingId,
-      listingTitle: o.listingTitle,
-      listingImage: o.listingImage,
-      peerName: o.peerName,
-      peerId: iAmRecipient ? o.starterId : o.recipientId,
-    });
+      const created = await createOfferAPI({
+        threadId: msg.threadId,
+        listingId: String(o.listingId),
+        listingTitle: o.listingTitle || "",
+        listingImage: o.listingImage,
+        recipientId: targetRecipientId,
+        amountCents: counterAmountCents,
+        currency: o.currency || "GBP",
+      });
+      console.log("[OfferMessage] Counter offer created:", created);
 
       setCounter("");
     } catch (err) {
       console.error(`[OfferMessage] Error countering offer:`, err);
-      alert("Failed to send counter offer");
+      alert(err instanceof Error ? err.message : "Failed to send counter offer");
     } finally {
       setLoading(false);
     }

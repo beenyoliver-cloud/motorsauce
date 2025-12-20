@@ -61,6 +61,10 @@ export type Message = {
     listingTitle?: string;
     listingImage?: string;
     listingPrice?: number;
+    starterId?: string | null;
+    recipientId?: string | null;
+    buyerId?: string | null;
+    sellerId?: string | null;
   };
   review?: {
     id: string;

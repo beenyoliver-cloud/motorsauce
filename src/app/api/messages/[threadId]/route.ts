@@ -84,7 +84,7 @@ export async function GET(
       // Fetch offers
       const { data: offers, error: offersError } = await supabase
         .from("offers")
-        .select("id, listing_id, listing_title, listing_image, amount_cents, currency, status")
+        .select("id, listing_id, listing_title, listing_image, amount_cents, currency, status, starter_id, recipient_id, starter, recipient, buyer_id, seller_id")
         .in("id", offerIds);
       
       if (offersError) {
@@ -120,6 +120,10 @@ export async function GET(
       const sender = profileMap.get(senderId);
       const offer = m.offer_id ? offerMap.get(m.offer_id) : null;
       const listing = offer?.listing_id ? listingsMap.get(offer.listing_id) : null;
+      const starterId = offer?.starter_id || offer?.buyer_id || null;
+      const recipientId = offer?.recipient_id || offer?.seller_id || null;
+      const buyerId = offer?.buyer_id || null;
+      const sellerId = offer?.seller_id || null;
       
       // Debug: log offer data if present
       if (offer && m.message_type === "offer") {
@@ -160,6 +164,10 @@ export async function GET(
               : (offer?.listing_image || null)
           ),
           listingPrice: listing?.price ? Math.round(Number(listing.price) * 100) : undefined,
+          starterId,
+          recipientId,
+          buyerId,
+          sellerId,
         } : undefined,
         createdAt: m.created_at,
         updatedAt: m.updated_at,

@@ -301,7 +301,7 @@ export default function Header() {
             <img
               src="/images/MSlogoreal.png"
               alt="Motorsauce"
-              className="h-[102px] w-auto"
+              className="h-10 w-auto object-contain"
             />
           </Link>
 
