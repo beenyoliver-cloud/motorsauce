@@ -33,6 +33,15 @@ export default function Home() {
       {/* @ts-ignore Server -> Client import allowed */}
       <JustSoldTicker />
 
+      {/* Suggested parts (personalized via API) */}
+      <section>
+        <div className="flex items-center justify-between mb-2 sm:mb-3">
+          <h2 className="text-lg sm:text-xl font-bold text-black">Suggested for you</h2>
+          <Link href="/search" className="text-xs sm:text-sm text-gray-600 hover:underline">View all</Link>
+        </div>
+        <SuggestedParts limit={8} />
+      </section>
+
       {/* Live activity feed + Category tiles side by side on desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-[3fr_1.2fr] gap-4">
         <div>
@@ -49,15 +58,6 @@ export default function Home() {
       <FeaturedRow title="New this week" variant="new" />
       <FeaturedRow title="Under £250" variant="under250" />
       <FeaturedRow title="Under £20" variant="under20" />
-
-      {/* Suggested parts (personalized via API) */}
-      <section>
-        <div className="flex items-center justify-between mb-2 sm:mb-3">
-          <h2 className="text-lg sm:text-xl font-bold text-black">Suggested for you</h2>
-          <Link href="/search" className="text-xs sm:text-sm text-gray-600 hover:underline">View all</Link>
-        </div>
-        <SuggestedParts limit={8} />
-      </section>
 
       {/* Sell CTA */}
       <SellCta />

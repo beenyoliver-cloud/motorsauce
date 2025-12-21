@@ -138,12 +138,11 @@ export default function HomeHero() {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-gray-900/20 bg-slate-900 text-white p-4 sm:p-5 md:p-6 shadow-lg max-w-5xl mx-auto">
+    <div className="relative overflow-hidden rounded-xl border border-gray-900/20 bg-slate-900 text-white p-4 sm:p-5 md:p-6 shadow-lg max-w-5xl mx-auto mt-6 sm:mt-8">
       <div className="absolute inset-0 pointer-events-none">
         <div className="home-hero-gradient" />
         <div className="home-hero-orbit home-hero-orbit--one" />
         <div className="home-hero-orbit home-hero-orbit--two" />
-        <div className="home-hero-ghost-car" />
       </div>
 
       <div className="relative max-w-3xl space-y-3">

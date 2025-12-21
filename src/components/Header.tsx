@@ -301,7 +301,7 @@ export default function Header() {
             <img
               src="/images/MSlogoreal.png"
               alt="Motorsauce"
-              className="h-11 w-auto object-contain"
+              className="h-12 w-auto object-contain"
             />
           </Link>
 
@@ -539,12 +539,12 @@ export default function Header() {
       )}
 
       {/* Desktop header (>= md) */}
-      <nav className="hidden md:flex w-full bg-white border-b border-gray-200 items-center justify-between px-6 py-3 shadow-sm fixed top-0 z-40 min-h-[86px]">
+      <nav className="hidden md:flex w-full bg-white border-b border-gray-200 items-center justify-between px-6 py-2 shadow-sm fixed top-0 z-40 min-h-[72px]">
         <Link href="/" aria-label="Motorsauce home" className="flex-shrink-0 inline-flex items-center h-full">
           <img
             src="/images/MSlogoreal.png"
             alt="Motorsauce"
-            className="h-16 lg:h-20 w-auto object-contain"
+            className="h-14 lg:h-16 w-auto object-contain"
           />
         </Link>
 
