@@ -12,6 +12,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { getMainCategories, getSubcategoriesForMain, type MainCategory } from '@/data/partCategories';
 import { supabaseBrowser } from "@/lib/supabase";
+import { logTelemetry } from "@/lib/telemetry";
 
 type Category = "OEM" | "Aftermarket" | "Tool" | "";
 type Condition = "New" | "Used - Like New" | "Used - Good" | "Used - Fair";
@@ -25,6 +26,7 @@ export default function SellPage() {
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
   const [sellerGate, setSellerGate] = useState<{ status: "checking" | "allowed" | "pending" | "blocked"; message?: string; detail?: string }>({ status: "checking" });
+  const [sellerProfileType, setSellerProfileType] = useState<"business" | "individual">("individual");
 
   const evaluateSellerStatus = useCallback(async (userId: string) => {
     try {
@@ -37,19 +39,23 @@ export default function SellPage() {
 
       if (!profile) {
         setSellerGate({ status: "blocked", message: "We couldn't load your profile.", detail: "Try refreshing or contact support." });
+        logTelemetry("sell_gate_status", { status: "profile_missing", userId });
         return;
       }
 
-      const accountType = profile.account_type ?? "individual";
+      const accountType = typeof profile.account_type === "string" ? profile.account_type.toLowerCase().trim() : "individual";
       const isBusinessAccount = accountType === "business";
+      setSellerProfileType(isBusinessAccount ? "business" : "individual");
 
       if (!isBusinessAccount) {
         setSellerGate({ status: "allowed" });
+        logTelemetry("sell_gate_status", { status: "allowed", accountType, userId });
         return;
       }
 
       if (profile.business_verified) {
         setSellerGate({ status: "allowed" });
+        logTelemetry("sell_gate_status", { status: "allowed_business_verified", accountType, userId });
         return;
       }
 
@@ -69,6 +75,7 @@ export default function SellPage() {
           message: "Your documents are being reviewed.",
           detail: "We'll email you as soon as you're approved.",
         });
+        logTelemetry("sell_gate_status", { status: "pending", accountType, userId });
         return;
       }
 
@@ -78,6 +85,12 @@ export default function SellPage() {
           message: "Your last verification submission needs attention.",
           detail: latest?.review_notes || profile.verification_notes || "Upload updated documents in Business Settings.",
         });
+        logTelemetry("sell_gate_status", {
+          status: "rejected",
+          accountType,
+          userId,
+          reviewNotes: latest?.review_notes || profile.verification_notes || null,
+        });
         return;
       }
 
@@ -86,12 +99,18 @@ export default function SellPage() {
         message: "Verification required before listing parts.",
         detail: "Upload documents in Business Settings so we can approve your storefront.",
       });
+      logTelemetry("sell_gate_status", { status: "verification_required", accountType, userId });
     } catch (err) {
       console.error("Failed to evaluate seller status", err);
       setSellerGate({
         status: "blocked",
         message: "Unable to confirm your seller status right now.",
         detail: "Please refresh the page or contact support if this continues.",
+      });
+      logTelemetry("sell_gate_status", {
+        status: "error",
+        error: err instanceof Error ? err.message : "unknown_error",
+        userId,
       });
     }
   }, []);
@@ -183,6 +202,27 @@ export default function SellPage() {
   return (
     <section className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 py-12 px-4">
       <div className="max-w-4xl mx-auto">
+        {sellerProfileType === "individual" && (
+          <div className="mb-6 rounded-2xl border border-gray-200 bg-white/90 p-5 shadow-sm">
+            <h2 className="text-xl font-semibold text-gray-900">Welcome to selling on Motorsauce</h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Individuals can list instantly—just keep messages/payments on-platform. Upgrade to a business account in
+              Settings if you need storefront controls or compliance tooling.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-600">
+              <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1">
+                • Secure payments via escrow
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1">
+                • Buyer chats stay in one inbox
+              </span>
+              <Link href="/settings" className="inline-flex items-center gap-1 rounded-full border border-gray-300 px-3 py-1 text-gray-800 hover:border-yellow-400 hover:text-yellow-600">
+                Manage my account →
+              </Link>
+            </div>
+          </div>
+        )}
+
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-3">List Your Part</h1>
           <p className="text-lg text-gray-600">Fill in the details below to create your listing</p>

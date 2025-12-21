@@ -111,20 +111,20 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
     ).slice(0, 4);
 
   return (
-    <div className="min-h-screen bg-white" style={themeStyles}>
+    <div className="min-h-screen bg-white pt-4 sm:pt-6" style={themeStyles}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* Business Header with Banner */}
       <BusinessHeader business={business} isOwner={isOwner} onColorsDetected={handleColorsDetected} />
 
       {/* Stats Bar */}
-      <div className="relative mt-4 md:mt-12 px-4">
+      <div className="relative mt-4 md:mt-12 px-3 sm:px-4">
         <div className="max-w-7xl mx-auto">
           <BusinessStats business={business} className="rounded-3xl shadow-2xl border border-white/10 overflow-hidden" />
         </div>
       </div>
 
       {/* Highlights */}
-      <div className="max-w-7xl mx-auto px-4 mt-6 grid gap-4 md:grid-cols-3">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 mt-6 grid gap-4 md:grid-cols-3">
         <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-2">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">About the shop</p>
           <p className="text-sm text-gray-700 leading-relaxed">
@@ -170,7 +170,7 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
       </div>
 
       {specialtyCollections.length > 0 && (
-        <div className="max-w-7xl mx-auto px-4 mt-6 space-y-2">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 mt-6 space-y-2">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">Featured collections</h3>
             <Link href="#catalogue" className="text-sm text-yellow-600 hover:text-yellow-700">
@@ -193,7 +193,7 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 mt-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 mt-6">
         <div className="rounded-3xl border border-gray-200 bg-white p-6 flex flex-col lg:flex-row gap-4 shadow">
           <div className="flex-1">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Testimonials</p>
@@ -228,20 +228,30 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
 
       {/* Navigation Tabs */}
       <div className="bg-white border-b sticky top-0 z-10 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4">
-          <nav className="flex space-x-4 overflow-x-auto py-2">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4">
+          <nav className="flex space-x-3 overflow-x-auto py-2" role="tablist" aria-label="Business sections">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                aria-controls={`${tab.id}-panel`}
+                id={`${tab.id}-tab`}
                 onClick={() => setActiveTab(tab.id)}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition ${
+                className={`group relative inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-yellow-400 ${
                   activeTab === tab.id
-                    ? 'bg-[var(--brand-primary)] text-black border-[var(--brand-primary)] shadow'
+                    ? 'bg-[var(--brand-primary)] text-black border-[var(--brand-primary)] shadow ring-1 ring-black/10'
                     : 'bg-white text-gray-700 border-gray-200 hover:border-yellow-400'
                 }`}
               >
                 {tab.icon}
                 <span>{tab.label}</span>
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none absolute inset-x-4 -bottom-1 h-0.5 rounded-full bg-yellow-500 transition-opacity ${
+                    activeTab === tab.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-60'
+                  }`}
+                />
               </button>
             ))}
           </nav>
@@ -249,23 +259,27 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-8">
         {activeTab === 'catalogue' && (
-          <div id="catalogue">
+          <div id="catalogue-panel" role="tabpanel" aria-labelledby="catalogue-tab">
             <BusinessCatalogue businessId={business.id} isOwner={isOwner} />
           </div>
         )}
         {activeTab === 'about' && (
-          <div id="about">
+          <div id="about-panel" role="tabpanel" aria-labelledby="about-tab">
             <BusinessAbout business={business} />
           </div>
         )}
         {activeTab === 'reviews' && (
-          <div id="reviews">
+          <div id="reviews-panel" role="tabpanel" aria-labelledby="reviews-tab">
             <BusinessReviews businessId={business.id} business={business} />
           </div>
         )}
-        {activeTab === 'contact' && <BusinessContact business={business} />}
+        {activeTab === 'contact' && (
+          <div id="contact-panel" role="tabpanel" aria-labelledby="contact-tab">
+            <BusinessContact business={business} />
+          </div>
+        )}
       </div>
     </div>
   );

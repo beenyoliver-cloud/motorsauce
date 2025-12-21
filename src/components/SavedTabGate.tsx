@@ -12,9 +12,9 @@ function TabLink({ href, label, isActive }: { href: string; label: string; isAct
     <Link
       href={href}
       aria-current={isActive ? "page" : undefined}
-      className={`group relative inline-flex min-w-[140px] items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 ${
+      className={`group relative inline-flex min-w-[140px] items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-yellow-400 ${
         isActive
-          ? "border-transparent bg-gradient-to-r from-yellow-500 via-yellow-600 to-gray-900 text-white shadow-lg"
+          ? "border-transparent bg-gradient-to-r from-yellow-500 via-yellow-600 to-gray-900 text-white shadow-lg ring-1 ring-white/40"
           : "border-gray-200 bg-white/90 text-gray-700 hover:border-yellow-400 hover:text-gray-900"
       }`}
     >
@@ -22,6 +22,12 @@ function TabLink({ href, label, isActive }: { href: string; label: string; isAct
       {isActive && (
         <span className="text-[10px] font-normal uppercase tracking-[0.3em] text-white/80">Live</span>
       )}
+      <span
+        aria-hidden="true"
+        className={`pointer-events-none absolute inset-x-4 -bottom-1 h-0.5 rounded-full bg-yellow-500 transition-opacity ${
+          isActive ? "opacity-100" : "opacity-0 group-hover:opacity-60"
+        }`}
+      />
     </Link>
   );
 }

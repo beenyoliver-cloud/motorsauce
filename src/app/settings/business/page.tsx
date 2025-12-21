@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { supabaseBrowser } from "@/lib/supabase";
 import { uploadComplianceDocument } from "@/lib/storage";
+import { logTelemetry } from "@/lib/telemetry";
 import { Building2, Upload, Loader2, Image as ImageIcon, X, Check, ShieldCheck, AlertTriangle, Clock3, FileCheck2 } from "lucide-react";
 import Cropper from "react-easy-crop";
 
@@ -484,9 +485,18 @@ export default function BusinessSettingsPage() {
       setVerificationStatus("pending");
       setVerificationSuccess("Documents submitted. We'll review them shortly.");
       await refreshVerificationStatus();
+      logTelemetry("compliance_upload_submitted", {
+        profileId: currentUserId,
+        documentType: verificationDocType,
+      });
     } catch (err) {
       console.error("Verification submission failed", err);
       setVerificationError(err instanceof Error ? err.message : "Failed to submit documents.");
+      logTelemetry("compliance_upload_failed", {
+        profileId: currentUserId,
+        documentType: verificationDocType,
+        error: err instanceof Error ? err.message : "unknown_error",
+      });
     } finally {
       setSubmittingVerification(false);
     }

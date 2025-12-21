@@ -238,7 +238,7 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto px-3 sm:px-4 py-8">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/3"></div>
           <div className="h-64 bg-gray-200 rounded"></div>
@@ -248,7 +248,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="page-center px-4 py-10">
+    <div className="page-center px-3 sm:px-4 py-10">
       <h1 className="text-3xl font-bold text-black mb-2">Account Settings</h1>
       <p className="text-gray-600 mb-8">Manage your account information and security</p>
 
