@@ -133,52 +133,52 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
       : `${displayName} hasn’t shared an about section yet. Check their listings or drop them a message to learn more.`;
 
   return (
-    <section className="max-w-6xl mx-auto px-2 sm:px-4 py-4 md:py-6 space-y-6">
-      <div className="rounded-3xl border border-gray-200 bg-white shadow-lg overflow-hidden relative">
-        <div className="relative h-36 sm:h-48 bg-gray-900">
+    <section className="max-w-6xl mx-auto px-3 sm:px-4 py-4 md:py-6 space-y-6">
+      <div className="rounded-3xl border border-gray-200 bg-white shadow-lg overflow-hidden">
+        <div className="h-28 sm:h-32 bg-gray-900">
           <EditableBackground
             displayName={displayName}
             backgroundUrl={sellerMetrics.background_image}
-            className="absolute inset-0 object-cover"
+            className="h-full w-full object-cover"
             heightClass="h-full"
           />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-white/10" />
         </div>
-        <div className="px-4 sm:px-8 pb-8 relative">
-          <div className="-mt-14 sm:-mt-16 flex flex-col gap-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
-              <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-end">
-                <div className="rounded-full bg-white shadow-2xl ring-1 ring-black/5 p-1 w-fit">
+
+        <div className="px-4 sm:px-8 pb-8">
+          <div className="flex flex-col gap-4 pt-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+              <div className="flex items-end gap-4">
+                <div className="-mt-12 inline-flex rounded-full border-4 border-white bg-white shadow-xl">
                   <EditableAvatar
                     displayName={displayName}
                     avatarUrl={sellerMetrics.avatar}
                     className="h-28 w-28"
                   />
                 </div>
-                <div className="flex-1 min-w-0 space-y-3">
+                <div className="space-y-2">
                   <p className="text-[11px] uppercase tracking-[0.3em] text-gray-500">Seller profile</p>
-                  <div className="space-y-2">
-                    <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 leading-tight truncate">{displayName}</h1>
-                    <div className="flex flex-wrap gap-2 text-sm text-gray-600">
-                      {infoTags.map((tag, index) => (
-                        <span
-                          key={`${tag.label}-${index}`}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white/80 px-3 py-1 text-gray-700 shadow-sm"
-                        >
-                          {tag.icon}
-                          {tag.label}
-                        </span>
-                      ))}
-                    </div>
+                  <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 leading-tight">{displayName}</h1>
+                  <div className="flex flex-wrap gap-2 text-sm text-gray-600">
+                    {infoTags.map((tag, index) => (
+                      <span
+                        key={`${tag.label}-${index}`}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1 text-gray-700"
+                      >
+                        {tag.icon}
+                        {tag.label}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>
-              <EditProfileTopButton displayName={displayName} baseHref={baseHref} />
+              <div className="flex justify-end">
+                <EditProfileTopButton displayName={displayName} baseHref={baseHref} />
+              </div>
             </div>
 
-            <div className="rounded-2xl border border-gray-100 bg-white/90 px-4 py-4 shadow-sm">
+            <div className="rounded-2xl border border-gray-100 bg-white px-4 py-4 shadow-sm">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div className="flex-1 min-w-[240px]">
+                <div className="flex-1 min-w-[260px]">
                   <ProfileActions
                     shareText={`Check out ${displayName} on Motorsource`}
                     shareUrl={baseHref}
@@ -195,14 +195,14 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
             </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-2xl border border-gray-200 bg-white/70 px-4 py-3 shadow-inner">
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
               <div className="text-xs uppercase tracking-wide text-gray-500">Listings live</div>
               <SellerListingCount sellerName={displayName} className="mt-1 text-2xl font-bold text-gray-900" />
               <p className="text-xs text-gray-500 mt-0.5">Active listings</p>
             </div>
             {stats.map((stat) => (
-              <div key={stat.label} className="rounded-2xl border border-gray-200 bg-white/70 px-4 py-3 flex flex-col gap-1 shadow-inner">
+              <div key={stat.label} className="rounded-2xl border border-gray-200 bg-white px-4 py-3 flex flex-col gap-1 shadow-sm">
                 <div className="flex items-center gap-2 text-gray-500 text-xs uppercase tracking-wide">
                   {stat.icon}
                   {stat.label}
@@ -213,7 +213,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
             ))}
           </div>
 
-          <div className="mt-6 rounded-2xl border border-gray-200 bg-gradient-to-r from-yellow-50 via-white to-white p-4 sm:p-5 text-sm leading-relaxed text-gray-700 flex flex-col gap-3">
+          <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-4 sm:p-5 text-sm leading-relaxed text-gray-700 flex flex-col gap-3">
             <p>{aboutPreview}</p>
             <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-gray-500">
               <span>Tap the About tab to read the full story.</span>
