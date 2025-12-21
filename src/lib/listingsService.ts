@@ -140,12 +140,16 @@ export async function createListing(payload: Partial<Listing>): Promise<Listing>
     .eq('id', user.id)
     .single();
 
-  if (!profile?.business_verified) {
+  const accountType = typeof profile?.account_type === 'string' ? profile.account_type.toLowerCase().trim() : 'individual';
+  const isBusinessAccount = accountType === 'business';
+
+  // Only business accounts require verification to create listings.
+  if (isBusinessAccount && !profile?.business_verified) {
     const status = profile?.verification_status;
     if (status === 'pending') {
       throw new Error('Your verification is still pending. We will notify you once you can list parts.');
     }
-    throw new Error('Your seller account must be verified before you can create listings.');
+    throw new Error('Your business account must be verified before you can create listings.');
   }
 
   const listingData = {
