@@ -15,6 +15,7 @@ type OfferCardProps = {
   listingImage?: string;
   listingPrice?: number;
   isCurrentUserSeller: boolean;
+  isRecipient: boolean;
   onUpdate?: () => void;
 };
 
@@ -28,42 +29,27 @@ export default function OfferCard({
   listingImage,
   listingPrice,
   isCurrentUserSeller,
+  isRecipient,
   onUpdate,
 }: OfferCardProps) {
   const [updating, setUpdating] = useState(false);
   const [counterAmount, setCounterAmount] = useState("");
   const [showCounterInput, setShowCounterInput] = useState(false);
 
-  // Debug: Log what data we're receiving
-  console.log("[OfferCard] Received props:", {
-    offerId,
-    amount,
-    listingId,
-    listingTitle,
-    listingImage,
-    listingPrice,
-    status,
-  });
-
   const offeredPrice = amount / 100;
   const originalPrice = listingPrice ? listingPrice / 100 : offeredPrice;
-  console.log("[OfferCard] Price calculation:", { amount, listingPrice, offeredPrice, originalPrice });
   const isPending = status === "pending";
-  const canRespond = isCurrentUserSeller && isPending;
+  const canRespond = isRecipient && isPending;
 
   async function handleAccept() {
     if (!confirm("Accept this offer? The buyer will be able to proceed to checkout.")) return;
     setUpdating(true);
     try {
-      console.log("[OfferCard] Calling updateOfferStatus with:", { offerId, status: "accepted" });
       const result = await updateOfferStatus(offerId, "accepted");
-      console.log("[OfferCard] updateOfferStatus result:", result);
       if (!result) {
         throw new Error("Failed to update offer - no result returned");
       }
-      console.log("[OfferCard] Calling onUpdate callback");
       onUpdate?.();
-      console.log("[OfferCard] onUpdate callback completed");
     } catch (err) {
       console.error("[OfferCard] Failed to accept offer:", err);
       alert(`Failed to accept offer: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -76,15 +62,11 @@ export default function OfferCard({
     if (!confirm("Decline this offer? The buyer will be notified.")) return;
     setUpdating(true);
     try {
-      console.log("[OfferCard] Calling updateOfferStatus with:", { offerId, status: "declined" });
       const result = await updateOfferStatus(offerId, "declined");
-      console.log("[OfferCard] updateOfferStatus result:", result);
       if (!result) {
         throw new Error("Failed to update offer - no result returned");
       }
-      console.log("[OfferCard] Calling onUpdate callback");
       onUpdate?.();
-      console.log("[OfferCard] onUpdate callback completed");
     } catch (err) {
       console.error("[OfferCard] Failed to decline offer:", err);
       alert(`Failed to decline offer: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -102,17 +84,13 @@ export default function OfferCard({
 
     setUpdating(true);
     try {
-      console.log("[OfferCard] Calling updateOfferStatus with:", { offerId, status: "countered", counterAmountCents: Math.round(pounds * 100) });
       const result = await updateOfferStatus(offerId, "countered", Math.round(pounds * 100));
-      console.log("[OfferCard] updateOfferStatus result:", result);
       if (!result) {
         throw new Error("Failed to update offer - no result returned");
       }
       setShowCounterInput(false);
       setCounterAmount("");
-      console.log("[OfferCard] Calling onUpdate callback");
       onUpdate?.();
-      console.log("[OfferCard] onUpdate callback completed");
     } catch (err) {
       console.error("[OfferCard] Failed to counter offer:", err);
       alert(`Failed to send counter offer: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -122,15 +100,13 @@ export default function OfferCard({
   }
 
   // Premium dark card design - seller view or buyer view
-  const headerText = isCurrentUserSeller 
-    ? "You've received an offer" 
-    : status === "accepted"
-    ? "Offer accepted!"
-    : status === "declined"
-    ? "Offer declined"
-    : status === "countered"
-    ? "Counter offer received"
-    : "Your offer";
+  const headerText = (() => {
+    if (isRecipient) return "You've received an offer";
+    if (status === "accepted") return "Offer accepted!";
+    if (status === "declined") return "Offer declined";
+    if (status === "countered") return isCurrentUserSeller ? "You countered this offer" : "Counter offer sent";
+    return isCurrentUserSeller ? "Your offer" : "Your pending offer";
+  })();
 
   return (
     <div className="w-full max-w-lg mx-auto">

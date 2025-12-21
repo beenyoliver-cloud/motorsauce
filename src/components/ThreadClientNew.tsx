@@ -547,9 +547,13 @@ export default function ThreadClientNew({
 
                 // Handle offer messages with interactive card
                 if (m.type === "offer" && m.offer) {
-                  // Determine if current user is the seller (recipient of offer)
-                  const isCurrentUserSeller = m.from.id !== currentUserId;
-                  
+                  const offerRecipientId = m.offer.recipientId || null;
+                  const offerSellerId = m.offer.sellerId || null;
+                  const isRecipient = offerRecipientId === currentUserId;
+                  const isCurrentUserSeller = offerSellerId
+                    ? offerSellerId === currentUserId
+                    : isRecipient;
+
                   return (
                     <div key={m.id} className="px-0 py-1">
                       <div className="max-w-[90vw] sm:max-w-md mx-auto">
@@ -563,6 +567,7 @@ export default function ThreadClientNew({
                           listingImage={m.offer.listingImage}
                           listingPrice={m.offer.listingPrice}
                           isCurrentUserSeller={isCurrentUserSeller}
+                          isRecipient={isRecipient}
                           onUpdate={async () => {
                             // Refresh messages after offer update
                             const msgs = await fetchMessages(threadId);
@@ -633,18 +638,18 @@ export default function ThreadClientNew({
                 // Regular text messages
                 return (
                   <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} px-0`}>
-                    <div className="max-w-[90vw] sm:max-w-[78%]">
+                    <div className="max-w-[88vw] sm:max-w-[78%]">
                       <div className={`flex items-center gap-2 mb-0.5 ${isMe ? 'flex-row-reverse' : ''}`}>
-                        <span className={`text-[10px] font-medium ${isMe ? 'text-right text-gray-500' : 'text-left text-gray-500'} truncate`}>
+                        <span className={`text-[11px] font-semibold ${isMe ? 'text-right text-gray-600' : 'text-left text-gray-600'} truncate`}>
                           {displayName(m.from.name)}
                         </span>
                         <span className="text-[10px] text-gray-400 whitespace-nowrap">{ts}</span>
                       </div>
                       <div
-                        className={`px-3 py-2 rounded-2xl border text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere] shadow-sm leading-relaxed ${
+                        className={`px-3 py-2.5 rounded-2xl text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-relaxed shadow ${
                           isMe
-                            ? 'bg-yellow-500 text-black border-yellow-400 rounded-br-sm'
-                            : 'bg-white text-gray-900 border-gray-200 rounded-bl-sm'
+                            ? 'bg-gray-900 text-white rounded-br-sm'
+                            : 'bg-gray-100 text-gray-900 rounded-bl-sm'
                         }`}
                       >
                         {m.text}

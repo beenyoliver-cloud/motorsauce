@@ -138,7 +138,7 @@ export default function HomeHero() {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-gray-900/10 bg-slate-900 text-white p-4 sm:p-6 md:p-8 shadow-xl">
+    <div className="relative overflow-hidden rounded-xl border border-gray-900/20 bg-slate-900 text-white p-4 sm:p-5 md:p-6 shadow-lg max-w-5xl mx-auto">
       <div className="absolute inset-0 pointer-events-none">
         <div className="home-hero-gradient" />
         <div className="home-hero-orbit home-hero-orbit--one" />
@@ -146,7 +146,7 @@ export default function HomeHero() {
         <div className="home-hero-ghost-car" />
       </div>
 
-      <div className="relative max-w-4xl space-y-4">
+      <div className="relative max-w-3xl space-y-3">
         <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.2em]">
           <Zap className="h-3.5 w-3.5 text-yellow-300" />
           Live vehicle-matching
@@ -160,18 +160,18 @@ export default function HomeHero() {
 
         <div className="mt-2 sm:mt-3 animate-fadeIn" style={{ animationDelay: '200ms' }}>
           <div
-            className={`grid grid-cols-1 md:grid-cols-[auto_1fr_auto] items-center gap-2 md:gap-3 rounded-2xl border border-white/10 bg-white/90 p-3 md:p-4 shadow-2xl backdrop-blur ${
+            className={`grid grid-cols-1 md:grid-cols-[auto_1fr_auto] items-center gap-2 md:gap-3 rounded-xl border border-white/10 bg-white/90 p-3 md:p-3 shadow-xl backdrop-blur ${
               plateFocused ? "ring-2 ring-offset-2 ring-offset-slate-900 ring-yellow-300" : ""
             }`}
           >
             <label className="text-[10px] font-semibold uppercase tracking-wide text-gray-600 md:pr-2">Search by registration</label>
             <div className="flex flex-col items-center justify-center w-full">
               <div
-                className={`relative flex w-full max-w-[480px] items-stretch rounded-lg border-2 border-[#1c1b18] bg-[#F9D548] shadow-[0_12px_18px_rgba(0,0,0,0.28)] transition-all duration-300 min-h-[56px] sm:min-h-[76px] ${
+                className={`relative flex w-full max-w-[360px] items-stretch rounded-lg border-2 border-[#1c1b18] bg-[#F9D548] shadow-[0_10px_14px_rgba(0,0,0,0.25)] transition-all duration-300 min-h-[48px] sm:min-h-[64px] ${
                   plateFocused ? "ring-2 ring-offset-2 ring-offset-slate-900 ring-yellow-200/60" : ""
                 }`}
               >
-                <div className="flex flex-col items-center justify-center bg-[#003399] text-white px-2 sm:px-3 py-2 sm:py-3 rounded-l-md border-r-2 border-[#1c1b18] min-w-[44px] sm:min-w-[50px]">
+                <div className="flex flex-col items-center justify-center bg-[#003399] text-white px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-l-md border-r-2 border-[#1c1b18] min-w-[40px] sm:min-w-[46px]">
                   <span className="text-[10px] font-semibold">🇬🇧</span>
                   <span className="text-[9px] sm:text-[10px] font-semibold tracking-tight -mt-0.5">UK</span>
                 </div>
@@ -187,7 +187,7 @@ export default function HomeHero() {
                     }
                   }}
                   placeholder="AB12 CDE"
-                  className="flex-1 bg-transparent text-black placeholder:text-black/40 px-4 sm:px-6 text-[1.2rem] sm:text-[1.9rem] uppercase tracking-[0.18em] focus:outline-none font-semibold text-center caret-black"
+                  className="flex-1 bg-transparent text-black placeholder:text-black/40 px-3 sm:px-5 text-[1rem] sm:text-[1.5rem] uppercase tracking-[0.12em] focus:outline-none font-semibold text-center caret-black"
                   style={{
                     fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif",
                   }}
@@ -198,7 +198,7 @@ export default function HomeHero() {
               type="button"
               onClick={submitPlateSearch}
               disabled={plateLoading}
-              className="justify-self-start md:justify-self-end inline-flex items-center gap-1.5 rounded-md bg-yellow-300 text-slate-900 font-semibold px-4 py-2.5 text-sm hover:bg-yellow-200 disabled:opacity-50 transition-all"
+              className="justify-self-start md:justify-self-end inline-flex items-center gap-1.5 rounded-md bg-yellow-300 text-slate-900 font-semibold px-3.5 py-2 text-sm hover:bg-yellow-200 disabled:opacity-50 transition-all"
             >
               {plateLoading ? (
                 <>
@@ -220,7 +220,7 @@ export default function HomeHero() {
           </div>
 
           {showManualFallback && (
-            <div className="mt-3 rounded-2xl border border-yellow-200/70 bg-yellow-50 p-4 space-y-3 text-sm text-yellow-900 shadow-lg">
+            <div className="mt-3 rounded-xl border border-yellow-200/70 bg-yellow-50 p-3 space-y-3 text-sm text-yellow-900 shadow">
               <p className="font-semibold text-base">
                 {fallbackMessage || "Tell us what you're driving so we can tailor the results."}
               </p>

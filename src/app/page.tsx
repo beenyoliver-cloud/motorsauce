@@ -1,4 +1,3 @@
-import HeroCarousel from "@/components/HeroCarousel";
 import Link from "next/link";
 import PopularSellers from "@/components/PopularSellers";
 import SuggestedParts from "@/components/SuggestedParts";
@@ -23,7 +22,6 @@ export default function Home() {
       <SEOJsonLd />
       {/* Hero + inline search */}
       <div className="space-y-3 sm:space-y-4">
-        <HeroCarousel />
         {/* @ts-ignore Server -> Client import allowed */}
         <HomeHero />
       </div>
