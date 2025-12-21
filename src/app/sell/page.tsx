@@ -40,17 +40,13 @@ export default function SellPage() {
         return;
       }
 
-      if (profile.business_verified) {
+      if (profile.account_type !== "business") {
         setSellerGate({ status: "allowed" });
         return;
       }
 
-      if (profile.account_type !== "business") {
-        setSellerGate({
-          status: "blocked",
-          message: "Switch to a business account to list parts.",
-          detail: "Update your account in Settings → Business.",
-        });
+      if (profile.business_verified) {
+        setSellerGate({ status: "allowed" });
         return;
       }
 
@@ -188,6 +184,23 @@ export default function SellPage() {
           <h1 className="text-4xl font-bold text-gray-900 mb-3">List Your Part</h1>
           <p className="text-lg text-gray-600">Fill in the details below to create your listing</p>
           <p className="text-sm text-gray-500 mt-2">Fields marked with <span className="text-red-500">*</span> are required</p>
+        </div>
+
+        <div className="mb-6 rounded-2xl border border-yellow-200 bg-yellow-50 p-5 text-left text-yellow-900 shadow-sm space-y-3">
+          <div className="flex items-center gap-3">
+            <ShieldAlert className="h-6 w-6 text-yellow-600" />
+            <div>
+              <p className="font-semibold text-base">Stay safe on Motorsource</p>
+              <p className="text-sm text-yellow-800">
+                Only accept payments and complete conversations inside Motorsource. Scammers often push for bank transfers, off-platform couriers, or verification fees.
+              </p>
+            </div>
+          </div>
+          <ul className="text-sm text-yellow-800 list-disc pl-5 space-y-1">
+            <li>Never share security codes or move the conversation to SMS/WhatsApp.</li>
+            <li>Report suspicious buyers via the contact page so we can take action.</li>
+            <li>If a deal sounds too good to be true, pause and check with support.</li>
+          </ul>
         </div>
 
         {isAuthed && <SellForm />}
