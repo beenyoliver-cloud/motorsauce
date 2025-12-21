@@ -92,12 +92,11 @@ export async function getImageUrl(path: string): Promise<string> {
 export async function uploadComplianceDocument(file: File): Promise<string> {
   const supabase = supabaseBrowser();
   const ext = file.name.split('.').pop();
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext || 'dat'}`;
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext || "dat"}`;
   const { data, error } = await supabase.storage.from(COMPLIANCE_BUCKET).upload(filename, file, {
-    cacheControl: '0',
+    cacheControl: "0",
     upsert: false,
   });
-  if (error) throw error;
-  const { data: { publicUrl } } = supabase.storage.from(COMPLIANCE_BUCKET).getPublicUrl(data.path);
-  return publicUrl;
+  if (error || !data?.path) throw error || new Error("Upload failed");
+  return data.path;
 }

@@ -21,6 +21,7 @@ type VerificationRecord = {
   status: "pending" | "approved" | "rejected" | string;
   document_type?: string | null;
   document_url?: string | null;
+  document_signed_url?: string | null;
   notes?: string | null;
   review_notes?: string | null;
   created_at: string;
@@ -259,9 +260,9 @@ export default function AdminVerificationPage() {
                   <div className="text-sm text-gray-600">
                     <p>Status:</p>
                     <p className="font-semibold text-gray-900 capitalize">{request.status}</p>
-                    {request.document_url && (
+                    {(request.document_signed_url || request.document_url) && (
                       <a
-                        href={request.document_url}
+                        href={request.document_signed_url || request.document_url || "#"}
                         target="_blank"
                         rel="noreferrer"
                         className="mt-2 inline-flex items-center gap-1 text-sm text-yellow-600 hover:text-yellow-500"

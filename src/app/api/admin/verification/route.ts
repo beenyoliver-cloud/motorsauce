@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+const COMPLIANCE_BUCKET = "seller-compliance";
+
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -66,11 +68,27 @@ export async function GET(request: NextRequest) {
       businesses = businessRows || [];
     }
 
-    const enriched = (verifications || []).map((v) => ({
-      ...v,
-      profile: profiles.find((p) => p.id === v.profile_id) || null,
-      business: businesses.find((b) => b.profile_id === v.profile_id) || null,
-    }));
+    const enriched = await Promise.all(
+      (verifications || []).map(async (v) => {
+        let documentSignedUrl: string | null = null;
+        if (v.document_url) {
+          if (/^https?:\/\//.test(v.document_url)) {
+            documentSignedUrl = v.document_url;
+          } else {
+            const { data: signed } = await supabaseAdmin.storage
+              .from(COMPLIANCE_BUCKET)
+              .createSignedUrl(v.document_url, 60 * 10);
+            documentSignedUrl = signed?.signedUrl || null;
+          }
+        }
+        return {
+          ...v,
+          profile: profiles.find((p) => p.id === v.profile_id) || null,
+          business: businesses.find((b) => b.profile_id === v.profile_id) || null,
+          document_signed_url: documentSignedUrl,
+        };
+      })
+    );
 
     return NextResponse.json(enriched);
   } catch (err) {

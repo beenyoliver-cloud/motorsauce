@@ -464,14 +464,14 @@ export default function BusinessSettingsPage() {
     setVerificationSuccess(null);
     setSubmittingVerification(true);
     try {
-      const url = await uploadComplianceDocument(verificationFile);
+      const documentPath = await uploadComplianceDocument(verificationFile);
       const supabase = supabaseBrowser();
       const { error } = await supabase
         .from("seller_verifications")
         .insert({
           profile_id: currentUserId,
           status: "pending",
-          document_url: url,
+          document_url: documentPath,
           document_type: verificationDocType,
           notes: verificationMessage || null,
         });

@@ -40,7 +40,10 @@ export default function SellPage() {
         return;
       }
 
-      if (profile.account_type !== "business") {
+      const accountType = profile.account_type ?? "individual";
+      const isBusinessAccount = accountType === "business";
+
+      if (!isBusinessAccount) {
         setSellerGate({ status: "allowed" });
         return;
       }
