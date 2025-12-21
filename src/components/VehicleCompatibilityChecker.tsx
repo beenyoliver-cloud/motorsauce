@@ -168,7 +168,7 @@ export default function VehicleCompatibilityChecker({
                 <div>
                   <div className="font-medium text-red-900">Not Compatible</div>
                   <div className="text-sm text-red-700">
-                    This part doesn't fit your vehicle
+                    This part doesn&apos;t fit your vehicle
                   </div>
                 </div>
               </>

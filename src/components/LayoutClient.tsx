@@ -18,7 +18,9 @@ export function LayoutClient({ children }: { children: ReactNode }) {
 
     // Timer to show loading animation only if page takes >2 seconds
     let loadingTimer: NodeJS.Timeout;
-    let pageLoadTimer: NodeJS.Timeout;
+    const pageLoadTimer: NodeJS.Timeout = setTimeout(() => {
+      setIsLoading(false);
+    }, 3500);
     
     const showLoadingAfter2s = () => {
       loadingTimer = setTimeout(() => {
@@ -28,11 +30,6 @@ export function LayoutClient({ children }: { children: ReactNode }) {
 
     // Start the 2 second timer on route change
     showLoadingAfter2s();
-
-    // Auto-hide loader after page content renders (max 3.5 seconds from route change)
-    pageLoadTimer = setTimeout(() => {
-      setIsLoading(false);
-    }, 3500);
 
     return () => {
       if (loadingTimer) {

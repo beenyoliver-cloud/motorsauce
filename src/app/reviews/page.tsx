@@ -151,10 +151,10 @@ export default function ReviewsPage() {
 
       {/* Reviews You Left */}
       <div>
-        <h2 className="text-xl font-bold mb-4">Reviews You've Left</h2>
+        <h2 className="text-xl font-bold mb-4">Reviews You&apos;ve Left</h2>
         {leftReviews.length === 0 ? (
           <p className="text-gray-600 text-sm">
-            You haven't left any reviews yet. After you receive an order, you can leave a review.
+            You haven&apos;t left any reviews yet. After you receive an order, you can leave a review.
           </p>
         ) : (
           <div className="space-y-4">
@@ -197,10 +197,10 @@ export default function ReviewsPage() {
 
       {/* Reviews You've Received */}
       <div>
-        <h2 className="text-xl font-bold mb-4">Reviews You've Received</h2>
+        <h2 className="text-xl font-bold mb-4">Reviews You&apos;ve Received</h2>
         {receivedReviews.length === 0 ? (
           <p className="text-gray-600 text-sm">
-            You haven't received any reviews yet.
+            You haven&apos;t received any reviews yet.
           </p>
         ) : (
           <div className="space-y-4">

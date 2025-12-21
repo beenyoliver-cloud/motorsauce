@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // Quick script to create seller_metrics table
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 const path = require('path');

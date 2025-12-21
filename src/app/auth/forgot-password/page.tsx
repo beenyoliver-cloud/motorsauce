@@ -69,10 +69,10 @@ export default function ForgotPasswordPage() {
             <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
           <p className="text-gray-700">
-            We've sent a password reset link to <strong>{email}</strong>
+            We&apos;ve sent a password reset link to <strong>{email}</strong>
           </p>
           <p className="text-sm text-gray-500">
-            Click the link in the email to reset your password. If you don't see it, check your spam folder.
+            Click the link in the email to reset your password. If you don&apos;t see it, check your spam folder.
           </p>
           <a
             href="/auth/login"
@@ -106,7 +106,7 @@ export default function ForgotPasswordPage() {
       <div className="mb-4 flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
         <Mail className="w-5 h-5 text-blue-600 flex-shrink-0" />
         <p className="text-sm text-blue-800">
-          Enter your email address and we'll send you a link to reset your password.
+          Enter your email address and we&apos;ll send you a link to reset your password.
         </p>
       </div>
 

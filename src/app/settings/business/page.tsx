@@ -618,7 +618,7 @@ export default function BusinessSettingsPage() {
 
                 {verificationStatus === "approved" ? (
                   <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-900">
-                    You're fully verified. Future listings will go live as soon as they pass the standard listing checks.
+                    You&apos;re fully verified. Future listings will go live as soon as they pass the standard listing checks.
                   </div>
                 ) : (
                   <div className="mt-5 space-y-4">

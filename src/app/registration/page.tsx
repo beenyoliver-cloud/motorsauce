@@ -321,7 +321,7 @@ export default function RegistrationPage() {
             </h1>
             <p className="mt-2 text-gray-600 max-w-2xl leading-relaxed">
               Enter your UK registration number to instantly find compatible parts for your vehicle. 
-              We'll identify your make and year automatically.
+              We&apos;ll identify your make and year automatically.
             </p>
           </div>
         </div>

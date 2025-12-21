@@ -255,7 +255,7 @@ export default function ThreadClient({
         ) : (
           <>
             <div className="text-sm text-gray-700">
-              This conversation doesn't exist or was removed.
+              This conversation doesn&apos;t exist or was removed.
             </div>
             <Link
               href="/messages"

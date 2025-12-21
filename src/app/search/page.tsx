@@ -776,7 +776,7 @@ function SearchPageInner() {
                     onClick={() => updateParam("q", term)}
                     className="px-3 py-1.5 text-xs rounded-full border border-gray-200 text-gray-700 hover:border-yellow-400 hover:text-yellow-600"
                   >
-                    Try "{term}"
+                    Try &quot;{term}&quot;
                   </button>
                 ))}
                 {TRENDING_QUERIES.slice(0, 3).map((term) => (

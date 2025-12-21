@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint . --ext .ts,.tsx --config eslint.config.mjs"
+    "lint": "eslint src middleware.ts scripts --ext .ts,.tsx,.js,.jsx,.mjs --config eslint.config.mjs"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

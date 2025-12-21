@@ -1,0 +1,19 @@
+# Generated output
+.next/
+
+# Dependencies
+node_modules/
+
+# Deploy tooling
+.vercel/
+
+# Snapshots / design references (not production code)
+snapshots/
+
+# User uploads (if present)
+public/uploads/
+
+# Misc
+coverage/
+dist/
+build/

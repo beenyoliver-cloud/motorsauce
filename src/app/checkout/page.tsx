@@ -397,7 +397,7 @@ function CheckoutContent() {
           </button>
           
           <p className="mt-2 text-xs text-center text-gray-600">
-            You'll be redirected to Stripe's secure checkout to enter payment details
+            You&apos;ll be redirected to Stripe&apos;s secure checkout to enter payment details
           </p>
         </div>
 

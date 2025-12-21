@@ -143,7 +143,7 @@ export default function ImageValidationPage() {
             <ul className="text-sm text-blue-800 space-y-1">
               <li>• Checks all active listing images for accessibility</li>
               <li>• Auto-drafts listings with broken images</li>
-              <li>• Adds reason: "Some images may be broken or inaccessible"</li>
+              <li>• Adds reason: &quot;Some images may be broken or inaccessible&quot;</li>
               <li>• Sellers can see drafts in their profile and fix images</li>
             </ul>
           </div>
