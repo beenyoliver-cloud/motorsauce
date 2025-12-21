@@ -301,7 +301,7 @@ export default function Header() {
             <img
               src="/images/MSlogoreal.png"
               alt="Motorsauce"
-              className="h-12 w-auto object-contain"
+              className="w-auto object-contain h-[4.5rem]"
             />
           </Link>
 
@@ -360,7 +360,7 @@ export default function Header() {
                 <img
                   src="/images/MSlogoreal.png"
                   alt="Motorsauce"
-                  className="h-16 w-auto object-contain"
+                  className="w-auto object-contain h-[6rem]"
                 />
               </Link>
               <button

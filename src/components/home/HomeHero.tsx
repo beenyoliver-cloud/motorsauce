@@ -116,15 +116,20 @@ export default function HomeHero() {
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white text-slate-900 p-4 sm:p-5 shadow-sm max-w-4xl mx-auto mt-4">
-      <div className="space-y-3">
+    <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white text-slate-900 p-4 sm:p-5 shadow-sm max-w-4xl mx-auto mt-4">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-16 -right-8 h-48 w-48 bg-gradient-to-br from-yellow-300/70 via-amber-200/40 to-transparent blur-3xl" />
+        <div className="absolute -bottom-20 -left-12 h-56 w-56 rotate-6 bg-gradient-to-tr from-gray-900/10 via-yellow-500/30 to-transparent blur-2xl" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(250,204,21,0.12),_transparent_60%)]" />
+      </div>
+      <div className="space-y-3 relative">
         <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-gray-600">
           <Zap className="h-3.5 w-3.5 text-yellow-500" />
           Live vehicle-matching
         </div>
         <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Search by reg. See compatible parts instantly.</h1>
-        <p className="text-sm text-gray-600">
-          Our DVLA lookup filters thousands of listings before you scroll—drop a plate to jump straight to parts that fit.
+        <p className="text-sm text-gray-600 whitespace-nowrap overflow-hidden text-ellipsis">
+          Drop a plate to jump straight into parts that fit.
         </p>
 
         <form
