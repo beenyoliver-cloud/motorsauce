@@ -143,22 +143,17 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
             heightClass="h-full"
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-white/10" />
-          <div className="pointer-events-none absolute -top-10 right-8 h-32 w-32 rounded-full bg-yellow-400/30 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-12 left-6 h-28 w-28 rounded-full bg-gray-900/30 blur-3xl" />
         </div>
         <div className="px-4 sm:px-8 pb-8 relative">
           <div className="-mt-14 sm:-mt-16 flex flex-col gap-5">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-end">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
               <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-end">
-                <div className="relative shrink-0">
-                  <div className="rounded-full bg-white/95 shadow-2xl ring-1 ring-black/5 p-1">
-                    <EditableAvatar
-                      displayName={displayName}
-                      avatarUrl={sellerMetrics.avatar}
-                      className="h-28 w-28"
-                    />
-                  </div>
-                  <div className="pointer-events-none absolute -top-1 -right-1 h-4 w-4 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 blur-[1px]" />
+                <div className="rounded-full bg-white shadow-2xl ring-1 ring-black/5 p-1 w-fit">
+                  <EditableAvatar
+                    displayName={displayName}
+                    avatarUrl={sellerMetrics.avatar}
+                    className="h-28 w-28"
+                  />
                 </div>
                 <div className="flex-1 min-w-0 space-y-3">
                   <p className="text-[11px] uppercase tracking-[0.3em] text-gray-500">Seller profile</p>
@@ -178,25 +173,25 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
                   </div>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2 justify-end">
-                <EditProfileTopButton displayName={displayName} baseHref={baseHref} />
-              </div>
+              <EditProfileTopButton displayName={displayName} baseHref={baseHref} />
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <div className="flex-1 min-w-[240px]">
-                <ProfileActions
-                  shareText={`Check out ${displayName} on Motorsource`}
-                  shareUrl={baseHref}
-                  toUsername={displayName}
-                  toUserId={sellerMetrics.id}
-                />
-              </div>
-              {sellerMetrics.id && (
-                <div className="flex-1 min-w-[200px] sm:flex-none">
-                  <ReportUserButton sellerName={displayName} sellerId={sellerMetrics.id} />
+            <div className="rounded-2xl border border-gray-100 bg-white/90 px-4 py-4 shadow-sm">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="flex-1 min-w-[240px]">
+                  <ProfileActions
+                    shareText={`Check out ${displayName} on Motorsource`}
+                    shareUrl={baseHref}
+                    toUsername={displayName}
+                    toUserId={sellerMetrics.id}
+                  />
                 </div>
-              )}
+                {sellerMetrics.id && (
+                  <div className="md:w-auto w-full">
+                    <ReportUserButton sellerName={displayName} sellerId={sellerMetrics.id} />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
