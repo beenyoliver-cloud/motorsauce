@@ -163,7 +163,7 @@ export default function SuggestedParts({ limit = 12 }: Props) {
 
       {quickAddError && <div className="text-xs text-red-600">{quickAddError}</div>}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {visibleListings.length === 0 ? (
           <div className="text-sm text-gray-600 py-4">
             Nothing in this filter yet. Try another chip above.

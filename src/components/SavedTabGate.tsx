@@ -12,14 +12,16 @@ function TabLink({ href, label, isActive }: { href: string; label: string; isAct
     <Link
       href={href}
       aria-current={isActive ? "page" : undefined}
-      className={`flex min-w-[140px] items-center justify-between rounded-2xl border px-4 py-2 text-sm font-semibold transition ${
+      className={`group relative inline-flex min-w-[140px] items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 ${
         isActive
-          ? "bg-gray-900 text-white border-gray-900 shadow-lg"
-          : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
+          ? "border-transparent bg-gradient-to-r from-yellow-500 via-yellow-600 to-gray-900 text-white shadow-lg"
+          : "border-gray-200 bg-white/90 text-gray-700 hover:border-yellow-400 hover:text-gray-900"
       }`}
     >
       <span className="truncate">{label}</span>
-      {isActive && <span className="text-[10px] uppercase tracking-wide text-white/70 ml-3">Active</span>}
+      {isActive && (
+        <span className="text-[10px] font-normal uppercase tracking-[0.3em] text-white/80">Live</span>
+      )}
     </Link>
   );
 }
@@ -98,24 +100,36 @@ export default function SavedTabGate({
 
   return (
     <>
-      {/* Tabs row */}
-      <div className="mt-6 flex gap-2 overflow-x-auto sm:flex-wrap sm:overflow-visible pb-1">
-        {me && <TabLink href={`${baseHref}?tab=saved`} label="Saved" isActive={activeTab === "saved"} />}
-        <TabLink href={`${baseHref}?tab=my`} label={listingsLabel} isActive={activeTab === "my"} />
-        {me && <TabLink href={`${baseHref}?tab=drafts`} label={`Drafts${draftCount > 0 ? ` (${draftCount})` : ''}`} isActive={activeTab === "drafts"} />}
-        {me && <TabLink href={`${baseHref}?tab=sold`} label={`Sold${soldCount > 0 ? ` (${soldCount})` : ''}`} isActive={activeTab === "sold"} />}
-        <TabLink href={`${baseHref}?tab=about`} label="About" isActive={activeTab === "about"} />
-        <TabLink href={`${baseHref}?tab=reviews`} label="Reviews (0)" isActive={activeTab === "reviews"} />
-        {!isBusinessAccount && (
-          <TabLink 
-            href={`${baseHref}?tab=garage`} 
-            label={`Garage${garageCount > 0 ? ` (${garageCount})` : ''}`} 
-            isActive={activeTab === "garage"} 
-          />
-        )}
+      <div className="mt-6 rounded-3xl border border-gray-200 bg-white/80 backdrop-blur px-3 py-3">
+        <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible scrollbar-hide">
+          {me && <TabLink href={`${baseHref}?tab=saved`} label="Saved" isActive={activeTab === "saved"} />}
+          <TabLink href={`${baseHref}?tab=my`} label={listingsLabel} isActive={activeTab === "my"} />
+          {me && (
+            <TabLink
+              href={`${baseHref}?tab=drafts`}
+              label={`Drafts${draftCount > 0 ? ` (${draftCount})` : ""}`}
+              isActive={activeTab === "drafts"}
+            />
+          )}
+          {me && (
+            <TabLink
+              href={`${baseHref}?tab=sold`}
+              label={`Sold${soldCount > 0 ? ` (${soldCount})` : ""}`}
+              isActive={activeTab === "sold"}
+            />
+          )}
+          <TabLink href={`${baseHref}?tab=about`} label="About" isActive={activeTab === "about"} />
+          <TabLink href={`${baseHref}?tab=reviews`} label="Reviews (0)" isActive={activeTab === "reviews"} />
+          {!isBusinessAccount && (
+            <TabLink
+              href={`${baseHref}?tab=garage`}
+              label={`Garage${garageCount > 0 ? ` (${garageCount})` : ""}`}
+              isActive={activeTab === "garage"}
+            />
+          )}
+        </div>
       </div>
 
-      {/* Saved content (gated) */}
       {activeTab === "saved" && (
         <div className="mt-4">
           {me ? (

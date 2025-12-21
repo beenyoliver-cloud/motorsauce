@@ -134,59 +134,80 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
 
   return (
     <section className="max-w-6xl mx-auto px-2 sm:px-4 py-4 md:py-6 space-y-6">
-      <div className="rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div className="relative h-32 sm:h-40 bg-gray-100">
+      <div className="rounded-3xl border border-gray-200 bg-white shadow-lg overflow-hidden relative">
+        <div className="relative h-36 sm:h-48 bg-gray-900">
           <EditableBackground
             displayName={displayName}
             backgroundUrl={sellerMetrics.background_image}
             className="absolute inset-0 object-cover"
             heightClass="h-full"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-white/10" />
+          <div className="pointer-events-none absolute -top-10 right-8 h-32 w-32 rounded-full bg-yellow-400/30 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-12 left-6 h-28 w-28 rounded-full bg-gray-900/30 blur-3xl" />
         </div>
-        <div className="px-4 sm:px-6 md:px-10 pb-6">
-          <div className="-mt-12 flex flex-col gap-4 lg:flex-row lg:items-end">
-            <EditableAvatar
-              displayName={displayName}
-              avatarUrl={sellerMetrics.avatar}
-              className="h-24 w-24 ring-4 ring-white shadow-xl"
-            />
-            <div className="flex-1 min-w-0 space-y-2">
-              <p className="text-[11px] uppercase tracking-[0.3em] text-gray-500">Seller profile</p>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div className="space-y-1 min-w-0">
-                  <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 leading-tight truncate">{displayName}</h1>
-                  <div className="flex flex-wrap gap-2 text-sm text-gray-600">
-                    {infoTags.map(({ icon, label }) => (
-                      <span key={label} className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-gray-700 border border-gray-200">
-                        {icon}
-                        {label}
-                      </span>
-                    ))}
+        <div className="px-4 sm:px-8 pb-8 relative">
+          <div className="-mt-14 sm:-mt-16 flex flex-col gap-5">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-end">
+              <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-end">
+                <div className="relative shrink-0">
+                  <div className="rounded-full bg-white/95 shadow-2xl ring-1 ring-black/5 p-1">
+                    <EditableAvatar
+                      displayName={displayName}
+                      avatarUrl={sellerMetrics.avatar}
+                      className="h-28 w-28"
+                    />
+                  </div>
+                  <div className="pointer-events-none absolute -top-1 -right-1 h-4 w-4 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 blur-[1px]" />
+                </div>
+                <div className="flex-1 min-w-0 space-y-3">
+                  <p className="text-[11px] uppercase tracking-[0.3em] text-gray-500">Seller profile</p>
+                  <div className="space-y-2">
+                    <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 leading-tight truncate">{displayName}</h1>
+                    <div className="flex flex-wrap gap-2 text-sm text-gray-600">
+                      {infoTags.map((tag, index) => (
+                        <span
+                          key={`${tag.label}-${index}`}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white/80 px-3 py-1 text-gray-700 shadow-sm"
+                        >
+                          {tag.icon}
+                          {tag.label}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <ProfileActions
-                    shareText={`Check out ${displayName} on Motorsource`}
-                    shareUrl={baseHref}
-                    toUsername={displayName}
-                    toUserId={sellerMetrics.id}
-                  />
-                  {sellerMetrics.id && <ReportUserButton sellerName={displayName} sellerId={sellerMetrics.id} />}
-                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 justify-end">
+                <EditProfileTopButton displayName={displayName} baseHref={baseHref} />
               </div>
             </div>
-            <EditProfileTopButton displayName={displayName} baseHref={baseHref} />
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <div className="flex-1 min-w-[240px]">
+                <ProfileActions
+                  shareText={`Check out ${displayName} on Motorsource`}
+                  shareUrl={baseHref}
+                  toUsername={displayName}
+                  toUserId={sellerMetrics.id}
+                />
+              </div>
+              {sellerMetrics.id && (
+                <div className="flex-1 min-w-[200px] sm:flex-none">
+                  <ReportUserButton sellerName={displayName} sellerId={sellerMetrics.id} />
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
+          <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-gray-200 bg-white/70 px-4 py-3 shadow-inner">
               <div className="text-xs uppercase tracking-wide text-gray-500">Listings live</div>
               <SellerListingCount sellerName={displayName} className="mt-1 text-2xl font-bold text-gray-900" />
               <p className="text-xs text-gray-500 mt-0.5">Active listings</p>
             </div>
             {stats.map((stat) => (
-              <div key={stat.label} className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 flex flex-col gap-1">
+              <div key={stat.label} className="rounded-2xl border border-gray-200 bg-white/70 px-4 py-3 flex flex-col gap-1 shadow-inner">
                 <div className="flex items-center gap-2 text-gray-500 text-xs uppercase tracking-wide">
                   {stat.icon}
                   {stat.label}
@@ -197,12 +218,15 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
             ))}
           </div>
 
-          <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm leading-relaxed text-gray-700 flex flex-col gap-2">
+          <div className="mt-6 rounded-2xl border border-gray-200 bg-gradient-to-r from-yellow-50 via-white to-white p-4 sm:p-5 text-sm leading-relaxed text-gray-700 flex flex-col gap-3">
             <p>{aboutPreview}</p>
-            <div className="flex items-center justify-between text-xs text-gray-500">
+            <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-gray-500">
               <span>Tap the About tab to read the full story.</span>
-              <Link href={`${baseHref}?tab=about`} className="text-yellow-600 hover:text-yellow-700 font-semibold">
-                Open About
+              <Link
+                href={`${baseHref}?tab=about`}
+                className="inline-flex items-center gap-1 rounded-full border border-gray-900 px-3 py-1.5 text-sm font-semibold text-gray-900 hover:bg-gray-900 hover:text-white transition"
+              >
+                Open About →
               </Link>
             </div>
           </div>
