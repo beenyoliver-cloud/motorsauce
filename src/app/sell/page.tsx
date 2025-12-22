@@ -43,13 +43,18 @@ export default function SellPage() {
         .single();
 
       if (!profile) {
-        setSellerGate({ status: "blocked", message: "We couldn't load your profile.", detail: "Try refreshing or contact support." });
-        logTelemetry("sell_gate_status", { status: "profile_missing", userId });
+        // Don't block selling due to a missing/failed profile fetch.
+        // Individuals should be able to sell; business-only verification is handled below.
+        setSellerProfileType("individual");
+        setSellerGate({ status: "allowed" });
+        logTelemetry("sell_gate_status", { status: "profile_missing_allowed", userId });
         return;
       }
 
       const profileAccountType = typeof profile.account_type === "string" ? profile.account_type.toLowerCase().trim() : null;
-      const resolvedAccountType = (metaAccountType || profileAccountType || "individual") as "business" | "individual";
+      // Treat ANY non-"business" value as individual.
+      // This avoids accidentally gating users due to unexpected values.
+      const resolvedAccountType = (metaAccountType || profileAccountType || "individual").toLowerCase().trim();
       const isBusinessAccount = resolvedAccountType === "business";
       setSellerProfileType(isBusinessAccount ? "business" : "individual");
 
@@ -108,13 +113,12 @@ export default function SellPage() {
       logTelemetry("sell_gate_status", { status: "verification_required", accountType: resolvedAccountType, userId });
     } catch (err) {
       console.error("Failed to evaluate seller status", err);
-      setSellerGate({
-        status: "blocked",
-        message: "Unable to confirm your seller status right now.",
-        detail: "Please refresh the page or contact support if this continues.",
-      });
+      // Fail open for selling, and rely on server-side validation when publishing.
+      // We only want to hard-block business users who definitely need verification.
+      setSellerProfileType("individual");
+      setSellerGate({ status: "allowed" });
       logTelemetry("sell_gate_status", {
-        status: "error",
+        status: "error_allowed",
         error: err instanceof Error ? err.message : "unknown_error",
         userId,
       });
@@ -129,7 +133,9 @@ export default function SellPage() {
         if (u) {
           await evaluateSellerStatus(u.id);
         } else {
-          setSellerGate({ status: "blocked", message: "Sign in to list parts." });
+          // Logged-out users can draft a listing. We'll require auth only at publish time.
+          setSellerProfileType("individual");
+          setSellerGate({ status: "allowed" });
         }
       } finally {
         setAuthChecked(true);
@@ -145,20 +151,8 @@ export default function SellPage() {
     );
   }
 
-  if (!isAuthed) {
-    return (
-      <section className="mx-auto max-w-3xl px-4 py-12">
-        <div className="rounded-2xl border border-gray-200 bg-white p-8 text-gray-900">
-          <h1 className="text-2xl font-bold mb-2">Sign in to sell</h1>
-          <p className="text-sm text-gray-700 mb-4">You need an account to list parts for sale.</p>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/auth/login?next=/sell" className="inline-flex items-center px-4 py-2 rounded-md bg-gold-500 text-black font-semibold hover:bg-gold-600">Sign in</Link>
-            <Link href="/auth/register?next=/sell" className="inline-flex items-center px-4 py-2 rounded-md border border-gray-300 text-gray-900 bg-white hover:bg-gray-50">Create account</Link>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  // Logged-out users are allowed to view the sell flow and draft.
+  // We require authentication only when they try to publish.
 
   if (sellerGate.status === "checking") {
     return (
@@ -208,6 +202,29 @@ export default function SellPage() {
   return (
     <section className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 py-12 px-4">
       <div className="max-w-4xl mx-auto">
+        {!isAuthed && (
+          <div className="mb-6 rounded-2xl border border-blue-200 bg-blue-50 p-5 text-blue-900 shadow-sm">
+            <h2 className="text-lg font-semibold">You can draft your listing</h2>
+            <p className="mt-1 text-sm text-blue-800">
+              You’ll need to sign in before publishing so we can attribute ownership and handle payments/messages.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-3">
+              <Link
+                href="/auth/login?next=/sell"
+                className="inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700"
+              >
+                Sign in to publish
+              </Link>
+              <Link
+                href="/auth/register?next=/sell"
+                className="inline-flex items-center px-4 py-2 rounded-md border border-blue-300 text-blue-900 bg-white hover:bg-blue-50"
+              >
+                Create an account
+              </Link>
+            </div>
+          </div>
+        )}
+
         {sellerProfileType === "individual" && (
           <div className="mb-6 rounded-2xl border border-gray-200 bg-white/90 p-5 shadow-sm">
             <h2 className="text-xl font-semibold text-gray-900">Welcome to selling on Motorsauce</h2>
@@ -252,13 +269,13 @@ export default function SellPage() {
           </ul>
         </div>
 
-        {isAuthed && <SellForm />}
+        <SellForm isAuthed={isAuthed} />
       </div>
     </section>
   );
 }
 
-function SellForm() {
+function SellForm({ isAuthed }: { isAuthed: boolean }) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<Category>("");
@@ -419,6 +436,12 @@ function SellForm() {
     e.preventDefault();
     setErrorMsg(null);
 
+    if (!isAuthed) {
+      setErrorMsg("Please sign in to publish your listing.");
+      router.push("/auth/login?next=/sell");
+      return;
+    }
+
     if (!canSubmit) {
       if (isVehicleSpecific && selectedVehicles.length === 0 && !isUniversal) {
         setErrorMsg("Please select at least one vehicle or mark as universal/generic part.");
@@ -561,6 +584,22 @@ function SellForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-8">
+      {!isAuthed && (
+        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-blue-900">
+          <div className="text-sm font-semibold">Sign in required to publish</div>
+          <div className="mt-1 text-sm text-blue-800">
+            You can fill out the form now, but you’ll need to sign in before we can publish your listing.
+          </div>
+          <div className="mt-3">
+            <Link
+              href="/auth/login?next=/sell"
+              className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              Sign in
+            </Link>
+          </div>
+        </div>
+      )}
       {/* Essential Details Card */}
       <div className="bg-white border-2 border-gray-100 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
         <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-gray-100">
