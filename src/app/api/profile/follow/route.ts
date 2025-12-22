@@ -1,17 +1,29 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
-function getSupabase() {
+function getSupabaseForRequest(req: NextRequest) {
+  // Primary path: browser/user requests on Vercel (cookie-based session)
+  const cookieClient = createRouteHandlerClient({ cookies });
+
+  // Optional path: allow non-browser callers to pass Authorization: Bearer <jwt>
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader) return cookieClient;
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  return createClient(url, anon, { auth: { persistSession: false } });
+  return createClient(url, anon, {
+    auth: { persistSession: false },
+    global: { headers: { Authorization: authHeader } },
+  });
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = getSupabaseForRequest(req);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -50,15 +62,16 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = getSupabaseForRequest(req);
     const { searchParams } = new URL(req.url);
     const profileId = searchParams.get("profileId");
     if (!profileId) {
       return NextResponse.json({ error: "profileId is required" }, { status: 400 });
     }
     const { data: { user } } = await supabase.auth.getUser();
+    const currentUserId: string | null = user?.id ?? null;
 
     const [{ data: followers }, { data: following }] = await Promise.all([
       supabase
@@ -71,12 +84,12 @@ export async function GET(req: Request) {
         .eq("follower_id", profileId),
     ]);
 
-    const isFollowing = user
+    const isFollowing = currentUserId
       ? (await supabase
           .from("profile_followers")
           .select("follower_id")
           .eq("following_id", profileId)
-          .eq("follower_id", user.id)
+          .eq("follower_id", currentUserId)
           .maybeSingle()).data != null
       : false;
 
