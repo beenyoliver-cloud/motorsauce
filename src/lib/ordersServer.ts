@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { createNotificationServer } from "@/lib/notificationsServer";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE;
@@ -110,6 +111,21 @@ export async function createOrderRecord({
   if (itemsError) {
     await supabase.from("orders").delete().eq("id", order.id);
     throw new Error(itemsError.message || "Failed to create order items");
+  }
+
+  // Best-effort notification for the buyer. This should never block checkout.
+  try {
+    const firstTitle = normalizedItems[0]?.title || "your order";
+    const more = normalizedItems.length > 1 ? ` (+${normalizedItems.length - 1} more)` : "";
+    await createNotificationServer({
+      userId,
+      type: "order_confirmed",
+      title: "Purchase confirmed",
+      message: `You bought ${firstTitle}${more}.`,
+      link: "/orders",
+    });
+  } catch {
+    // ignore
   }
 
   return {
