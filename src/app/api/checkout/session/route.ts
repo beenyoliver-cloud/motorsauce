@@ -4,11 +4,22 @@ import { supabaseServer } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "")).replace(/\/$/, "");
+function normalizeAbsoluteUrl(input: string): string {
+  return String(input || "")
+    .trim()
+    .replace(/\/$/, "");
+}
+
+function isAbsoluteHttpUrl(input: string): boolean {
+  return /^https?:\/\//i.test(String(input || "").trim());
+}
 
 function derivePublicOrigin(req: Request): string {
-  // Prefer explicit configured URL.
-  if (SITE_URL) return SITE_URL;
+  // Prefer explicit configured URL only if it includes a scheme.
+  // This lets you keep NEXT_PUBLIC_SITE_URL set to a placeholder domain (or unset)
+  // and still have Stripe return to the current Vercel deployment.
+  const envSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (envSiteUrl && isAbsoluteHttpUrl(envSiteUrl)) return normalizeAbsoluteUrl(envSiteUrl);
 
   // Vercel provides VERCEL_URL without scheme.
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
