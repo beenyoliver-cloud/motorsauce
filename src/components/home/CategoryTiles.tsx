@@ -62,7 +62,7 @@ const tiles = [
 
 export default function CategoryTiles() {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 lg:grid-rows-2 gap-3 lg:h-[var(--home-tiles-block-height)]">
       {tiles.map((t, idx) => {
         const Icon = t.icon;
         return (

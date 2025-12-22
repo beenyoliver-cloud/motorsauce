@@ -47,7 +47,7 @@ html, body {
 
   /*
     Homepage desktop layout sizing
-    - Category tiles are designed around two tile-rows on desktop.
+    - Category tiles are a 3x2 grid on desktop.
     - Keep Live Activity aligned by referencing the same variable.
   */
   --home-tiles-row-height: 130px;
