@@ -185,7 +185,7 @@ export async function POST(req: Request) {
       }
 
       // Some environments may not have listings.price_cents yet.
-      // Attempt the modern select first, then fall back if Postgres reports undefined column (42703).
+  // Attempt the modern select first, then fall back if Postgres reports undefined column (42703).
       const fullSelect = `
             id,
             title,
@@ -197,13 +197,13 @@ export async function POST(req: Request) {
             seller_id,
             seller:profiles!seller_id (name)
           `;
-      const fallbackSelect = `
+  // Minimal select intended to work across older schemas.
+  // (Avoids price_cents, image_url, image.)
+  const fallbackSelect = `
             id,
             title,
             price,
             images,
-            image_url,
-            image,
             seller_id,
             seller:profiles!seller_id (name)
           `;
