@@ -222,13 +222,14 @@ function CheckoutContent() {
         },
         body: JSON.stringify(body),
       });
-      if (!res.ok) {
+  if (!res.ok) {
         // Don't silently redirect to success anymore — it's too confusing when the
         // server is misconfigured (e.g. missing SUPABASE_SERVICE_ROLE_KEY / STRIPE_SECRET_KEY).
         // Instead, show a clear message and keep the user on the checkout page.
-  const data = await res.json().catch(() => ({} as any));
-  const msg = typeof data?.error === "string" ? data.error : "";
-  const hint = typeof data?.hint === "string" ? data.hint : "";
+    const data = await res.json().catch(() => ({} as any));
+    const msg = typeof data?.error === "string" ? data.error : "";
+    const hint = typeof data?.hint === "string" ? data.hint : "";
+    const details = typeof data?.details === "string" ? data.details : "";
 
         if (res.status === 401) {
           setCheckoutError("Please sign in again to continue checkout.");
@@ -245,8 +246,9 @@ function CheckoutContent() {
           return;
         }
 
-        if (msg === "DB error" && hint) {
-          setCheckoutError(`Checkout is temporarily unavailable (${hint}).`);
+        if (msg === "DB error") {
+          const extra = hint || details;
+          setCheckoutError(extra ? `Checkout is temporarily unavailable (${extra}).` : "Checkout is temporarily unavailable (database error).");
           return;
         }
 

@@ -323,6 +323,7 @@ export async function POST(req: Request) {
         {
           error: "DB error",
           hint,
+          code: (storeError as any)?.code ?? null,
         },
         { status: 500 }
       );
