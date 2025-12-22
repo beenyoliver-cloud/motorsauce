@@ -849,8 +849,8 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             />
           )}
 
-          {/* Sold badge if listing is sold */}
-          {listing.status === "sold" && (
+          {/* Sold badge if listing is sold OR out of stock */}
+          {(listing.status === "sold" || (typeof (listing as any).quantity === "number" && (listing as any).quantity <= 0)) && (
             <div className="rounded-xl border-2 border-red-500 bg-red-50 p-4">
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold text-red-600">SOLD</span>

@@ -97,6 +97,39 @@ export async function POST(req: Request) {
       totals: row.payload.totals,
     });
 
+    // Decrement listing stock and mark sold when stock reaches 0.
+    // Run only on first consumption to keep this endpoint idempotent.
+    // Note: We intentionally fail-open here (order is the source of truth).
+    try {
+      for (const item of row.payload.items) {
+        const qty = Math.max(1, Math.min(99, Math.floor(Number(item.quantity || 1))));
+        const { data: listing, error: listingErr } = await admin
+          .from("listings")
+          .select("id, quantity, status")
+          .eq("id", item.listing_id)
+          .maybeSingle();
+
+        if (listingErr || !listing) continue;
+
+        const currentQty = typeof (listing as any).quantity === "number" ? (listing as any).quantity : 1;
+        const nextQty = Math.max(0, currentQty - qty);
+        const nextStatus = nextQty <= 0 ? "sold" : (listing as any).status || "active";
+
+        const update: any = { quantity: nextQty };
+        if (nextQty <= 0) {
+          update.status = "sold";
+          update.marked_sold_at = new Date().toISOString();
+        } else if (nextStatus !== "sold") {
+          // keep as active if it wasn't sold
+          update.status = "active";
+        }
+
+        await admin.from("listings").update(update).eq("id", item.listing_id);
+      }
+    } catch (e) {
+      console.warn("[checkout/complete] Stock decrement failed", e);
+    }
+
     await admin
       .from("checkout_sessions")
       .update({ consumed_at: new Date().toISOString(), order_id: orderId })
