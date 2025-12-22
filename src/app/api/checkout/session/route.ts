@@ -184,10 +184,9 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Invalid items" }, { status: 400 });
       }
 
-      const { data, error } = await admin
-        .from("listings")
-        .select(
-          `
+      // Some environments may not have listings.price_cents yet.
+      // Attempt the modern select first, then fall back if Postgres reports undefined column (42703).
+      const fullSelect = `
             id,
             title,
             price,
@@ -197,10 +196,33 @@ export async function POST(req: Request) {
             image,
             seller_id,
             seller:profiles!seller_id (name)
-          `
-        )
-        .in("id", ids)
-        .limit(200);
+          `;
+      const fallbackSelect = `
+            id,
+            title,
+            price,
+            images,
+            image_url,
+            image,
+            seller_id,
+            seller:profiles!seller_id (name)
+          `;
+
+      let data: any[] | null = null;
+      let error: any = null;
+
+      {
+        const res = await admin.from("listings").select(fullSelect).in("id", ids).limit(200);
+        data = res.data as any;
+        error = res.error as any;
+      }
+
+      if (error && (error as any)?.code === "42703") {
+        const res2 = await admin.from("listings").select(fallbackSelect).in("id", ids).limit(200);
+        data = res2.data as any;
+        error = res2.error as any;
+      }
+
       if (error) {
         return NextResponse.json({ error: "DB error", details: error.message }, { status: 500 });
       }
