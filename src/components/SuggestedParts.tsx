@@ -164,49 +164,52 @@ export default function SuggestedParts({ limit = 12 }: Props) {
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-              {list.map((p) => (
-                <article
-                  key={`${filter.id}-${p.id}`}
-                  data-listing-card={String(p.id)}
-                  className="rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all flex flex-col"
-                >
-                  <Link href={`/listing/${p.id}`} className="block relative aspect-[4/3] overflow-hidden rounded-t-2xl">
-                    <SafeImage src={p.image} alt={p.title} className="absolute inset-0 w-full h-full object-cover" />
-                  </Link>
-                  <div className="p-3 flex flex-col gap-3 flex-1">
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-900 line-clamp-2">{p.title}</h4>
-                      <div className="mt-1 text-base font-bold text-gray-900">{p.price}</div>
+            {/* Horizontal scroll row: show ~2.5 cards across on mobile and allow swipe/trackpad scroll */}
+            <div className="overflow-x-auto scrollbar-hide -mr-3 pr-3">
+              <div className="flex gap-3">
+                {list.map((p) => (
+                  <article
+                    key={`${filter.id}-${p.id}`}
+                    data-listing-card={String(p.id)}
+                    className="rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all flex flex-col shrink-0 w-[72%] sm:w-[280px] lg:w-[300px]"
+                  >
+                    <Link href={`/listing/${p.id}`} className="block relative aspect-[4/3] overflow-hidden rounded-t-2xl">
+                      <SafeImage src={p.image} alt={p.title} className="absolute inset-0 w-full h-full object-cover" />
+                    </Link>
+                    <div className="p-4 flex flex-col gap-3 flex-1">
+                      <div>
+                        <h4 className="text-base font-semibold text-gray-900 line-clamp-2">{p.title}</h4>
+                        <div className="mt-1 text-lg font-bold text-gray-900">{p.price}</div>
+                      </div>
+                      <div className="mt-auto flex items-center gap-2">
+                        <button
+                          onClick={() => quickAdd(p.id)}
+                          disabled={addingId === p.id}
+                          className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-slate-900 text-white text-sm font-semibold px-3 py-2 hover:bg-slate-800 disabled:opacity-70"
+                        >
+                          {addingId === p.id ? (
+                            <span className="inline-flex items-center gap-2 text-xs">
+                              <span className="h-3 w-3 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                              Adding…
+                            </span>
+                          ) : (
+                            <>
+                              <ShoppingCart size={16} />
+                              {addedId === p.id ? "Added!" : "Quick add"}
+                            </>
+                          )}
+                        </button>
+                        <Link
+                          href={`/listing/${p.id}`}
+                          className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+                        >
+                          View
+                        </Link>
+                      </div>
                     </div>
-                    <div className="mt-auto flex items-center gap-2">
-                      <button
-                        onClick={() => quickAdd(p.id)}
-                        disabled={addingId === p.id}
-                        className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-slate-900 text-white text-sm font-semibold px-3 py-2 hover:bg-slate-800 disabled:opacity-70"
-                      >
-                        {addingId === p.id ? (
-                          <span className="inline-flex items-center gap-2 text-xs">
-                            <span className="h-3 w-3 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                            Adding…
-                          </span>
-                        ) : (
-                          <>
-                            <ShoppingCart size={16} />
-                            {addedId === p.id ? "Added!" : "Quick add"}
-                          </>
-                        )}
-                      </button>
-                      <Link
-                        href={`/listing/${p.id}`}
-                        className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
-                      >
-                        View
-                      </Link>
-                    </div>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                ))}
+              </div>
             </div>
           </section>
         );
