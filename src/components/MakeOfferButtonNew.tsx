@@ -54,8 +54,12 @@ export default function MakeOfferButtonNew({
     setIsModalOpen(true);
   }
 
-  async function handleOfferCreated() {
+  async function handleOfferCreated(result?: { threadId?: string }) {
     setIsModalOpen(false);
+    if (result?.threadId) {
+      router.push(`/messages/${encodeURIComponent(result.threadId)}?offer=new`);
+      return;
+    }
     const thread = await createThread(sellerId, String(listingId));
     if (thread) {
       router.push(`/messages/${encodeURIComponent(thread.id)}?offer=new`);

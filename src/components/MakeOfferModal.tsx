@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase";
+import { createOffer, createThread } from "@/lib/messagesClient";
 
 interface MakeOfferModalProps {
   isOpen: boolean;
@@ -14,7 +15,7 @@ interface MakeOfferModalProps {
     images?: { url: string }[];
   };
   sellerId: string;
-  onOfferCreated?: () => void;
+  onOfferCreated?: (result?: { threadId?: string; offerId?: string }) => void;
 }
 
 export default function MakeOfferModal({
@@ -49,36 +50,31 @@ export default function MakeOfferModal({
         return;
       }
 
-      const listingImage = listing.images?.[0]?.url || null;
+      const listingImage = listing.images?.[0]?.url || undefined;
 
-      const response = await fetch("/api/offers-standalone", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          listingId: listing.id,
-          sellerId,
-          listingTitle: listing.title,
-          listingPrice: listing.price,
-          offeredAmount: amount,
-          listingImage: listingImage || null,
-          currency: "GBP",
-          notes: notes || null,
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to create offer");
+      const thread = await createThread(sellerId, listing.id);
+      if (!thread) {
+        throw new Error("Couldn't start chat thread with seller");
       }
 
-      // Success
+      const offer = await createOffer({
+        threadId: thread.id,
+        listingId: listing.id,
+        listingTitle: listing.title,
+        listingImage,
+        recipientId: sellerId,
+        amountCents: Math.round(amount * 100),
+        currency: "GBP",
+      });
+
+      if (!offer) {
+        throw new Error("Failed to create offer");
+      }
+
       setOfferAmount("");
       setNotes("");
       onClose();
-      onOfferCreated?.();
+      onOfferCreated?.({ threadId: thread.id, offerId: offer.id });
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {

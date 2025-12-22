@@ -31,6 +31,11 @@ export default function SellPage() {
   const evaluateSellerStatus = useCallback(async (userId: string) => {
     try {
       const supabase = supabaseBrowser();
+      const { data: authData } = await supabase.auth.getUser();
+      const metaAccountType = typeof authData?.user?.user_metadata?.account_type === "string"
+        ? authData.user.user_metadata.account_type.toLowerCase().trim()
+        : null;
+
       const { data: profile } = await supabase
         .from("profiles")
         .select("account_type, business_verified, verification_status, verification_notes")
@@ -43,19 +48,20 @@ export default function SellPage() {
         return;
       }
 
-      const accountType = typeof profile.account_type === "string" ? profile.account_type.toLowerCase().trim() : "individual";
-      const isBusinessAccount = accountType === "business";
+      const profileAccountType = typeof profile.account_type === "string" ? profile.account_type.toLowerCase().trim() : null;
+      const resolvedAccountType = (metaAccountType || profileAccountType || "individual") as "business" | "individual";
+      const isBusinessAccount = resolvedAccountType === "business";
       setSellerProfileType(isBusinessAccount ? "business" : "individual");
 
       if (!isBusinessAccount) {
         setSellerGate({ status: "allowed" });
-        logTelemetry("sell_gate_status", { status: "allowed", accountType, userId });
+        logTelemetry("sell_gate_status", { status: "allowed", accountType: resolvedAccountType, userId });
         return;
       }
 
       if (profile.business_verified) {
         setSellerGate({ status: "allowed" });
-        logTelemetry("sell_gate_status", { status: "allowed_business_verified", accountType, userId });
+        logTelemetry("sell_gate_status", { status: "allowed_business_verified", accountType: resolvedAccountType, userId });
         return;
       }
 
@@ -75,7 +81,7 @@ export default function SellPage() {
           message: "Your documents are being reviewed.",
           detail: "We'll email you as soon as you're approved.",
         });
-        logTelemetry("sell_gate_status", { status: "pending", accountType, userId });
+        logTelemetry("sell_gate_status", { status: "pending", accountType: resolvedAccountType, userId });
         return;
       }
 
@@ -87,7 +93,7 @@ export default function SellPage() {
         });
         logTelemetry("sell_gate_status", {
           status: "rejected",
-          accountType,
+          accountType: resolvedAccountType,
           userId,
           reviewNotes: latest?.review_notes || profile.verification_notes || null,
         });
@@ -99,7 +105,7 @@ export default function SellPage() {
         message: "Verification required before listing parts.",
         detail: "Upload documents in Business Settings so we can approve your storefront.",
       });
-      logTelemetry("sell_gate_status", { status: "verification_required", accountType, userId });
+      logTelemetry("sell_gate_status", { status: "verification_required", accountType: resolvedAccountType, userId });
     } catch (err) {
       console.error("Failed to evaluate seller status", err);
       setSellerGate({
