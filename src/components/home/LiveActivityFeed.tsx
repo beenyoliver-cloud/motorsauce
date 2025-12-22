@@ -60,7 +60,7 @@ export default function LiveActivityFeed() {
   // Loading skeleton - matches category tile style
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse lg:h-[146px]">
         <div className="flex items-center gap-2 mb-3">
           <div className="w-2 h-2 bg-gray-200 rounded-full" />
           <div className="w-12 h-3 bg-gray-200 rounded" />
@@ -73,7 +73,7 @@ export default function LiveActivityFeed() {
   // Empty state
   if (activities.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 lg:h-[146px]">
         <div className="flex items-center gap-2 mb-2">
           <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
           <span className="text-xs font-medium text-gray-500">Live Activity</span>
@@ -91,7 +91,7 @@ export default function LiveActivityFeed() {
   return (
     <Link 
       href={`/listing/${listingId}`}
-      className="block h-full bg-white border border-gray-200 rounded-2xl p-5 hover:border-gray-300 hover:shadow-md transition-all"
+      className="block bg-white border border-gray-200 rounded-2xl p-5 hover:border-gray-300 hover:shadow-md transition-all lg:h-[calc(2*130px+12px)] lg:flex lg:flex-col"
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
@@ -102,7 +102,7 @@ export default function LiveActivityFeed() {
         <span className="text-xs text-gray-400">{timeAgo(current.timestamp)}</span>
       </div>
 
-      <div className="bg-gray-50 rounded-xl overflow-hidden mb-3 aspect-[5/3] flex items-center justify-center">
+      <div className="bg-gray-50 rounded-xl overflow-hidden mb-3 aspect-[5/3] flex items-center justify-center lg:aspect-auto lg:flex-1">
         {current.image ? (
           <img
             src={current.image}
@@ -117,7 +117,7 @@ export default function LiveActivityFeed() {
       </div>
 
       {/* Activity message */}
-      <p className="text-sm text-gray-800 leading-snug">
+      <p className="text-sm text-gray-800 leading-snug lg:line-clamp-3">
         {current.type === "sale" ? (
           <>
             <span className="text-green-600 font-medium">Sold: </span>
@@ -132,7 +132,7 @@ export default function LiveActivityFeed() {
 
       {/* Dots indicator - only show if multiple activities */}
       {activities.length > 1 && (
-        <div className="flex justify-center gap-1.5 mt-4">
+        <div className="flex justify-center gap-1.5 mt-4 lg:mt-auto">
           {activities.slice(0, Math.min(5, activities.length)).map((_, i) => (
             <span
               key={i}

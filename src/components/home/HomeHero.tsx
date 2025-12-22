@@ -128,7 +128,7 @@ export default function HomeHero() {
           Live vehicle-matching
         </div>
         <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Search by reg. See compatible parts instantly.</h1>
-        <p className="text-sm text-gray-600 whitespace-nowrap overflow-hidden text-ellipsis">
+        <p className="text-sm text-gray-600 break-words sm:whitespace-nowrap sm:overflow-hidden sm:text-ellipsis">
           Drop a plate to jump straight into parts that fit.
         </p>
 

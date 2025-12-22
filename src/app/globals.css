@@ -7,6 +7,29 @@ html, body {
   background-color: white;
 }
 
+/*
+  Mobile overflow hardening
+  -------------------------
+  A few homepage cards use tight flex layouts and dynamic text.
+  Long titles/strings (e.g., seller names, part titles) can force horizontal overflow
+  unless we allow wrapping and flex children to shrink.
+
+  These utilities are intentionally lightweight + opt-in via className.
+*/
+
+.ms-card {
+  min-width: 0;
+}
+
+.ms-card * {
+  min-width: 0;
+}
+
+.ms-wrap {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 /* Elegant Gold Color Palette - #D4AF37 based */
 :root {
   --gold-50: #fdfbf3;
