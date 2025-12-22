@@ -25,6 +25,11 @@ type Order = {
   id: string;
   created_at: string;
   status: string;
+  shipped_at?: string | null;
+  shipping_carrier?: string | null;
+  tracking_number?: string | null;
+  delivery_confirmed_at?: string | null;
+  payout_status?: string | null;
   items_subtotal: number;
   service_fee: number;
   shipping_cost: number;
@@ -40,6 +45,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<string | null>(null);
 
   useEffect(() => {
     loadOrders();
@@ -121,6 +127,42 @@ export default function OrdersPage() {
     }
   }
 
+  async function handleConfirmReceived(orderId: string) {
+    if (!confirm("Confirm you've received this item? This will release funds to the seller.")) {
+      return;
+    }
+
+    try {
+      setConfirming(orderId);
+      const supabase = supabaseBrowser();
+      const { data: session } = await supabase.auth.getSession();
+
+      if (!session.session) {
+        alert("Not authenticated");
+        return;
+      }
+
+      const response = await fetch(`/api/orders/${orderId}/receive`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.session.access_token}`,
+        },
+      });
+
+      if (response.ok) {
+        loadOrders();
+      } else {
+        const data = await response.json().catch(() => ({}));
+        alert(`Failed to confirm receipt: ${data.error || "Unknown error"}`);
+      }
+    } catch (error) {
+      console.error("Failed to confirm receipt:", error);
+      alert("An error occurred while confirming receipt");
+    } finally {
+      setConfirming(null);
+    }
+  }
+
   function getStatusColor(status: string) {
     switch (status) {
       case "confirmed":
@@ -183,6 +225,11 @@ export default function OrdersPage() {
           {orders.map((order) => {
             const orderRef = `MS-${order.id.split("-")[0].toUpperCase()}`;
             const canCancel = order.status !== "cancelled" && order.status !== "delivered";
+            const canConfirmReceived =
+              order.status !== "cancelled" &&
+              order.status !== "delivered" &&
+              !!order.shipped_at &&
+              !order.delivery_confirmed_at;
 
             return (
               <div key={order.id} className="rounded-lg border border-gray-200 bg-white p-6">
@@ -249,6 +296,32 @@ export default function OrdersPage() {
                   </div>
                 </div>
 
+                {/* Fulfillment / Escrow */}
+                <div className="mb-4 rounded-md border border-gray-200 bg-gray-50 p-3 text-sm text-gray-800">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="font-semibold">Delivery status</div>
+                    <div className="text-xs text-gray-600">Funds are held until delivery is confirmed.</div>
+                  </div>
+                  <div className="mt-2 space-y-1 text-sm text-gray-700">
+                    <div>
+                      <span className="font-medium">Shipped:</span> {order.shipped_at ? new Date(order.shipped_at).toLocaleDateString("en-GB") : "Not yet"}
+                    </div>
+                    {(order.shipping_carrier || order.tracking_number) && (
+                      <div className="text-xs text-gray-600">
+                        {order.shipping_carrier ? `${order.shipping_carrier}` : ""}
+                        {order.shipping_carrier && order.tracking_number ? " • " : ""}
+                        {order.tracking_number ? `Tracking: ${order.tracking_number}` : ""}
+                      </div>
+                    )}
+                    <div>
+                      <span className="font-medium">Received:</span> {order.delivery_confirmed_at ? new Date(order.delivery_confirmed_at).toLocaleDateString("en-GB") : "Not yet"}
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      Payout status: {order.payout_status || "held"}
+                    </div>
+                  </div>
+                </div>
+
                 {/* Cancellation Info */}
                 {order.status === "cancelled" && (
                   <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-800">
@@ -266,6 +339,15 @@ export default function OrdersPage() {
 
                 {/* Actions */}
                 <div className="flex flex-wrap gap-3">
+                  {canConfirmReceived && (
+                    <button
+                      onClick={() => handleConfirmReceived(order.id)}
+                      disabled={confirming === order.id}
+                      className="inline-flex items-center gap-2 rounded-md bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {confirming === order.id ? "Confirming..." : "I've received it"}
+                    </button>
+                  )}
                   {canCancel && (
                     <button
                       onClick={() => handleCancelOrder(order.id)}

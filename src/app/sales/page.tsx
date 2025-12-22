@@ -23,6 +23,11 @@ type Sale = {
   order_status: string;
   order_created_at: string;
   shipping_method: string;
+  shipped_at?: string | null;
+  shipping_carrier?: string | null;
+  tracking_number?: string | null;
+  delivery_confirmed_at?: string | null;
+  payout_status?: string | null;
   cancelled_at: string | null;
   cancellation_reason: string | null;
   buyer_name: string;
@@ -33,6 +38,7 @@ export default function SalesPage() {
   const router = useRouter();
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
+  const [shipping, setShipping] = useState<string | null>(null);
 
   useEffect(() => {
     loadSales();
@@ -70,6 +76,46 @@ export default function SalesPage() {
       console.error("Failed to load sales:", error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleMarkShipped(orderId: string) {
+    const carrier = prompt("Shipping carrier (optional):") || "";
+    const tracking = prompt("Tracking number (optional):") || "";
+
+    try {
+      setShipping(orderId);
+      const supabase = supabaseBrowser();
+      const { data: session } = await supabase.auth.getSession();
+
+      if (!session.session) {
+        alert("Not authenticated");
+        return;
+      }
+
+      const response = await fetch(`/api/orders/${orderId}/ship`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.session.access_token}`,
+        },
+        body: JSON.stringify({
+          shipping_carrier: carrier || null,
+          tracking_number: tracking || null,
+        }),
+      });
+
+      if (response.ok) {
+        loadSales();
+      } else {
+        const data = await response.json().catch(() => ({}));
+        alert(`Failed to mark shipped: ${data.error || "Unknown error"}`);
+      }
+    } catch (error) {
+      console.error("Failed to mark shipped:", error);
+      alert("An error occurred while marking shipped");
+    } finally {
+      setShipping(null);
     }
   }
 
@@ -165,6 +211,8 @@ export default function SalesPage() {
           {sales.map((sale) => {
             const orderRef = `MS-${sale.order_id.split("-")[0].toUpperCase()}`;
             const isCancelled = sale.order_status === "cancelled";
+            const canMarkShipped =
+              !isCancelled && sale.order_status !== "delivered" && !sale.shipped_at;
 
             return (
               <div key={sale.id} className="rounded-lg border border-gray-200 bg-white p-6">
@@ -225,6 +273,32 @@ export default function SalesPage() {
                   </div>
                 </div>
 
+                {/* Fulfillment / Escrow */}
+                <div className="mb-4 rounded-md border border-gray-200 bg-gray-50 p-3 text-sm text-gray-800">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="font-semibold">Delivery status</div>
+                    <div className="text-xs text-gray-600">Funds release after buyer confirms delivery.</div>
+                  </div>
+                  <div className="mt-2 space-y-1 text-sm text-gray-700">
+                    <div>
+                      <span className="font-medium">Shipped:</span> {sale.shipped_at ? new Date(sale.shipped_at).toLocaleDateString("en-GB") : "Not yet"}
+                    </div>
+                    {(sale.shipping_carrier || sale.tracking_number) && (
+                      <div className="text-xs text-gray-600">
+                        {sale.shipping_carrier ? `${sale.shipping_carrier}` : ""}
+                        {sale.shipping_carrier && sale.tracking_number ? " • " : ""}
+                        {sale.tracking_number ? `Tracking: ${sale.tracking_number}` : ""}
+                      </div>
+                    )}
+                    <div>
+                      <span className="font-medium">Received:</span> {sale.delivery_confirmed_at ? new Date(sale.delivery_confirmed_at).toLocaleDateString("en-GB") : "Not yet"}
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      Payout status: {sale.payout_status || "held"}
+                    </div>
+                  </div>
+                </div>
+
                 {/* Cancellation Info */}
                 {isCancelled && sale.cancellation_reason && (
                   <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-800">
@@ -240,6 +314,15 @@ export default function SalesPage() {
 
                 {/* Actions */}
                 <div className="flex flex-wrap gap-3">
+                  {canMarkShipped && (
+                    <button
+                      onClick={() => handleMarkShipped(sale.order_id)}
+                      disabled={shipping === sale.order_id}
+                      className="inline-flex items-center gap-2 rounded-md bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {shipping === sale.order_id ? "Saving..." : "Mark shipped"}
+                    </button>
+                  )}
                   <Link
                     href={`/messages?buyer=${sale.buyer_name}`}
                     className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
