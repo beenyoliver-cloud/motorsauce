@@ -60,7 +60,7 @@ export default function LiveActivityFeed() {
   // Loading skeleton - matches category tile style
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse lg:h-[146px]">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse lg:h-[var(--home-tiles-block-height)]">
         <div className="flex items-center gap-2 mb-3">
           <div className="w-2 h-2 bg-gray-200 rounded-full" />
           <div className="w-12 h-3 bg-gray-200 rounded" />
@@ -73,7 +73,7 @@ export default function LiveActivityFeed() {
   // Empty state
   if (activities.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4 lg:h-[146px]">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 lg:h-[var(--home-tiles-block-height)]">
         <div className="flex items-center gap-2 mb-2">
           <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
           <span className="text-xs font-medium text-gray-500">Live Activity</span>
@@ -91,7 +91,7 @@ export default function LiveActivityFeed() {
   return (
     <Link 
       href={`/listing/${listingId}`}
-      className="block bg-white border border-gray-200 rounded-2xl p-5 hover:border-gray-300 hover:shadow-md transition-all lg:h-[calc(2*130px+12px)] lg:flex lg:flex-col"
+      className="block bg-white border border-gray-200 rounded-2xl p-5 hover:border-gray-300 hover:shadow-md transition-all lg:h-[var(--home-tiles-block-height)] lg:flex lg:flex-col"
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">

@@ -43,7 +43,7 @@ export default function Home() {
       </section>
 
       {/* Live activity feed + Category tiles side by side on desktop */}
-      <div className="grid grid-cols-1 lg:grid-cols-[3fr_1.2fr] gap-4 lg:h-[calc(2*130px+12px)]">
+      <div className="grid grid-cols-1 lg:grid-cols-[3fr_1.2fr] gap-4 lg:h-[var(--home-tiles-block-height)]">
         <div className="lg:h-full">
           {/* @ts-ignore Server -> Client import allowed */}
           <CategoryTiles />

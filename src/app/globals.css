@@ -44,6 +44,15 @@ html, body {
   --gold-900: #524215;
   --background: #ffffff;
   --foreground: #171717;
+
+  /*
+    Homepage desktop layout sizing
+    - Category tiles are designed around two tile-rows on desktop.
+    - Keep Live Activity aligned by referencing the same variable.
+  */
+  --home-tiles-row-height: 130px;
+  --home-tiles-row-gap: 12px; /* matches Tailwind gap-3 */
+  --home-tiles-block-height: calc((2 * var(--home-tiles-row-height)) + var(--home-tiles-row-gap));
 }
 
 @theme inline {
