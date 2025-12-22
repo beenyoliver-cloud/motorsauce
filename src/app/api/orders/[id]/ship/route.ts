@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createNotificationServer } from "@/lib/notificationsServer";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     // Ensure the current user is a seller on this order
     const { data: orderItems, error: itemsError } = await supabase
       .from("order_items")
-      .select("id, seller_id")
+      .select("id, seller_id, title")
       .eq("order_id", orderId);
 
     if (itemsError) {
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     // Read current order state (idempotency)
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("id, status, shipped_at")
+      .select("id, status, shipped_at, buyer_id")
       .eq("id", orderId)
       .maybeSingle();
 
@@ -93,6 +94,22 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     if (updateError) {
       console.error("[orders.ship] Failed to update order:", updateError);
       return NextResponse.json({ error: "Failed to mark shipped" }, { status: 500 });
+    }
+
+    // Best-effort notification letting the buyer know their order is on the way.
+    if (order?.buyer_id) {
+      try {
+        const firstTitle = orderItems?.[0]?.title || "your purchase";
+        await createNotificationServer({
+          userId: order.buyer_id,
+          type: "order_shipped",
+          title: "Order shipped",
+          message: `Your order for ${firstTitle} is on the way.`,
+          link: "/orders",
+        });
+      } catch (notifyErr) {
+        console.warn("[orders.ship] Failed to create notification:", notifyErr);
+      }
     }
 
     return NextResponse.json({ ok: true });

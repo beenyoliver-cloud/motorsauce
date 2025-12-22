@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createNotificationServer } from "@/lib/notificationsServer";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -87,6 +88,33 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     if (updateError) {
       console.error("[orders.payout] Failed to update order:", updateError);
       return NextResponse.json({ error: "Failed to mark payout released" }, { status: 500 });
+    }
+
+    // Notify sellers that their payout was released.
+    try {
+      const { data: orderItems } = await supabase
+        .from("order_items")
+        .select("seller_id, title")
+        .eq("order_id", orderId);
+
+      const sellerIds = Array.from(
+        new Set((orderItems || []).map((item: any) => item?.seller_id).filter(Boolean))
+      );
+      const firstTitle = orderItems?.[0]?.title || "your order";
+
+      await Promise.all(
+        sellerIds.map((sellerId) =>
+          createNotificationServer({
+            userId: sellerId,
+            type: "payout_released",
+            title: "Payout released",
+            message: `Funds for ${firstTitle} have been released to your account.`,
+            link: "/sales",
+          })
+        )
+      );
+    } catch (notifyErr) {
+      console.warn("[orders.payout] Failed to notify sellers:", notifyErr);
     }
 
     return NextResponse.json({ ok: true });

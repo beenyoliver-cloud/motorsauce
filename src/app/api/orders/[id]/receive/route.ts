@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createNotificationServer } from "@/lib/notificationsServer";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -60,6 +61,16 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
       return NextResponse.json({ ok: true, already: true });
     }
 
+    const { data: orderItems, error: itemsError } = await supabase
+      .from("order_items")
+      .select("seller_id, title")
+      .eq("order_id", orderId);
+
+    if (itemsError) {
+      console.error("[orders.receive] Failed to load order items:", itemsError);
+      return NextResponse.json({ error: "Failed to load order" }, { status: 500 });
+    }
+
     // Mark delivered + request payout release.
     // If/when Stripe Connect payout exists, this route is where we'd create the Transfer.
     const { error: updateError } = await supabase
@@ -75,6 +86,28 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     if (updateError) {
       console.error("[orders.receive] Failed to update order:", updateError);
       return NextResponse.json({ error: "Failed to confirm delivery" }, { status: 500 });
+    }
+
+    // Notify each seller that the buyer has confirmed delivery (funds can release soon).
+    try {
+      const sellerIds = Array.from(
+        new Set((orderItems || []).map((item: any) => item?.seller_id).filter(Boolean))
+      );
+      const firstTitle = orderItems?.[0]?.title || "your order";
+
+      await Promise.all(
+        sellerIds.map((sellerId) =>
+          createNotificationServer({
+            userId: sellerId,
+            type: "delivery_confirmed",
+            title: "Buyer confirmed delivery",
+            message: `The buyer confirmed they received ${firstTitle}. Payout release requested.`,
+            link: "/sales",
+          })
+        )
+      );
+    } catch (notifyErr) {
+      console.warn("[orders.receive] Failed to notify sellers:", notifyErr);
     }
 
     return NextResponse.json({ ok: true, payout: "release_requested" });
