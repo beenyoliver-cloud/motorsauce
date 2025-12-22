@@ -6,6 +6,26 @@ export const dynamic = "force-dynamic";
 
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "")).replace(/\/$/, "");
 
+function derivePublicOrigin(req: Request): string {
+  // Prefer explicit configured URL.
+  if (SITE_URL) return SITE_URL;
+
+  // Vercel provides VERCEL_URL without scheme.
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+
+  // Some runtimes set Origin; use it if present.
+  const origin = req.headers.get("origin");
+  if (origin && /^https?:\/\//i.test(origin)) return origin.replace(/\/$/, "");
+
+  // Otherwise derive from host headers.
+  const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+  const proto = req.headers.get("x-forwarded-proto") || "https";
+  if (host) return `${proto}://${host}`.replace(/\/$/, "");
+
+  // Final fallback: Stripe requires absolute URLs with scheme.
+  throw new Error("Public site URL is not configured (missing NEXT_PUBLIC_SITE_URL / VERCEL_URL / host headers)");
+}
+
 type RawListingRow = {
   id: string;
   title: string;
@@ -289,16 +309,14 @@ export async function POST(req: Request) {
       shipping
     );
 
+    const origin = derivePublicOrigin(req);
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items,
       currency: "gbp",
-      success_url: SITE_URL
-        ? `${SITE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`
-        : `${req.headers.get("origin")}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: SITE_URL
-        ? `${SITE_URL}/checkout${offerId ? `?offer_id=${offerId}` : ""}`
-        : `${req.headers.get("origin")}/checkout`,
+      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/checkout${offerId ? `?offer_id=${offerId}` : ""}`,
       metadata: {
         buyer_id: user.id,
         offer_id: offerId || "",
