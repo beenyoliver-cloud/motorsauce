@@ -128,6 +128,49 @@ export async function createOrderRecord({
     // ignore
   }
 
+  // Best-effort notifications for sellers.
+  // One notification per seller (aggregated message) to avoid spamming.
+  try {
+    const bySeller = new Map<string, { sellerName: string; items: string[]; totalQty: number }>();
+    for (const item of normalizedItems) {
+      const sellerId = item.seller_id;
+      if (!sellerId) continue;
+      const current = bySeller.get(sellerId) || {
+        sellerName: item.seller_name || "",
+        items: [],
+        totalQty: 0,
+      };
+      current.items.push(item.title);
+      current.totalQty += Math.max(1, Math.floor(Number(item.quantity || 1)));
+      bySeller.set(sellerId, current);
+    }
+
+    for (const [sellerId, info] of bySeller.entries()) {
+      const first = info.items[0] || "an item";
+      const more = info.items.length > 1 ? ` (+${info.items.length - 1} more)` : "";
+
+      await createNotificationServer({
+        userId: sellerId,
+        type: "item_sold",
+        title: "Item sold",
+        message: `You sold ${first}${more}.`,
+        link: "/sales",
+      });
+
+      if (shippingMethod === "standard") {
+        await createNotificationServer({
+          userId: sellerId,
+          type: "ship_item",
+          title: "Ship your order",
+          message: "The buyer chose shipping. Mark the order as shipped when you've sent it.",
+          link: "/sales",
+        });
+      }
+    }
+  } catch {
+    // ignore
+  }
+
   return {
     orderId: order.id as string,
     orderRef: `MS-${String(order.id).split("-")[0].toUpperCase()}`,
