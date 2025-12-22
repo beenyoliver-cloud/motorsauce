@@ -308,10 +308,17 @@ export async function POST(req: Request) {
       // - checkout_sessions table missing (migration not applied)
       // - foreign key failure (profiles row missing for user_id)
       // - RLS/policy issues (should be bypassed with service role)
+      const msg = typeof storeError?.message === "string" ? storeError.message : "";
+      const m = msg.toLowerCase();
+
       const hint =
-        typeof storeError?.message === "string" && storeError.message.toLowerCase().includes("checkout_sessions")
+        m.includes("relation") && m.includes("checkout_sessions")
           ? "Missing DB table: checkout_sessions (apply SQL migration)"
-          : "Database error";
+          : m.includes("violates foreign key") || m.includes("foreign key")
+            ? "Database constraint error (likely checkout_sessions.user_id FK points to profiles; switch FK to auth.users or ensure profiles row exists)"
+            : m.includes("violates not-null") || m.includes("null value")
+              ? "Database constraint error (missing required field)"
+              : "Database error";
       return NextResponse.json(
         {
           error: "DB error",
