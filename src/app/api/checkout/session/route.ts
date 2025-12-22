@@ -304,7 +304,21 @@ export async function POST(req: Request) {
 
     if (storeError) {
       console.error("[checkout/session] Failed to store session snapshot", storeError);
-      return NextResponse.json({ error: "Failed to initialise checkout" }, { status: 500 });
+      // Most common causes:
+      // - checkout_sessions table missing (migration not applied)
+      // - foreign key failure (profiles row missing for user_id)
+      // - RLS/policy issues (should be bypassed with service role)
+      const hint =
+        typeof storeError?.message === "string" && storeError.message.toLowerCase().includes("checkout_sessions")
+          ? "Missing DB table: checkout_sessions (apply SQL migration)"
+          : "Database error";
+      return NextResponse.json(
+        {
+          error: "DB error",
+          hint,
+        },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ url: session.url }, { status: 200 });

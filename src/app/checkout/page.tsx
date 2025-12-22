@@ -226,8 +226,9 @@ function CheckoutContent() {
         // Don't silently redirect to success anymore — it's too confusing when the
         // server is misconfigured (e.g. missing SUPABASE_SERVICE_ROLE_KEY / STRIPE_SECRET_KEY).
         // Instead, show a clear message and keep the user on the checkout page.
-        const data = await res.json().catch(() => ({} as any));
-        const msg = typeof data?.error === "string" ? data.error : "";
+  const data = await res.json().catch(() => ({} as any));
+  const msg = typeof data?.error === "string" ? data.error : "";
+  const hint = typeof data?.hint === "string" ? data.hint : "";
 
         if (res.status === 401) {
           setCheckoutError("Please sign in again to continue checkout.");
@@ -241,6 +242,11 @@ function CheckoutContent() {
 
         if (res.status === 500 && (msg.toLowerCase().includes("configuration") || msg.toLowerCase().includes("server"))) {
           setCheckoutError("Checkout is temporarily offline due to a server configuration issue. Please try again later.");
+          return;
+        }
+
+        if (msg === "DB error" && hint) {
+          setCheckoutError(`Checkout is temporarily unavailable (${hint}).`);
           return;
         }
 
