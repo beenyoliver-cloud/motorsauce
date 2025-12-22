@@ -93,49 +93,74 @@ export default function CheckoutSuccessPage() {
     return session.session.access_token;
   }
 
+  function toOrderSummary(data: any): OrderSummary {
+    return {
+      orderRef: data.orderRef,
+      items: (data.items || []).map((item: any) => ({
+        id: item.listing_id,
+        title: item.title,
+        image: item.image ?? null,
+        price: item.price,
+        qty: item.quantity,
+        sellerName: item.seller_name,
+      })),
+      totals: {
+        itemsSubtotal: data.totals?.itemsSubtotal ?? 0,
+        serviceFee: data.totals?.serviceFee ?? 0,
+        shipping: data.totals?.shippingCost ?? 0,
+        total: data.totals?.total ?? 0,
+      },
+      shippingMethod: data.shippingMethod || "standard",
+      // shippingAddress may be omitted by the lookup endpoint for privacy.
+      shippingAddress: data.shippingAddress || null,
+    };
+  }
+
+  async function completeWithoutSession(sessionId: string) {
+    const res = await fetch(`/api/checkout/lookup?session_id=${encodeURIComponent(sessionId)}`, {
+      method: "GET",
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || `Failed to confirm payment (${res.status})`);
+    }
+
+    const data = await res.json();
+    const summary = toOrderSummary(data);
+    addSoldIds(summary.items.map((item) => item.id));
+    clearCart();
+    setOrder(summary);
+    setError(null);
+  }
+
   async function completeStripeOrder(sessionId: string) {
     setLoading(true);
     try {
-      const token = await ensureSession();
-      const res = await fetch("/api/checkout/complete", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ session_id: sessionId }),
-      });
+      // 1) Prefer the new session-based path (works even if the browser appears signed out after redirect).
+      await completeWithoutSession(sessionId);
 
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || `Failed to finalise payment (${res.status})`);
+      // 2) If you are signed in, also call the authenticated completion endpoint so it can
+      //    enforce user ownership and return shipping address. Fail-open.
+      try {
+        const token = await ensureSession();
+        const res = await fetch("/api/checkout/complete", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ session_id: sessionId }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const summary = toOrderSummary(data);
+          setOrder(summary);
+        }
+      } catch (e) {
+        // ignore
       }
-
-      const data = await res.json();
-      const summary: OrderSummary = {
-        orderRef: data.orderRef,
-        items: data.items.map((item: any) => ({
-          id: item.listing_id,
-          title: item.title,
-          image: item.image ?? null,
-          price: item.price,
-          qty: item.quantity,
-          sellerName: item.seller_name,
-        })),
-        totals: {
-          itemsSubtotal: data.totals.itemsSubtotal,
-          serviceFee: data.totals.serviceFee,
-          shipping: data.totals.shippingCost,
-          total: data.totals.total,
-        },
-        shippingMethod: data.shippingMethod || "standard",
-        shippingAddress: data.shippingAddress || null,
-      };
-
-      addSoldIds(summary.items.map((item) => item.id));
-      clearCart();
-      setOrder(summary);
-      setError(null);
     } catch (err: any) {
       console.error("Failed to complete Stripe session", err);
       setError(err instanceof Error ? err.message : "Failed to confirm your payment.");
