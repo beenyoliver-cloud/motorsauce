@@ -214,20 +214,31 @@ function CheckoutContent() {
     if (disabled || paying) return;
     setPaying(true);
     try {
+      const supabase = supabaseBrowser();
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        throw new Error("Please sign in to continue.");
+      }
+
       // Build payload - include offer_id if present
       const body = offerCheckout
         ? {
             offer_id: offerCheckout.offerId,
             shipping: cart.shipping,
+            address: addr,
           }
         : {
             items: cart.items.map((i) => ({ id: i.id, qty: i.qty })),
             shipping: cart.shipping,
+            address: addr,
           };
       
       const res = await fetch("/api/checkout/session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.session.access_token}`,
+        },
         body: JSON.stringify(body),
       });
       if (!res.ok) {

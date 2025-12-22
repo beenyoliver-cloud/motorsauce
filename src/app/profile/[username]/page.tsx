@@ -59,7 +59,9 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
     created_at?: string | null;
   } = {};
   try {
-    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3001";
+    const baseUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
     const fullUrl = `${baseUrl}/api/seller-profile?name=${encodeURIComponent(displayName)}`;
     const res = await fetch(fullUrl, { cache: "no-store" });
     if (res.ok) {

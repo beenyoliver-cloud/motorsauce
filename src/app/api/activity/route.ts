@@ -48,6 +48,7 @@ export async function GET() {
       .select("id, title, seller_id, marked_sold_at, images")
       .eq("status", "sold")
       .not("marked_sold_at", "is", null)
+      .gte("marked_sold_at", thirtyDaysAgo)
       .order("marked_sold_at", { ascending: false })
       .limit(15);
 

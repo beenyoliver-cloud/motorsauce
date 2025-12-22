@@ -1,15 +1,13 @@
-// src/app/checkout/success/page.tsx
 "use client";
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { clearCart } from "@/lib/cartStore";
 import { addSoldIds } from "@/lib/soldStore";
 import { formatGBP } from "@/lib/currency";
 import { supabaseBrowser } from "@/lib/supabase";
-// listings moved to Supabase; avoid synchronous local imports here
 
 type Snapshot = {
   orderRef: string;
@@ -36,112 +34,187 @@ type Snapshot = {
   totals: { itemsSubtotal: number; serviceFee: number; shipping: number; total: number };
 };
 
-/** Try hard to get an image for the item */
-function resolveImage(it: { id: string; image?: string; images?: string[] }): string {
+type OrderSummary = {
+  orderRef: string;
+  items: Array<{
+    id: string;
+    title: string;
+    image?: string | null;
+    price: number;
+    qty: number;
+    sellerName?: string | null;
+  }>;
+  totals: { itemsSubtotal: number; serviceFee: number; shipping: number; total: number };
+  shippingMethod: "standard" | "collection";
+  shippingAddress?: Snapshot["address"] | null;
+};
+
+function resolveImage(it: { image?: string | null; images?: string[]; id: string }): string {
   if (it.image) return it.image;
   if (it.images && it.images.length) return it.images[0];
-  // synchronous DB lookups are not available here; fall back to placeholder
   return "/images/placeholder.png";
 }
 
 export default function CheckoutSuccessPage() {
   const router = useRouter();
-  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [order, setOrder] = useState<OrderSummary | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const supabase = useMemo(() => supabaseBrowser(), []);
 
-  // Parse the serialized snapshot from the query string on the client.
   useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const payload = params.get("o");
-      setSnapshot(payload ? (JSON.parse(decodeURIComponent(payload)) as Snapshot) : null);
-    } catch {
-      setSnapshot(null);
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get("session_id");
+    const fallbackPayload = params.get("o");
+
+    if (sessionId) {
+      completeStripeOrder(sessionId);
+    } else if (fallbackPayload) {
+      try {
+        const snapshot = JSON.parse(decodeURIComponent(fallbackPayload)) as Snapshot;
+        createOrderFromSnapshot(snapshot);
+      } catch (err) {
+        console.error("Invalid snapshot payload", err);
+        setError("We couldn't read your order details. Please contact support.");
+        setLoading(false);
+      }
+    } else {
+      setLoading(false);
+      setError("Missing checkout confirmation. Please contact support if you were charged.");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const orderRef = snapshot?.orderRef || "MS-ORDER";
-  const committed = useRef(false);
-  const [orderCreated, setOrderCreated] = useState(false);
-  const [orderError, setOrderError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (committed.current || !snapshot) return;
-    committed.current = true;
-
-    async function createOrder() {
-      try {
-        if (!snapshot) {
-          console.error("No snapshot found");
-          return;
-        }
-
-        const supabase = supabaseBrowser();
-        const { data: session } = await supabase.auth.getSession();
-        
-        if (!session.session) {
-          console.error("No session found, cannot create order");
-          setOrderError("Authentication required");
-          return;
-        }
-
-        // Create order in database via API
-        const response = await fetch("/api/orders", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.session.access_token}`,
-          },
-          body: JSON.stringify({
-            items: snapshot.items.map((item) => ({
-              listing_id: item.id,
-              seller_id: item.sellerId || "",
-              seller_name: item.seller?.name || "Unknown",
-              title: item.title,
-              image: resolveImage(item),
-              price: item.price,
-              quantity: item.qty,
-            })),
-            shipping_method: snapshot.shipping,
-            shipping_address: snapshot.address,
-            items_subtotal: snapshot.totals.itemsSubtotal,
-            service_fee: snapshot.totals.serviceFee,
-            shipping_cost: snapshot.totals.shipping,
-            total: snapshot.totals.total,
-          }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Failed to create order");
-        }
-
-        const { orderId, orderRef } = await response.json();
-        console.log("Order created:", orderId, orderRef);
-        
-        // Mark sold & notify
-        addSoldIds(snapshot.items.map((i) => i.id));
-        setOrderCreated(true);
-        
-        // Clear cart
-        clearCart();
-      } catch (error) {
-        console.error("Failed to create order:", error);
-        setOrderError(error instanceof Error ? error.message : "Failed to create order");
-        
-        // Even if order creation fails, still clear cart to avoid duplicate orders
-        clearCart();
-      }
+  async function ensureSession() {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) {
+      throw new Error("Please sign in again to view your order.");
     }
+    return session.session.access_token;
+  }
 
-    createOrder();
-  }, [snapshot]);
+  async function completeStripeOrder(sessionId: string) {
+    setLoading(true);
+    try {
+      const token = await ensureSession();
+      const res = await fetch("/api/checkout/complete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ session_id: sessionId }),
+      });
 
-  const items = snapshot?.items ?? [];
-  const totals = snapshot?.totals ?? { itemsSubtotal: 0, shipping: 0, serviceFee: 0, total: 0 };
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `Failed to finalise payment (${res.status})`);
+      }
+
+      const data = await res.json();
+      const summary: OrderSummary = {
+        orderRef: data.orderRef,
+        items: data.items.map((item: any) => ({
+          id: item.listing_id,
+          title: item.title,
+          image: item.image ?? null,
+          price: item.price,
+          qty: item.quantity,
+          sellerName: item.seller_name,
+        })),
+        totals: {
+          itemsSubtotal: data.totals.itemsSubtotal,
+          serviceFee: data.totals.serviceFee,
+          shipping: data.totals.shippingCost,
+          total: data.totals.total,
+        },
+        shippingMethod: data.shippingMethod || "standard",
+        shippingAddress: data.shippingAddress || null,
+      };
+
+      addSoldIds(summary.items.map((item) => item.id));
+      clearCart();
+      setOrder(summary);
+      setError(null);
+    } catch (err: any) {
+      console.error("Failed to complete Stripe session", err);
+      setError(err instanceof Error ? err.message : "Failed to confirm your payment.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function createOrderFromSnapshot(snapshot: Snapshot) {
+    setLoading(true);
+    try {
+      const token = await ensureSession();
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          items: snapshot.items.map((item) => ({
+            listing_id: item.id,
+            seller_id: item.sellerId || "",
+            seller_name: item.seller?.name || "Unknown",
+            title: item.title,
+            image: resolveImage(item),
+            price: item.price,
+            quantity: item.qty,
+          })),
+          shipping_method: snapshot.shipping,
+          shipping_address: snapshot.address,
+          items_subtotal: snapshot.totals.itemsSubtotal,
+          service_fee: snapshot.totals.serviceFee,
+          shipping_cost: snapshot.totals.shipping,
+          total: snapshot.totals.total,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || "Failed to create order");
+      }
+
+      const { orderRef } = await response.json();
+      addSoldIds(snapshot.items.map((i) => i.id));
+      clearCart();
+      setOrder({
+        orderRef,
+        items: snapshot.items.map((item) => ({
+          id: item.id,
+          title: item.title,
+          image: resolveImage(item),
+          price: item.price,
+          qty: item.qty,
+          sellerName: item.seller?.name ?? "Seller",
+        })),
+        totals: {
+          itemsSubtotal: snapshot.totals.itemsSubtotal,
+          serviceFee: snapshot.totals.serviceFee,
+          shipping: snapshot.totals.shipping,
+          total: snapshot.totals.total,
+        },
+        shippingMethod: snapshot.shipping,
+        shippingAddress: snapshot.address,
+      });
+      setError(null);
+    } catch (err: any) {
+      console.error("Failed to create order from snapshot", err);
+      setError(err instanceof Error ? err.message : "Failed to save your order.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const orderRef = order?.orderRef || "MS-ORDER";
+  const items = order?.items ?? [];
+  const totals = order?.totals ?? { itemsSubtotal: 0, shipping: 0, serviceFee: 0, total: 0 };
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-6">
-      {/* Top bar */}
       <div className="mb-4">
         <button
           onClick={() => router.back()}
@@ -157,61 +230,60 @@ export default function CheckoutSuccessPage() {
         <p className="mt-2 text-gray-800">
           Reference: <span className="font-mono font-semibold">{orderRef}</span>
         </p>
-        
-        {/* Error message if order creation failed */}
-        {orderError && (
-          <div className="mt-4 rounded-md bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-800">
-            <p className="font-semibold">Note:</p>
+
+        {error && (
+          <div className="mt-4 rounded-md bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-800 text-left">
+            <p className="font-semibold">Heads up:</p>
+            <p className="mt-1">{error}</p>
             <p className="mt-1">
-              Your payment was successful, but there was an issue saving your order: {orderError}
+              Please contact support with reference <span className="font-mono">{orderRef}</span> if you were
+              charged.
             </p>
-            <p className="mt-1">Please contact support with reference: {orderRef}</p>
           </div>
         )}
-        
-        <p className="mt-1 text-gray-600 text-sm">
-          You&apos;ll receive a confirmation email shortly (MVP: not actually sent).
-        </p>
 
-        {/* Items recap */}
+        {!error && (
+          <p className="mt-1 text-gray-600 text-sm">
+            You&apos;ll receive a confirmation email shortly (MVP: not actually sent).
+          </p>
+        )}
+
         {items.length > 0 && (
           <div className="mt-6 text-left">
             <h2 className="text-sm font-semibold text-gray-900 mb-2">What you ordered</h2>
             <ul className="divide-y divide-gray-100">
-              {items.map((it) => {
-                const img = resolveImage(it);
-                return (
-                  <li key={it.id} className="py-2 flex items-center gap-3">
-                    <div className="h-14 w-16 rounded-md overflow-hidden border border-gray-200 bg-gray-50">
-                      <Image src={img} alt={it.title} width={128} height={96} className="h-full w-full object-cover" />
+              {items.map((it) => (
+                <li key={it.id} className="py-2 flex items-center gap-3">
+                  <div className="h-14 w-16 rounded-md overflow-hidden border border-gray-200 bg-gray-50">
+                    <Image src={resolveImage(it)} alt={it.title} width={128} height={96} className="h-full w-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium text-gray-900 line-clamp-2">{it.title}</div>
+                    <div className="text-[11px] text-gray-600">
+                      Qty {it.qty} • Seller {it.sellerName || "Seller"}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-gray-900 line-clamp-2">{it.title}</div>
-                      <div className="text-[11px] text-gray-600">Qty {it.qty} • Seller {it.seller?.name}</div>
-                    </div>
-                    <div className="text-xs font-semibold text-gray-900 whitespace-nowrap">
-                      {formatGBP(it.price * it.qty)}
-                    </div>
-                  </li>
-                );
-              })}
+                  </div>
+                  <div className="text-xs font-semibold text-gray-900 whitespace-nowrap">
+                    {formatGBP(it.price * it.qty)}
+                  </div>
+                </li>
+              ))}
             </ul>
 
-            {/* Totals */}
-            <div className="mt-3 space-y-1 text-sm">
+            <div className="mt-4 border-t border-gray-100 pt-3 space-y-2 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-gray-800">Items subtotal</span>
-                <span className="text-gray-900 font-medium">{formatGBP(totals.itemsSubtotal)}</span>
+                <span className="text-gray-600">Items</span>
+                <span className="font-semibold text-gray-900">{formatGBP(totals.itemsSubtotal)}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-800">Shipping</span>
-                <span className="text-gray-900 font-medium">{formatGBP(totals.shipping)}</span>
+                <span className="text-gray-600">Shipping</span>
+                <span className="font-semibold text-gray-900">{formatGBP(totals.shipping)}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-800">Service fee</span>
-                <span className="text-gray-900 font-medium">{formatGBP(totals.serviceFee)}</span>
+                <span className="text-gray-600">Service fee</span>
+                <span className="font-semibold text-gray-900">{formatGBP(totals.serviceFee)}</span>
               </div>
-              <div className="border-t border-gray-200 pt-2 flex items-center justify-between">
+              <div className="flex items-center justify-between text-base border-t border-gray-200 pt-2">
                 <span className="font-semibold text-gray-900">Total</span>
                 <span className="font-extrabold text-gray-900">{formatGBP(totals.total)}</span>
               </div>
@@ -219,16 +291,12 @@ export default function CheckoutSuccessPage() {
           </div>
         )}
 
-        <div className="mt-6 flex items-center justify-center gap-3">
-          <Link href="/orders" className="px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-50 text-sm">
-            View orders
-          </Link>
-          <Link
-            href="/search"
-            className="px-4 py-2 rounded-md bg-yellow-500 text-black font-semibold hover:bg-yellow-600 text-sm"
-          >
-            Continue shopping
-          </Link>
+        {loading && !items.length && (
+          <div className="mt-6 text-sm text-gray-600">Finalising your order…</div>
+        )}
+
+        <div className="mt-8 text-sm text-gray-600">
+          Need help? <Link href="/contact" className="text-yellow-600 hover:underline">Contact support</Link>.
         </div>
       </div>
     </section>

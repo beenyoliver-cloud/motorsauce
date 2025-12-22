@@ -53,8 +53,11 @@ export async function GET(req: NextRequest) {
 
     // Date calculations
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-    const weekStart = new Date(now.setDate(now.getDate() - now.getDay())).toISOString();
+    const todayStartDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStart = todayStartDate.toISOString();
+    const weekStartDate = new Date(todayStartDate);
+    weekStartDate.setDate(todayStartDate.getDate() - todayStartDate.getDay());
+    const weekStart = weekStartDate.toISOString();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
     // Get all metrics in parallel using service role (bypass RLS)
