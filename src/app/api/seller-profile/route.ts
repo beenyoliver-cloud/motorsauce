@@ -27,12 +27,36 @@ export async function GET(req: NextRequest) {
 
     const supabase = createClient(supabaseUrl, usingService ? serviceKey : anonKey);
 
-    // Fetch profile with response metrics, account type, and location
-    const { data: profile, error } = await supabase
+    // Fetch profile with response metrics, account type, and location.
+    // NOTE: Some columns are optional and may not exist in older DB schemas.
+    // We first try the full select, then gracefully retry with a minimal select
+    // if we hit a "column does not exist" error.
+    const fullSelect =
+      "id, name, avatar, background_image, about, avg_response_time_minutes, response_rate, total_responses, total_inquiries_received, account_type, county, country, created_at, business_verified, verification_status";
+    const fallbackSelect =
+      "id, name, avatar, background_image, about, avg_response_time_minutes, response_rate, total_responses, total_inquiries_received, account_type, county, country, created_at";
+
+    let profile: any = null;
+    let error: any = null;
+
+    ({ data: profile, error } = await supabase
       .from("profiles")
-      .select("id, name, avatar, background_image, about, avg_response_time_minutes, response_rate, total_responses, total_inquiries_received, account_type, county, country, created_at, business_verified, verification_status")
+      .select(fullSelect)
       .eq("name", name)
-      .single();
+      .single());
+
+    if (error?.code === "42703") {
+      // Postgres undefined_column
+      console.warn("[seller-profile] Optional column missing; retrying with fallback select", {
+        name,
+        message: error?.message,
+      });
+      ({ data: profile, error } = await supabase
+        .from("profiles")
+        .select(fallbackSelect)
+        .eq("name", name)
+        .single());
+    }
 
     if (error || !profile) {
       console.error("[seller-profile] Profile fetch error", { name, error });
