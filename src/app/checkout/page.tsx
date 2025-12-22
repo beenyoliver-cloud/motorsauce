@@ -187,37 +187,18 @@ function CheckoutContent() {
   const hasItems = offerCheckout || cart.items.length > 0;
   const disabled = !hasItems || !isAddressValid(addr) || !agree;
   const [paying, setPaying] = useState(false);
-
-  async function placeOrder() {
-    saveAddress(addr);
-    const orderRef = "MS-" + Math.random().toString(36).slice(2, 8).toUpperCase();
-    const items = offerCheckout 
-      ? [{ id: offerCheckout.listingId, title: offerCheckout.title, image: offerCheckout.image, price: offerCheckout.offerPrice, qty: 1 }]
-      : cart.items;
-    const snapshot = {
-      orderRef,
-      placedAt: new Date().toISOString(),
-      items,
-      shipping: cart.shipping,
-      address: addr,
-      totals,
-      offerId: offerCheckout?.offerId || null,
-    };
-    const payload = encodeURIComponent(JSON.stringify(snapshot));
-    if (!offerCheckout) {
-      clearCart();
-    }
-    router.push(`/checkout/success?o=${payload}`);
-  }
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   async function payWithStripe() {
     if (disabled || paying) return;
     setPaying(true);
+    setCheckoutError(null);
     try {
       const supabase = supabaseBrowser();
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
-        throw new Error("Please sign in to continue.");
+        setCheckoutError("Please sign in to continue.");
+        return;
       }
 
       // Build payload - include offer_id if present
@@ -242,8 +223,28 @@ function CheckoutContent() {
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        // Fallback: use local success flow if payments not configured yet
-        await placeOrder();
+        // Don't silently redirect to success anymore — it's too confusing when the
+        // server is misconfigured (e.g. missing SUPABASE_SERVICE_ROLE_KEY / STRIPE_SECRET_KEY).
+        // Instead, show a clear message and keep the user on the checkout page.
+        const data = await res.json().catch(() => ({} as any));
+        const msg = typeof data?.error === "string" ? data.error : "";
+
+        if (res.status === 401) {
+          setCheckoutError("Please sign in again to continue checkout.");
+          return;
+        }
+
+        if (res.status === 503) {
+          setCheckoutError("Checkout is temporarily unavailable. Please try again in a few minutes.");
+          return;
+        }
+
+        if (res.status === 500 && (msg.toLowerCase().includes("configuration") || msg.toLowerCase().includes("server"))) {
+          setCheckoutError("Checkout is temporarily offline due to a server configuration issue. Please try again later.");
+          return;
+        }
+
+        setCheckoutError(msg || "We couldn't start secure checkout. Please try again.");
         return;
       }
       const json = await res.json();
@@ -251,9 +252,9 @@ function CheckoutContent() {
         window.location.href = json.url;
         return;
       }
-      await placeOrder();
+      setCheckoutError("We couldn't start secure checkout. Please try again.");
     } catch {
-      await placeOrder();
+      setCheckoutError("We couldn't start secure checkout. Please try again.");
     } finally {
       setPaying(false);
     }
@@ -342,6 +343,16 @@ function CheckoutContent() {
         {/* Form */}
         <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-4">
           <h2 className="text-sm font-semibold text-gray-900 mb-3">Delivery details</h2>
+
+          {checkoutError && (
+            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+              {checkoutError}{" "}
+              <span className="text-red-700">
+                If you believe you were charged, please contact support and include reference{" "}
+                <span className="font-mono">MS-ORDER</span>.
+              </span>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <TextField label="Full name" value={addr.fullName} onChange={(v) => setAddr({ ...addr, fullName: v })} />
