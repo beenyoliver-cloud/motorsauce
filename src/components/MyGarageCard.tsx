@@ -3,7 +3,37 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { isMe } from "@/lib/auth";
-    setEditYear(c.year);
+import {
+  Car as CarType,
+  loadMyCars, saveMyCars,
+  getSelectedCarId, setSelectedCarId,
+  isPublic, setPublic,
+  readPublicGarage,
+  vehicleLabel,
+  fallbackCarImage,
+  loadGarageFromDatabase,
+} from "@/lib/garage";
+import { VEHICLES, YEARS } from "@/data/vehicles";
+import {
+  Trash2, Plus, Eye, EyeOff, Star, Image as ImageIcon, PencilLine, Check, X, Link as LinkIcon, Copy
+} from "lucide-react";
+import DisplayWall from "@/components/DisplayWall";
+import GarageStats from "@/components/GarageStats";
+import EnhancedVehicleForm from "@/components/EnhancedVehicleForm";
+import GaragePartsIntegration from "@/components/GaragePartsIntegration";
+import GarageQRCode from "@/components/GarageQRCode";
+import { scheduleVehicleReminders } from "@/lib/reminderScheduler";
+
+/* ----------------------------- Small helpers ----------------------------- */
+function cx(...parts: Array<string | false | null | undefined>) {
+  return parts.filter(Boolean).join(" ");
+}
+
+async function readImageFile(file: File): Promise<string> {
+  if (!file.type.startsWith("image/")) throw new Error("Please choose an image file.");
+  if (file.size > 12 * 1024 * 1024) throw new Error("Image larger than 12MB. Please choose a smaller image (<12MB).");
+  const buf = await file.arrayBuffer();
+  const blob = new Blob([new Uint8Array(buf)], { type: file.type });
   return await new Promise<string>((resolve, reject) => {
     const fr = new FileReader();
     fr.onerror = () => reject(new Error("Could not read the file."));
@@ -17,18 +47,6 @@ function buildSearchUrl(c: Pick<CarType, "make" | "model" | "year">) {
   if (c.make) params.set("make", c.make);
   if (c.model) params.set("model", c.model);
   if (c.year) {
-
-  async function changeCarPhoto(id: string, file?: File) {
-    if (!file) return;
-    try {
-      const dataUrl = await readImageFile(file);
-      const next = cars.map((c) => (c.id === id ? { ...c, image: dataUrl } : c));
-      saveMyCars(next);
-      setCars(next);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Unable to use that image.");
-    }
-  }
     params.set("yearFrom", String(c.year));
     params.set("yearTo", String(c.year));
   }
