@@ -731,7 +731,7 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
         )}
 
         {others.length > 0 && !compact && (
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
             {others.map((c) => {
               const label = vehicleLabel(c);
               const isEditing = editingId === c.id;
@@ -743,144 +743,88 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
                 <li
                   key={c.id}
                   className={cx(
-                    "rounded-xl border border-gray-200 bg-white p-3 shadow-sm hover:shadow transition",
+                    "rounded-lg bg-white overflow-hidden hover:opacity-80 transition",
                     justChanged && "ms-card-ring"
                   )}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="h-16 w-24 rounded-md bg-white border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+                  <div className="group relative">
+                    {/* Square thumbnail */}
+                    <div className="relative w-full aspect-square bg-gray-100 overflow-hidden">
                       <CarThumb src={c.image} alt={label} />
+                      {mine && (
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <button
+                            onClick={() => makeDefault(c.id)}
+                            className="inline-flex items-center gap-1 rounded-md bg-white text-gray-900 text-xs font-semibold px-3 py-1.5 shadow-lg hover:bg-gray-100"
+                          >
+                            <Star className="h-3.5 w-3.5" /> Set default
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {!isEditing ? (
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <div className="font-semibold text-base text-black truncate">{label}</div>
-                        </div>
-                        <div className="text-sm text-gray-600">{c.make} {c.model}</div>
-
-                        <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                          <a
-                            href={searchUrl}
-                            className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-md border border-gray-300 bg-white text-gray-900 hover:bg-gray-50"
-                          >
-                            <LinkIcon className="h-3.5 w-3.5" /> Find parts
-                          </a>
-                          <button
-                            type="button"
-                            onClick={() => copyLabel(c.id, label)}
-                            className={cx(
-                              "inline-flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-md border bg-white",
-                              copiedId === c.id
-                                ? "border-green-300 text-green-700"
-                                : "border-gray-300 text-gray-900 hover:bg-gray-50"
-                            )}
-                          >
-                            <Copy className="h-3.5 w-3.5" />
-                            {copiedId === c.id ? "Copied!" : "Copy label"}
-                          </button>
-                        </div>
+                      <div className="p-2">
+                        <div className="text-xs font-semibold text-gray-900 truncate">{label}</div>
+                        <div className="text-[11px] text-gray-500 truncate">{c.year}</div>
                       </div>
                     ) : (
-                      <div className="flex-1 grid grid-cols-3 gap-2">
+                      <div className="p-2 space-y-2">
                         <input
                           value={editMake}
                           onChange={(e) => setEditMake(e.target.value)}
-                          className="border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                          className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-yellow-400"
                           placeholder="Make"
                         />
                         <input
                           value={editModel}
                           onChange={(e) => setEditModel(e.target.value)}
-                          className="border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                          className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-yellow-400"
                           placeholder="Model"
                         />
                         <input
                           value={editYear}
                           onChange={(e) => setEditYear(e.target.value)}
-                          className="border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                          className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-yellow-400"
                           placeholder="Year"
                         />
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => saveEdit(c.id)}
+                            className="flex-1 inline-flex items-center justify-center gap-1 text-[10px] px-2 py-1.5 rounded-md bg-green-500 text-white font-semibold hover:bg-green-600"
+                          >
+                            <Check className="h-3 w-3" /> Save
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="flex-1 inline-flex items-center justify-center gap-1 text-[10px] px-2 py-1.5 rounded-md border border-gray-300 bg-white text-gray-900 hover:bg-gray-50"
+                          >
+                            <X className="h-3 w-3" /> Cancel
+                          </button>
+                        </div>
+                        {mine && (
+                          <button
+                            onClick={() => {
+                              const ok = window.confirm("Delete this vehicle?");
+                              if (ok) removeCar(c.id);
+                            }}
+                            className="w-full inline-flex items-center justify-center gap-1 text-[10px] px-2 py-1.5 rounded-md text-red-700 border border-red-200 bg-white hover:bg-red-50"
+                          >
+                            <Trash2 className="h-3 w-3" /> Delete
+                          </button>
+                        )}
                       </div>
                     )}
 
-                    {mine && (
-                      <div className="flex items-center gap-2 ml-auto">
-                        {!isEditing ? (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => makeDefault(c.id)}
-                              className="p-1.5 rounded transition focus:outline-none focus:ring-2 focus:ring-yellow-400 text-gray-500 hover:text-gray-700"
-                              title="Set as default"
-                            >
-                              <Star className="h-5 w-5" />
-                            </button>
-
-                            <label
-                              htmlFor={inputId}
-                              className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 cursor-pointer focus-within:ring-2 focus-within:ring-yellow-400"
-                              title="Change photo"
-                            >
-                              <ImageIcon className="h-3.5 w-3.5" />
-                              Photo
-                            </label>
-                            <input
-                              id={inputId}
-                              type="file"
-                              accept="image/*"
-                              hidden
-                              onChange={async (e) => {
-                                const f = e.target.files?.[0];
-                                e.target.value = "";
-                                if (f) await changeCarPhoto(c.id, f);
-                              }}
-                            />
-
-                            <button
-                              type="button"
-                              onClick={() => startEdit(c)}
-                              className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md bg-yellow-500 text-black font-semibold hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                              title="Edit details"
-                            >
-                              <PencilLine className="h-3.5 w-3.5" />
-                              Edit
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const ok = window.confirm("Delete this vehicle?");
-                                if (ok) removeCar(c.id);
-                              }}
-                              className="p-1.5 rounded text-red-600 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-300"
-                              title="Delete"
-                            >
-                              <Trash2 className="h-5 w-5" />
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => saveEdit(c.id)}
-                              className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md bg-yellow-500 text-black font-semibold hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                              title="Save"
-                            >
-                              <Check className="h-3.5 w-3.5" />
-                              Save
-                            </button>
-                            <button
-                              type="button"
-                              onClick={cancelEdit}
-                              className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                              title="Cancel"
-                            >
-                              <X className="h-3.5 w-3.5" />
-                              Cancel
-                            </button>
-                          </>
-                        )}
+                    {mine && !isEditing && (
+                      <div className=\"absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1\">
+                        <button
+                          onClick={() => startEdit(c)}
+                          className=\"inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/90 text-gray-700 hover:bg-white shadow-sm\"
+                          title=\"Edit\"
+                        >
+                          <PencilLine className=\"h-3 w-3\" />
+                        </button>
                       </div>
                     )}
                   </div>

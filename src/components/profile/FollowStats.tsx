@@ -22,15 +22,15 @@ export default function FollowStats({ profileId }: FollowStatsProps) {
   }, [profileId]);
 
   return (
-    <div className="grid grid-cols-2 gap-3 rounded-2xl border border-gray-100 bg-white shadow-sm p-4 text-center">
-      <div>
-        <div className="text-xs uppercase text-gray-500">Followers</div>
-        <div className="text-2xl font-semibold text-gray-900">{followers}</div>
-      </div>
-      <div>
-        <div className="text-xs uppercase text-gray-500">Following</div>
-        <div className="text-2xl font-semibold text-gray-900">{following}</div>
-      </div>
-    </div>
+    <>
+      <button className="hover:underline cursor-pointer">
+        <span className="font-semibold text-gray-900">{followers}</span>
+        <span className="text-gray-600 ml-1">followers</span>
+      </button>
+      <button className="hover:underline cursor-pointer">
+        <span className="font-semibold text-gray-900">{following}</span>
+        <span className="text-gray-600 ml-1">following</span>
+      </button>
+    </>
   );
 }
