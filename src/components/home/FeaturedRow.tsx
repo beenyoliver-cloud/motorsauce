@@ -37,7 +37,7 @@ export default async function FeaturedRow({
   const activeCar = await readActiveCarPreference();
   const items = pickVariant(allListings, variant, limit, activeCar);
 
-  if (!items.length) return null;
+  if (!items.length || items.length <= 5) return null;
 
   return (
     <section className="mb-8">
@@ -45,14 +45,15 @@ export default async function FeaturedRow({
         <h2 className="text-xl font-bold text-black">{title}</h2>
         <Link href="/search" className="text-sm text-gray-600 hover:text-yellow-600 hover:underline transition-colors duration-300">View all</Link>
       </div>
-      <div className="overflow-x-auto">
-        <div className="flex gap-3">
-          {items.map((p) => (
+      {/* Mobile: horizontal scroll, Desktop: fixed grid of 5 */}
+      <div className="overflow-x-auto md:overflow-visible">
+        <div className="flex gap-3 md:grid md:grid-cols-5">
+          {items.slice(0, 5).map((p) => (
             <Link
               key={p.id}
               href={`/listing/${p.id}`}
               data-listing-card={String(p.id)}
-              className="group min-w-[80px] max-w-[100px] sm:min-w-[100px] sm:max-w-[120px] md:min-w-[110px] md:max-w-[140px] lg:min-w-[120px] lg:max-w-[150px] border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-md hover:border-yellow-400 transition-colors duration-200"
+              className="group min-w-[80px] max-w-[100px] sm:min-w-[100px] sm:max-w-[120px] md:min-w-0 md:max-w-none border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-md hover:border-yellow-400 transition-colors duration-200"
             >
               <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
                 <HotBadgeSmall viewCount={p.viewCount} threshold={10} />

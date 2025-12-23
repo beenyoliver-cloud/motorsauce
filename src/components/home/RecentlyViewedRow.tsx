@@ -50,7 +50,7 @@ export default function RecentlyViewedRow() {
     };
   }, []);
 
-  if (!items.length) return null;
+  if (!items.length || items.length <= 5) return null;
 
   // Helper to format price
   const formatPrice = (price: number | string) => {
@@ -86,9 +86,9 @@ export default function RecentlyViewedRow() {
       </div>
 
       <div className="relative">
-        <div className="overflow-x-auto pb-2">
-          <div className="flex gap-4 min-w-min">
-            {items.map((listing) => {
+        <div className="overflow-x-auto pb-2 md:overflow-visible">
+          <div className="flex gap-4 min-w-min md:grid md:grid-cols-5">
+            {items.slice(0, 5).map((listing) => {
               const price = typeof listing.price === "number" ? listing.price : parseFloat(listing.price_gbp || "0");
               const hasPriceDrop = listing.previous_price && listing.previous_price > price;
               const priceDrop = hasPriceDrop ? ((listing.previous_price! - price) / listing.previous_price!) * 100 : 0;
@@ -96,7 +96,7 @@ export default function RecentlyViewedRow() {
               return (
                 <div
                   key={listing.id}
-                  className="group relative min-w-[100px] max-w-[120px] md:min-w-[120px] md:max-w-[150px] lg:min-w-[130px] lg:max-w-[160px] flex-shrink-0"
+                  className="group relative min-w-[100px] max-w-[120px] md:min-w-0 md:max-w-none flex-shrink-0"
                 >
                   <Link
                     href={`/listing/${listing.id}`}

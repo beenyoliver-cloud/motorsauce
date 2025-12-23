@@ -116,7 +116,7 @@ export default function HomeHero() {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white text-slate-900 p-4 sm:p-5 shadow-sm max-w-4xl mx-auto mt-4">
+    <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white text-slate-900 p-4 sm:p-5 shadow-sm max-w-5xl mx-auto mt-4">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-16 -right-8 h-48 w-48 bg-gradient-to-br from-yellow-300/70 via-amber-200/40 to-transparent blur-3xl" />
         <div className="absolute -bottom-20 -left-12 h-56 w-56 rotate-6 bg-gradient-to-tr from-gray-900/10 via-yellow-500/30 to-transparent blur-2xl" />
@@ -133,7 +133,7 @@ export default function HomeHero() {
         </p>
 
         <form
-          className="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-3 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm"
+          className="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-3 rounded-2xl border border-gray-200 bg-white p-3 sm:p-4 shadow-sm"
           onSubmit={(e) => {
             e.preventDefault();
             submitPlateSearch();
@@ -142,7 +142,7 @@ export default function HomeHero() {
           <label className="text-[10px] font-semibold uppercase tracking-wide text-gray-600 sm:pr-2">Registration lookup</label>
           <div className="flex flex-col items-center justify-center w-full">
             <div
-              className={`relative flex w-full max-w-[320px] items-stretch rounded-lg border-2 border-[#1c1b18] bg-[#F9D548] shadow-[0_8px_14px_rgba(0,0,0,0.18)] transition-all duration-200 min-h-[46px] ${
+              className={`relative flex w-full max-w-[420px] sm:max-w-[480px] items-stretch rounded-lg border-2 border-[#1c1b18] bg-[#F9D548] shadow-[0_8px_14px_rgba(0,0,0,0.18)] transition-all duration-200 min-h-[46px] ${
                 plateFocused ? "ring-2 ring-yellow-200" : ""
               }`}
             >

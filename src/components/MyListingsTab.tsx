@@ -53,13 +53,13 @@ export default function MyListingsTab({ sellerName }: { sellerName?: string }) {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="rounded-xl border border-gray-200 bg-white p-4 space-y-4 animate-pulse">
-            <div className="h-40 rounded-lg bg-gray-100" />
-            <div className="space-y-2">
-              <div className="h-4 bg-gray-100 rounded" />
-              <div className="h-4 bg-gray-100 rounded w-2/3" />
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+        {Array.from({ length: 12 }).map((_, i) => (
+          <div key={i} className="rounded-lg border border-gray-200 bg-white overflow-hidden animate-pulse">
+            <div className="w-full aspect-[4/3] bg-gray-100" />
+            <div className="p-2 space-y-2">
+              <div className="h-3 bg-gray-100 rounded" />
+              <div className="h-3 bg-gray-100 rounded w-2/3" />
             </div>
           </div>
         ))}
@@ -90,7 +90,7 @@ export default function MyListingsTab({ sellerName }: { sellerName?: string }) {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
       {items.map((l) => {
         const u = getCurrentUserSync();
         const uid = u?.id;
@@ -101,22 +101,24 @@ export default function MyListingsTab({ sellerName }: { sellerName?: string }) {
             {isMine && (
               <a
                 href={`/listing/${l.id}/edit`}
-                className="absolute top-2 right-2 sm:top-2 sm:right-2 rounded-md bg-yellow-500 text-black px-3 py-1.5 text-xs font-semibold sm:opacity-0 sm:group-hover:opacity-100 sm:bg-black/70 sm:text-white transition z-50 hover:bg-yellow-600 sm:hover:bg-black shadow-sm"
+                className="absolute top-1.5 right-1.5 rounded-md bg-yellow-500 text-black px-2 py-1 text-[10px] font-semibold opacity-0 group-hover:opacity-100 bg-black/70 text-white transition z-50 hover:bg-black shadow-sm"
               >
                 Edit
               </a>
             )}
             
-            {/* Mobile: Row layout, Tablet+: Block layout */}
-            <Link href={`/listing/${l.id}`} className="flex sm:block items-center gap-3 sm:gap-0">
-              <div className="relative w-[120px] h-[120px] sm:w-auto sm:h-auto sm:aspect-[4/3] bg-gray-50 overflow-hidden shrink-0">
+            {/* Compact block layout */}
+            <Link href={`/listing/${l.id}`} className="block">
+              <div className="relative w-full aspect-[4/3] bg-gray-50 overflow-hidden">
                 <SafeImage src={l.image} alt={l.title} className="w-full h-full object-cover object-center" />
               </div>
-              <div className="flex-1 p-2 sm:p-3 flex flex-col justify-between min-w-0">
-                <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 pr-14 sm:pr-0">{l.title}</h3>
-                <div className="mt-1 flex items-center justify-between gap-2">
-                  <div className="text-base font-bold text-gray-900">{l.price}</div>
-                  <FavoriteButton listingId={String(l.id)} showLabel={false} />
+              <div className="p-2 flex flex-col gap-1.5">
+                <h3 className="text-xs font-semibold text-gray-900 line-clamp-2 leading-tight">{l.title}</h3>
+                <div className="flex items-center justify-between gap-1">
+                  <div className="text-sm font-bold text-gray-900">{l.price}</div>
+                  <div onClick={(e) => e.preventDefault()}>
+                    <FavoriteButton listingId={String(l.id)} showLabel={false} className="!px-1.5 !py-1" />
+                  </div>
                 </div>
               </div>
             </Link>
