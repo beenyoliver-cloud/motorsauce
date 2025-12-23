@@ -9,7 +9,6 @@ import TrustBand from "@/components/home/TrustBand";
 import SellCta from "@/components/home/SellCta";
 import LiveActivityFeed from "@/components/home/LiveActivityFeed";
 import JustSoldTicker from "@/components/home/JustSoldTicker";
-import WrenchingWall from "@/components/home/WrenchingWall";
 import SEOJsonLd from "@/components/SEOJsonLd";
 import ToastContainer from "@/components/Toast";
 
@@ -25,7 +24,7 @@ export default function Home() {
 
       <section>
         <div className="flex items-center justify-between mb-2 sm:mb-3">
-          <h2 className="text-lg sm:text-xl font-bold text-black">Suggested for you</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-black">Shop by intent</h2>
           <Link href="/search" className="text-xs sm:text-sm text-gray-600 hover:underline">View all</Link>
         </div>
         <SuggestedParts limit={8} />
@@ -57,8 +56,6 @@ export default function Home() {
       </section>
 
       <RecentlyViewedRow />
-
-      <WrenchingWall />
 
       <TrustBand />
       
