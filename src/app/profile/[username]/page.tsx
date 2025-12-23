@@ -13,6 +13,10 @@ import SellerRating from "@/components/profile/SellerRating";
 import { MapPin, Clock3 } from "lucide-react";
 import { formatJoined } from "@/lib/profileFormatting";
 
+// Force dynamic rendering to prevent stale profile data
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 /** Route types */
 type PageProps = {
   params: Promise<{ username: string }>;
