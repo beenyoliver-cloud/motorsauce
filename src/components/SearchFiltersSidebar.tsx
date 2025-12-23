@@ -56,10 +56,18 @@ export default function SearchFiltersSidebar(props: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
+  const [favouriteGarage, setFavouriteGarage] = useState<ReturnType<typeof readFavouriteGarage>>(null);
   
   const selectedMake = sp.get("make") || "";
   const selectedModel = sp.get("model") || "";
   
+  useEffect(() => {
+    setFavouriteGarage(readFavouriteGarage());
+    const onStorage = () => setFavouriteGarage(readFavouriteGarage());
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
   // Get available years based on selected model
   const availableYears = useMemo(() => {
     if (selectedMake && selectedModel) {
@@ -265,6 +273,24 @@ export default function SearchFiltersSidebar(props: Props) {
                 <option key={e} value={e} />
               ))}
             </datalist>
+
+            <label className="flex items-start gap-2 text-sm text-gray-900">
+              <input
+                type="checkbox"
+                checked={sp.get("garageOnly") === "1"}
+                onChange={(e) => setParam("garageOnly", e.target.checked ? "1" : "")}
+                className="h-4 w-4 rounded mt-0.5"
+                disabled={!favouriteGarage}
+              />
+              <span className="flex flex-col leading-tight">
+                <span>Only parts for my car</span>
+                <span className="text-[11px] text-gray-500">
+                  {favouriteGarage
+                    ? [favouriteGarage.make, favouriteGarage.model, favouriteGarage.generation].filter(Boolean).join(" ") || "Favourite car"
+                    : "Set a favourite car in your garage first"}
+                </span>
+              </span>
+            </label>
           </div>
         </div>
 

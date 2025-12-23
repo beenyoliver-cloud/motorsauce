@@ -3,37 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { isMe } from "@/lib/auth";
-import {
-  Car as CarType,
-  loadMyCars, saveMyCars,
-  getSelectedCarId, setSelectedCarId,
-  isPublic, setPublic,
-  readPublicGarage,
-  vehicleLabel,
-  fallbackCarImage,
-  loadGarageFromDatabase,
-} from "@/lib/garage";
-import { VEHICLES, YEARS } from "@/data/vehicles";
-import {
-  Trash2, Plus, Eye, EyeOff, Star, Image as ImageIcon, PencilLine, Check, X, Link as LinkIcon, Copy
-} from "lucide-react";
-import DisplayWall from "@/components/DisplayWall";
-import GarageStats from "@/components/GarageStats";
-import EnhancedVehicleForm from "@/components/EnhancedVehicleForm";
-import GaragePartsIntegration from "@/components/GaragePartsIntegration";
-import GarageQRCode from "@/components/GarageQRCode";
-import { scheduleVehicleReminders } from "@/lib/reminderScheduler";
-
-/* ----------------------------- Small helpers ----------------------------- */
-function cx(...parts: Array<string | false | null | undefined>) {
-  return parts.filter(Boolean).join(" ");
-}
-
-async function readImageFile(file: File): Promise<string> {
-  if (!file.type.startsWith("image/")) throw new Error("Please choose an image file.");
-  if (file.size > 12 * 1024 * 1024) throw new Error("Image larger than 12MB. Please choose a smaller image (<12MB).");
-  const buf = await file.arrayBuffer();
-  const blob = new Blob([new Uint8Array(buf)], { type: file.type });
+    setEditYear(c.year);
   return await new Promise<string>((resolve, reject) => {
     const fr = new FileReader();
     fr.onerror = () => reject(new Error("Could not read the file."));
@@ -47,6 +17,18 @@ function buildSearchUrl(c: Pick<CarType, "make" | "model" | "year">) {
   if (c.make) params.set("make", c.make);
   if (c.model) params.set("model", c.model);
   if (c.year) {
+
+  async function changeCarPhoto(id: string, file?: File) {
+    if (!file) return;
+    try {
+      const dataUrl = await readImageFile(file);
+      const next = cars.map((c) => (c.id === id ? { ...c, image: dataUrl } : c));
+      saveMyCars(next);
+      setCars(next);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Unable to use that image.");
+    }
+  }
     params.set("yearFrom", String(c.year));
     params.set("yearTo", String(c.year));
   }
@@ -219,9 +201,11 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
     setEditModel(c.model);
     setEditYear(c.year);
   }
+
   function cancelEdit() {
     setEditingId(null);
   }
+
   function saveEdit(id: string) {
     if (!editMake || !editModel || !editYear) return;
     const next = cars.map((c) =>
@@ -266,6 +250,50 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
     setPubState(!pub);
   }
 
+  // Shared save handler to avoid duplicate inserts and ensure first car selection
+  async function onSave(vehicle: CarType) {
+    const newCar: CarType = {
+      id: vehicle.id || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+      make: vehicle.make!,
+      model: vehicle.model!,
+      year: vehicle.year!,
+      trim: vehicle.trim,
+      color: vehicle.color,
+      registration: vehicle.registration,
+      hideRegistration: vehicle.hideRegistration || false,
+      mileage: vehicle.mileage,
+      motExpiry: vehicle.motExpiry,
+      motReminder: vehicle.motReminder || false,
+      insuranceExpiry: vehicle.insuranceExpiry,
+      insuranceReminder: vehicle.insuranceReminder || false,
+      notes: vehicle.notes,
+      image: vehicle.image,
+      photos: [],
+    };
+
+    setCars((prev) => {
+      if (prev.some((c) => c.id === newCar.id)) return prev;
+      const next = [...prev, newCar];
+      saveMyCars(next);
+      if (prev.length === 0) {
+        setSelectedCarId(newCar.id);
+        setSelectedId(newCar.id);
+      }
+      return next;
+    });
+
+    await scheduleVehicleReminders(displayName, newCar.id, {
+      mot: {
+        enabled: newCar.motReminder || false,
+        expiryDate: newCar.motExpiry,
+      },
+      insurance: {
+        enabled: newCar.insuranceReminder || false,
+        expiryDate: newCar.insuranceExpiry,
+      },
+    });
+  }
+
   /* ----------------------------- Add vehicle ----------------------------- */
   async function onAddImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -291,9 +319,13 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
       return;
     }
     const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
-    const next: CarType[] = [{ id, make: mk, model: md, year: yr, image: newImage }, ...cars];
-    saveMyCars(next);
-    setCars(next);
+    const newCar: CarType = { id, make: mk, model: md, year: yr, image: newImage };
+    setCars((prev) => {
+      if (prev.some((c) => c.id === id)) return prev;
+      const next = [newCar, ...prev];
+      saveMyCars(next);
+      return next;
+    });
 
     // reset
     setMake("");
@@ -633,40 +665,7 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
         <div className="px-6 py-5 border-t border-gray-200 bg-gray-50/60">
           <EnhancedVehicleForm
             onSubmit={async (vehicle) => {
-              const newCar: CarType = {
-                id: String(Date.now()),
-                make: vehicle.make!,
-                model: vehicle.model!,
-                year: vehicle.year!,
-                trim: vehicle.trim,
-                color: vehicle.color,
-                registration: vehicle.registration,
-                hideRegistration: vehicle.hideRegistration || false,
-                mileage: vehicle.mileage,
-                motExpiry: vehicle.motExpiry,
-                motReminder: vehicle.motReminder || false,
-                insuranceExpiry: vehicle.insuranceExpiry,
-                insuranceReminder: vehicle.insuranceReminder || false,
-                notes: vehicle.notes,
-                image: vehicle.image,
-                photos: [],
-              };
-              saveMyCars([...cars, newCar]);
-              setCars((prev) => [...prev, newCar]);
-              if (cars.length === 0) setSelectedCarId(newCar.id);
-              
-              // Schedule reminders if enabled
-              await scheduleVehicleReminders(displayName, newCar.id, {
-                mot: {
-                  enabled: newCar.motReminder || false,
-                  expiryDate: newCar.motExpiry,
-                },
-                insurance: {
-                  enabled: newCar.insuranceReminder || false,
-                  expiryDate: newCar.insuranceExpiry,
-                },
-              });
-              
+              await onSave(vehicle as CarType);
               setOpenAdd(false);
               setFormErr(null);
             }}
