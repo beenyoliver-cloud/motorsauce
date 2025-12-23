@@ -5,11 +5,11 @@ import MyListingsTab from "@/components/MyListingsTab";
 import MySoldTab from "@/components/MySoldTab";
 import SellerListingCount from "@/components/SellerListingCount";
 import EditableAvatar from "@/components/EditableAvatar";
-import EditProfileTopButton from "@/components/EditProfileTopButton";
 import MyGarageCard from "@/components/MyGarageCard";
 import BusinessStorefrontWrapper from "@/components/business/BusinessStorefrontWrapper";
 import FollowButton from "@/components/profile/FollowButton";
 import FollowStats from "@/components/profile/FollowStats";
+import SellerRating from "@/components/profile/SellerRating";
 import { MapPin, Clock3 } from "lucide-react";
 import { formatJoined } from "@/lib/profileFormatting";
 
@@ -89,30 +89,27 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
                 <h1 className="text-xl font-semibold text-gray-900">{displayName}</h1>
                 <div className="flex gap-2">
                   <FollowButton profileId={sellerMetrics.id} profileName={displayName} />
-                  <EditProfileTopButton displayName={displayName} baseHref={baseHref} />
                 </div>
               </div>
               
-              {/* Stats row */}
-              <div className="flex gap-6 mb-3 text-sm">
-                <div>
-                  <span className="font-semibold text-gray-900">
+              {/* Stats row - inline with listings in yellow */}
+              <div className="flex items-center gap-6 mb-3 text-sm">
+                <div className="flex items-center">
+                  <span className="font-semibold text-yellow-600">
                     <SellerListingCount sellerName={displayName} />
                   </span>
                   <span className="text-gray-600 ml-1">listings</span>
                 </div>
-                <div>
-                  <FollowStats profileId={sellerMetrics.id} />
-                </div>
+                <FollowStats profileId={sellerMetrics.id} />
               </div>
               
-              {/* Bio/About preview */}
-              {sellerMetrics.about && sellerMetrics.about.trim().length > 0 && (
-                <p className="text-sm text-gray-700 line-clamp-2 mb-2">{sellerMetrics.about.trim()}</p>
-              )}
+              {/* Seller Rating */}
+              <div className="mb-3">
+                <SellerRating profileId={sellerMetrics.id} displayName={displayName} />
+              </div>
               
               {/* Location & joined */}
-              <div className="flex flex-wrap gap-3 text-xs text-gray-500">
+              <div className="flex flex-wrap gap-3 text-xs text-gray-500 mb-2">
                 {(sellerMetrics.county || sellerMetrics.country) && (
                   <span className="inline-flex items-center gap-1">
                     <MapPin className="h-3.5 w-3.5" />
@@ -125,8 +122,11 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
                   <Clock3 className="h-3.5 w-3.5" />
                   {formatJoined(sellerMetrics.created_at)}
                 </span>
-              </div>
-            </div>
+              </div>              
+              {/* Bio - only show if exists */}
+              {sellerMetrics.about && sellerMetrics.about.trim().length > 0 && (
+                <p className="text-sm text-gray-700 mb-2">{sellerMetrics.about.trim()}</p>
+              )}            </div>
           </div>
           
           {/* Actions row */}

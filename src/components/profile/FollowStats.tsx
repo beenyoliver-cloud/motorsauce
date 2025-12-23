@@ -22,7 +22,7 @@ export default function FollowStats({ profileId }: FollowStatsProps) {
   }, [profileId]);
 
   return (
-    <>
+    <div className="flex items-center gap-4">
       <button className="hover:underline cursor-pointer">
         <span className="font-semibold text-gray-900">{followers}</span>
         <span className="text-gray-600 ml-1">followers</span>
@@ -31,6 +31,6 @@ export default function FollowStats({ profileId }: FollowStatsProps) {
         <span className="font-semibold text-gray-900">{following}</span>
         <span className="text-gray-600 ml-1">following</span>
       </button>
-    </>
+    </div>
   );
 }

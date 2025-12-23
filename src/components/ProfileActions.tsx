@@ -2,6 +2,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { MessageSquare, Share2 } from "lucide-react";
 import { getCurrentUserSync } from "@/lib/auth";
 import { createThread } from "@/lib/messagesClient";
@@ -111,16 +112,25 @@ export default function ProfileActions({
 
   return (
     <div className="flex flex-col gap-2 w-full md:min-w-[120px]">
-      <button
-        type="button"
-        onClick={handleMessage}
-        disabled={isSelf || isLoading}
-        className="w-full inline-flex items-center justify-center rounded-md px-3 py-2 bg-gray-900 text-white font-medium hover:bg-gray-800 text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
-        title={isSelf ? "You can't message yourself" : `Message ${toUsername}`}
-      >
-        <MessageSquare className="h-4 w-4 mr-2" />
-        {isLoading ? "Loading..." : "Message"}
-      </button>
+      {isSelf ? (
+        <Link
+          href="/settings"
+          className="w-full inline-flex items-center justify-center rounded-md px-3 py-2 bg-gray-900 text-white font-medium hover:bg-gray-800 text-sm transition"
+        >
+          Edit account
+        </Link>
+      ) : (
+        <button
+          type="button"
+          onClick={handleMessage}
+          disabled={isLoading}
+          className="w-full inline-flex items-center justify-center rounded-md px-3 py-2 bg-gray-900 text-white font-medium hover:bg-gray-800 text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+          title={`Message ${toUsername}`}
+        >
+          <MessageSquare className="h-4 w-4 mr-2" />
+          {isLoading ? "Loading..." : "Message"}
+        </button>
+      )}
 
       <button
         type="button"
