@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
 import ProfileActions from "@/components/ProfileActions";
 import MyListingsTab from "@/components/MyListingsTab";
 import MySoldTab from "@/components/MySoldTab";
@@ -72,52 +71,6 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
   if (isBusinessAccount && sellerMetrics.id) {
     return <BusinessStorefrontWrapper profileId={sellerMetrics.id} displayName={displayName} />;
   }
-
-  const infoTags: Array<{ icon: ReactNode; label: string }> = [];
-  if (sellerMetrics.county || sellerMetrics.country) {
-    infoTags.push({
-      icon: <MapPin className="h-4 w-4 text-gray-500" />,
-      label:
-        sellerMetrics.county && sellerMetrics.country
-          ? `${sellerMetrics.county}, ${sellerMetrics.country}`
-          : sellerMetrics.county || sellerMetrics.country || "",
-    });
-  }
-
-  return (
-    <div className="bg-gray-50 min-h-screen">
-      <section className="max-w-4xl mx-auto px-4 py-6 space-y-4">
-      helper: sellerMetrics.avg_response_time_minutes ? "avg reply" : "new to messaging",
-      icon: <Clock3 className="h-4 w-4 text-gray-500" />,
-    },
-    {
-      label: "Response rate",
-      value: sellerMetrics.response_rate ? `${sellerMetrics.response_rate}%` : "Building trust",
-      helper: "last 30 days",
-      icon: <MessageCircle className="h-4 w-4 text-gray-500" />,
-    },
-    {
-      label: "Enquiries answered",
-      value: sellerMetrics.total_responses ?? 0,
-      helper: "lifetime",
-      icon: <Star className="h-4 w-4 text-gray-500" />,
-    },
-  ];
-
-  const aboutPreview =
-    sellerMetrics.about && sellerMetrics.about.trim().length > 0
-      ? sellerMetrics.about.trim().slice(0, 180) + (sellerMetrics.about.length > 180 ? "…" : "")
-      : `${displayName} hasn’t shared an about section yet. Check their listings or drop them a message to learn more.`;
-
-  const trustSignals = [
-    sellerMetrics.business_verified
-      ? { label: "Verified seller", detail: "ID confirmed", icon: <Star className="h-4 w-4 text-amber-500" /> }
-      : sellerMetrics.verification_status === "pending"
-      ? { label: "Verification pending", detail: "Documents submitted", icon: <Clock3 className="h-4 w-4 text-amber-500" /> }
-      : { label: "Community seller", detail: "Trusted by buyers", icon: <Star className="h-4 w-4 text-gray-500" /> },
-    { label: "Fast replies", detail: formatResponseTime(sellerMetrics.avg_response_time_minutes), icon: <Clock3 className="h-4 w-4 text-sky-500" /> },
-    { label: "Local hero", detail: sellerMetrics.county || "Across the UK", icon: <MapPin className="h-4 w-4 text-rose-500" /> },
-  ];
 
   return (
     <div className="bg-gray-50 min-h-screen">
