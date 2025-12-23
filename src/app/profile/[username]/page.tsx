@@ -83,15 +83,10 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
           : sellerMetrics.county || sellerMetrics.country || "",
     });
   }
-  infoTags.push({
-    icon: <Store className="h-4 w-4 text-gray-500" />,
-    label: formatJoined(sellerMetrics.created_at),
-  });
 
-  const stats = [
-    {
-      label: "Response time",
-      value: formatResponseTime(sellerMetrics.avg_response_time_minutes),
+  return (
+    <div className="bg-gray-50 min-h-screen">
+      <section className="max-w-4xl mx-auto px-4 py-6 space-y-4">
       helper: sellerMetrics.avg_response_time_minutes ? "avg reply" : "new to messaging",
       icon: <Clock3 className="h-4 w-4 text-gray-500" />,
     },
