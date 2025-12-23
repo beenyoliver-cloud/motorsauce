@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getCurrentUser, type LocalUser, nsKey } from "@/lib/auth";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
@@ -8,7 +8,7 @@ import { User, Mail, Lock, Save, Upload, MapPin, CreditCard, Bell } from "lucide
 
 type Tab = "general" | "security" | "location" | "notifications" | "billing";
 
-export default function SettingsPage() {
+function SettingsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClientComponentClient();
@@ -636,5 +636,22 @@ export default function SettingsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-96 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    }>
+      <SettingsContent />
+    </Suspense>
   );
 }
