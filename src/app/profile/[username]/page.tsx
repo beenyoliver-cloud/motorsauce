@@ -45,6 +45,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
     country?: string | null;
     total_responses?: number | null;
     created_at?: string | null;
+    account_type?: string;
   } = {};
   try {
     const baseUrl =
