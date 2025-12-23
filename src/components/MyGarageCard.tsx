@@ -96,22 +96,16 @@ function Toggle({
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={cx(
-        "inline-flex items-center rounded-full px-2 h-9 border transition focus:outline-none focus:ring-2 focus:ring-yellow-400 relative",
-        checked ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"
+        "inline-flex items-center gap-1.5 rounded-lg px-2 h-8 border transition focus:outline-none focus:ring-2 focus:ring-yellow-400",
+        checked
+          ? "bg-green-50 border-green-200 text-green-700"
+          : "bg-gray-50 border-gray-200 text-gray-600"
       )}
       title={checked ? onLabel : offLabel}
     >
-      <span className={cx("text-sm font-semibold text-gray-900 select-none transition-all", checked ? "ml-2 mr-8" : "ml-8 mr-2")}>
-        {checked ? onLabel : offLabel}
-      </span>
-      <span
-        className={cx(
-          "absolute inline-flex items-center justify-center h-6 w-6 rounded-full shadow-sm transition",
-          checked ? "right-1 bg-green-600 text-white" : "left-1 bg-gray-400 text-white"
-        )}
-      >
-        {checked ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-      </span>
+      <EyeOff className={cx("h-4 w-4 transition-opacity", checked ? "opacity-0" : "opacity-100")} />
+      <span className="text-sm font-semibold select-none">{checked ? onLabel : offLabel}</span>
+      <Eye className={cx("h-4 w-4 transition-opacity", checked ? "opacity-100" : "opacity-0")} />
     </button>
   );
 }
@@ -357,44 +351,39 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
       {/* Header */}
-      <div className="px-4 sm:px-6 pt-5">
+      <div className="px-4 sm:px-6 pt-4 pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           {/* Title + default badge */}
-          <div className="flex items-center gap-3 flex-wrap">
-          <h2 className="text-2xl font-extrabold text-black tracking-tight">
+          <div className="flex items-center gap-2 flex-wrap">
+          <h2 className="text-xl font-bold text-black tracking-tight">
             {mine ? "My Garage" : `${displayName}'s Garage`}
           </h2>
           {defaultCar && (
-            <span className="inline-flex items-center text-[11px] font-bold px-2 py-1 rounded-full bg-yellow-500 text-black">
-              Default: {vehicleLabel(defaultCar)}
+            <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-yellow-500 text-black">
+              {vehicleLabel(defaultCar)}
             </span>
-          )}
-          {mine && (
-            <button
-              type="button"
-              onClick={() => setCompact(v => !v)}
-              className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white text-gray-900 text-xs px-2 py-1 hover:bg-gray-50"
-            >
-              {compact ? 'Expanded view' : 'Compact view'}
-            </button>
           )}
           </div>
 
           {/* Actions - stack on mobile */}
-          <div className="grid grid-cols-1 sm:auto-cols-max sm:grid-flow-col gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {mine && (
               <>
                 <button
                   type="button"
                   onClick={() => setOpenAdd((v) => !v)}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-yellow-500 text-black font-semibold px-4 py-2 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-yellow-500 text-black font-semibold text-sm px-3 py-1.5 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400"
                 >
-                  <Plus className="h-4 w-4" /> Add vehicle
+                  <Plus className="h-3.5 w-3.5" /> Add
                 </button>
-                <div className="inline-flex items-center justify-between sm:justify-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2">
-                  <span className="text-xs text-gray-700">Public</span>
-                  <Toggle checked={pub} onChange={togglePublic} />
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setCompact((v) => !v)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-sm px-3 py-1.5 hover:bg-gray-50 transition"
+                >
+                  {compact ? "Grid" : "List"}
+                </button>
+                <Toggle checked={pub} onChange={togglePublic} />
                 {pub && (
                   <div className="inline-flex items-center gap-2">
                     <GarageQRCode username={displayName} vehicleCount={cars.length} />
@@ -439,10 +428,10 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
             {mine && (
               <div className="absolute top-3 right-3 flex gap-2">
                 <label
-                  className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white text-gray-900 text-sm px-3 py-1.5 shadow hover:bg-gray-100 cursor-pointer focus-within:ring-2 focus-within:ring-yellow-400"
-                  title="Change photo"
+                  className="inline-flex items-center gap-1 rounded-lg border border-gray-300 bg-white text-gray-900 text-sm px-3 py-1.5 shadow hover:bg-gray-100 cursor-pointer focus-within:ring-2 focus-within:ring-yellow-400 transition"
+                  title="Photo"
                 >
-                  <ImageIcon className="h-4 w-4" />
+                  <ImageIcon className="h-3.5 w-3.5" />
                   Photo
                   <input
                     type="file"
@@ -454,10 +443,10 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
                 <button
                   type="button"
                   onClick={() => startEdit(defaultCar)}
-                  className="inline-flex items-center gap-1 rounded-md bg-yellow-500 text-black font-semibold px-3 py-1.5 text-sm shadow hover:bg-yellow-600"
-                  title="Edit details"
+                  className="inline-flex items-center gap-1 rounded-lg bg-yellow-500 text-black font-semibold px-3 py-1.5 text-sm shadow hover:bg-yellow-600 transition"
+                  title="Edit"
                 >
-                  <PencilLine className="h-4 w-4" />
+                  <PencilLine className="h-3.5 w-3.5" />
                   Edit
                 </button>
               </div>
@@ -468,7 +457,7 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-white font-extrabold text-xl sm:text-2xl truncate drop-shadow">
+                    <h3 className="text-white font-semibold text-lg sm:text-xl truncate drop-shadow">
                       {vehicleLabel(defaultCar)}
                     </h3>
                     <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-yellow-500 text-black text-[11px] font-bold px-2 py-[2px] drop-shadow">
@@ -480,27 +469,27 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <a
                     href={buildSearchUrl(defaultCar)}
-                    className="inline-flex items-center gap-1 rounded-md bg-white text-gray-900 text-sm px-3 py-1.5 shadow hover:bg-gray-50"
+                    className="inline-flex items-center gap-1 rounded-lg bg-white text-gray-900 text-sm px-3 py-1.5 shadow hover:bg-gray-50 transition"
                     title="Find parts for this vehicle"
                   >
-                    <LinkIcon className="h-4 w-4" /> Find parts
+                    <LinkIcon className="h-3.5 w-3.5" /> Parts
                   </a>
                   <button
                     type="button"
                     onClick={() => copyLabel(defaultCar.id, vehicleLabel(defaultCar))}
                     className={cx(
-                      "inline-flex items-center gap-1 rounded-md text-sm px-3 py-1.5 border shadow",
+                      "inline-flex items-center gap-1 rounded-lg text-sm px-3 py-1.5 border shadow transition",
                       copiedId === defaultCar.id
                         ? "bg-white border-green-300 text-green-700"
                         : "bg-white border-gray-200 text-gray-900 hover:bg-gray-50"
                     )}
                     title="Copy vehicle label"
                   >
-                    <Copy className="h-4 w-4" />
-                    {copiedId === defaultCar.id ? "Copied!" : "Copy label"}
+                    <Copy className="h-3.5 w-3.5" />
+                    {copiedId === defaultCar.id ? "✓" : "Copy"}
                   </button>
                 </div>
               </div>
@@ -530,24 +519,24 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
                   placeholder="Year"
                 />
               </div>
-              <div className="mt-3 flex items-center gap-2">
+              <div className="mt-3 flex items-center gap-2 flex-wrap">
                 <button
                   onClick={() => saveEdit(defaultCar.id)}
-                  className="inline-flex items-center gap-2 rounded-md bg-yellow-500 text-black font-semibold px-4 py-2 hover:bg-yellow-600"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-yellow-500 text-black font-semibold px-3 py-1.5 text-sm hover:bg-yellow-600 transition"
                 >
-                  <Check className="h-4 w-4" /> Save
+                  <Check className="h-3.5 w-3.5" /> Save
                 </button>
                 <button
                   onClick={cancelEdit}
-                  className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white text-gray-900 px-4 py-2 hover:bg-gray-50"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white text-gray-900 px-3 py-1.5 text-sm hover:bg-gray-50 transition"
                 >
-                  <X className="h-4 w-4" /> Cancel
+                  <X className="h-3.5 w-3.5" /> Cancel
                 </button>
                 {mine && (
                   <>
-                    <label className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white text-gray-900 px-4 py-2 hover:bg-gray-50 cursor-pointer">
-                      <ImageIcon className="h-4 w-4" />
-                      Change photo
+                    <label className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white text-gray-900 px-3 py-1.5 text-sm hover:bg-gray-50 cursor-pointer transition">
+                      <ImageIcon className="h-3.5 w-3.5" />
+                      Photo
                       <input
                         type="file"
                         accept="image/*"
@@ -558,9 +547,9 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
                     {defaultCar.image && (
                       <button
                         onClick={() => removeCarPhoto(defaultCar.id)}
-                        className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white text-gray-900 px-4 py-2 hover:bg-gray-50"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white text-gray-900 px-3 py-1.5 text-sm hover:bg-gray-50 transition"
                       >
-                        Remove photo
+                        <X className="h-3.5 w-3.5" /> Remove
                       </button>
                     )}
                     <button
@@ -568,9 +557,9 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
                         const ok = window.confirm("Delete this vehicle?");
                         if (ok) removeCar(defaultCar.id);
                       }}
-                      className="inline-flex items-center gap-2 rounded-md text-red-700 border border-red-200 bg-white px-4 py-2 hover:bg-red-50"
+                      className="inline-flex items-center gap-1.5 rounded-lg text-red-700 border border-red-200 bg-white px-3 py-1.5 text-sm hover:bg-red-50 transition"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3.5 w-3.5" />
                       Delete
                     </button>
                   </>
@@ -723,9 +712,9 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
             <button
               type="button"
               onClick={() => setOpenAdd(true)}
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-yellow-500 text-black font-semibold px-4 py-2 hover:bg-yellow-600"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-yellow-500 text-black font-semibold text-sm px-3 py-1.5 hover:bg-yellow-600"
             >
-              <Plus className="h-4 w-4" /> Add vehicle
+              <Plus className="h-3.5 w-3.5" /> Add vehicle
             </button>
           </div>
         )}
@@ -752,12 +741,12 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
                     <div className="relative w-full aspect-square bg-gray-100 overflow-hidden">
                       <CarThumb src={c.image} alt={label} />
                       {mine && (
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
                           <button
                             onClick={() => makeDefault(c.id)}
-                            className="inline-flex items-center gap-1 rounded-md bg-white text-gray-900 text-xs font-semibold px-3 py-1.5 shadow-lg hover:bg-gray-100"
+                            className="inline-flex items-center gap-1 rounded-md bg-white text-gray-900 text-xs font-semibold px-2.5 py-1.5 shadow-lg hover:bg-yellow-500 transition"
                           >
-                            <Star className="h-3.5 w-3.5" /> Set default
+                            <Star className="h-3 w-3" /> Default
                           </button>
                         </div>
                       )}

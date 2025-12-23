@@ -1,0 +1,43 @@
+This file contains UI improvements for the My Garage tab:
+
+1. Header Changes:
+   - Reduced heading from text-2xl to text-xl
+   - Reduced padding from pt-5 to pt-4 pb-3
+   - Smaller default badge (text-[10px] instead of [11px], removed "Default:" label)
+   - Moved compact/list toggle next to Add button
+   - Removed "Public" label wrapper, made toggle standalone
+   - Changed button text from "Add vehicle" to "Add"
+   - Changed toggle text from "Expanded view"/"Compact view" to "Grid"/"List"
+
+2. Toggle Component:
+   - Changed from rounded-full to rounded-lg
+   - Reduced height from h-9 to h-8
+   - Simplified design: shows icons inline with text instead of sliding circle
+   - Added color coding (green for public, gray for private)
+
+3. Default Car Section Buttons:
+   - All buttons reduced from px-4 py-2 to px-3 py-1.5
+   - Icon sizes reduced from h-4 w-4 to h-3.5 w-3.5
+   - "Edit details" changed to "Edit"
+   - "Find parts" changed to "Parts"
+   - "Copy label" changed to "Copy", shows "✓" when copied
+   - Changed from rounded-md to rounded-lg
+   - Added transition classes
+
+4. Edit Mode Buttons:
+   - All buttons reduced from px-4 py-2 to px-3 py-1.5
+   - Made flex-wrap to handle mobile better
+   - "Change photo" changed to "Photo"
+   - "Remove photo" changed to "Remove"
+   - Consistent rounded-lg borders
+
+5. Grid Hover Overlay:
+   - Increased hover darkness from bg-black/40 to bg-black/50
+   - "Set default" changed to "Default"
+   - Made button hover change to yellow-500
+   - Reduced padding
+
+6. Empty State:
+   - Updated "Add vehicle" button to match new sizing
+
+All changes maintain functionality while creating a cleaner, more compact UI.
