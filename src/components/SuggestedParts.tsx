@@ -165,13 +165,13 @@ export default function SuggestedParts({ limit = 12 }: Props) {
             </div>
 
             {/* Horizontal scroll row: show ~2.5 cards across on mobile and allow swipe/trackpad scroll */}
-            <div className="overflow-x-auto scrollbar-hide -mr-3 pr-3">
+            <div className="overflow-x-auto scrollbar-hide">
               <div className="flex gap-3">
                 {list.map((p) => (
                   <article
                     key={`${filter.id}-${p.id}`}
                     data-listing-card={String(p.id)}
-                    className="rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all flex flex-col shrink-0 w-[72%] sm:w-[280px] lg:w-[300px]"
+                    className="rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all flex flex-col shrink-0 w-[36%] sm:w-[140px] md:w-[160px] lg:w-[180px]"
                   >
                     <Link href={`/listing/${p.id}`} className="block relative aspect-[4/3] overflow-hidden rounded-t-2xl">
                       <SafeImage src={p.image} alt={p.title} className="absolute inset-0 w-full h-full object-cover" />

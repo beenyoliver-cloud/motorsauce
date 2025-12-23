@@ -45,14 +45,14 @@ export default async function FeaturedRow({
         <h2 className="text-xl font-bold text-black">{title}</h2>
         <Link href="/search" className="text-sm text-gray-600 hover:text-yellow-600 hover:underline transition-colors duration-300">View all</Link>
       </div>
-      <div className="-mx-1 overflow-x-auto">
-        <div className="px-1 flex gap-3">
+      <div className="overflow-x-auto">
+        <div className="flex gap-3">
           {items.map((p) => (
             <Link
               key={p.id}
               href={`/listing/${p.id}`}
               data-listing-card={String(p.id)}
-              className="group min-w-[160px] max-w-[200px] sm:min-w-[200px] sm:max-w-[240px] border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-md hover:border-yellow-400 transition-colors duration-200"
+              className="group min-w-[80px] max-w-[100px] sm:min-w-[100px] sm:max-w-[120px] md:min-w-[110px] md:max-w-[140px] lg:min-w-[120px] lg:max-w-[150px] border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-md hover:border-yellow-400 transition-colors duration-200"
             >
               <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
                 <HotBadgeSmall viewCount={p.viewCount} threshold={10} />
@@ -73,7 +73,9 @@ export default async function FeaturedRow({
 
 const getListingPool = cache(async (): Promise<Listing[]> => {
   try {
-    const res = await fetch("/api/listings?limit=200", { cache: "no-store" });
+    const res = await fetch("/api/listings?limit=200", { 
+      next: { revalidate: 300 } // 5 minutes
+    });
     if (!res.ok) return [];
     const data = await res.json();
     if (!Array.isArray(data)) return [];

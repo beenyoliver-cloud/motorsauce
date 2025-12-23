@@ -17,7 +17,9 @@ export default function JustSoldTicker() {
   useEffect(() => {
     async function fetchSales() {
       try {
-        const res = await fetch("/api/activity", { cache: "no-store" });
+        const res = await fetch("/api/activity", { 
+          next: { revalidate: 60 } // 1 minute
+        });
         if (res.ok) {
           const data = await res.json();
           // Filter only sales

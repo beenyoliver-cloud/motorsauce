@@ -11,29 +11,21 @@ import LiveActivityFeed from "@/components/home/LiveActivityFeed";
 import JustSoldTicker from "@/components/home/JustSoldTicker";
 import TrustSignals from "@/components/home/TrustSignals";
 import WrenchingWall from "@/components/home/WrenchingWall";
-
 import SEOJsonLd from "@/components/SEOJsonLd";
+import ToastContainer from "@/components/Toast";
 
 export default function Home() {
   return (
     <main className="mx-auto max-w-6xl px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 md:space-y-8">
-      {/* SEO structured data */}
-      {/* @ts-ignore */}
       <SEOJsonLd />
-      {/* Hero + inline search */}
       <div className="space-y-3 sm:space-y-4">
-        {/* @ts-ignore Server -> Client import allowed */}
         <HomeHero />
       </div>
 
-      {/* Trust signals strip */}
       <TrustSignals />
 
-      {/* Just Sold ticker - social proof banner */}
-      {/* @ts-ignore Server -> Client import allowed */}
       <JustSoldTicker />
 
-      {/* Suggested parts (personalized via API) */}
       <section>
         <div className="flex items-center justify-between mb-2 sm:mb-3">
           <h2 className="text-lg sm:text-xl font-bold text-black">Suggested for you</h2>
@@ -42,46 +34,38 @@ export default function Home() {
         <SuggestedParts limit={8} />
       </section>
 
-      {/* Live activity feed + Category tiles side by side on desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-[3fr_1.2fr] gap-4 lg:h-[var(--home-tiles-block-height)]">
         <div className="lg:h-full">
-          {/* @ts-ignore Server -> Client import allowed */}
           <CategoryTiles />
         </div>
         <div className="self-stretch lg:h-full">
-          {/* @ts-ignore Server -> Client import allowed */}
           <LiveActivityFeed />
         </div>
       </div>
 
-      {/* Featured rows */}
       <FeaturedRow title="New this week" variant="new" />
       <FeaturedRow title="Under £250" variant="under250" />
       <FeaturedRow title="Under £20" variant="under20" />
 
-      {/* Sell CTA */}
       <SellCta />
 
-      {/* Popular sellers */}
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-black">Popular sellers</h2>
           <span className="text-sm text-gray-500">Based on recent clicks</span>
         </div>
         <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-          {/* @ts-ignore Server -> Client import allowed */}
           <PopularSellers />
         </div>
       </section>
 
-      {/* Recently viewed */}
-      {/* @ts-ignore Server -> Client import allowed */}
       <RecentlyViewedRow />
 
       <WrenchingWall />
 
-      {/* Trust band */}
       <TrustBand />
+      
+      <ToastContainer />
     </main>
   );
 }

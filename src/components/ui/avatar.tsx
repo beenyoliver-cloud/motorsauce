@@ -8,7 +8,7 @@ export function Avatar({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function AvatarImage({ src, alt }: { src: string; alt?: string }) {
+export function AvatarImage({ src, alt }: { src: string; alt: string }) {
   return <img src={src} alt={alt} className="site-image" />;
 }
 

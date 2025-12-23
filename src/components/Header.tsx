@@ -87,7 +87,6 @@ export default function Header() {
   useEffect(() => {
     const refreshUser = async () => {
       const currentUser = await getCurrentUser();
-      console.log('[Header] User loaded:', currentUser?.email);
       setUser(currentUser);
       setIsUserLoaded(true);
       if (currentUser) {

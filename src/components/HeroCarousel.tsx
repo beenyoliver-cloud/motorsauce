@@ -47,7 +47,9 @@ export default function HeroCarousel() {
     const cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/hero.config.json", { cache: "no-store" });
+        const res = await fetch("/hero.config.json", { 
+          next: { revalidate: 600 } // 10 minutes
+        });
         if (!res.ok) throw new Error("no config");
         const data = await res.json();
         const cfg = Array.isArray(data?.slides) ? (data.slides as Slide[]) : [];

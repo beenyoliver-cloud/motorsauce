@@ -26,6 +26,39 @@ type OfferWithThread = {
   listing_image: string | null;
 };
 
+type RawOffer = {
+  id: string;
+  amount: number;
+  status: string;
+  message: string | null;
+  counter_amount: number | null;
+  counter_message: string | null;
+  created_at: string;
+  expires_at: string | null;
+  listing_id: string;
+  starter: string;
+};
+
+type ListingData = {
+  id: string;
+  title: string;
+  price: number;
+  images: string[] | null;
+};
+
+type ProfileData = {
+  id: string;
+  name: string;
+  avatar: string | null;
+};
+
+type ThreadData = {
+  id: string;
+  participant_1_id: string;
+  participant_2_id: string;
+  listing_ref: string;
+};
+
 export default function OffersInbox() {
   const [offers, setOffers] = useState<OfferWithThread[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,24 +115,24 @@ export default function OffersInbox() {
         }
 
         // Get listing details for these offers
-        const offerListingIds = [...new Set(offersData.map((o: any) => o.listing_id))];
+        const offerListingIds = [...new Set(offersData.map((o: RawOffer) => o.listing_id))];
         const { data: listingsData } = await supabase
           .from("listings")
           .select("id, title, price, images")
           .in("id", offerListingIds);
 
-        const listingsMap = new Map(
+        const listingsMap = new Map<string, ListingData>(
           (listingsData || []).map(l => [l.id, l])
         );
 
         // Get buyer profiles
-        const buyerIds = [...new Set(offersData.map((o: any) => o.starter))];
+        const buyerIds = [...new Set(offersData.map((o: RawOffer) => o.starter))];
         const { data: profilesData } = await supabase
           .from("profiles")
           .select("id, name, avatar")
           .in("id", buyerIds);
 
-        const profilesMap = new Map(
+        const profilesMap = new Map<string, ProfileData>(
           (profilesData || []).map(p => [p.id, p])
         );
 
@@ -108,17 +141,17 @@ export default function OffersInbox() {
           .from("threads")
           .select("id, participant_1_id, participant_2_id, listing_ref")
           .or(`participant_1_id.eq.${user.id},participant_2_id.eq.${user.id}`)
-          .in("listing_ref", offersData.map((o: any) => o.listing_id));
+          .in("listing_ref", offersData.map((o: RawOffer) => o.listing_id));
 
-        const threadsMap = new Map(
-          (threadsData || []).map(t => {
+        const threadsMap = new Map<string, string>(
+          (threadsData || []).map((t: ThreadData) => {
             const otherId = t.participant_1_id === user.id ? t.participant_2_id : t.participant_1_id;
             return [`${otherId}-${t.listing_ref}`, t.id];
           })
         );
 
         // Combine data
-        const enrichedOffers: OfferWithThread[] = offersData.map((offer: any) => {
+        const enrichedOffers: OfferWithThread[] = offersData.map((offer: RawOffer) => {
           const buyer = profilesMap.get(offer.starter);
           const listing = listingsMap.get(offer.listing_id);
           const threadKey = `${offer.starter}-${offer.listing_id}`;

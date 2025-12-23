@@ -39,7 +39,7 @@ export default function ResultsGrid() {
   // Load once
   useEffect(() => {
     setLoading(true);
-    fetch("/api/listings", { cache: "no-store" })
+    fetch("/api/listings", { next: { revalidate: 300 } })
       .then((r) => r.json())
       .then((data) => setAll(Array.isArray(data) ? data : []))
       .finally(() => setLoading(false));

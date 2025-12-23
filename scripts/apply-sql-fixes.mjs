@@ -54,7 +54,8 @@ async function applySQLFile(filePath) {
       console.error('❌ SQL execution failed:', error);
       
       console.log('\n📝 Manual instructions:');
-      console.log('1. Go to: https://supabase.com/dashboard/project/ufmkjjmoticwdhxtgyfo/sql/new');
+      const projectId = SUPABASE_URL.split('//')[1]?.split('.')[0] || 'YOUR_PROJECT_ID';
+      console.log(`1. Go to: https://supabase.com/dashboard/project/${projectId}/sql/new`);
       console.log('2. Copy the contents of: sql/fix_unread_status_trigger.sql');
       console.log('3. Paste into SQL Editor');
       console.log('4. Click "Run" or press Cmd+Enter');
@@ -70,7 +71,8 @@ async function applySQLFile(filePath) {
     console.error('❌ Error:', err.message);
     
     console.log('\n📝 Manual instructions:');
-    console.log('1. Go to: https://supabase.com/dashboard/project/ufmkjjmoticwdhxtgyfo/sql/new');
+    const projectId = SUPABASE_URL.split('//')[1]?.split('.')[0] || 'YOUR_PROJECT_ID';
+    console.log(`1. Go to: https://supabase.com/dashboard/project/${projectId}/sql/new`);
     console.log('2. Copy the contents of: sql/fix_unread_status_trigger.sql');
     console.log('3. Paste into SQL Editor');
     console.log('4. Click "Run" or press Cmd+Enter');
