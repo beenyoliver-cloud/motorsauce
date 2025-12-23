@@ -59,8 +59,17 @@ export default function SellerRating({ profileId, displayName }: SellerRatingPro
     fetchRating();
   }, [profileId]);
 
+  // Show different UI for sellers with no reviews
   if (rating === null || rating === 0) {
-    return null;
+    return (
+      <div className="flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-1">
+          <Star className="h-4 w-4 text-gray-300" />
+          <span className="font-semibold text-gray-500">No rating yet</span>
+        </div>
+        <span className="text-gray-500">· New seller</span>
+      </div>
+    );
   }
 
   return (
