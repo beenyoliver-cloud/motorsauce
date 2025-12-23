@@ -817,13 +817,13 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
                     )}
 
                     {mine && !isEditing && (
-                      <div className=\"absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1\">
+                      <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                         <button
                           onClick={() => startEdit(c)}
-                          className=\"inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/90 text-gray-700 hover:bg-white shadow-sm\"
-                          title=\"Edit\"
+                          className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/90 text-gray-700 hover:bg-white shadow-sm"
+                          title="Edit"
                         >
-                          <PencilLine className=\"h-3 w-3\" />
+                          <PencilLine className="h-3 w-3" />
                         </button>
                       </div>
                     )}
