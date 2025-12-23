@@ -125,11 +125,11 @@ export default function HomeHero() {
       <div className="space-y-3 relative">
         <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-gray-600">
           <Zap className="h-3.5 w-3.5 text-yellow-500" />
-          Live vehicle-matching
+          Vehicle compatibility
         </div>
-        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Search by reg. See compatible parts instantly.</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Find parts that fit your car—fast.</h1>
         <p className="text-sm text-gray-600 break-words sm:whitespace-nowrap sm:overflow-hidden sm:text-ellipsis">
-          Drop a plate to jump straight into parts that fit.
+          Enter your UK registration to filter listings by compatibility.
         </p>
 
         <form
