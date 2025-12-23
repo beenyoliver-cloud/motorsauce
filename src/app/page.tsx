@@ -9,7 +9,6 @@ import TrustBand from "@/components/home/TrustBand";
 import SellCta from "@/components/home/SellCta";
 import LiveActivityFeed from "@/components/home/LiveActivityFeed";
 import JustSoldTicker from "@/components/home/JustSoldTicker";
-import TrustSignals from "@/components/home/TrustSignals";
 import WrenchingWall from "@/components/home/WrenchingWall";
 import SEOJsonLd from "@/components/SEOJsonLd";
 import ToastContainer from "@/components/Toast";
@@ -21,8 +20,6 @@ export default function Home() {
       <div className="space-y-3 sm:space-y-4">
         <HomeHero />
       </div>
-
-      <TrustSignals />
 
       <JustSoldTicker />
 
