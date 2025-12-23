@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import SafeImage from "@/components/SafeImage";
-import { Clock, TrendingDown, CheckCircle2 } from "lucide-react";
-import FavoriteButton from "@/components/FavoriteButton";
+import { Clock } from "lucide-react";
+import ListingCard from "@/components/ListingCard";
 
 type Listing = {
   id: string | number;
@@ -52,19 +50,6 @@ export default function RecentlyViewedRow() {
 
   if (!items.length || items.length <= 5) return null;
 
-  // Helper to format price
-  const formatPrice = (price: number | string) => {
-    if (typeof price === "string") return price;
-    return `£${price.toFixed(2)}`;
-  };
-
-  // Helper to check if recently listed (within 3 days)
-  const isNew = (created_at?: string) => {
-    if (!created_at) return false;
-    const diff = Date.now() - new Date(created_at).getTime();
-    return diff < 3 * 24 * 60 * 60 * 1000; // 3 days
-  };
-
   return (
     <section className="mb-10">
       <div className="flex items-center justify-between mb-4">
@@ -88,78 +73,19 @@ export default function RecentlyViewedRow() {
       <div className="relative">
         <div className="overflow-x-auto pb-2 md:overflow-visible">
           <div className="flex gap-4 min-w-min md:grid md:grid-cols-5">
-            {items.slice(0, 5).map((listing) => {
-              const price = typeof listing.price === "number" ? listing.price : parseFloat(listing.price_gbp || "0");
-              const hasPriceDrop = listing.previous_price && listing.previous_price > price;
-              const priceDrop = hasPriceDrop ? ((listing.previous_price! - price) / listing.previous_price!) * 100 : 0;
-
-              return (
-                <div
-                  key={listing.id}
-                  className="group relative min-w-[100px] max-w-[120px] md:min-w-0 md:max-w-none flex-shrink-0"
-                >
-                  <Link
-                    href={`/listing/${listing.id}`}
-                    data-listing-card={String(listing.id)}
-                    className="block border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg hover:border-gray-300 transition-all duration-200"
-                  >
-                    {/* Image */}
-                    <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
-                      <SafeImage
-                        src={listing.image}
-                        alt={listing.title}
-                        className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
-                      />
-
-                      {/* Badges overlay */}
-                      <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
-                        {listing.status === "active" && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-500 text-white text-[10px] font-semibold rounded-full shadow">
-                            <CheckCircle2 className="h-3 w-3" />
-                            Available
-                          </span>
-                        )}
-                        {isNew(listing.created_at) && (
-                          <span className="inline-block px-2 py-0.5 bg-blue-500 text-white text-[10px] font-semibold rounded-full shadow">
-                            NEW
-                          </span>
-                        )}
-                        {hasPriceDrop && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-500 text-white text-[10px] font-semibold rounded-full shadow">
-                            <TrendingDown className="h-3 w-3" />
-                            {priceDrop.toFixed(0)}% OFF
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Favorite button overlay */}
-                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div onClick={(e) => e.preventDefault()}>
-                          <FavoriteButton listingId={String(listing.id)} showLabel={false} className="shadow-md" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="p-3">
-                      <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 min-h-[2.5rem]">
-                        {listing.title}
-                      </h3>
-                      <div className="mt-2 flex items-baseline gap-2">
-                        <span className="text-lg font-bold text-gray-900">
-                          {formatPrice(listing.price || listing.price_gbp || 0)}
-                        </span>
-                        {hasPriceDrop && (
-                          <span className="text-xs text-gray-500 line-through">
-                            £{listing.previous_price!.toFixed(2)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                </div>
-              );
-            })}
+            {items.slice(0, 5).map((listing) => (
+              <ListingCard
+                key={listing.id}
+                id={listing.id}
+                title={listing.title}
+                price={listing.price}
+                image={listing.image}
+                status={listing.status}
+                createdAt={listing.created_at}
+                previousPrice={listing.previous_price}
+                className="min-w-[100px] max-w-[120px] md:min-w-0 md:max-w-none flex-shrink-0"
+              />
+            ))}
           </div>
         </div>
 

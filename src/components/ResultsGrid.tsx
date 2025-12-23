@@ -2,9 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import SafeImage from "@/components/SafeImage";
-import FavoriteButton from "@/components/FavoriteButton";
+import ListingCard from "@/components/ListingCard";
 import { getSelectedCarId, loadMyCars, vehicleLabel } from "@/lib/garage";
 import { isListingHidden } from "@/lib/moderationStore";
 
@@ -136,28 +134,17 @@ export default function ResultsGrid() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 md:gap-6">
       {visible.map((l) => (
-        <Link
+        <ListingCard
           key={String(l.id)}
-          href={`/listing/${l.id}`}
-          data-listing-card={String(l.id)}
-          className="flex items-center gap-3 border border-gray-200 rounded-md overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition sm:block"
-        >
-          {/* Image: fixed 120x120 on mobile, full width card on sm+ */}
-          <div className="w-[120px] h-[120px] flex-shrink-0 bg-gray-50 overflow-hidden sm:relative sm:aspect-[3/2.5] sm:h-auto sm:w-full">
-            <SafeImage src={l.image} alt={l.title} className="w-full h-full object-cover object-center" />
-          </div>
-
-          {/* Content area */}
-          <div className="flex-1 py-2 pr-2 sm:p-3">
-            <h3 className="text-sm leading-tight sm:text-sm font-semibold text-gray-900 line-clamp-2">{l.title}</h3>
-            <div className="mt-1 sm:mt-1 flex items-center justify-between">
-              <div className="text-sm sm:text-base font-bold text-gray-900">{l.price}</div>
-              <div className="scale-90 sm:scale-100 origin-right sm:mr-0">
-                <FavoriteButton listingId={String(l.id)} showLabel={false} />
-              </div>
-            </div>
-          </div>
-        </Link>
+          id={l.id}
+          title={l.title}
+          price={l.price}
+          image={l.image}
+          images={l.images}
+          category={l.category}
+          seller={l.seller}
+          variant="detailed"
+        />
       ))}
     </div>
   );

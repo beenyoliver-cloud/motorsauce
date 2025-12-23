@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { cache } from "react";
 import { cookies } from "next/headers";
-import SafeImage from "@/components/SafeImage";
-import { HotBadgeSmall } from "@/components/HotBadge";
+import ListingCard from "@/components/ListingCard";
 
 type Listing = {
   id: string | number;
@@ -49,22 +48,18 @@ export default async function FeaturedRow({
       <div className="overflow-x-auto md:overflow-visible">
         <div className="flex gap-3 md:grid md:grid-cols-5">
           {items.slice(0, 5).map((p) => (
-            <Link
+            <ListingCard
               key={p.id}
-              href={`/listing/${p.id}`}
-              data-listing-card={String(p.id)}
-              className="group min-w-[80px] max-w-[100px] sm:min-w-[100px] sm:max-w-[120px] md:min-w-0 md:max-w-none border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-md hover:border-yellow-400 transition-colors duration-200"
-            >
-              <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
-                <HotBadgeSmall viewCount={p.viewCount} threshold={10} />
-                <SafeImage src={p.image} alt={p.title} className="absolute inset-0 w-full h-full object-cover object-center" />
-                <div className="absolute inset-0 bg-yellow-500/0 group-hover:bg-yellow-500/10 transition-colors duration-200" />
-              </div>
-              <div className="p-2">
-                <div className="text-xs font-semibold text-gray-900 line-clamp-2 group-hover:text-yellow-600 transition-colors duration-200">{p.title}</div>
-                <div className="mt-1 text-sm font-bold text-gray-900 group-hover:text-yellow-600 transition-colors duration-200">{p.price}</div>
-              </div>
-            </Link>
+              id={p.id}
+              title={p.title}
+              price={p.price}
+              image={p.image}
+              make={p.make}
+              model={p.model}
+              year={p.year}
+              createdAt={p.createdAt}
+              className="min-w-[80px] max-w-[100px] sm:min-w-[100px] sm:max-w-[120px] md:min-w-0 md:max-w-none"
+            />
           ))}
         </div>
       </div>
