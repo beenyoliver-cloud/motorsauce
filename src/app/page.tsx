@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import PopularSellers from "@/components/PopularSellers";
 import SuggestedParts from "@/components/SuggestedParts";
 import HomeHero from "@/components/home/HomeHero";
@@ -17,7 +18,9 @@ export default function Home() {
     <main className="mx-auto max-w-6xl px-3 sm:px-4 py-5 sm:py-8 space-y-6 sm:space-y-8 md:space-y-10">
       <SEOJsonLd />
       <div className="space-y-3 sm:space-y-4">
-        <HomeHero />
+        <Suspense fallback={null}>
+          <HomeHero />
+        </Suspense>
       </div>
 
       <TrustBand />
