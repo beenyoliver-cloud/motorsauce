@@ -74,6 +74,10 @@ export default function Header() {
   const [cartOpen, setCartOpen] = useState(false);
   const [isUserLoaded, setIsUserLoaded] = useState(false);
   const [isAdminUser, setIsAdminUser] = useState(false);
+  const [isDesktop, setIsDesktop] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth >= 768;
+  });
 
   const categories = [
     ["OEM Parts", "/categories/oem"],
@@ -262,6 +266,16 @@ export default function Header() {
     };
   }, [mobileMenuOpen]);
 
+  // Detect viewport to render only one header (mobile OR desktop) at a time
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(min-width: 768px)");
+    const handler = (event: MediaQueryListEvent) => setIsDesktop(event.matches);
+    setIsDesktop(mq.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
   const displayName = useMemo(() => getDisplayName(user), [user]);
   const initials = useMemo(() => getInitials(displayName), [displayName]);
   const profileHref = user ? `/profile/${encodeURIComponent(user.name)}` : "/auth/login";
@@ -280,8 +294,10 @@ export default function Header() {
 
   return (
     <>
-      {/* Mobile header (md:hidden) - Compact two-row design */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      {!isDesktop && (
+        <>
+        {/* Mobile header - Compact two-row design */}
+        <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         {/* Top row: Menu, Logo, Icons */}
         <div className="relative h-14 flex items-center justify-between px-2">
           {/* Left: Menu button */}
@@ -343,7 +359,7 @@ export default function Header() {
 
       {/* Mobile menu backdrop and panel - OUTSIDE the header div to fix stacking context */}
       {mobileMenuOpen && (
-        <div className="md:hidden">
+        <div>
           {/* Backdrop */}
           <div
             className="fixed inset-0 bg-black/30 z-[100]"
@@ -538,9 +554,11 @@ export default function Header() {
           </div>
         </div>
       )}
+      </>
+      )}
 
-      {/* Desktop header (>= md) */}
-      <nav className="hidden md:flex w-full bg-white border-b border-gray-200 items-center justify-between px-6 py-2 shadow-sm fixed top-0 z-40 min-h-[72px]">
+      {isDesktop && (
+      <nav className="w-full bg-white border-b border-gray-200 items-center justify-between px-6 py-2 shadow-sm fixed top-0 z-40 min-h-[72px]">
         <Link href="/" aria-label="Motorsauce home" className="flex-shrink-0 inline-flex items-center h-full">
           <img
             src="/images/MSlogoreal.png"
@@ -705,10 +723,11 @@ export default function Header() {
       </div>
 
       {/* Cart drawer - desktop only (mobile navigates to /basket page) */}
-      <div className="hidden md:block">
+      <div>
         <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
       </div>
     </nav>
+      )}
     </>
   );
 }

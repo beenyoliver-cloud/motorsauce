@@ -14,11 +14,13 @@ import ToastContainer from "@/components/Toast";
 
 export default function Home() {
   return (
-    <main className="mx-auto max-w-6xl px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 md:space-y-8">
+    <main className="mx-auto max-w-6xl px-3 sm:px-4 py-5 sm:py-8 space-y-6 sm:space-y-8 md:space-y-10">
       <SEOJsonLd />
       <div className="space-y-3 sm:space-y-4">
         <HomeHero />
       </div>
+
+      <TrustBand />
 
       <JustSoldTicker />
 
@@ -30,7 +32,7 @@ export default function Home() {
         <SuggestedParts limit={8} />
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[3fr_1.2fr] gap-4 lg:h-[var(--home-tiles-block-height)]">
+      <div className="grid grid-cols-1 lg:grid-cols-[3fr_1.2fr] gap-6 lg:h-[var(--home-tiles-block-height)]">
         <div className="lg:h-full">
           <CategoryTiles />
         </div>
@@ -56,8 +58,6 @@ export default function Home() {
       </section>
 
       <RecentlyViewedRow />
-
-      <TrustBand />
       
       <ToastContainer />
     </main>

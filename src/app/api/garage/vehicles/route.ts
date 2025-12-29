@@ -1,26 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseServer } from "@/lib/supabase";
 
-function getSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE;
-  if (!url || !key) {
-    throw new Error("Missing Supabase configuration");
+function unauthorized() {
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+}
+
+async function requireUser(req: NextRequest) {
+  try {
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) return { error: unauthorized() };
+    const supabase = supabaseServer({ authHeader });
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data?.user) return { error: unauthorized() };
+    return { supabase, userId: data.user.id };
+  } catch (err) {
+    console.error("[garage/vehicles] Auth error", err);
+    return { error: unauthorized() };
   }
-  return createClient(url, key);
 }
 
 export async function GET(req: NextRequest) {
+  const auth = await requireUser(req);
+  if ("error" in auth && auth.error) return auth.error;
+
   try {
-    const supabase = getSupabase();
-    const userId = req.headers.get("x-user-id");
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { data, error } = await auth.supabase
+      .from("garage_vehicles")
+      .select("*")
+      .eq("user_id", auth.userId)
+      .order("is_default", { ascending: false })
+      .order("created_at", { ascending: false });
 
-    const { data, error } = await supabase.from("garage_vehicles").select("*").eq("user_id", userId).order("is_default", { ascending: false }).order("created_at", { ascending: false });
     if (error) throw error;
-
     return NextResponse.json({ vehicles: data || [] });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Unknown error";
@@ -30,17 +41,14 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = await requireUser(req);
+  if ("error" in auth && auth.error) return auth.error;
+
   try {
-    const supabase = getSupabase();
-    const userId = req.headers.get("x-user-id");
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const body = await req.json();
-    const vehicle = { user_id: userId, ...body };
+    const vehicle = { user_id: auth.userId, ...body };
 
-    const { data, error } = await supabase.from("garage_vehicles").insert([vehicle]).select().single();
+    const { data, error } = await auth.supabase.from("garage_vehicles").insert([vehicle]).select().single();
     if (error) throw error;
 
     return NextResponse.json({ vehicle: data });
@@ -52,13 +60,10 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  try {
-    const supabase = getSupabase();
-    const userId = req.headers.get("x-user-id");
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const auth = await requireUser(req);
+  if ("error" in auth && auth.error) return auth.error;
 
+  try {
     const body = await req.json();
     const { id, ...updates } = body;
 
@@ -66,7 +71,14 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Vehicle ID required" }, { status: 400 });
     }
 
-    const { data, error } = await supabase.from("garage_vehicles").update(updates).eq("id", id).eq("user_id", userId).select().single();
+    // Force user scope server-side to avoid spoofing
+    const { data, error } = await auth.supabase
+      .from("garage_vehicles")
+      .update({ ...updates, user_id: auth.userId })
+      .eq("id", id)
+      .eq("user_id", auth.userId)
+      .select()
+      .single();
     if (error) throw error;
 
     return NextResponse.json({ vehicle: data });
@@ -78,13 +90,10 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  try {
-    const supabase = getSupabase();
-    const userId = req.headers.get("x-user-id");
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const auth = await requireUser(req);
+  if ("error" in auth && auth.error) return auth.error;
 
+  try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
 
@@ -92,7 +101,11 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Vehicle ID required" }, { status: 400 });
     }
 
-    const { error } = await supabase.from("garage_vehicles").delete().eq("id", id).eq("user_id", userId);
+    const { error } = await auth.supabase
+      .from("garage_vehicles")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", auth.userId);
     if (error) throw error;
 
     return NextResponse.json({ ok: true });

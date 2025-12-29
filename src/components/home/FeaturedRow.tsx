@@ -22,6 +22,7 @@ type ActiveCarPreference = {
 };
 
 const ACTIVE_CAR_COOKIE = "ms_active_car";
+const FALLBACK_SITE_URL = "http://localhost:3000";
 
 export default async function FeaturedRow({
   title,
@@ -39,14 +40,17 @@ export default async function FeaturedRow({
   if (!items.length || items.length <= 5) return null;
 
   return (
-    <section className="mb-8">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-xl font-bold text-black">{title}</h2>
-        <Link href="/search" className="text-sm text-gray-600 hover:text-yellow-600 hover:underline transition-colors duration-300">View all</Link>
+    <section className="mb-10">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold text-black tracking-tight">{title}</h2>
+        <Link href="/search" className="text-sm text-gray-700 hover:text-yellow-600 inline-flex items-center gap-1 transition-colors duration-300">
+          View all
+          <span aria-hidden>→</span>
+        </Link>
       </div>
       {/* Mobile: horizontal scroll, Desktop: fixed grid of 5 */}
       <div className="overflow-x-auto md:overflow-visible">
-        <div className="flex gap-3 md:grid md:grid-cols-5">
+        <div className="flex gap-4 md:grid md:grid-cols-5">
           {items.slice(0, 5).map((p) => (
             <ListingCard
               key={p.id}
@@ -69,7 +73,7 @@ export default async function FeaturedRow({
 
 const getListingPool = cache(async (): Promise<Listing[]> => {
   try {
-    const res = await fetch("/api/listings?limit=200", { 
+    const res = await fetch(listingsApiUrl("/api/listings?limit=200"), { 
       next: { revalidate: 300 } // 5 minutes
     });
     if (!res.ok) return [];
@@ -117,6 +121,13 @@ function pickVariant(
   }
 
   return filtered.slice(0, safeLimit);
+}
+
+function listingsApiUrl(path: string) {
+  const base =
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : FALLBACK_SITE_URL);
+  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 async function readActiveCarPreference(): Promise<ActiveCarPreference | null> {

@@ -145,16 +145,16 @@ function SearchPageInner() {
   const [sellersLoading, setSellersLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [recent, setRecent] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<"parts" | "sellers">("parts");
   const [quickViewListingId, setQuickViewListingId] = useState<string | null>(null);
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [visibleCount, setVisibleCount] = useState(30);
   const [favouriteGarage, setFavouriteGarage] = useState<FavouriteGarage>(null);
   const [sellerSort, setSellerSort] = useState<"featured" | "rating" | "listings">("featured");
-
   const sp = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+  const initialTab = sp.get("tab") === "sellers" ? "sellers" : "parts";
+  const [activeTab, setActiveTab] = useState<"parts" | "sellers">(initialTab);
 
   const updateParam = useCallback(
     (key: string, value?: string) => {
@@ -178,6 +178,11 @@ function SearchPageInner() {
       return next;
     });
   }, []);
+
+  useEffect(() => {
+    const tab = sp.get("tab") === "sellers" ? "sellers" : "parts";
+    setActiveTab(tab);
+  }, [sp]);
 
   // Auto-apply favourite garage on first load if no filters are set
   useEffect(() => {

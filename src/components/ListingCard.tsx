@@ -3,7 +3,7 @@
 import Link from "next/link";
 import SafeImage from "@/components/SafeImage";
 import FavoriteButton from "@/components/FavoriteButton";
-import { CheckCircle2, TrendingDown, MapPin, Star, Package } from "lucide-react";
+import { CheckCircle2, TrendingDown, MapPin, Star, Package, Eye, Heart } from "lucide-react";
 
 type ListingCardProps = {
   id: string | number;
@@ -35,6 +35,7 @@ type ListingCardProps = {
   distanceKm?: number;
   variant?: "compact" | "detailed";
   className?: string;
+  viewCount?: number;
 };
 
 function formatPrice(price: string | number): string {
@@ -98,13 +99,22 @@ export default function ListingCard(props: ListingCardProps) {
   const hasPriceDrop = previousPrice && previousPrice > priceNum;
   const priceDrop = hasPriceDrop ? ((previousPrice - priceNum) / previousPrice) * 100 : 0;
   const vehicleText = getVehicleText(props);
+  const isUnder20 = Number.isFinite(priceNum) && priceNum > 0 && priceNum <= 20;
+  const isNewToday = createdAt ? Date.now() - new Date(createdAt).getTime() < 24 * 60 * 60 * 1000 : false;
+  const isPopularSeller = typeof seller?.rating === "number" && seller.rating >= 4.8;
+  const viewCount = typeof props.viewCount === "number" ? props.viewCount : undefined;
+  const utilityBadges = [
+    isUnder20 ? "Under £20" : null,
+    isNewToday ? "New today" : null,
+    isPopularSeller ? "Popular seller" : null,
+  ].filter(Boolean) as string[];
 
   return (
     <div className={`group relative ${className}`}>
       <Link
         href={`/listing/${id}`}
         data-listing-card={String(id)}
-        className="block border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg hover:border-gray-300 transition-all duration-200"
+        className="block border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-lg hover:border-gray-300 transition-all duration-200"
       >
         {/* Image */}
         <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
@@ -150,10 +160,17 @@ export default function ListingCard(props: ListingCardProps) {
               <FavoriteButton listingId={String(id)} showLabel={false} className="shadow-md" />
             </div>
           </div>
+          {/* Engagement */}
+          <div className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-black/60 text-white text-[10px] font-semibold px-2 py-1 backdrop-blur-sm">
+            <Eye className="h-3.5 w-3.5" />
+            <span>{typeof viewCount === "number" ? viewCount : "—"}</span>
+            <span className="h-1 w-1 rounded-full bg-white/50" />
+            <Heart className="h-3 w-3 text-white/80" />
+          </div>
         </div>
 
         {/* Content */}
-        <div className="p-3">
+        <div className="p-3 flex flex-col gap-2">
           {/* Title */}
           <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 min-h-[2.5rem]">
             {title}
@@ -179,16 +196,25 @@ export default function ListingCard(props: ListingCardProps) {
             )}
           </div>
 
-          {/* Price */}
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-lg font-bold text-gray-900">
-              {formatPrice(price)}
-            </span>
-            {hasPriceDrop && previousPrice && (
-              <span className="text-xs text-gray-500 line-through">
-                £{previousPrice.toFixed(2)}
+          {/* Badges + Price */}
+          <div className="mt-1 flex items-end justify-between gap-2">
+            <div className="flex flex-wrap gap-1.5">
+              {utilityBadges.map((badge) => (
+                <span key={badge} className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] font-semibold text-gray-800">
+                  {badge}
+                </span>
+              ))}
+            </div>
+            <div className="text-right">
+              <span className="block text-lg font-bold text-gray-900 leading-none">
+                {formatPrice(price)}
               </span>
-            )}
+              {hasPriceDrop && previousPrice && (
+                <span className="text-[11px] text-gray-500 line-through">
+                  £{previousPrice.toFixed(2)}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Seller Info */}

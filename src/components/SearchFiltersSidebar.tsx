@@ -82,6 +82,19 @@ export default function SearchFiltersSidebar(props: Props) {
     return years;
   }, [selectedMake, selectedModel]);
 
+  const summaryChips = useMemo(() => {
+    const chips: string[] = [];
+    if (sp.get("priceMax")) chips.push(`≤ £${sp.get("priceMax")}`);
+    if (sp.get("priceMin")) chips.push(`≥ £${sp.get("priceMin")}`);
+    if (sp.get("make")) chips.push(sp.get("make")!);
+    if (sp.get("model")) chips.push(sp.get("model")!);
+    const conditions = sp.getAll("condition");
+    if (conditions.length) chips.push(...conditions);
+    if (sp.get("distance")) chips.push(`${sp.get("distance")}km`);
+    if (sp.get("category")) chips.push(sp.get("category")!);
+    return chips.slice(0, 4);
+  }, [sp]);
+
   function setParam(key: string, value?: string) {
     const params = new URLSearchParams(sp.toString());
     if (value && value.trim() !== "") params.set(key, value.trim());
@@ -144,8 +157,8 @@ export default function SearchFiltersSidebar(props: Props) {
 
   // The actual sidebar content (used for both desktop and mobile)
   const Panel = (
-    <aside className="md:sticky md:top-4 md:self-start md:w-[300px] md:border-r md:border-gray-200 md:bg-white">
-      <div className="p-4 space-y-6 md:max-h-[calc(100vh-2rem)] md:overflow-y-auto">
+    <aside className="md:sticky md:top-6 md:self-start md:w-[300px] md:border-r md:border-gray-200 md:bg-white">
+      <div className="p-4 space-y-6 md:max-h-[calc(100vh-3rem)] md:overflow-y-auto">
         {/* Search query */}
         <div>
           <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700">Search</div>
@@ -437,10 +450,21 @@ export default function SearchFiltersSidebar(props: Props) {
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/40" onClick={onMobileClose} aria-hidden />
-          <div className="absolute top-0 left-0 h-full w-[86%] max-w-[320px] bg-white shadow-xl flex flex-col">
+          <div className="absolute top-0 left-0 h-full w-full bg-white shadow-2xl flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 shrink-0">
-              <span className="font-semibold text-gray-900">Filters</span>
+              <div>
+                <span className="font-semibold text-gray-900">Filters</span>
+                {summaryChips.length > 0 && (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {summaryChips.map((chip) => (
+                      <span key={chip} className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-800">
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button
                 onClick={onMobileClose}
                 className="p-1 text-gray-500 hover:text-gray-900"

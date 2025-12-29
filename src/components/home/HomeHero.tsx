@@ -1,13 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Search as SearchIcon, Zap } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Search as SearchIcon, Zap, Flame, ShieldCheck, Sparkles, Layers, ShoppingBag } from "lucide-react";
 import { nsKey } from "@/lib/auth";
 import { manualVehicleMakes, manualVehicleModels, getYearsForModel } from "@/data/manualVehicleOptions";
 
 export default function HomeHero() {
   const router = useRouter();
+  const sp = useSearchParams();
+  const [heroTab, setHeroTab] = useState<"parts" | "sellers">("parts");
+  const [keyword, setKeyword] = useState("");
   const [plate, setPlate] = useState("");
   const [plateLoading, setPlateLoading] = useState(false);
   const [plateError, setPlateError] = useState<string | null>(null);
@@ -38,12 +41,27 @@ export default function HomeHero() {
     }
   };
 
+  useEffect(() => {
+    const tab = sp.get("tab");
+    if (tab === "sellers") setHeroTab("sellers");
+  }, [sp]);
+
   function resetManualFallback() {
     setShowManualFallback(false);
     setManualMake("");
     setManualModel("");
     setManualYear("");
     setFallbackMessage("");
+  }
+
+  function submitKeywordSearch(target?: { q?: string; priceMax?: number; tabOverride?: "parts" | "sellers" }) {
+    const resolvedTab = target?.tabOverride ?? heroTab;
+    const q = target?.q ?? keyword.trim();
+    const params = new URLSearchParams();
+    if (q) params.set(resolvedTab === "sellers" ? "seller" : "q", q);
+    if (resolvedTab === "sellers") params.set("tab", "sellers");
+    if (typeof target?.priceMax === "number") params.set("priceMax", String(target.priceMax));
+    router.push(`/search${params.toString() ? `?${params.toString()}` : ""}`);
   }
 
   async function submitPlateSearch() {
@@ -122,15 +140,131 @@ export default function HomeHero() {
         <div className="absolute -bottom-20 -left-12 h-56 w-56 rotate-6 bg-gradient-to-tr from-gray-900/10 via-yellow-500/30 to-transparent blur-2xl" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(250,204,21,0.12),_transparent_60%)]" />
       </div>
-      <div className="space-y-3 relative">
-        <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-gray-600">
-          <Zap className="h-3.5 w-3.5 text-yellow-500" />
-          Vehicle compatibility
+      <div className="space-y-4 relative">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-gray-600">
+            <Zap className="h-3.5 w-3.5 text-yellow-500" />
+            Marketplace launchpad
+          </div>
+          <div className="flex items-center gap-2 text-xs text-gray-600">
+            <ShieldCheck className="h-4 w-4 text-green-600" />
+            Payment protected • Seller verified
+          </div>
         </div>
-        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Find parts that fit your car—fast.</h1>
-        <p className="text-sm text-gray-600 break-words sm:whitespace-nowrap sm:overflow-hidden sm:text-ellipsis">
-          Enter your UK registration to filter listings by compatibility.
-        </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-gray-900">Shop smarter. Sell faster.</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              Search parts or sellers, then narrow by your vehicle or price. Post your part in seconds.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => router.push("/sell")}
+              className="inline-flex items-center gap-2 rounded-full bg-yellow-500 text-black px-4 py-2 font-semibold text-sm hover:bg-yellow-600 transition"
+            >
+              <ShoppingBag className="h-4 w-4" />
+              Post your part
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/categories")}
+              className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 hover:border-yellow-400 transition"
+            >
+              Browse categories
+            </button>
+          </div>
+        </div>
+
+        {/* Marketplace search */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-4 shadow-sm space-y-3">
+          <div className="flex items-center gap-2">
+            {(["parts", "sellers"] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setHeroTab(tab)}
+                className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold transition ${
+                  heroTab === tab
+                    ? "bg-gray-900 text-white shadow-sm"
+                    : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                }`}
+              >
+                {tab === "parts" ? <Layers className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+                {tab === "parts" ? "Parts" : "Sellers"}
+              </button>
+            ))}
+          </div>
+          <form
+            className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              submitKeywordSearch();
+            }}
+          >
+            <div className="flex-1">
+              <div className="flex items-center gap-2 rounded-xl border-2 border-gray-900 bg-white px-3 py-2 shadow-[0_10px_20px_rgba(0,0,0,0.04)]">
+                <SearchIcon className="h-5 w-5 text-gray-700" />
+                <input
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  placeholder={heroTab === "sellers" ? "Search sellers by name" : "Search parts, OEM, brand, or keyword"}
+                  className="flex-1 bg-transparent text-base text-gray-900 placeholder:text-gray-500 focus:outline-none"
+                />
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 text-white px-4 py-2.5 text-sm font-semibold hover:bg-black transition"
+              >
+                <SearchIcon className="h-4 w-4" />
+                Go
+              </button>
+              <button
+                type="button"
+                onClick={() => submitKeywordSearch({ q: "", priceMax: 20, tabOverride: "parts" })}
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 hover:border-yellow-400 transition"
+              >
+                <Flame className="h-4 w-4 text-orange-500" />
+                Under £20
+              </button>
+            </div>
+          </form>
+          <div className="flex flex-wrap gap-2 text-xs text-gray-700">
+            {[
+              { label: "OEM", q: "OEM", icon: <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" /> },
+              { label: "Tools", q: "tool kit", icon: <Layers className="h-3.5 w-3.5 text-blue-600" /> },
+              { label: "New Today", q: "new", icon: <Sparkles className="h-3.5 w-3.5 text-yellow-600" /> },
+            ].map((chip) => (
+              <button
+                key={chip.label}
+                onClick={() => submitKeywordSearch({ q: chip.q })}
+                className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 font-semibold hover:border-yellow-400 hover:bg-white transition"
+              >
+                {chip.icon}
+                {chip.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-[auto_1fr_auto] sm:items-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-gray-600">
+            <Zap className="h-3.5 w-3.5 text-yellow-500" />
+            Vehicle compatibility
+          </div>
+          <p className="text-sm text-gray-600 break-words sm:whitespace-nowrap sm:overflow-hidden sm:text-ellipsis">
+            Enter your UK registration to filter listings by compatibility.
+          </p>
+          <button
+            type="button"
+            onClick={() => router.push("/search")}
+            className="justify-self-end text-xs text-gray-700 underline decoration-yellow-500 underline-offset-4"
+          >
+            Browse without a reg →
+          </button>
+        </div>
 
         <form
           className="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-3 rounded-2xl border border-gray-200 bg-white p-3 sm:p-4 shadow-sm"
