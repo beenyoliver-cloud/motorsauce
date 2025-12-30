@@ -33,6 +33,7 @@ export default function AdminListingsPage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "draft" | "sold" | "reported">("all");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "price_high" | "price_low" | "views" | "reports">("newest");
@@ -75,6 +76,7 @@ export default function AdminListingsPage() {
   async function fetchListings() {
     if (!accessToken) return;
     setLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -106,6 +108,7 @@ export default function AdminListingsPage() {
       setSelectedIds(new Set());
     } catch (err) {
       console.error(err);
+      setError(err instanceof Error ? err.message : "Failed to load listings");
     } finally {
       setLoading(false);
     }
@@ -219,6 +222,23 @@ export default function AdminListingsPage() {
 
   if (loading) {
     return (<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>);
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="max-w-lg w-full rounded-lg border border-red-200 bg-white p-6 shadow-sm space-y-3">
+          <p className="text-lg font-semibold text-red-700">Failed to load listings</p>
+          <p className="text-sm text-red-600">{error}</p>
+          <button
+            onClick={() => fetchListings()}
+            className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-white text-sm font-semibold hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
