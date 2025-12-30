@@ -261,24 +261,34 @@ export default function Header() {
     <>
       <nav className="w-full bg-white border-b border-gray-200 shadow-sm fixed top-0 z-40">
         <div className="mx-auto max-w-6xl px-3 sm:px-6">
-          <div className="py-2 space-y-3 sm:space-y-0">
-            {/* Desktop: single row */}
-            <div className="hidden sm:flex items-center gap-4">
-              <Link href="/" aria-label="Motorsauce home" className="inline-flex items-center flex-shrink-0">
-                <img
-                  src="/images/MSlogoreal.png"
-                  alt="Motorsauce"
-                  className="h-12 w-auto object-contain"
-                />
-              </Link>
-              <div className="flex-1" role="search">
-                <SearchBar placeholder="Search parts or sellers…" compact />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 py-2">
+            {/* Top row: logo + actions (mobile stack) */}
+            <div className="flex items-center justify-between gap-3">
+              {/* Left: Logo + Menu (mobile) */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Link href="/" aria-label="Motorsauce home" className="inline-flex items-center">
+                  <img
+                    src="/images/MSlogoreal.png"
+                    alt="Motorsauce"
+                    className="h-12 w-auto object-contain"
+                  />
+                </Link>
+                <Link
+                  href="/categories"
+                  className="sm:hidden inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-sm text-gray-900 hover:bg-gray-50"
+                  aria-label="Open categories"
+                >
+                  <Menu size={16} />
+                  Categories
+                </Link>
               </div>
-              <div className="flex items-center gap-4 flex-shrink-0">
+
+              {/* Right actions (mobile row; stack on desktop inline) */}
+              <div className="flex items-center gap-3 flex-shrink-0">
                 {isUserLoaded && user && (
                   <Link
                     href="/sell"
-                    className="inline-flex items-center gap-1 text-sm font-medium text-black hover:text-yellow-500 transition-colors"
+                    className="hidden sm:inline-flex items-center gap-1 text-sm font-medium text-black hover:text-yellow-500 transition-colors"
                   >
                     <PlusCircle size={16} /> Sell
                   </Link>
@@ -286,7 +296,7 @@ export default function Header() {
                 {isUserLoaded && isAdminUser && (
                   <Link
                     href="/admin/dashboard"
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-black hover:text-yellow-500 transition-colors bg-yellow-100 px-2 py-1 rounded"
+                    className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-black hover:text-yellow-500 transition-colors bg-yellow-100 px-2 py-1 rounded"
                   >
                     Admin
                   </Link>
@@ -318,6 +328,8 @@ export default function Header() {
                     </span>
                   )}
                 </button>
+
+                {/* Profile */}
                 <div className="relative group">
                   <Link href={profileHref} className="flex items-center gap-2 focus:outline-none">
                     <div className="h-9 w-9 rounded-full ring-2 ring-yellow-500 ring-offset-2 ring-offset-white overflow-hidden shrink-0">
@@ -330,11 +342,12 @@ export default function Header() {
                         </div>
                       )}
                     </div>
-                    <span className="text-sm font-medium text-black">
+                    <span className="text-sm font-medium text-black hidden sm:block">
                       {isUserLoaded && user ? displayName : "Sign in"}
                     </span>
-                    <ChevronDown size={14} className="text-gray-500" aria-hidden="true" />
+                    <ChevronDown size={14} className="text-gray-500 hidden sm:block" aria-hidden="true" />
                   </Link>
+
                   <div
                     className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible
                                group-hover:visible group-hover:opacity-100 transform -translate-y-2 group-hover:translate-y-0
@@ -390,88 +403,9 @@ export default function Header() {
               </div>
             </div>
 
-            {/* Mobile: actions row above search */}
-            <div className="flex sm:hidden flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Link href="/" aria-label="Motorsauce home" className="inline-flex items-center">
-                    <img
-                      src="/images/MSlogoreal.png"
-                      alt="Motorsauce"
-                      className="h-10 w-auto object-contain"
-                    />
-                  </Link>
-                  <Link
-                    href="/categories"
-                    className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-sm text-gray-900 hover:bg-gray-50"
-                    aria-label="Open categories"
-                  >
-                    <Menu size={16} />
-                    Categories
-                  </Link>
-                </div>
-                <div className="flex items-center gap-2 flex-1">
-                  <button
-                    onClick={() => setMobileMenuOpen((v) => !v)}
-                    className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-sm text-gray-900 hover:bg-gray-50"
-                    aria-label="Toggle menu"
-                  >
-                    <Menu size={16} />
-                    Menu
-                  </button>
-                  <div className="flex-1 flex justify-center">
-                    <Link href="/" aria-label="Motorsauce home" className="inline-flex items-center">
-                      <img
-                        src="/images/MSlogoreal.png"
-                        alt="Motorsauce"
-                        className="h-10 w-auto object-contain"
-                      />
-                    </Link>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {isUserLoaded && user && <NotificationsDropdown />}
-                    {isUserLoaded && user && (
-                      <Link
-                        href="/messages"
-                        className="relative flex items-center text-black hover:text-yellow-500 transition-colors"
-                        aria-label="Messages"
-                      >
-                        <MessageSquare size={20} />
-                        {unread > 0 && (
-                          <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[11px] font-bold min-w-[18px] h-[18px] px-1">
-                            {unread > 9 ? '9+' : unread}
-                          </span>
-                        )}
-                      </Link>
-                    )}
-                    <button
-                      onClick={() => setCartOpen(true)}
-                      className="relative flex items-center text-black hover:text-yellow-500 transition-colors"
-                      aria-label="Open basket"
-                    >
-                      <ShoppingCart size={20} />
-                      {cartCount > 0 && (
-                        <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[11px] font-bold min-w-[18px] h-[18px] px-1">
-                          {cartCount > 9 ? '9+' : cartCount}
-                        </span>
-                      )}
-                    </button>
-                    <Link href={profileHref} className="flex items-center">
-                      <div className="h-9 w-9 rounded-full ring-2 ring-yellow-500 ring-offset-2 ring-offset-white overflow-hidden shrink-0">
-                        {isUserLoaded && user && avatar ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={avatar} alt="" className="site-image" />
-                        ) : (
-                          <div className="h-full w-full bg-yellow-500 text-black flex items-center justify-center text-xs font-semibold">
-                            {isUserLoaded && user ? initials : <User size={18} />}
-                          </div>
-                        )}
-                      </div>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-              <div className="w-full" role="search">
+            {/* Middle: Search */}
+            <div className="w-full" role="search">
+              <div className="w-full max-w-3xl mx-auto">
                 <SearchBar placeholder="Search parts or sellers…" compact />
               </div>
             </div>
@@ -509,4 +443,3 @@ export default function Header() {
     </>
   );
 }
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
