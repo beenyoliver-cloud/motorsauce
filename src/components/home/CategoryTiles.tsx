@@ -77,7 +77,7 @@ export default function CategoryTiles() {
               backgroundBlendMode: "soft-light",
             }}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-black/30 via-black/10 to-black/50 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-black/30 to-black/60 pointer-events-none" />
             <div className="relative flex items-start justify-between gap-2 w-full">
               <div className="flex flex-col gap-1 min-w-0">
                 <span className="text-[10px] uppercase tracking-[0.3em] text-white/70 whitespace-nowrap">

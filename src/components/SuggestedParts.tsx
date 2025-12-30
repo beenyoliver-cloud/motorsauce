@@ -20,11 +20,11 @@ type Props = { limit?: number };
 type FilterId = "all" | "under100" | "performance" | "interior" | "exterior";
 
 const filters: { id: FilterId; label: string }[] = [
-  { id: "all", label: "Fresh matches" },
-  { id: "under100", label: "Under £100" },
-  { id: "performance", label: "Performance" },
-  { id: "interior", label: "Interior" },
-  { id: "exterior", label: "Exterior" },
+  { id: "all", label: "Recommended for you" },
+  { id: "under100", label: "Budget picks under £100" },
+  { id: "performance", label: "Performance upgrades" },
+  { id: "interior", label: "Interior refresh" },
+  { id: "exterior", label: "Exterior styling" },
 ];
 
 function parsePrice(value: string) {
@@ -153,15 +153,12 @@ export default function SuggestedParts({ limit = 12 }: Props) {
           <section key={filter.id} className="space-y-3">
             <div className="flex items-baseline justify-between">
               <h3 className="text-base sm:text-lg font-bold text-gray-900">{filter.label}</h3>
-              <button
-                type="button"
-                onClick={() => setActiveFilter(filter.id)}
-                className={`text-xs sm:text-sm ${
-                  activeFilter === filter.id ? "text-gray-900" : "text-gray-500 hover:text-gray-900"
-                }`}
+              <Link
+                href={`/search${filter.id === 'under100' ? '?priceMax=100' : filter.id === 'all' ? '' : `?q=${filter.id}`}`}
+                className="text-xs sm:text-sm text-gray-600 hover:text-gray-900 hover:underline"
               >
-                {activeFilter === filter.id ? "Selected" : "Focus"}
-              </button>
+                See all →
+              </Link>
             </div>
 
             {/* Mobile: horizontal scroll, Desktop: fixed grid of 5 */}
