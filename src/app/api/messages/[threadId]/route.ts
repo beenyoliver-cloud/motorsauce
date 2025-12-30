@@ -307,13 +307,20 @@ export async function POST(
           return NextResponse.json({ error: "Thread not found. Please reopen the conversation from Messages." }, { status: 404 });
         }
 
-        thread = recreated.data;
-        threadId = thread.id;
+        const recreatedThread = recreated.data;
+        thread = recreatedThread;
+        threadId = recreatedThread.id;
         await supabase.from("thread_deletions").delete().eq("thread_id", threadId).eq("user_id", user.id);
       } else {
         return NextResponse.json({ error: "Thread not found. Please reopen the conversation from Messages." }, { status: 404 });
       }
     }
+    
+    // At this point, thread is guaranteed to be non-null (either from initial query or recreation)
+    if (!thread) {
+      return NextResponse.json({ error: "Thread not found. Please reopen the conversation from Messages." }, { status: 404 });
+    }
+    
     const participants = [
       thread.participant_1_id,
       thread.participant_2_id,
