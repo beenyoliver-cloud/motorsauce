@@ -14,7 +14,7 @@ import QuickViewModal from "@/components/QuickViewModal";
 import Breadcrumb from "@/components/Breadcrumb";
 import ActiveFilters from "@/components/ActiveFilters";
 import LiveActivityFeed from "@/components/home/LiveActivityFeed";
-import { Eye, Heart, ChevronRight, Sparkles, Gauge, MapPin } from "lucide-react";
+import { Eye, Heart, ChevronRight, Sparkles, Gauge, MapPin, Clock } from "lucide-react";
 import { nsKey } from "@/lib/auth";
 import SaveSearchButton from "@/components/SaveSearchButton";
 import { searchListing, normalizeSearchTerm } from "@/lib/searchHelpers";
@@ -644,13 +644,21 @@ function SearchPageInner() {
                       Seller: <strong>{seller}</strong>
                     </span>
                   )}
-                  {!q && recent[0] && (
-                    <button
-                      onClick={() => updateParam("q", recent[0])}
-                      className="px-3 py-1 rounded-full border border-gray-300 text-gray-800"
-                    >
-                      Jump back to “{recent[0]}”
-                    </button>
+                  {!q && recent.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">Recent searches:</span>
+                      <div className="flex flex-wrap gap-2">
+                        {recent.slice(0, 3).map((item) => (
+                          <button
+                            key={item}
+                            onClick={() => updateParam("q", item)}
+                            className="px-3 py-1 rounded-full border border-gray-300 text-gray-800 hover:bg-gray-50 transition text-sm"
+                          >
+                            {item}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
@@ -698,14 +706,20 @@ function SearchPageInner() {
                 ))}
               </div>
               {recent.length > 0 && (
-                <div className="mt-3 p-3 rounded-lg border border-gray-200 bg-gray-50 text-xs flex items-center justify-between">
-                  <span className="text-gray-800">Resume “{recent[0]}”</span>
-                  <button
-                    onClick={() => updateParam("q", recent[0])}
-                    className="text-blue-700 font-semibold"
-                  >
-                    Load
-                  </button>
+                <div className="mt-4 space-y-2">
+                  <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Recent searches</h4>
+                  <div className="space-y-1">
+                    {recent.slice(0, 5).map((item) => (
+                      <button
+                        key={item}
+                        onClick={() => updateParam("q", item)}
+                        className="w-full text-left text-xs px-2 py-1.5 rounded-md text-gray-800 hover:bg-gray-100 transition flex items-center gap-2"
+                      >
+                        <Clock className="h-3 w-3 text-gray-400" />
+                        {item}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
