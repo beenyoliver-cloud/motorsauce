@@ -262,7 +262,7 @@ export default function Header() {
         <div className="mx-auto max-w-6xl px-3 sm:px-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 py-2">
             {/* Left: Logo */}
-            <div className="flex items-center gap-3 flex-shrink-0">
+              <div className="flex items-center gap-3 flex-shrink-0">
               <Link href="/" aria-label="Motorsauce home" className="inline-flex items-center">
                 <img
                   src="/images/MSlogoreal.png"
@@ -270,32 +270,6 @@ export default function Header() {
                   className="h-12 w-auto object-contain"
                 />
               </Link>
-              <div className="relative group hidden sm:block">
-                <button
-                  type="button"
-                  className="flex items-center gap-1 text-sm font-medium text-black hover:text-yellow-500 transition-colors"
-                >
-                  Categories <ChevronDown size={14} aria-hidden="true" />
-                </button>
-                <div
-                  className="absolute left-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible
-                             group-hover:visible group-hover:opacity-100 transform -translate-y-2 group-hover:translate-y-0
-                             transition-all duration-200 ease-out z-50"
-                  role="menu"
-                >
-                  {categories.map(([name, href], index) => (
-                    <Link
-                      key={href}
-                      href={href}
-                      style={{ transitionDelay: `${index * 40}ms` }}
-                      className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600 transition-all"
-                      role="menuitem"
-                    >
-                      {name}
-                    </Link>
-                  ))}
-                </div>
-              </div>
             </div>
 
             {/* Middle: Search */}
@@ -423,6 +397,31 @@ export default function Header() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Categories rail */}
+          <div className="hidden sm:flex items-center gap-3 text-sm text-gray-700 py-2 border-t border-gray-100">
+            {categories.map(([name, href]) => (
+              <Link
+                key={href}
+                href={href}
+                className="px-2 py-1 rounded hover:text-yellow-600 hover:bg-yellow-50 transition"
+              >
+                {name}
+              </Link>
+            ))}
+          </div>
+          {/* Mobile horizontal scroll */}
+          <div className="flex sm:hidden items-center gap-2 text-xs text-gray-700 py-2 border-t border-gray-100 overflow-x-auto">
+            {categories.map(([name, href]) => (
+              <Link
+                key={href}
+                href={href}
+                className="px-2 py-1 rounded whitespace-nowrap hover:text-yellow-600 hover:bg-yellow-50 transition"
+              >
+                {name}
+              </Link>
+            ))}
           </div>
         </div>
 
