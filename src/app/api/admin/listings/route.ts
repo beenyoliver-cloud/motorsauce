@@ -95,23 +95,26 @@ export async function GET(request: NextRequest) {
     const offerCounts = countByListing(offersRes.data);
     const reportCounts = countByListing(reportsRes.data, "pending");
 
-    const listings = (data || []).map((listing) => ({
-      id: listing.id,
-      title: listing.title,
-      price: listing.price || 0,
-      status: listing.status,
-      created_at: listing.created_at,
-      images: listing.images || [],
-      seller_id: listing.seller_id,
-      seller_name: listing.profiles?.name || "Unknown",
-      seller_username: listing.profiles?.username || "",
-      seller_avatar: listing.profiles?.avatar_url || null,
-      view_count: listing.view_count || 0,
-      save_count: saveCounts.get(listing.id) || 0,
-      offer_count: offerCounts.get(listing.id) || 0,
-      report_count: reportCounts.get(listing.id) || 0,
-      category: listing.category || "",
-    }));
+    const listings = (data || []).map((listing) => {
+      const profile = Array.isArray(listing.profiles) ? listing.profiles[0] : listing.profiles;
+      return {
+        id: listing.id,
+        title: listing.title,
+        price: listing.price || 0,
+        status: listing.status,
+        created_at: listing.created_at,
+        images: listing.images || [],
+        seller_id: listing.seller_id,
+        seller_name: profile?.name || "Unknown",
+        seller_username: profile?.username || "",
+        seller_avatar: profile?.avatar_url || null,
+        view_count: listing.view_count || 0,
+        save_count: saveCounts.get(listing.id) || 0,
+        offer_count: offerCounts.get(listing.id) || 0,
+        report_count: reportCounts.get(listing.id) || 0,
+        category: listing.category || "",
+      };
+    });
 
     return NextResponse.json({ listings, total: count || 0, page, pageSize });
   } catch (error) {
