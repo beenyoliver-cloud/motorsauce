@@ -11,10 +11,7 @@ export async function GET() {
   // Handle missing environment variables
   if (!supabaseUrl || !supabaseKey) {
     console.error('[popular-sellers-weekly] Missing Supabase credentials');
-    return NextResponse.json(
-      { error: 'Server configuration error', sellers: [] },
-      { status: 500 }
-    );
+    return NextResponse.json([]);
   }
 
   const supabase = createClient(supabaseUrl, supabaseKey);
@@ -23,48 +20,24 @@ export async function GET() {
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-
-  // Query all profile_visits in the last 7 days
-  const { data, error } = await supabase
-    .from('profile_visits')
-    .select('seller_id')
-    .gte('visited_at', sevenDaysAgo.toISOString());
+  // Fetch sellers with active listings, ordered by most recent
+  const { data: sellers, error } = await supabase
+    .from('profiles')
+    .select('id, name, avatar, rating')
+    .gt('listings_count', 0) // Only sellers with listings
+    .limit(6);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('[popular-sellers-weekly] Error fetching sellers:', error);
+    return NextResponse.json([]);
   }
 
-  // Aggregate visit counts per seller_id
-  const visitCounts: Record<string, number> = {};
-  for (const row of data ?? []) {
-    if (row.seller_id) {
-      visitCounts[row.seller_id] = (visitCounts[row.seller_id] || 0) + 1;
-    }
-  }
-
-  // Get top 10 seller_ids by visit count
-  const topSellerIds = Object.entries(visitCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
-    .map(([sellerId]) => sellerId);
-
-  // Fetch seller profile info for each seller
-  let sellers: any[] = [];
-  if (topSellerIds.length > 0) {
-    const { data: sellerData, error: sellersError } = await supabase
-      .from('profiles')
-      .select('*')
-      .in('id', topSellerIds);
-    if (sellersError) {
-      return NextResponse.json({ error: sellersError.message }, { status: 500 });
-    }
-    sellers = sellerData ?? [];
-  }
-
-  // Merge visit counts with seller profiles
-  const result = sellers.map((seller: any) => ({
-    ...seller,
-    weekly_visits: visitCounts[seller.id] || 0,
+  const result = (sellers || []).map((seller: any) => ({
+    seller_id: seller.id,
+    seller_name: seller.name || 'Unknown',
+    avatar: seller.avatar || undefined,
+    rating: seller.rating || 5.0,
+    sold_count: undefined,
   }));
 
   return NextResponse.json(result);
