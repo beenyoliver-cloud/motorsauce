@@ -157,6 +157,13 @@ export async function GET(req: NextRequest) {
       .order('view_count', { ascending: false })
       .limit(5);
 
+    // Get all listings for insights
+    const { data: allListings } = await supabase
+      .from('listings')
+      .select('id, title, price, created_at, view_count, oem, images')
+      .eq('seller_id', user.id)
+      .limit(200);
+
     return NextResponse.json({
       total_listings: allListingsRes.count || 0,
       active_listings: activeListingsRes.count || 0,
@@ -172,6 +179,7 @@ export async function GET(req: NextRequest) {
       offers_month: offersMonth.count || 0,
       recent_listings: recentListings || [],
       top_listings: topListings || [],
+      all_listings: allListings || [],
     });
   } catch (error) {
     console.error('[business-metrics] Error:', error);

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Package, Eye, ShoppingCart, TrendingUp, ArrowLeft, Loader2 } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase";
+import BusinessInsights from "@/components/business/BusinessInsights";
 
 interface Metrics {
   total_listings: number;
@@ -21,6 +22,7 @@ interface Metrics {
   offers_month: number;
   recent_listings: Array<{ id: string; title: string; created_at: string }>;
   top_listings: Array<{ id: string; title: string; view_count: number; price: string }>;
+  all_listings: Array<{ id: string; title?: string; price?: number | string; created_at?: string; view_count?: number; oem?: string | null; images?: string[] | null }>;
 }
 
 export default function BusinessAnalytics() {
@@ -294,6 +296,13 @@ export default function BusinessAnalytics() {
             )}
           </div>
         </div>
+
+        {/* Business Insights */}
+        {metrics?.all_listings && metrics.all_listings.length > 0 && (
+          <div className="mb-8">
+            <BusinessInsights listings={metrics.all_listings} variant="analytics" />
+          </div>
+        )}
 
         {/* Help */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">

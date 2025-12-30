@@ -29,7 +29,7 @@ function median(nums: number[]) {
   return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
 }
 
-export default function BusinessInsights({ listings }: { listings: Listing[] }) {
+export default function BusinessInsights({ listings, variant = "default" }: { listings: Listing[], variant?: "default" | "analytics" }) {
   const today = Date.now();
 
   const metrics = useMemo(() => {
@@ -60,7 +60,7 @@ export default function BusinessInsights({ listings }: { listings: Listing[] }) 
   }, [listings, today]);
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm space-y-4">
+    <div className={`border border-gray-200 bg-white p-5 shadow-sm space-y-4 ${variant === "analytics" ? "rounded-lg" : "rounded-2xl"}`}>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Business insights</p>
