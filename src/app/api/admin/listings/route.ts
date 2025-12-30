@@ -30,13 +30,90 @@ export async function GET(request: NextRequest) {
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { supabaseAdmin } = auth;
-    const { data, error } = await supabaseAdmin
-      .from("listings")
-      .select("*, profiles:seller_id(id, name, username, avatar_url)")
-      .order("created_at", { ascending: false });
+    const { searchParams } = new URL(request.url);
 
+    const page = Math.max(parseInt(searchParams.get("page") || "1", 10), 1);
+    const pageSize = Math.min(Math.max(parseInt(searchParams.get("pageSize") || "20", 10), 1), 100);
+    const status = searchParams.get("status") || "all";
+    const search = (searchParams.get("search") || "").trim();
+
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    let query = supabaseAdmin
+      .from("listings")
+      .select(
+        "id, title, price, status, created_at, images, seller_id, view_count, category, profiles:seller_id(id, name, username, avatar_url)",
+        { count: "exact" }
+      );
+
+    if (status === "reported") {
+      const { data: reportedRows, error: reportFilterError } = await supabaseAdmin
+        .from("listing_reports")
+        .select("listing_id")
+        .eq("status", "pending");
+
+      if (reportFilterError) throw reportFilterError;
+
+      const reportedIds = Array.from(new Set((reportedRows || []).map((row) => row.listing_id).filter(Boolean)));
+      if (!reportedIds.length) {
+        return NextResponse.json({ listings: [], total: 0, page, pageSize });
+      }
+
+      query = query.in("id", reportedIds);
+    } else if (status && status !== "all") {
+      query = query.eq("status", status);
+    }
+
+    if (search) {
+      query = query.or(`title.ilike.%${search}%,category.ilike.%${search}%`);
+    }
+
+    const { data, count, error } = await query.order("created_at", { ascending: false }).range(from, to);
     if (error) throw error;
-    return NextResponse.json(data);
+
+    const listingIds = (data || []).map((listing) => listing.id).filter(Boolean);
+    const idFilter = listingIds.length ? listingIds : ["__none__"];
+
+    const [savesRes, offersRes, reportsRes] = await Promise.all([
+      supabaseAdmin.from("saved_listings").select("listing_id").in("listing_id", idFilter),
+      supabaseAdmin.from("offers").select("listing_id").in("listing_id", idFilter),
+      supabaseAdmin.from("listing_reports").select("listing_id, status").in("listing_id", idFilter),
+    ]);
+
+    const countByListing = (rows: { listing_id: string; status?: string }[] | null | undefined, statusFilter?: string) => {
+      const map = new Map<string, number>();
+      (rows || []).forEach((row) => {
+        if (!row?.listing_id) return;
+        if (statusFilter && row.status !== statusFilter) return;
+        map.set(row.listing_id, (map.get(row.listing_id) || 0) + 1);
+      });
+      return map;
+    };
+
+    const saveCounts = countByListing(savesRes.data);
+    const offerCounts = countByListing(offersRes.data);
+    const reportCounts = countByListing(reportsRes.data, "pending");
+
+    const listings = (data || []).map((listing) => ({
+      id: listing.id,
+      title: listing.title,
+      price: listing.price || 0,
+      status: listing.status,
+      created_at: listing.created_at,
+      images: listing.images || [],
+      seller_id: listing.seller_id,
+      seller_name: listing.profiles?.name || "Unknown",
+      seller_username: listing.profiles?.username || "",
+      seller_avatar: listing.profiles?.avatar_url || null,
+      view_count: listing.view_count || 0,
+      save_count: saveCounts.get(listing.id) || 0,
+      offer_count: offerCounts.get(listing.id) || 0,
+      report_count: reportCounts.get(listing.id) || 0,
+      category: listing.category || "",
+    }));
+
+    return NextResponse.json({ listings, total: count || 0, page, pageSize });
   } catch (error) {
     console.error("Admin listings GET error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

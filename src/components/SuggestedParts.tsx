@@ -163,12 +163,12 @@ export default function SuggestedParts({ limit = 12 }: Props) {
 
             {/* Mobile: horizontal scroll, Desktop: fixed grid of 5 */}
             <div className="overflow-x-auto scrollbar-hide md:overflow-visible">
-              <div className="flex gap-3 md:grid md:grid-cols-5">
+              <div className="flex gap-4 md:grid md:grid-cols-5">
                 {list.slice(0, 5).map((p) => (
                   <article
                     key={`${filter.id}-${p.id}`}
                     data-listing-card={String(p.id)}
-                    className="rounded-sm border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all flex flex-col shrink-0 w-[65%] min-w-[220px] sm:w-[200px] md:w-auto"
+                    className="rounded-sm border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all flex flex-col shrink-0 w-[70%] min-w-[230px] sm:w-[220px] md:w-auto"
                   >
                     <Link href={`/listing/${p.id}`} className="block relative aspect-[4/3] overflow-hidden rounded-t-sm">
                       <SafeImage src={p.image} alt={p.title} className="absolute inset-0 w-full h-full object-cover" />

@@ -33,7 +33,7 @@ export default function ModerationLogPage() {
         setLoading(false);
         return;
       }
-      const res = await fetch("/api/admin/reports", {
+      const res = await fetch("/api/reports", {
         headers: { Authorization: `Bearer ${session.session.access_token}` },
       });
       if (!res.ok) {

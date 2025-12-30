@@ -215,6 +215,9 @@ export async function POST(
 
     if (type === "text" && text) {
       const safety = analyzeMessageSafety(text);
+      if (text.length > 2000) {
+        return NextResponse.json({ error: "Message too long (max 2000 characters)" }, { status: 400 });
+      }
       if (safety.blockReason) {
         return NextResponse.json(
           { error: safety.blockReason, code: "MESSAGE_BLOCKED" },
@@ -230,12 +233,23 @@ export async function POST(
     // Verify thread access
     const { data: thread, error: threadError } = await supabase
       .from("threads")
-      .select("*")
+      .select("id, participant_1_id, participant_2_id, a_user, b_user")
       .eq("id", threadId)
       .single();
 
     if (threadError || !thread) {
       return NextResponse.json({ error: "Thread not found" }, { status: 404 });
+    }
+    const participants = [
+      thread.participant_1_id,
+      thread.participant_2_id,
+      (thread as any).a_user,
+      (thread as any).b_user,
+    ]
+      .filter(Boolean)
+      .map((x) => String(x));
+    if (!participants.includes(user.id)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Attempt insert using new schema (from_user_id). Also include legacy columns to satisfy NOT NULL if present.

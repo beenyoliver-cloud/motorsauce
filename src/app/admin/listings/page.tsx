@@ -27,10 +27,12 @@ interface Listing {
 
 export default function AdminListingsPage() {
   const router = useRouter();
+  const PAGE_SIZE = 20;
   const [loading, setLoading] = useState(true);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
-  const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "draft" | "sold" | "reported">("all");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "price_high" | "price_low" | "views" | "reports">("newest");
@@ -42,10 +44,15 @@ export default function AdminListingsPage() {
   const [bulkAction, setBulkAction] = useState<string>("");
 
   useEffect(() => { checkAdminAndFetch(); }, []);
-  useEffect(() => { filterAndSort(); }, [listings, searchQuery, statusFilter, sortBy]);
+  useEffect(() => {
+    if (accessToken) {
+      fetchListings();
+    }
+  }, [accessToken, searchQuery, statusFilter, page]);
 
   async function checkAdminAndFetch() {
     try {
+      setLoading(true);
       const supabase = supabaseBrowser();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) { router.push("/auth/login"); return; }
@@ -56,80 +63,75 @@ export default function AdminListingsPage() {
       if (!isAdmin) { router.push("/"); return; }
 
       setAccessToken(session.access_token);
-      await fetchListings();
-    } catch (err) { console.error(err); } finally { setLoading(false); }
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
+    }
   }
 
   async function fetchListings() {
-    const supabase = supabaseBrowser();
-    
-    const { data: listingsData, error } = await supabase
-      .from("listings")
-      .select(`*, profiles:seller_id(id, name, username, avatar_url)`)
-      .order("created_at", { ascending: false });
+    if (!accessToken) return;
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        pageSize: PAGE_SIZE.toString(),
+      });
 
-    if (error) { console.error(error); return; }
+      if (statusFilter !== "all") params.append("status", statusFilter);
+      if (searchQuery.trim()) params.append("search", searchQuery.trim());
 
-    const enriched = await Promise.all((listingsData || []).map(async (listing) => {
-      const [savesRes, offersRes, reportsRes] = await Promise.all([
-        supabase.from("saved_listings").select("id", { count: "exact", head: true }).eq("listing_id", listing.id),
-        supabase.from("offers").select("id", { count: "exact", head: true }).eq("listing_id", listing.id),
-        supabase.from("listing_reports").select("id", { count: "exact", head: true }).eq("listing_id", listing.id).eq("status", "pending"),
-      ]);
+      const res = await fetch(`/api/admin/listings?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
 
-      return {
-        id: listing.id,
-        title: listing.title,
-        price: listing.price || 0,
-        status: listing.status,
-        created_at: listing.created_at,
-        images: listing.images || [],
-        seller_id: listing.seller_id,
-        seller_name: listing.profiles?.name || "Unknown",
-        seller_username: listing.profiles?.username || "",
-        seller_avatar: listing.profiles?.avatar_url,
-        view_count: listing.view_count || 0,
-        save_count: savesRes.count || 0,
-        offer_count: offersRes.count || 0,
-        report_count: reportsRes.count || 0,
-        category: listing.category || "",
-      };
-    }));
+      if (!res.ok) throw new Error("Failed to load listings");
 
-    setListings(enriched);
+      const data = await res.json();
+      const totalCount = typeof data.total === "number" ? data.total : 0;
+      const maxPage = Math.max(Math.ceil(totalCount / PAGE_SIZE), 1);
+
+      if (page > maxPage) {
+        setTotal(totalCount);
+        setListings([]);
+        setPage(maxPage);
+        return;
+      }
+
+      setListings(Array.isArray(data.listings) ? data.listings : []);
+      setTotal(totalCount);
+      setSelectedIds(new Set());
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function filterAndSort() {
-    let filtered = [...listings];
+  const filteredListings = statusFilter === "reported" ? listings.filter((l) => l.report_count > 0) : listings;
 
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      filtered = filtered.filter(l => 
-        l.title.toLowerCase().includes(q) || 
-        l.seller_name.toLowerCase().includes(q) ||
-        l.seller_username.toLowerCase().includes(q) ||
-        l.category.toLowerCase().includes(q)
-      );
-    }
-
-    switch (statusFilter) {
-      case "active": filtered = filtered.filter(l => l.status === "active"); break;
-      case "draft": filtered = filtered.filter(l => l.status === "draft"); break;
-      case "sold": filtered = filtered.filter(l => l.status === "sold"); break;
-      case "reported": filtered = filtered.filter(l => l.report_count > 0); break;
-    }
-
+  const visibleListings = [...filteredListings].sort((a, b) => {
     switch (sortBy) {
-      case "newest": filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()); break;
-      case "oldest": filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()); break;
-      case "price_high": filtered.sort((a, b) => b.price - a.price); break;
-      case "price_low": filtered.sort((a, b) => a.price - b.price); break;
-      case "views": filtered.sort((a, b) => b.view_count - a.view_count); break;
-      case "reports": filtered.sort((a, b) => b.report_count - a.report_count); break;
+      case "newest":
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      case "oldest":
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      case "price_high":
+        return b.price - a.price;
+      case "price_low":
+        return a.price - b.price;
+      case "views":
+        return b.view_count - a.view_count;
+      case "reports":
+        return b.report_count - a.report_count;
+      default:
+        return 0;
     }
+  });
 
-    setFilteredListings(filtered);
-  }
+  const totalPages = Math.max(Math.ceil(total / PAGE_SIZE), 1);
+  const startItem = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const endItem = Math.min(page * PAGE_SIZE, total);
 
   function toggleSelect(id: string) {
     const newSet = new Set(selectedIds);
@@ -139,10 +141,10 @@ export default function AdminListingsPage() {
   }
 
   function toggleSelectAll() {
-    if (selectedIds.size === filteredListings.length) {
+    if (selectedIds.size === visibleListings.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(filteredListings.map(l => l.id)));
+      setSelectedIds(new Set(visibleListings.map(l => l.id)));
     }
   }
 
@@ -224,7 +226,7 @@ export default function AdminListingsPage() {
             <ArrowLeft className="h-4 w-4" />Back to Dashboard
           </Link>
           <h1 className="text-3xl font-bold text-gray-900">Listing Management</h1>
-          <p className="text-gray-600 mt-1">{listings.length} total listings</p>
+          <p className="text-gray-600 mt-1">{total} total listings</p>
         </div>
 
         <div className="bg-white rounded-lg shadow mb-6">
@@ -232,10 +234,20 @@ export default function AdminListingsPage() {
             <div className="flex flex-col lg:flex-row gap-4">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input type="text" placeholder="Search by title, seller, or category..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" />
+                <input
+                  type="text"
+                  placeholder="Search by title, seller, or category..."
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+                  className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
               </div>
               <div className="flex items-center gap-3">
-                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="border rounded-lg px-3 py-2">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => { setStatusFilter(e.target.value as typeof statusFilter); setPage(1); }}
+                  className="border rounded-lg px-3 py-2"
+                >
                   <option value="all">All Status</option>
                   <option value="active">Active</option>
                   <option value="draft">Draft</option>
@@ -275,7 +287,7 @@ export default function AdminListingsPage() {
           <div className="divide-y">
             <div className="p-3 bg-gray-50 flex items-center gap-4 text-sm font-medium text-gray-600">
               <button onClick={toggleSelectAll} className="p-1">
-                {selectedIds.size === filteredListings.length && filteredListings.length > 0 ? <CheckSquare className="h-5 w-5 text-blue-600" /> : <Square className="h-5 w-5" />}
+                {selectedIds.size === visibleListings.length && visibleListings.length > 0 ? <CheckSquare className="h-5 w-5 text-blue-600" /> : <Square className="h-5 w-5" />}
               </button>
               <span className="w-16">Image</span>
               <span className="flex-1">Title</span>
@@ -286,7 +298,7 @@ export default function AdminListingsPage() {
               <span className="w-32 text-right">Actions</span>
             </div>
 
-            {filteredListings.map((listing) => (
+            {visibleListings.map((listing) => (
               <div key={listing.id} className={`p-3 flex items-center gap-4 hover:bg-gray-50 ${listing.report_count > 0 ? "bg-orange-50" : ""}`}>
                 <button onClick={() => toggleSelect(listing.id)} className="p-1">
                   {selectedIds.has(listing.id) ? <CheckSquare className="h-5 w-5 text-blue-600" /> : <Square className="h-5 w-5 text-gray-400" />}
@@ -360,12 +372,33 @@ export default function AdminListingsPage() {
               </div>
             ))}
 
-            {filteredListings.length === 0 && (
+            {visibleListings.length === 0 && (
               <div className="text-center py-12">
                 <Package className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="mt-2 text-sm font-medium text-gray-900">No listings found</h3>
               </div>
             )}
+          </div>
+
+          <div className="flex items-center justify-between px-4 py-3 text-sm text-gray-600">
+            <span>Showing {startItem}-{endItem} of {total}</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage(Math.max(page - 1, 1))}
+                disabled={page === 1}
+                className="px-3 py-1 border rounded-lg disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span>Page {page} of {totalPages}</span>
+              <button
+                onClick={() => setPage(Math.min(page + 1, totalPages))}
+                disabled={page === totalPages || total === 0}
+                className="px-3 py-1 border rounded-lg disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
       </div>

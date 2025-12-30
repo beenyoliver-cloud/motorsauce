@@ -15,7 +15,7 @@ import ToastContainer from "@/components/Toast";
 
 export default function Home() {
   return (
-    <main className="mx-auto max-w-6xl px-3 sm:px-4 py-5 sm:py-8 space-y-8 sm:space-y-10 md:space-y-12 bg-[#f5f5f5]">
+    <main className="mx-auto max-w-6xl px-3 sm:px-4 py-5 sm:py-8 space-y-8 sm:space-y-10 md:space-y-12 bg-white">
       <SEOJsonLd />
       <div className="space-y-3 sm:space-y-4">
         <Suspense fallback={null}>
