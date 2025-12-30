@@ -55,18 +55,14 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
-        <SellCta />
-      </div>
+      <SellCta />
 
       <section className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-black">Popular sellers</h2>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-2xl font-bold text-black">Popular sellers</h2>
           <span className="text-sm text-gray-500">Based on recent clicks</span>
         </div>
-        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-          <PopularSellers />
-        </div>
+        <PopularSellers />
       </section>
 
       <Suspense fallback={null}>
