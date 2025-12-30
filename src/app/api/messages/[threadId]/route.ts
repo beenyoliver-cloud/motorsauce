@@ -269,8 +269,25 @@ export async function POST(
 
     if (threadError || !thread) {
       console.error("[messages POST] Thread not found for threadId:", threadId);
-      // Try to recreate if we have enough info (peerId/listingRef)
-      if (peerId && peerId !== user.id) {
+
+      // If the user had soft-deleted this thread, remove the deletion marker and try again once.
+      try {
+        await supabase.from("thread_deletions").delete().eq("thread_id", threadId).eq("user_id", user.id);
+        const retry = await supabase
+          .from("threads")
+          .select("id, participant_1_id, participant_2_id, listing_ref")
+          .eq("id", threadId)
+          .single();
+        if (!retry.error && retry.data) {
+          thread = retry.data;
+          threadError = null;
+        }
+      } catch (undeleteErr) {
+        console.warn("[messages POST] Unable to clear deletion marker", undeleteErr);
+      }
+
+      // Try to recreate if still missing and we have enough info (peerId/listingRef)
+      if ((!thread || threadError) && peerId && peerId !== user.id) {
         const [p1, p2] = [user.id, peerId].sort();
         const conflictTarget = listingRef ? "participant_1_id,participant_2_id,listing_ref" : "participant_1_id,participant_2_id";
         let recreated = await supabase
@@ -297,7 +314,7 @@ export async function POST(
         thread = recreatedThread;
         threadId = recreatedThread.id;
         await supabase.from("thread_deletions").delete().eq("thread_id", threadId).eq("user_id", user.id);
-      } else {
+      } else if (!thread) {
         return NextResponse.json({ error: "Thread missing", threadMissing: true }, { status: 200 });
       }
     }
