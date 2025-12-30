@@ -213,7 +213,13 @@ export default function ThreadClientNew({
         setError(null);
       } catch (err: any) {
         console.error("[ThreadClientNew] Load error:", err);
-        if (active) setError(err.message || "Failed to load messages");
+        if (active) {
+          if (err?.threadMissing || err?.message === "THREAD_MISSING") {
+            setError("This conversation isn’t available anymore. Please reopen it from Messages or start a new chat.");
+          } else {
+            setError(err.message || "Failed to load messages");
+          }
+        }
       } finally {
         if (active) {
           setIsInitialLoading(false);
@@ -330,7 +336,11 @@ export default function ThreadClientNew({
           console.error("[ThreadClientNew] failed to recreate thread", createErr);
         }
       }
-      setSendError(msg || "Failed to send message");
+      if (missing && !peerId) {
+        setSendError("This conversation isn’t available anymore. Please reopen it from Messages or start a new chat.");
+      } else {
+        setSendError(msg || "Failed to send message");
+      }
       isSendingRef.current = false;
     } finally {
       setIsSending(false);

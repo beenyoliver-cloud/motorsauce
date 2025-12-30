@@ -184,13 +184,21 @@ export async function fetchMessages(threadId: string): Promise<Message[]> {
       headers: { Authorization: authHeader },
     });
 
+    const payload = await res.json().catch(() => ({} as any));
+
+    if (payload?.threadMissing) {
+      const err: any = new Error("THREAD_MISSING");
+      err.threadMissing = true;
+      err.detail = payload?.error;
+      throw err;
+    }
+
     if (!res.ok) {
-      console.error("[messagesClient] Failed to fetch messages:", res.status);
+      console.error("[messagesClient] Failed to fetch messages:", res.status, payload?.error || payload?.message);
       return [];
     }
 
-    const data = await res.json();
-    return data.messages || [];
+    return payload.messages || [];
   } catch (error) {
     console.error("[messagesClient] Error fetching messages:", error);
     return [];
