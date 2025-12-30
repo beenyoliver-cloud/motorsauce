@@ -791,7 +791,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
       />
 
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-3">
-        {/* ---------- Left column: Gallery + Description (desktop) ---------- */}
+        {/* ---------- Left column: Gallery + Description + Details (desktop) ---------- */}
         <div className="lg:col-span-2 space-y-4">
           <ListingImageGallery images={gallery} title={listing.title} />
           
@@ -802,6 +802,133 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               <p className="whitespace-pre-line text-sm text-gray-700 leading-relaxed">{listing.description}</p>
             </div>
           )}
+
+          {/* Fitment + analytics (desktop left) */}
+          <div className="hidden lg:grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="rounded-sm border border-gray-200 bg-white p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2">
+                  <ListChecks className="h-5 w-5 text-gray-800 flex-shrink-0" />
+                  <div>
+                    <h3 className="text-sm font-semibold text-black">Vehicle fitment</h3>
+                    <p className="text-xs text-gray-600">{fitmentSummary.helper}</p>
+                  </div>
+                </div>
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${fitmentSummary.confidence.tone}`}>
+                  {fitmentSummary.confidence.label}
+                </span>
+              </div>
+              {fitmentSummary.chips.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {fitmentSummary.chips.map((chip) => (
+                    <span key={chip} className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-800">
+                      {chip}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <Link
+                href="#fitment-checker"
+                className="mt-3 inline-flex items-center text-xs font-semibold text-yellow-700 hover:text-yellow-800"
+              >
+                Deep compatibility check →
+              </Link>
+            </div>
+            <div className="rounded-sm border border-gray-200 bg-white p-4">
+              <div className="flex items-start gap-2">
+                <TrendingUp className="h-5 w-5 text-gray-800 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm font-semibold text-black">Listing insights</h3>
+                  <p className="text-xs text-gray-600">Live marketplace telemetry</p>
+                </div>
+              </div>
+              <dl className="mt-4 grid grid-cols-2 gap-3">
+                {listingMetrics.map((metric) => (
+                  <div key={metric.label} className="rounded-lg border border-gray-100 bg-gray-50/70 px-3 py-2">
+                    <dt className="text-[11px] uppercase tracking-wide text-gray-500">{metric.label}</dt>
+                    <dd className="text-base font-semibold text-gray-900">{metric.value}</dd>
+                    {metric.helper && <p className="text-[11px] text-gray-500 mt-0.5">{metric.helper}</p>}
+                  </div>
+                ))}
+              </dl>
+            </div>
+          </div>
+
+          {/* Shipping & returns (desktop left) */}
+          <div className="hidden lg:block rounded-sm border border-gray-200 bg-white p-5">
+            <h2 className="mb-4 text-sm font-semibold text-black">Shipping & returns</h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {shippingHighlights.map((item) => (
+                <div key={item.title} className="flex items-start gap-3">
+                  <item.icon className="h-5 w-5 text-gray-800 flex-shrink-0" />
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900">{item.title}</div>
+                    <div className="text-sm text-gray-700">{item.body}</div>
+                    <p className="text-xs text-gray-500 mt-0.5">{item.helper}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Risk panel (desktop left) */}
+          <div className="hidden lg:block rounded-sm border border-gray-200 bg-white p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-800">Stay protected</span>
+              <span className="text-xs text-gray-600">On-platform chat & checkout recommended</span>
+            </div>
+            {riskFlags.length === 0 ? (
+              <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800 flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4" />
+                No issues detected. Pay through Motorsauce to keep funds safe.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {riskFlags.map((flag) => (
+                  <div
+                    key={flag.title}
+                    className={`rounded-lg px-3 py-2 text-sm flex items-start gap-2 border ${
+                      flag.tone === "red"
+                        ? "border-red-200 bg-red-50 text-red-800"
+                        : flag.tone === "amber"
+                        ? "border-amber-200 bg-amber-50 text-amber-900"
+                        : "border-blue-200 bg-blue-50 text-blue-900"
+                    }`}
+                  >
+                    <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold">{flag.title}</p>
+                      <p className="text-sm">{flag.body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="text-xs text-gray-600">
+              Tips: keep conversations in Messages, never pay off-platform, ask for OEM/VIN when unsure, and report anything that feels off.
+            </div>
+          </div>
+
+          {/* Marketplace safeguards (desktop left) */}
+          <div className="hidden lg:block rounded-sm border border-gray-200 bg-white p-5">
+            <div className="flex items-start gap-2 mb-3">
+              <ShieldCheck className="h-5 w-5 text-gray-800 flex-shrink-0" />
+              <div>
+                <h2 className="text-sm font-semibold text-black">Safety & messaging safeguards</h2>
+                <p className="text-xs text-gray-600">Stay inside Motorsource to keep payment protection active.</p>
+              </div>
+            </div>
+            <ul className="space-y-2 text-sm text-gray-700">
+              <li>• Payments stay in escrow until you confirm delivery or raise a dispute.</li>
+              <li>• We monitor chats for off-platform payment requests and intervene on repeat offenders.</li>
+              <li>
+                • Use the <span className="font-semibold">Report listing</span> button above if anything feels off—the trust desk reviews reports within hours.
+              </li>
+              {priceAnomaly.flagged && (
+                <li>• This listing is already queued for a manual check because of its unusual price.</li>
+              )}
+            </ul>
+          </div>
         </div>
 
         {/* ---------- Right column: Purchase options + Details ---------- */}
@@ -907,8 +1034,8 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             </div>
           )}
 
-          {/* Risk panel */}
-          <div className="rounded-sm border border-gray-200 bg-white p-4 space-y-3">
+          {/* Risk panel (mobile only) */}
+          <div className="lg:hidden rounded-sm border border-gray-200 bg-white p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-gray-800">Stay protected</span>
               <span className="text-xs text-gray-600">On-platform chat & checkout recommended</span>
@@ -945,8 +1072,8 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
-          {/* Fitment + analytics */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {/* Fitment + analytics (mobile only) */}
+          <div className="lg:hidden grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-sm border border-gray-200 bg-white p-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-start gap-2">
@@ -996,8 +1123,8 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
-          {/* Shipping & returns */}
-          <div className="rounded-sm border border-gray-200 bg-white p-4">
+          {/* Shipping & returns (mobile only) */}
+          <div className="lg:hidden rounded-sm border border-gray-200 bg-white p-4">
             <h2 className="mb-3 text-sm font-semibold text-black">Shipping & returns</h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {shippingHighlights.map((item) => (
@@ -1013,8 +1140,8 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
-          {/* Marketplace safeguards */}
-          <div className="rounded-sm border border-gray-200 bg-white p-4">
+          {/* Marketplace safeguards (mobile only) */}
+          <div className="lg:hidden rounded-sm border border-gray-200 bg-white p-4">
             <div className="flex items-start gap-2">
               <ShieldCheck className="h-5 w-5 text-gray-800 flex-shrink-0" />
               <div>
@@ -1142,10 +1269,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* Related Parts - full width at bottom */}
-      <div className="mt-8">
-        <h2 className="text-xl font-bold text-black mb-4">Related parts</h2>
-        <SimilarProducts listingId={listing.id} limit={6} />
-      </div>
+      <SimilarProducts listingId={listing.id} limit={6} />
     </section>
   );
 }
