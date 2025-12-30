@@ -13,7 +13,7 @@ type Props = {
 type Listing = {
   id: string;
   title: string;
-  price: number;
+  price: number | string;
   images: string[];
   created_at: string;
 };
@@ -87,6 +87,12 @@ export default function BusinessCatalogue({ businessId, isOwner }: Props) {
   const filteredListings = listings.filter((listing) =>
     listing.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const formatPrice = (value: number | string) => {
+    const numeric = Number(String(value).replace(/[^\d.]/g, ""));
+    if (!Number.isFinite(numeric)) return "—";
+    return `£${numeric.toFixed(2)}`;
+  };
 
   if (loading) {
     return (
@@ -172,7 +178,7 @@ export default function BusinessCatalogue({ businessId, isOwner }: Props) {
                 </div>
                 <div className="p-4">
                   <h3 className="font-semibold text-gray-900 line-clamp-2 mb-2">{listing.title}</h3>
-                  <p className="text-lg font-bold text-gray-900">£{Number(listing.price).toFixed(2)}</p>
+                  <p className="text-lg font-bold text-gray-900">{formatPrice(listing.price)}</p>
                 </div>
               </Link>
             );

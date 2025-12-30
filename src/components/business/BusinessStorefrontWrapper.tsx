@@ -15,11 +15,19 @@ export default function BusinessStorefrontWrapper({ profileId, displayName, isOw
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [owner, setOwner] = useState(isOwner);
 
   useEffect(() => {
     async function fetchBusinessProfile() {
       try {
         const supabase = supabaseBrowser();
+        // Determine ownership from auth
+        try {
+          const { data } = await supabase.auth.getUser();
+          if (data?.user?.id === profileId) setOwner(true);
+        } catch {
+          /* ignore auth errors */
+        }
         
         console.log("[BusinessStorefront] Fetching profile for ID:", profileId);
         
@@ -137,5 +145,5 @@ export default function BusinessStorefrontWrapper({ profileId, displayName, isOw
     );
   }
 
-  return <BusinessStorefront business={businessProfile} isOwner={isOwner} />;
+  return <BusinessStorefront business={businessProfile} isOwner={owner} />;
 }
