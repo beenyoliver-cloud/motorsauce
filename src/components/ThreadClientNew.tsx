@@ -166,8 +166,8 @@ export default function ThreadClientNew({
         setMessages(msgs);
         if (msgs.length > 0) setHasHadMessages(true);
 
-        // Derive peer from messages if any
-        let peerId = msgs.find(m => m.from.id !== currentUserId)?.from.id || peerId;
+        // Derive peer from messages if any (fallback to cached state)
+        let derivedPeerId = msgs.find(m => m.from.id !== currentUserId)?.from.id || peerId;
 
         // Load thread metadata (participants/listing) once
         if (!threadMetaFetched.current) {
@@ -179,10 +179,10 @@ export default function ThreadClientNew({
           if (!threadErr && threadRow) {
             threadMetaFetched.current = true;
             const { participant_1_id, participant_2_id, listing_ref } = threadRow as any;
-            if (!peerId && participant_1_id && participant_2_id) {
-              peerId = participant_1_id === currentUserId ? participant_2_id : participant_1_id;
+            if (!derivedPeerId && participant_1_id && participant_2_id) {
+              derivedPeerId = participant_1_id === currentUserId ? participant_2_id : participant_1_id;
             }
-            if (peerId) setPeerId(peerId);
+            if (derivedPeerId) setPeerId(derivedPeerId);
             if (listing_ref) setListingRef(listing_ref);
             if (listing_ref && !threadListing) {
               const { data: listingData } = await supabase
@@ -208,18 +208,18 @@ export default function ThreadClientNew({
           }
         }
 
-        if (peerId) {
+        if (derivedPeerId) {
           const { data: profileData } = await supabase
             .from("profiles")
             .select("id, name, email, created_at, avatar, account_type, business_verified, total_sales, avg_response_time_minutes, response_rate")
-            .eq("id", peerId)
+            .eq("id", derivedPeerId)
             .single();
           if (profileData) setPeerProfile(profileData);
         }
 
         // Persist meta so we can rebuild threads client-side if needed
         try {
-          localStorage.setItem(metaKey, JSON.stringify({ peerId: peerId || null, listingRef: listingRef || null }));
+          localStorage.setItem(metaKey, JSON.stringify({ peerId: derivedPeerId || null, listingRef: listingRef || null }));
         } catch {}
 
         setError(null);
