@@ -306,7 +306,7 @@ export default function Header() {
             </div>
 
             {/* Right actions */}
-            <div className="flex items-center justify-end gap-3 flex-shrink-0">
+            <div className="flex items-center justify-end gap-5 flex-shrink-0">
               {isUserLoaded && user && (
                 <Link
                   href="/sell"
@@ -340,7 +340,7 @@ export default function Header() {
               )}
               <button
                 onClick={() => setCartOpen(true)}
-                className="relative flex items-center text-black hover:text-yellow-500 transition-colors"
+                className="relative flex items-center text-black hover:text-yellow-500 transition-colors mr-2"
                 aria-label="Open basket"
               >
                 <ShoppingCart size={20} />

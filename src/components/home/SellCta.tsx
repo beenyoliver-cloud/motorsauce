@@ -3,12 +3,28 @@ import Link from "next/link";
 export default function SellCta() {
   return (
     <section className="mb-8">
-      <div className="rounded-2xl border border-yellow-500 bg-gradient-to-r from-yellow-400 to-yellow-500 p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-3 hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] animate-fadeIn">
-        <div>
-          <h3 className="text-lg sm:text-xl font-extrabold text-black">Got parts to sell?</h3>
-          <p className="text-sm text-black/80">List your part in minutes and reach buyers today.</p>
+      <div className="rounded-xl border border-gray-200 bg-white p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-yellow-300 via-yellow-400 to-amber-400 flex items-center justify-center text-black font-extrabold shadow-sm">
+            £
+          </div>
+          <div>
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900">Sell your parts in minutes</h3>
+            <p className="text-sm text-gray-700 mt-1">Create a listing, get buyers, and cash out securely with Stripe.</p>
+            <div className="flex flex-wrap gap-2 mt-2 text-xs text-gray-600">
+              <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 border border-gray-200">No monthly fees</span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 border border-gray-200">Offer & chat built-in</span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 border border-gray-200">Boost exposure</span>
+            </div>
+          </div>
         </div>
-        <Link href="/sell" className="rounded-full bg-black text-white px-4 py-2 font-semibold hover:bg-gray-800 hover:scale-105 transition-all duration-300 shadow-md hover:shadow-lg active:scale-95">List a part</Link>
+        <Link
+          href="/sell"
+          className="inline-flex items-center gap-2 rounded-md bg-[#0064d2] text-white px-4 py-2 text-sm font-semibold hover:bg-[#0056b3] transition-colors shadow-sm"
+        >
+          List a part
+          <span aria-hidden>→</span>
+        </Link>
       </div>
     </section>
   );
