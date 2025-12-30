@@ -23,9 +23,7 @@ export default function Home() {
         </Suspense>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-        <JustSoldTicker />
-      </div>
+      <JustSoldTicker />
 
       <section className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
         <div className="mb-2 sm:mb-3">
@@ -58,10 +56,7 @@ export default function Home() {
       <SellCta />
 
       <section className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-2xl font-bold text-black">Popular sellers</h2>
-          <span className="text-sm text-gray-500">Based on recent clicks</span>
-        </div>
+        <h2 className="text-2xl font-bold text-black mb-5">Popular sellers</h2>
         <PopularSellers />
       </section>
 
