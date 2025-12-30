@@ -312,7 +312,7 @@ export default function MessagesPage() {
               {pendingOfferThreads.slice(0, 3).map((thread) => (
                 <Link
                   key={thread.id}
-                  href={`/messages/${encodeURIComponent(thread.id)}`}
+                  href={`/messages/${encodeURIComponent(thread.id)}?peer=${encodeURIComponent(thread.peer.id)}${thread.listingRef ? `&listing=${encodeURIComponent(thread.listingRef)}` : ""}`}
                   onClick={() => handleOpenThread(thread)}
                   className="inline-flex items-center gap-2 rounded-full bg-white text-emerald-900 text-xs font-semibold px-3 py-1 border border-emerald-200 hover:border-emerald-400 transition"
                 >
@@ -506,7 +506,7 @@ export default function MessagesPage() {
                 return (
                   <Link
                     key={t.id}
-                    href={`/messages/${encodeURIComponent(t.id)}`}
+                    href={`/messages/${encodeURIComponent(t.id)}?peer=${encodeURIComponent(t.peer.id)}${t.listingRef ? `&listing=${encodeURIComponent(t.listingRef)}` : ""}`}
                     onClick={() => handleOpenThread(t)}
                     className={`group flex items-center gap-3 p-4 transition ${
                       unread ? "bg-yellow-50" : "bg-white hover:bg-gray-50"

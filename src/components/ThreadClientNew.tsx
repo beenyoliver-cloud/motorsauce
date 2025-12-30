@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { User, Calendar, Trash2, Mail, ShieldAlert, ShoppingBag, Shield } from "lucide-react";
 import {
   fetchMessages,
@@ -56,6 +56,7 @@ export default function ThreadClientNew({
   threadId: string;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -93,6 +94,15 @@ export default function ThreadClientNew({
   }, [messages]);
 
   useEffect(() => { setMounted(true); }, []);
+
+  // Seed peer/listing from URL params if provided (helps rebuild deleted threads from shared links)
+  useEffect(() => {
+    if (!mounted) return;
+    const peer = searchParams.get("peer");
+    const listing = searchParams.get("listing");
+    if (peer && !peerId) setPeerId(peer);
+    if (listing && !listingRef) setListingRef(listing);
+  }, [mounted, searchParams, peerId, listingRef]);
 
   // Fetch current user
   useEffect(() => {
