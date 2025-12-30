@@ -117,7 +117,7 @@ export async function GET(req: Request) {
     if (listingRefs.length > 0) {
       const { data: listings } = await supabase
         .from("listings")
-        .select("id, title, image_urls")
+        .select("id, title, images, image_urls")
         .in("id", listingRefs);
       
       if (listings) {
@@ -126,7 +126,11 @@ export async function GET(req: Request) {
           {
             id: l.id,
             title: l.title,
-            image: l.image_urls && l.image_urls.length > 0 ? l.image_urls[0] : null,
+            image: (
+              (Array.isArray(l.images) && l.images.length > 0 && (l.images[0]?.url || l.images[0])) ||
+              (Array.isArray(l.image_urls) && l.image_urls.length > 0 ? l.image_urls[0] : null) ||
+              null
+            ),
           }
         ]));
       }
@@ -287,44 +291,77 @@ export async function POST(req: Request) {
     const [p1, p2] = [user.id, peerId].sort();
     console.log("[threads API POST] Creating thread with participants:", { p1, p2, listingRef });
 
-    // Try new schema first (requires unique constraint on participant_1_id,participant_2_id,listing_ref)
-    let threadAttempt = await supabase
+    // Try to find existing thread first
+    let threadQuery = supabase
       .from("threads")
-      .upsert(
-        {
+      .select("*")
+      .eq("participant_1_id", p1)
+      .eq("participant_2_id", p2);
+    
+    if (listingRef) {
+      threadQuery = threadQuery.eq("listing_ref", listingRef);
+    } else {
+      threadQuery = threadQuery.is("listing_ref", null);
+    }
+
+    const { data: existingThread, error: fetchError } = await threadQuery.single();
+
+    let threadAttempt: any;
+    if (existingThread) {
+      console.log("[threads API POST] Found existing thread:", existingThread.id);
+      threadAttempt = { data: existingThread, error: null };
+    } else if (fetchError && fetchError.code === "PGRST116") {
+      // No row found - this is expected, create a new thread
+      console.log("[threads API POST] No existing thread found, creating new one");
+      threadAttempt = await supabase
+        .from("threads")
+        .insert({
           participant_1_id: p1,
           participant_2_id: p2,
           listing_ref: listingRef || null,
           last_message_text: "New conversation",
           last_message_at: new Date().toISOString(),
-        },
-        { onConflict: "participant_1_id,participant_2_id,listing_ref" }
-      )
-      .select()
-      .single();
-
-    if (threadAttempt.error && threadAttempt.error.code === "42703") {
+        })
+        .select()
+        .single();
+    } else if (fetchError && fetchError.code === "42703") {
       // Undefined column => legacy schema fallback
       console.warn("[threads API POST] Falling back to legacy schema (a_user/b_user)");
-      threadAttempt = await supabase
+      
+      // Try to find existing thread in legacy schema
+      const { data: legacyThread, error: legacyFetchError } = await supabase
         .from("threads")
-        .upsert(
-          {
+        .select("*")
+        .eq("a_user", p1)
+        .eq("b_user", p2)
+        .single();
+
+      if (legacyThread) {
+        console.log("[threads API POST] Found existing legacy thread:", legacyThread.id);
+        threadAttempt = { data: legacyThread, error: null };
+      } else if (legacyFetchError && legacyFetchError.code === "PGRST116") {
+        // Create new legacy thread
+        threadAttempt = await supabase
+          .from("threads")
+          .insert({
             a_user: p1,
             b_user: p2,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             listing_ref: listingRef || null,
-          },
-          { onConflict: "a_user,b_user" }
-        )
-        .select()
-        .single();
+          })
+          .select()
+          .single();
+      } else {
+        threadAttempt = { error: legacyFetchError };
+      }
+    } else {
+      threadAttempt = { error: fetchError };
     }
 
     if (threadAttempt.error) {
       const upsertError = threadAttempt.error;
-      console.error("[threads API POST] Error upserting thread after legacy attempt:", {
+      console.error("[threads API POST] Error creating/fetching thread:", {
         error: upsertError,
         code: upsertError.code,
         message: upsertError.message,

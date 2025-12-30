@@ -11,9 +11,18 @@ CREATE TABLE IF NOT EXISTS public.threads (
   last_message_at TIMESTAMPTZ DEFAULT NOW(),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  CONSTRAINT threads_participants_unique UNIQUE (participant_1_id, participant_2_id, listing_ref),
   CONSTRAINT threads_participants_ordered CHECK (participant_1_id < participant_2_id)
 );
+
+-- Create unique index that treats NULL listing_ref as matching any thread without a listing
+CREATE UNIQUE INDEX IF NOT EXISTS idx_threads_unique_participants 
+ON public.threads(participant_1_id, participant_2_id)
+WHERE listing_ref IS NULL;
+
+-- Create unique index for threads WITH a listing_ref
+CREATE UNIQUE INDEX IF NOT EXISTS idx_threads_unique_with_listing 
+ON public.threads(participant_1_id, participant_2_id, listing_ref)
+WHERE listing_ref IS NOT NULL;
 
 -- Messages table (stores individual messages within threads)
 CREATE TABLE IF NOT EXISTS public.messages (

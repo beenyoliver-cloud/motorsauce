@@ -84,13 +84,19 @@ export async function GET(
     }
 
     // Fetch profiles for message senders
-    const senderIds = [...new Set((messages || []).map((m: any) => m.from_user_id || m.sender) || [])];
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, name, avatar")
-      .in("id", senderIds);
-
-    const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+    const senderIds = [...new Set((messages || []).map((m: any) => m.from_user_id || m.sender).filter(Boolean))];
+    let profileMap = new Map();
+    if (senderIds.length > 0) {
+      const { data: profiles, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, name, avatar")
+        .in("id", senderIds);
+      if (profileError) {
+        console.warn("[messages API] Error fetching profiles:", profileError);
+      } else {
+        profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+      }
+    }
 
     // Fetch offers for messages that reference offers
     const offerIds = (messages || [])
@@ -231,14 +237,25 @@ export async function POST(
     }
 
     // Verify thread access
+    console.log("[messages POST] Looking for thread:", threadId, "for user:", user.id);
     const { data: thread, error: threadError } = await supabase
       .from("threads")
       .select("id, participant_1_id, participant_2_id, a_user, b_user")
       .eq("id", threadId)
       .single();
 
+    if (threadError) {
+      console.error("[messages POST] Thread lookup error:", {
+        code: threadError.code,
+        message: threadError.message,
+        details: threadError.details,
+      });
+    }
+    console.log("[messages POST] Thread found:", thread);
+
     if (threadError || !thread) {
-      return NextResponse.json({ error: "Thread not found" }, { status: 404 });
+      console.error("[messages POST] Thread not found for threadId:", threadId);
+      return NextResponse.json({ error: "Thread not found. Please reopen the conversation from Messages." }, { status: 404 });
     }
     const participants = [
       thread.participant_1_id,

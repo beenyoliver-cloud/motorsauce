@@ -66,12 +66,28 @@ export async function GET(req: Request) {
       return NextResponse.json({ count: cachedCount }, { status: 200 });
     }
 
-    // Fetch threads where user is a participant (either participant_1 or participant_2)
-    const { data: threads, error: threadsError } = await supabase
+    // Fetch threads where user is a participant (support both new and legacy columns)
+    let threads: any[] | null = null;
+    let threadsError: any = null;
+    let query = supabase
       .from("threads")
       .select("id, last_message_at, created_at")
-      .or(`participant_1_id.eq.${user.id},participant_2_id.eq.${user.id}`)
+      .or(`participant_1_id.eq.${user.id},participant_2_id.eq.${user.id},a_user.eq.${user.id},b_user.eq.${user.id}`)
       .order("last_message_at", { ascending: false });
+    let result = await query;
+
+    if (result.error && result.error.code === "42703") {
+      // Legacy schema without participant_1_id/participant_2_id
+      console.warn("[unread-count] Falling back to legacy thread columns a_user/b_user");
+      result = await supabase
+        .from("threads")
+        .select("id, last_message_at, created_at")
+        .or(`a_user.eq.${user.id},b_user.eq.${user.id}`)
+        .order("last_message_at", { ascending: false });
+    }
+
+    threads = result.data;
+    threadsError = result.error;
 
     if (threadsError) {
       console.error("[unread-count] threads error:", threadsError);

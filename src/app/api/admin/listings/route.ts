@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+export const dynamic = "force-dynamic";
+
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE;
@@ -41,20 +43,29 @@ export async function GET(request: NextRequest) {
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
-    let query = supabaseAdmin
-      .from("listings")
-      .select(
-        "id, title, price, status, created_at, images, seller_id, view_count, category, profiles:seller_id(id, name, username, avatar_url)",
-        { count: "exact" }
-      );
+    const baseColumns =
+      "id, title, price, status, created_at, images, seller_id, category, profiles:seller_id(id, name, username, avatar_url)";
+    const columnsWithViews = `${baseColumns}, view_count`;
+
+    let query = supabaseAdmin.from("listings").select(columnsWithViews, { count: "exact" });
+    let hasViewCount = true;
 
     if (status === "reported") {
-      const { data: reportedRows, error: reportFilterError } = await supabaseAdmin
+      let reportedRows: { listing_id: string }[] | null = null;
+      const { data: reportedData, error: reportFilterError } = await supabaseAdmin
         .from("listing_reports")
         .select("listing_id")
         .eq("status", "pending");
 
-      if (reportFilterError) throw reportFilterError;
+      if (reportFilterError) {
+        if (reportFilterError.code === "42P01") {
+          console.warn("[Admin Listings] listing_reports table missing; skipping reported filter.");
+        } else {
+          throw reportFilterError;
+        }
+      } else {
+        reportedRows = reportedData;
+      }
 
       const reportedIds = Array.from(new Set((reportedRows || []).map((row) => row.listing_id).filter(Boolean)));
       if (!reportedIds.length) {
@@ -70,16 +81,42 @@ export async function GET(request: NextRequest) {
       query = query.or(`title.ilike.%${search}%,category.ilike.%${search}%`);
     }
 
-    const { data, count, error } = await query.order("created_at", { ascending: false }).range(from, to);
+    let { data, count, error } = await query.order("created_at", { ascending: false }).range(from, to);
+    if (error && hasViewCount && error.code === "42703") {
+      console.warn("[Admin Listings] view_count column missing; retrying without it.");
+      hasViewCount = false;
+      const fallbackQuery = supabaseAdmin
+        .from("listings")
+        .select(baseColumns, { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      ({ data, count, error } = await fallbackQuery);
+    }
     if (error) throw error;
 
     const listingIds = (data || []).map((listing) => listing.id).filter(Boolean);
     const idFilter = listingIds.length ? listingIds : ["__none__"];
 
-    const [savesRes, offersRes, reportsRes] = await Promise.all([
-      supabaseAdmin.from("saved_listings").select("listing_id").in("listing_id", idFilter),
-      supabaseAdmin.from("offers").select("listing_id").in("listing_id", idFilter),
-      supabaseAdmin.from("listing_reports").select("listing_id, status").in("listing_id", idFilter),
+    const safeQuery = async <T>(
+      promise: Promise<{ data: T[] | null; error: any }>,
+      label: string
+    ): Promise<T[]> => {
+      const { data, error } = await promise;
+      if (error) {
+        if (error.code === "42P01") {
+          console.warn(`[Admin Listings] ${label} table missing; returning empty set.`);
+          return [];
+        }
+        console.error(`[Admin Listings] ${label} query error:`, error);
+        throw error;
+      }
+      return data || [];
+    };
+
+    const [saves, offers, reports] = await Promise.all([
+      safeQuery<{ listing_id: string }[]>(supabaseAdmin.from("saved_listings").select("listing_id").in("listing_id", idFilter), "saved_listings"),
+      safeQuery<{ listing_id: string }[]>(supabaseAdmin.from("offers").select("listing_id").in("listing_id", idFilter), "offers"),
+      safeQuery<{ listing_id: string; status?: string }[]>(supabaseAdmin.from("listing_reports").select("listing_id, status").in("listing_id", idFilter), "listing_reports"),
     ]);
 
     const countByListing = (rows: { listing_id: string; status?: string }[] | null | undefined, statusFilter?: string) => {
@@ -92,9 +129,9 @@ export async function GET(request: NextRequest) {
       return map;
     };
 
-    const saveCounts = countByListing(savesRes.data);
-    const offerCounts = countByListing(offersRes.data);
-    const reportCounts = countByListing(reportsRes.data, "pending");
+    const saveCounts = countByListing(saves);
+    const offerCounts = countByListing(offers);
+    const reportCounts = countByListing(reports, "pending");
 
     const listings = (data || []).map((listing) => {
       const profile = Array.isArray(listing.profiles) ? listing.profiles[0] : listing.profiles;
@@ -109,7 +146,7 @@ export async function GET(request: NextRequest) {
         seller_name: profile?.name || "Unknown",
         seller_username: profile?.username || "",
         seller_avatar: profile?.avatar_url || null,
-        view_count: listing.view_count || 0,
+        view_count: hasViewCount ? listing.view_count || 0 : 0,
         save_count: saveCounts.get(listing.id) || 0,
         offer_count: offerCounts.get(listing.id) || 0,
         report_count: reportCounts.get(listing.id) || 0,
