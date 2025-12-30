@@ -284,7 +284,15 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { peerId } = body;
     const listingRefRaw = body?.listingRef;
-    const listingRef = listingRefRaw && `${listingRefRaw}`.trim().length > 0 ? `${listingRefRaw}` : null;
+    const listingRefCandidate =
+      listingRefRaw &&
+      `${listingRefRaw}`.trim().length > 0 &&
+      `${listingRefRaw}` !== "null" &&
+      `${listingRefRaw}` !== "undefined"
+        ? `${listingRefRaw}`.trim()
+        : null;
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+    const listingRef = listingRefCandidate && uuidRegex.test(listingRefCandidate) ? listingRefCandidate : null;
 
     console.log("[threads API POST] Request body:", { peerId, listingRef });
 
@@ -372,31 +380,29 @@ export async function POST(req: Request) {
     }
 
     if (isNew) {
-      // Insert initial system message so UI can derive peer & show timeline (support legacy sender column)
-      let systemInsert = await supabase
-        .from("messages")
-        .insert({
+      // Insert initial system message to seed context
+      const messagesToInsert: any[] = [
+        {
           thread_id: threadNormalized.id,
           from_user_id: user.id, // system message authored by creator for RLS compliance
-          sender: user.id,
           message_type: "system",
           text_content: listingRef ? "Conversation started regarding listing" : "Conversation started",
+        },
+      ];
+
+      // If listing_ref exists, add a listing context system message (lightweight "share")
+      if (listingRef) {
+        messagesToInsert.push({
+          thread_id: threadNormalized.id,
+          from_user_id: user.id,
+          message_type: "system",
+          text_content: `Listing: ${listingRef}`,
         });
+      }
+
+      const systemInsert = await supabase.from("messages").insert(messagesToInsert);
       if (systemInsert.error) {
-        if (systemInsert.error.code === "42703") {
-          // Legacy fallback (text_content may be 'text', sender column present)
-          systemInsert = await supabase
-            .from("messages")
-            .insert({
-              thread_id: threadNormalized.id,
-              sender: user.id,
-              message_type: "system",
-              text: listingRef ? "Conversation started regarding listing" : "Conversation started",
-            });
-        }
-        if (systemInsert.error) {
-          console.warn("[threads API POST] Failed to create initial system message after fallback", systemInsert.error);
-        }
+        console.warn("[threads API POST] Failed to create initial system messages", systemInsert.error);
       }
     }
 
