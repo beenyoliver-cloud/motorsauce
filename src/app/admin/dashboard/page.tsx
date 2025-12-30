@@ -197,7 +197,7 @@ function StatCard({ title, value, subtitle, icon, color, label }: { title: strin
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex items-center justify-between mb-4"><div className={`p-3 rounded-lg ${colorClasses[color]}`}>{icon}</div></div>
       <h3 className="text-gray-600 text-sm font-medium">{title}</h3>
-      <p className="text-2xl font-bold text-gray-900 mt-1">{value}{label && <span className="text-sm font-normal text-gray-500 ml-1">{label}</span>}</p>
+      <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
       <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
     </div>
   );

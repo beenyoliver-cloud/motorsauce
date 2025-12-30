@@ -43,7 +43,10 @@ export default function AdminListingsPage() {
   const [processing, setProcessing] = useState(false);
   const [bulkAction, setBulkAction] = useState<string>("");
 
-  useEffect(() => { checkAdminAndFetch(); }, []);
+  useEffect(() => { 
+    checkAdminAndFetch(); 
+  }, []);
+
   useEffect(() => {
     if (accessToken) {
       fetchListings();

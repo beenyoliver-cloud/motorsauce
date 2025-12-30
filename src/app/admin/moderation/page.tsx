@@ -50,6 +50,11 @@ export default function ModerationLogPage() {
 
   return (
     <section className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+      <div className="mb-4">
+        <Link href="/admin/dashboard" className="text-sm font-medium text-blue-600 hover:text-blue-800 mb-2 inline-block">
+          ← Back to Dashboard
+        </Link>
+      </div>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Moderation Log</h1>

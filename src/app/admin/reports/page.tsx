@@ -3,6 +3,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase";
 import { Flag, Eye, CheckCircle, XCircle, AlertCircle, Clock, Users, ArrowLeft } from "lucide-react";
 import { AdminNav, AdminBreadcrumb } from "@/components/AdminNav";
@@ -195,6 +196,9 @@ function AdminReportsPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4">
+        <Link href="/admin/dashboard" className="text-blue-600 hover:text-blue-800 flex items-center gap-1 mb-2 text-sm font-medium">
+          <ArrowLeft className="h-4 w-4" />Back to Dashboard
+        </Link>
         <AdminBreadcrumb current="Reports" />
         <AdminNav />
         

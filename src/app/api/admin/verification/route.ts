@@ -86,39 +86,53 @@ export async function GET(request: NextRequest) {
 
     const enriched = await Promise.all(
       (verifications || []).map(async (v) => {
-        let storagePath: string | null = null;
-        if (typeof v.document_url === "string" && v.document_url.length > 0) {
-          if (/^https?:\/\//.test(v.document_url)) {
-            const match = v.document_url.match(/seller-compliance\/(.+)$/);
-            if (match && match[1]) storagePath = match[1];
-          } else {
-            storagePath = v.document_url;
+        try {
+          let storagePath: string | null = null;
+          if (typeof v.document_url === "string" && v.document_url.length > 0) {
+            if (/^https?:\/\//.test(v.document_url)) {
+              const match = v.document_url.match(/seller-compliance\/(.+)$/);
+              if (match && match[1]) storagePath = match[1];
+            } else {
+              storagePath = v.document_url;
+            }
           }
-        }
 
-        let documentSignedUrl: string | null = null;
-        if (storagePath) {
-          const { data: signed, error: signError } = await supabaseAdmin.storage
-            .from(COMPLIANCE_BUCKET)
-            .createSignedUrl(storagePath, 600);
-          if (!signError) documentSignedUrl = signed?.signedUrl || null;
-        }
+          let documentSignedUrl: string | null = null;
+          if (storagePath) {
+            const { data: signed, error: signError } = await supabaseAdmin.storage
+              .from(COMPLIANCE_BUCKET)
+              .createSignedUrl(storagePath, 600);
+            if (!signError) documentSignedUrl = signed?.signedUrl || null;
+          }
 
-        return {
-          ...v,
-          document_url: null,
-          profile: profiles.find((p) => p.id === v.profile_id) || null,
-          business: businesses.find((b) => b.profile_id === v.profile_id) || null,
-          document_signed_url: documentSignedUrl,
-          history: historyMap[v.profile_id] || [],
-        };
+          return {
+            ...v,
+            document_url: null,
+            profile: profiles.find((p) => p.id === v.profile_id) || null,
+            business: businesses.find((b) => b.profile_id === v.profile_id) || null,
+            document_signed_url: documentSignedUrl,
+            history: historyMap[v.profile_id] || [],
+          };
+        } catch (mapErr) {
+          console.error("Error enriching verification:", mapErr);
+          // Return minimal version on error
+          return {
+            ...v,
+            document_url: null,
+            document_signed_url: null,
+            profile: profiles.find((p) => p.id === v.profile_id) || null,
+            business: businesses.find((b) => b.profile_id === v.profile_id) || null,
+            history: historyMap[v.profile_id] || [],
+          };
+        }
       })
     );
 
     return NextResponse.json(enriched);
   } catch (err) {
     console.error("Admin verification GET error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const message = err instanceof Error ? err.message : "Internal server error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
