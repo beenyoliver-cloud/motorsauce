@@ -43,7 +43,7 @@ export async function GET(
     // Verify user has access to this thread
     const { data: thread, error: threadError } = await supabase
       .from("threads")
-      .select("id, participant_1_id, participant_2_id, a_user, b_user")
+      .select("id, participant_1_id, participant_2_id")
       .eq("id", threadId)
       .single();
 
@@ -51,14 +51,7 @@ export async function GET(
       // Gracefully return empty messages so UI can recreate thread if needed
       return NextResponse.json({ error: "Thread not found", threadMissing: true, messages: [] }, { status: 200 });
     }
-    const participants = [
-      thread.participant_1_id,
-      thread.participant_2_id,
-      (thread as any).a_user,
-      (thread as any).b_user,
-    ]
-      .filter(Boolean)
-      .map((x) => String(x));
+    const participants = [thread.participant_1_id, thread.participant_2_id].filter(Boolean).map((x) => String(x));
     if (!participants.includes(user.id)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -251,7 +244,7 @@ export async function POST(
     console.log("[messages POST] Looking for thread:", threadId, "for user:", user.id);
     let { data: thread, error: threadError } = await supabase
       .from("threads")
-      .select("id, participant_1_id, participant_2_id, a_user, b_user, listing_ref")
+      .select("id, participant_1_id, participant_2_id, listing_ref")
       .eq("id", threadId)
       .single();
 
@@ -322,14 +315,7 @@ export async function POST(
       return NextResponse.json({ error: "Thread not found. Please reopen the conversation from Messages." }, { status: 404 });
     }
     
-    const participants = [
-      thread.participant_1_id,
-      thread.participant_2_id,
-      (thread as any).a_user,
-      (thread as any).b_user,
-    ]
-      .filter(Boolean)
-      .map((x) => String(x));
+    const participants = [thread.participant_1_id, thread.participant_2_id].filter(Boolean).map((x) => String(x));
     if (!participants.includes(user.id)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
