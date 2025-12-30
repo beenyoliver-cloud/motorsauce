@@ -434,6 +434,50 @@ function SettingsContent() {
                     </p>
                   </div>
 
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Profile Background
+                    </label>
+                    {backgroundImage && (
+                      <div className="mb-4 w-full h-32 rounded-lg overflow-hidden border border-gray-200">
+                        <img 
+                          src={backgroundImage} 
+                          alt="Background" 
+                          className="w-full h-full object-cover"
+                          onError={(e) => e.currentTarget.style.display = 'none'} 
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <input
+                        type="url"
+                        value={backgroundImage}
+                        onChange={(e) => setBackgroundImage(e.target.value)}
+                        placeholder="https://example.com/background.jpg"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-gray-900 mb-2"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => backgroundInputRef.current?.click()}
+                        disabled={uploading === 'background'}
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
+                      >
+                        <Upload size={16} />
+                        {uploading === 'background' ? 'Uploading...' : 'Upload Image'}
+                      </button>
+                      <input
+                        ref={backgroundInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBackgroundFileChange}
+                        className="hidden"
+                      />
+                      <p className="text-xs text-gray-500 mt-2">
+                        Max 5MB (JPEG, PNG, WebP). Recommended: 1920x400px
+                      </p>
+                    </div>
+                  </div>
+
                   <button
                     type="submit"
                     disabled={saving}
