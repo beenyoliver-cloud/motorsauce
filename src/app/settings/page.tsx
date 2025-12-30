@@ -608,11 +608,11 @@ function SettingsContent() {
                       Access the compliance center to submit KYB documentation, manage verifications, and review status updates.
                     </p>
                     <Link
-                      href="/settings/business?tab=compliance"
+                      href="/settings/business"
                       className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white rounded-lg font-semibold hover:bg-gray-800 transition"
                     >
                       <ShieldCheck size={16} />
-                      Open compliance center
+                      Open seller verification
                     </Link>
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                       <h3 className="text-sm font-medium text-gray-900 mb-2">What you may need</h3>

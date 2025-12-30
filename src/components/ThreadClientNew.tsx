@@ -76,6 +76,17 @@ export default function ThreadClientNew({
   const threadMetaFetched = useRef(false);
   const safetyInsights = useMemo(() => analyzeMessageSafety(draft), [draft]);
   const isBlockedBySafety = Boolean(safetyInsights.blockReason);
+  const historyWarnings = useMemo(() => {
+    const warnings = new Set<string>();
+    messages.forEach((m) => {
+      if (m.text) {
+        const res = analyzeMessageSafety(m.text);
+        res.warnings.forEach((w) => warnings.add(w));
+        if (res.blockReason) warnings.add(res.blockReason);
+      }
+    });
+    return Array.from(warnings);
+  }, [messages]);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -517,6 +528,18 @@ export default function ThreadClientNew({
         className="flex-1 min-h-0 overflow-y-auto p-3 space-y-6 overscroll-contain"
         style={viewportAdjustedHeight ? { height: viewportAdjustedHeight } : undefined}
       >
+        {historyWarnings.length > 0 && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 flex items-start gap-2">
+            <ShieldAlert className="h-4 w-4 flex-shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-semibold">Safety reminder</p>
+              {historyWarnings.map((w) => (
+                <p key={w}>{w}</p>
+              ))}
+              <p className="text-[11px] text-amber-800">Keep chat and payments on Motorsource for protection.</p>
+            </div>
+          </div>
+        )}
         {isRefreshing && (
           <div className="absolute top-2 right-3 text-[10px] text-gray-400 flex items-center gap-1">
             <span className="inline-block h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />

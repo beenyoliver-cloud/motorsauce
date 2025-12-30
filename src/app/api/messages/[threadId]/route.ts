@@ -43,20 +43,40 @@ export async function GET(
     // Verify user has access to this thread
     const { data: thread, error: threadError } = await supabase
       .from("threads")
-      .select("*")
+      .select("id, participant_1_id, participant_2_id, a_user, b_user")
       .eq("id", threadId)
       .single();
 
     if (threadError || !thread) {
       return NextResponse.json({ error: "Thread not found" }, { status: 404 });
     }
+    const participants = [
+      thread.participant_1_id,
+      thread.participant_2_id,
+      (thread as any).a_user,
+      (thread as any).b_user,
+    ]
+      .filter(Boolean)
+      .map((x) => String(x));
+    if (!participants.includes(user.id)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const limit = Math.min(Number(searchParams.get("limit") || 100), 200);
+    const before = searchParams.get("before");
 
     // Fetch messages (RLS will enforce access control)
-    const { data: messages, error: messagesError } = await supabase
+    let query = supabase
       .from("messages")
       .select("*")
       .eq("thread_id", threadId)
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: true })
+      .limit(limit);
+    if (before) {
+      query = query.lt("created_at", before);
+    }
+    const { data: messages, error: messagesError } = await query;
 
     if (messagesError) {
       console.error("[messages API] Error fetching messages:", messagesError);
@@ -106,12 +126,8 @@ export async function GET(
         }
         
         listingsMap = new Map((listings || []).map((l: any) => [l.id, l]));
-        console.log("[messages API] Fetched listings:", listings?.length || 0);
+        // no-op
       }
-      
-      console.log("[messages API] Fetched offers:", offers?.length || 0);
-      console.log("[messages API] Offers data:", JSON.stringify(offers, null, 2));
-      console.log("[messages API] Listings data:", JSON.stringify(Array.from(listingsMap.entries()), null, 2));
     }
 
     // Enrich messages
@@ -124,21 +140,6 @@ export async function GET(
       const recipientId = offer?.recipient_id || offer?.seller_id || null;
       const buyerId = offer?.buyer_id || null;
       const sellerId = offer?.seller_id || null;
-      
-      // Debug: log offer data if present
-      if (offer && m.message_type === "offer") {
-        console.log("[messages API] Enriching offer message:", {
-          offerId: m.offer_id,
-          hasOffer: !!offer,
-          hasListing: !!listing,
-          listingId: offer?.listing_id,
-          listingTitle: listing?.title,
-          offerListingTitle: offer?.listing_title,
-          listingImage: listing?.image,
-          offerListingImage: offer?.listing_image,
-          listingPrice: listing?.price,
-        });
-      }
       
       return {
         id: m.id,
@@ -173,13 +174,6 @@ export async function GET(
         updatedAt: m.updated_at,
       };
     });
-
-    console.log("[messages API] Returning enriched messages:", enriched.length);
-    // Log offer messages specifically
-    const offerMessages = enriched.filter(m => m.offer);
-    if (offerMessages.length > 0) {
-      console.log("[messages API] Offer messages being returned:", JSON.stringify(offerMessages, null, 2));
-    }
 
     return NextResponse.json({ messages: enriched }, { status: 200 });
   } catch (error: any) {
