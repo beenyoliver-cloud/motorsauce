@@ -51,7 +51,7 @@ export default function Footer() {
           <ul className="space-y-2 text-sm text-gray-600">
             <li><Link href="/categories/oem" className="hover:text-yellow-500">OEM Parts</Link></li>
             <li><Link href="/categories/aftermarket" className="hover:text-yellow-500">Aftermarket Parts</Link></li>
-            <li><Link href="/categories/compatibility" className="hover:text-yellow-500">Compatibility Search</Link></li>
+            <li><Link href="/registration" className="hover:text-yellow-500">Search by Registration</Link></li>
             <li><Link href="/categories/vin" className="hover:text-yellow-500">VIN Lookup</Link></li>
             <li><Link href="/categories/tools" className="hover:text-yellow-500">Tools & Accessories</Link></li>
           </ul>

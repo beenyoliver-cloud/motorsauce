@@ -77,7 +77,6 @@ export default function Header() {
   const categories = [
     ["OEM Parts", "/categories/oem"],
     ["Aftermarket Parts", "/categories/aftermarket"],
-    ["Compatibility Search", "/categories/compatibility"],
     ["Search by Registration", "/registration"],
     ["Tools & Accessories", "/categories/tools"],
   ] as const;
