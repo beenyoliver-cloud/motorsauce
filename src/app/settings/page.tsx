@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState, useRef, Suspense } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getCurrentUser, type LocalUser, nsKey } from "@/lib/auth";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { User, Mail, Lock, Save, Upload, MapPin, CreditCard, Bell } from "lucide-react";
+import { User, Mail, Lock, Save, Upload, MapPin, CreditCard, Bell, ShieldCheck } from "lucide-react";
 
-type Tab = "general" | "security" | "location" | "notifications" | "billing";
+type Tab = "general" | "security" | "location" | "notifications" | "billing" | "compliance";
 
 function SettingsContent() {
   const router = useRouter();
@@ -29,6 +30,7 @@ function SettingsContent() {
   const [postcode, setPostcode] = useState("");
   const [county, setCounty] = useState("");
   const [country, setCountry] = useState("United Kingdom");
+  const [accountType, setAccountType] = useState<string | null>(null);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -39,7 +41,7 @@ function SettingsContent() {
 
   useEffect(() => {
     const tab = searchParams?.get("tab");
-    if (tab && ["general", "security", "location", "notifications", "billing"].includes(tab)) {
+    if (tab && ["general", "security", "location", "notifications", "billing", "compliance"].includes(tab)) {
       setActiveTab(tab as Tab);
     }
   }, [searchParams]);
@@ -58,7 +60,7 @@ function SettingsContent() {
       // Load profile data
       const { data: profile } = await supabase
         .from('profiles')
-        .select('avatar, background_image, about, postcode, county, country')
+        .select('avatar, background_image, about, postcode, county, country, account_type')
         .eq('id', currentUser.id)
         .single();
       
@@ -69,6 +71,7 @@ function SettingsContent() {
         setPostcode(profile.postcode || "");
         setCounty(profile.county || "");
         setCountry(profile.country || "United Kingdom");
+        setAccountType((profile as any).account_type || null);
       }
       
       setLoading(false);
@@ -144,6 +147,20 @@ function SettingsContent() {
     }
 
     try {
+      const lastNameChangeKey = nsKey("last_name_change_at");
+      const lastChangeRaw = typeof window !== 'undefined' ? localStorage.getItem(lastNameChangeKey) : null;
+      const lastChange = lastChangeRaw ? new Date(lastChangeRaw).getTime() : 0;
+      const sixMonthsMs = 1000 * 60 * 60 * 24 * 30 * 6;
+      const now = Date.now();
+      const nameChanged = name.trim() !== (user.name || "");
+
+      if (nameChanged && lastChange && now - lastChange < sixMonthsMs) {
+        const nextDate = new Date(lastChange + sixMonthsMs).toLocaleDateString();
+        setMessage({ type: 'error', text: `Display name can only be changed once every 6 months. Try again after ${nextDate}.` });
+        setSaving(false);
+        return;
+      }
+
       // Update profiles table with ALL fields including name
       const { error: profileError } = await supabase
         .from('profiles')
@@ -157,6 +174,10 @@ function SettingsContent() {
         .eq('id', user.id);
 
       if (profileError) throw profileError;
+
+      if (nameChanged && typeof window !== 'undefined') {
+        localStorage.setItem(lastNameChangeKey, new Date().toISOString());
+      }
 
       // Update localStorage
       try {
@@ -236,6 +257,12 @@ function SettingsContent() {
     setSaving(true);
     setMessage(null);
 
+    if (!currentPassword) {
+      setMessage({ type: 'error', text: 'Enter your current password to change it' });
+      setSaving(false);
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       setMessage({ type: 'error', text: 'New passwords do not match' });
       setSaving(false);
@@ -249,9 +276,15 @@ function SettingsContent() {
     }
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
+      if (!user?.email) throw new Error('No email on file');
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
       });
+      if (signInError) throw new Error('Current password is incorrect');
+
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
 
       if (error) throw error;
 
@@ -269,6 +302,7 @@ function SettingsContent() {
   const tabs = [
     { id: "general" as Tab, label: "General", icon: User },
     { id: "security" as Tab, label: "Security", icon: Lock },
+    { id: "compliance" as Tab, label: "Compliance", icon: ShieldCheck },
     { id: "location" as Tab, label: "Location", icon: MapPin },
     { id: "notifications" as Tab, label: "Notifications", icon: Bell },
     { id: "billing" as Tab, label: "Billing", icon: CreditCard },
@@ -353,7 +387,7 @@ function SettingsContent() {
                       required
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      This is how your name appears on your profile
+                      This is how your name appears on your profile. Changes allowed once every 6 months.
                     </p>
                   </div>
 
@@ -498,6 +532,23 @@ function SettingsContent() {
                 <form onSubmit={handleUpdatePassword} className="space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Current Password
+                    </label>
+                    <input
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-gray-900"
+                      placeholder="Enter current password"
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Required to verify you before changing your password
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       New Password
                     </label>
                     <input
@@ -529,13 +580,60 @@ function SettingsContent() {
 
                   <button
                     type="submit"
-                    disabled={saving || !newPassword || !confirmPassword}
+                    disabled={saving || !currentPassword || !newPassword || !confirmPassword}
                     className="flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
                   >
                     <Lock size={16} />
                     {saving ? 'Updating...' : 'Update Password'}
                   </button>
                 </form>
+              </div>
+            )}
+
+            {/* Compliance Tab */}
+            {activeTab === "compliance" && (
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">Compliance & Verification</h2>
+                <p className="text-sm text-gray-600 mb-6">
+                  Stay aligned with our verification requirements to keep your account in good standing.
+                </p>
+
+                {accountType === 'business' ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-700">
+                      Access the compliance center to submit KYB documentation, manage verifications, and review status updates.
+                    </p>
+                    <Link
+                      href="/settings/business?tab=compliance"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white rounded-lg font-semibold hover:bg-gray-800 transition"
+                    >
+                      <ShieldCheck size={16} />
+                      Open compliance center
+                    </Link>
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <h3 className="text-sm font-medium text-gray-900 mb-2">What you may need</h3>
+                      <ul className="list-disc pl-5 space-y-1 text-sm text-gray-700">
+                        <li>Business identity documents (registration and director information)</li>
+                        <li>Proof of address and banking details for payouts</li>
+                        <li>Authorized representative contact details</li>
+                      </ul>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <h3 className="text-sm font-medium text-gray-900 mb-2">Identity verification</h3>
+                      <p className="text-sm text-gray-700">
+                        For individuals, we may request ID verification to protect buyers and sellers. Keep your profile details accurate to avoid disruptions.
+                      </p>
+                    </div>
+                    <ul className="list-disc pl-5 space-y-1 text-sm text-gray-700">
+                      <li>Ensure your legal name matches your ID</li>
+                      <li>Keep contact and address information current</li>
+                      <li>Respond promptly if we request verification</li>
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
 
