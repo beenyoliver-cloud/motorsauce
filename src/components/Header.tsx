@@ -263,19 +263,19 @@ export default function Header() {
       <nav className="w-full bg-white border-b border-gray-200 shadow-sm fixed top-0 z-40">
         <div className="mx-auto max-w-6xl px-3 sm:px-6">
           {/* Desktop Header */}
-          <div className="hidden sm:flex flex-col gap-3 py-2">
-            <div className="flex items-center gap-4">
+          <div className="hidden sm:flex flex-col gap-2 py-3">
+            <div className="flex items-center gap-6">
               {/* Logo */}
               <Link href="/" aria-label="Motorsauce home" className="inline-flex items-center flex-shrink-0">
                 <img
                   src="/images/MSlogoreal.png"
                   alt="Motorsauce"
-                  className="h-12 w-auto object-contain"
+                  className="h-11 w-auto object-contain"
                 />
               </Link>
 
               {/* Left nav items */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 {isUserLoaded && user && (
                   <Link
                     href="/sell"
@@ -300,7 +300,7 @@ export default function Header() {
               </div>
 
               {/* Right side: Messages, Notifications, Basket, Profile */}
-              <div className="flex items-center gap-3 flex-shrink-0">
+              <div className="flex items-center gap-4 flex-shrink-0">
                 {isUserLoaded && user && <NotificationsDropdown />}
                 {isUserLoaded && user && (
                   <Link
@@ -318,7 +318,7 @@ export default function Header() {
                 )}
                 <button
                   onClick={() => setCartOpen(true)}
-                  className="relative flex items-center text-black hover:text-yellow-500 transition-colors mr-2"
+                  className="relative flex items-center text-black hover:text-yellow-500 transition-colors"
                   aria-label="Open basket"
                 >
                   <ShoppingCart size={20} />
