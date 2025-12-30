@@ -12,6 +12,7 @@ import {
   ShoppingCart,
   MessageSquare,
   Tag,
+  Menu,
 } from "lucide-react";
 import { getCurrentUser, LocalUser, nsKey } from "@/lib/auth";
 import { isAdmin } from "@/lib/admin";
@@ -261,140 +262,151 @@ export default function Header() {
       <nav className="w-full bg-white border-b border-gray-200 shadow-sm fixed top-0 z-40">
         <div className="mx-auto max-w-6xl px-3 sm:px-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 py-2">
-            {/* Left: Logo */}
-              <div className="flex items-center gap-3 flex-shrink-0">
-              <Link href="/" aria-label="Motorsauce home" className="inline-flex items-center">
-                <img
-                  src="/images/MSlogoreal.png"
-                  alt="Motorsauce"
-                  className="h-12 w-auto object-contain"
-                />
-              </Link>
-            </div>
+            {/* Top row: logo + actions (mobile stack) */}
+            <div className="flex items-center justify-between gap-3">
+              {/* Left: Logo + Menu (mobile) */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Link href="/" aria-label="Motorsauce home" className="inline-flex items-center">
+                  <img
+                    src="/images/MSlogoreal.png"
+                    alt="Motorsauce"
+                    className="h-12 w-auto object-contain"
+                  />
+                </Link>
+                <Link
+                  href="/categories"
+                  className="sm:hidden inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-sm text-gray-900 hover:bg-gray-50"
+                  aria-label="Open categories"
+                >
+                  <Menu size={16} />
+                  Categories
+                </Link>
+              </div>
 
-            {/* Middle: Search */}
-            <div className="flex-1 w-full" role="search">
-              <div className="w-full max-w-3xl mx-auto">
-                <SearchBar placeholder="Search parts or sellers…" compact />
+              {/* Right actions (mobile row; stack on desktop inline) */}
+              <div className="flex items-center gap-3 flex-shrink-0">
+                {isUserLoaded && user && (
+                  <Link
+                    href="/sell"
+                    className="hidden sm:inline-flex items-center gap-1 text-sm font-medium text-black hover:text-yellow-500 transition-colors"
+                  >
+                    <PlusCircle size={16} /> Sell
+                  </Link>
+                )}
+                {isUserLoaded && isAdminUser && (
+                  <Link
+                    href="/admin/dashboard"
+                    className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-black hover:text-yellow-500 transition-colors bg-yellow-100 px-2 py-1 rounded"
+                  >
+                    Admin
+                  </Link>
+                )}
+                {isUserLoaded && user && <NotificationsDropdown />}
+                {isUserLoaded && user && (
+                  <Link
+                    href="/messages"
+                    className="relative flex items-center text-black hover:text-yellow-500 transition-colors"
+                    aria-label="Messages"
+                  >
+                    <MessageSquare size={20} />
+                    {unread > 0 && (
+                      <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[11px] font-bold min-w-[18px] h-[18px] px-1">
+                        {unread > 9 ? '9+' : unread}
+                      </span>
+                    )}
+                  </Link>
+                )}
+                <button
+                  onClick={() => setCartOpen(true)}
+                  className="relative flex items-center text-black hover:text-yellow-500 transition-colors"
+                  aria-label="Open basket"
+                >
+                  <ShoppingCart size={20} />
+                  {cartCount > 0 && (
+                    <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[11px] font-bold min-w-[18px] h-[18px] px-1">
+                      {cartCount > 9 ? '9+' : cartCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Profile */}
+                <div className="relative group">
+                  <Link href={profileHref} className="flex items-center gap-2 focus:outline-none">
+                    <div className="h-9 w-9 rounded-full ring-2 ring-yellow-500 ring-offset-2 ring-offset-white overflow-hidden shrink-0">
+                      {isUserLoaded && user && avatar ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={avatar} alt="" className="site-image" />
+                      ) : (
+                        <div className="h-full w-full bg-yellow-500 text-black flex items-center justify-center text-xs font-semibold">
+                          {isUserLoaded && user ? initials : <User size={18} />}
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-sm font-medium text-black hidden sm:block">
+                      {isUserLoaded && user ? displayName : "Sign in"}
+                    </span>
+                    <ChevronDown size={14} className="text-gray-500 hidden sm:block" aria-hidden="true" />
+                  </Link>
+
+                  <div
+                    className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible
+                               group-hover:visible group-hover:opacity-100 transform -translate-y-2 group-hover:translate-y-0
+                               transition-all duration-200 ease-out z-50"
+                    role="menu"
+                  >
+                    {isUserLoaded && user ? (
+                      <>
+                        {profileLinks.map(([name, href], i) => (
+                          <Link
+                            key={href}
+                            href={href}
+                            style={{ transitionDelay: `${i * 40}ms` }}
+                            className="flex items-center justify-between px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600 transition-all"
+                            role="menuitem"
+                          >
+                            <span>{name}</span>
+                            {name === "My Messages" && unread > 0 && (
+                              <span className="ml-2 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-xs font-bold px-2 py-0.5">
+                                {unread > 9 ? '9+' : unread}
+                              </span>
+                            )}
+                          </Link>
+                        ))}
+                        <Link
+                          href="/auth/logout"
+                          className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                          role="menuitem"
+                        >
+                          Log out
+                        </Link>
+                      </>
+                    ) : (
+                      <>
+                        <Link
+                          href="/auth/login"
+                          className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                          role="menuitem"
+                        >
+                          Sign in
+                        </Link>
+                        <Link
+                          href="/auth/register"
+                          className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                          role="menuitem"
+                        >
+                          Register
+                        </Link>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Right actions */}
-            <div className="flex items-center justify-end gap-5 flex-shrink-0">
-              {isUserLoaded && user && (
-                <Link
-                  href="/sell"
-                  className="hidden sm:inline-flex items-center gap-1 text-sm font-medium text-black hover:text-yellow-500 transition-colors"
-                >
-                  <PlusCircle size={16} /> Sell
-                </Link>
-              )}
-              {isUserLoaded && isAdminUser && (
-                <Link
-                  href="/admin/dashboard"
-                  className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-black hover:text-yellow-500 transition-colors bg-yellow-100 px-2 py-1 rounded"
-                >
-                  Admin
-                </Link>
-              )}
-              {isUserLoaded && user && <NotificationsDropdown />}
-              {isUserLoaded && user && (
-                <Link
-                  href="/messages"
-                  className="relative flex items-center text-black hover:text-yellow-500 transition-colors"
-                  aria-label="Messages"
-                >
-                  <MessageSquare size={20} />
-                  {unread > 0 && (
-                    <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[11px] font-bold min-w-[18px] h-[18px] px-1">
-                      {unread > 9 ? '9+' : unread}
-                    </span>
-                  )}
-                </Link>
-              )}
-              <button
-                onClick={() => setCartOpen(true)}
-                className="relative flex items-center text-black hover:text-yellow-500 transition-colors mr-2"
-                aria-label="Open basket"
-              >
-                <ShoppingCart size={20} />
-                {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[11px] font-bold min-w-[18px] h-[18px] px-1">
-                    {cartCount > 9 ? '9+' : cartCount}
-                  </span>
-                )}
-              </button>
-
-              {/* Profile */}
-              <div className="relative group">
-                <Link href={profileHref} className="flex items-center gap-2 focus:outline-none">
-                  <div className="h-9 w-9 rounded-full ring-2 ring-yellow-500 ring-offset-2 ring-offset-white overflow-hidden shrink-0">
-                    {isUserLoaded && user && avatar ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={avatar} alt="" className="site-image" />
-                    ) : (
-                      <div className="h-full w-full bg-yellow-500 text-black flex items-center justify-center text-xs font-semibold">
-                        {isUserLoaded && user ? initials : <User size={18} />}
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-sm font-medium text-black hidden sm:block">
-                    {isUserLoaded && user ? displayName : "Sign in"}
-                  </span>
-                  <ChevronDown size={14} className="text-gray-500 hidden sm:block" aria-hidden="true" />
-                </Link>
-
-                <div
-                  className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible
-                             group-hover:visible group-hover:opacity-100 transform -translate-y-2 group-hover:translate-y-0
-                             transition-all duration-200 ease-out z-50"
-                  role="menu"
-                >
-                  {isUserLoaded && user ? (
-                    <>
-                      {profileLinks.map(([name, href], i) => (
-                        <Link
-                          key={href}
-                          href={href}
-                          style={{ transitionDelay: `${i * 40}ms` }}
-                          className="flex items-center justify-between px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600 transition-all"
-                          role="menuitem"
-                        >
-                          <span>{name}</span>
-                          {name === "My Messages" && unread > 0 && (
-                            <span className="ml-2 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-xs font-bold px-2 py-0.5">
-                              {unread > 9 ? '9+' : unread}
-                            </span>
-                          )}
-                        </Link>
-                      ))}
-                      <Link
-                        href="/auth/logout"
-                        className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                        role="menuitem"
-                      >
-                        Log out
-                      </Link>
-                    </>
-                  ) : (
-                    <>
-                      <Link
-                        href="/auth/login"
-                        className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                        role="menuitem"
-                      >
-                        Sign in
-                      </Link>
-                      <Link
-                        href="/auth/register"
-                        className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                        role="menuitem"
-                      >
-                        Register
-                      </Link>
-                    </>
-                  )}
-                </div>
+            {/* Middle: Search */}
+            <div className="w-full" role="search">
+              <div className="w-full max-w-3xl mx-auto">
+                <SearchBar placeholder="Search parts or sellers…" compact />
               </div>
             </div>
           </div>

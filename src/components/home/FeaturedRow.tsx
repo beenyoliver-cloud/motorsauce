@@ -62,7 +62,8 @@ export default async function FeaturedRow({
               model={p.model}
               year={p.year}
               createdAt={p.createdAt}
-              className="min-w-[80px] max-w-[100px] sm:min-w-[100px] sm:max-w-[120px] md:min-w-0 md:max-w-none"
+              tight
+              className="min-w-[120px] max-w-[140px] sm:min-w-[140px] sm:max-w-[160px] md:min-w-0 md:max-w-none"
             />
           ))}
         </div>

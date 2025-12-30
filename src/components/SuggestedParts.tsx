@@ -168,7 +168,7 @@ export default function SuggestedParts({ limit = 12 }: Props) {
                   <article
                     key={`${filter.id}-${p.id}`}
                     data-listing-card={String(p.id)}
-                    className="rounded-sm border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all flex flex-col shrink-0 w-[36%] sm:w-[140px] md:w-auto"
+                    className="rounded-sm border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all flex flex-col shrink-0 w-[65%] min-w-[220px] sm:w-[200px] md:w-auto"
                   >
                     <Link href={`/listing/${p.id}`} className="block relative aspect-[4/3] overflow-hidden rounded-t-sm">
                       <SafeImage src={p.image} alt={p.title} className="absolute inset-0 w-full h-full object-cover" />
@@ -178,7 +178,7 @@ export default function SuggestedParts({ limit = 12 }: Props) {
                         <h4 className="text-base font-semibold text-gray-900 line-clamp-2">{p.title}</h4>
                         <div className="mt-1 text-lg font-bold text-gray-900">{p.price}</div>
                       </div>
-                      <div className="mt-auto flex gap-2">
+                      <div className="mt-auto flex flex-col sm:flex-row gap-2">
                         <button
                           onClick={() => quickAdd(p.id)}
                           disabled={addingId === p.id}

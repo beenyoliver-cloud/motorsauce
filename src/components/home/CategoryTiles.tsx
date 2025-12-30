@@ -100,9 +100,6 @@ export default function CategoryTiles() {
               <div className="h-1 w-2/3 rounded-full bg-white/30 overflow-hidden">
                 <div className="h-full rounded-full bg-white group-hover:w-full transition-all duration-500" />
               </div>
-              <p className="mt-2 text-[11px] text-white/80 leading-snug break-words">
-                Tap to jump into curated searches tuned to this category.
-              </p>
             </div>
           </Link>
         );

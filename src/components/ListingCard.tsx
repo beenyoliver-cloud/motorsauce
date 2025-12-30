@@ -36,6 +36,7 @@ type ListingCardProps = {
   variant?: "compact" | "detailed";
   className?: string;
   viewCount?: number;
+  tight?: boolean;
 };
 
 function formatPrice(price: string | number): string {
@@ -93,6 +94,7 @@ export default function ListingCard(props: ListingCardProps) {
     distanceKm,
     variant = "compact",
     className = "",
+    tight = false,
   } = props;
 
   const priceNum = typeof price === "number" ? price : parseFloat(String(price).replace(/[^\d.]/g, ""));
@@ -118,7 +120,7 @@ export default function ListingCard(props: ListingCardProps) {
       <Link
         href={`/listing/${id}`}
         data-listing-card={String(id)}
-        className="block border border-gray-200 rounded-sm overflow-hidden bg-white hover:shadow-lg hover:border-gray-300 transition-all duration-200"
+        className={`block border border-gray-200 rounded-sm overflow-hidden bg-white hover:shadow-lg hover:border-gray-300 transition-all duration-200 ${tight ? "min-w-[140px]" : ""}`}
       >
         {/* Image */}
         <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
@@ -174,14 +176,14 @@ export default function ListingCard(props: ListingCardProps) {
         </div>
 
         {/* Content */}
-        <div className="p-3 flex flex-col gap-2">
+        <div className={`p-3 flex flex-col gap-2 ${tight ? "min-h-[140px]" : ""}`}>
           {/* Title */}
-          <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 min-h-[2.5rem]">
+          <h3 className={`text-sm font-semibold text-gray-900 line-clamp-2 ${tight ? "" : "min-h-[2.5rem]"}`}>
             {title}
           </h3>
 
           {/* Vehicle Compatibility */}
-          {vehicleText && (
+          {!tight && vehicleText && (
             <div className="mt-1 flex items-center gap-1 text-xs text-gray-600">
               <Package className="h-3 w-3" />
               <span className="font-medium">{vehicleText}</span>
@@ -189,16 +191,18 @@ export default function ListingCard(props: ListingCardProps) {
           )}
 
           {/* Condition & OEM */}
-          <div className="mt-1 flex items-center gap-2 text-xs">
-            {condition && (
-              <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded font-medium">
-                {condition}
-              </span>
-            )}
-            {oem && (
-              <span className="text-gray-500 font-mono truncate">OEM: {oem}</span>
-            )}
-          </div>
+          {!tight && (
+            <div className="mt-1 flex items-center gap-2 text-xs">
+              {condition && (
+                <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded font-medium">
+                  {condition}
+                </span>
+              )}
+              {oem && (
+                <span className="text-gray-500 font-mono truncate">OEM: {oem}</span>
+              )}
+            </div>
+          )}
 
           {/* Badges + Price */}
           <div className="mt-1 flex items-end justify-between gap-2">
