@@ -400,7 +400,7 @@ export default function Header() {
           </div>
 
           {/* Categories rail */}
-          <div className="hidden sm:flex items-center gap-3 text-sm text-gray-700 py-2 border-t border-gray-100">
+          <div className="hidden sm:flex items-center justify-center gap-3 text-sm text-gray-700 py-2 border-t border-gray-100">
             {categories.map(([name, href]) => (
               <Link
                 key={href}

@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ShieldCheck,
   Loader2,
@@ -10,6 +11,7 @@ import {
   Filter,
   Car as CarIcon,
   Wrench,
+  Search as SearchIcon,
 } from "lucide-react";
 
 // ✅ Same garage helpers/types as the rest of your app
@@ -181,9 +183,13 @@ function matchesListing(listing: Listing, car: CarType) {
 
 /** ----------------------------- Page ----------------------------- */
 export default function CompatibilityPage() {
+  const router = useRouter();
   const [selectedCar, setSelectedCar] = useState<CarType | null>(null);
   const [listings, setListings] = useState<Listing[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reg, setReg] = useState("");
+  const [regLoading, setRegLoading] = useState(false);
+  const [regError, setRegError] = useState<string | null>(null);
 
   // 🔗 Compute My Profile link exactly like Header
   const [me, setMe] = useState<LocalUser | null>(null);
@@ -238,8 +244,37 @@ export default function CompatibilityPage() {
     return listings.filter((l) => matchesListing(l, selectedCar));
   }, [listings, selectedCar]);
 
+  async function handleRegLookup(e: React.FormEvent) {
+    e.preventDefault();
+    const plate = reg.trim().toUpperCase().replace(/\s/g, "");
+    if (!plate) {
+      setRegError("Enter a registration");
+      return;
+    }
+    setRegError(null);
+    setRegLoading(true);
+    try {
+      const res = await fetch(`/api/garage/registration-lookup?reg=${encodeURIComponent(plate)}`, { cache: "no-store" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Lookup failed");
+      const params = new URLSearchParams();
+      if (data.make) params.set("make", data.make);
+      if (data.model) params.set("model", data.model);
+      if (typeof data.year === "number") {
+        params.set("yearMin", String(data.year));
+        params.set("yearMax", String(data.year));
+      }
+      setReg("");
+      router.push(`/search?${params.toString()}`);
+    } catch (err: any) {
+      setRegError(err.message || "Lookup failed");
+    } finally {
+      setRegLoading(false);
+    }
+  }
+
   return (
-    <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16">
+    <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
       {/* Breadcrumb */}
       <nav className="mb-4 text-sm text-gray-600">
         <Link href="/" className="hover:text-yellow-600">Home</Link>
@@ -285,6 +320,31 @@ export default function CompatibilityPage() {
             <Filter className="h-4 w-4" /> Open full search
           </Link>
         </div>
+
+        {/* Registration lookup (returns to search with filters) */}
+        <form onSubmit={handleRegLookup} className="mt-6 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+          <div className="flex items-center gap-2">
+            <SearchIcon className="h-4 w-4 text-gray-600" />
+            <input
+              value={reg}
+              onChange={(e) => setReg(e.target.value)}
+              placeholder="Enter registration (e.g., AB12 CDE)"
+              className="flex-1 bg-white border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={regLoading}
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-gray-900 text-white px-4 py-2 text-sm font-semibold hover:bg-black disabled:opacity-50"
+          >
+            {regLoading ? "Looking up…" : "Filter by registration"}
+          </button>
+          {regError && (
+            <div className="sm:col-span-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+              {regError}
+            </div>
+          )}
+        </form>
       </div>
 
       {/* Results */}
