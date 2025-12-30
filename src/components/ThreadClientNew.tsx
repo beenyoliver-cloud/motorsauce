@@ -71,6 +71,7 @@ export default function ThreadClientNew({
   const [peerId, setPeerId] = useState<string | null>(null);
   const [listingRef, setListingRef] = useState<string | null>(null);
   const draftKey = `ms_thread_draft:${threadId}`;
+  const metaKey = `ms_thread_meta:${threadId}`;
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
   const composerRef = useRef<HTMLDivElement | null>(null);
@@ -110,8 +111,14 @@ export default function ThreadClientNew({
     try {
       const saved = localStorage.getItem(draftKey);
       if (saved) setDraft(saved);
+      const savedMetaRaw = localStorage.getItem(metaKey);
+      if (savedMetaRaw) {
+        const parsed = JSON.parse(savedMetaRaw);
+        if (parsed?.peerId) setPeerId(parsed.peerId);
+        if (parsed?.listingRef) setListingRef(parsed.listingRef);
+      }
     } catch {}
-  }, [mounted, draftKey]);
+  }, [mounted, draftKey, metaKey]);
 
   // Persist draft
   useEffect(() => {
@@ -160,7 +167,7 @@ export default function ThreadClientNew({
         if (msgs.length > 0) setHasHadMessages(true);
 
         // Derive peer from messages if any
-        let peerId = msgs.find(m => m.from.id !== currentUserId)?.from.id;
+        let peerId = msgs.find(m => m.from.id !== currentUserId)?.from.id || peerId;
 
         // Load thread metadata (participants/listing) once
         if (!threadMetaFetched.current) {
@@ -210,11 +217,28 @@ export default function ThreadClientNew({
           if (profileData) setPeerProfile(profileData);
         }
 
+        // Persist meta so we can rebuild threads client-side if needed
+        try {
+          localStorage.setItem(metaKey, JSON.stringify({ peerId: peerId || null, listingRef: listingRef || null }));
+        } catch {}
+
         setError(null);
       } catch (err: any) {
         console.error("[ThreadClientNew] Load error:", err);
         if (active) {
-          if (err?.threadMissing || err?.message === "THREAD_MISSING") {
+          const missing = err?.threadMissing || err?.message === "THREAD_MISSING";
+          if (missing && peerId) {
+            try {
+              const newThread = await createThread(peerId, listingRef || undefined);
+              if (newThread?.id) {
+                router.replace(`/messages/${encodeURIComponent(newThread.id)}`);
+                return;
+              }
+            } catch (recreateErr) {
+              console.error("[ThreadClientNew] auto-recreate failed", recreateErr);
+            }
+          }
+          if (missing) {
             setError("This conversation isn’t available anymore. Please reopen it from Messages or start a new chat.");
           } else {
             setError(err.message || "Failed to load messages");

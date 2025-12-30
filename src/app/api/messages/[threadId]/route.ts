@@ -269,6 +269,7 @@ export async function POST(
       // Try to recreate if we have enough info (peerId/listingRef)
       if (peerId && peerId !== user.id) {
         const [p1, p2] = [user.id, peerId].sort();
+        const conflictTarget = listingRef ? "participant_1_id,participant_2_id,listing_ref" : "participant_1_id,participant_2_id";
         let recreated = await supabase
           .from("threads")
           .upsert(
@@ -279,7 +280,7 @@ export async function POST(
               last_message_text: "Conversation restarted",
               last_message_at: new Date().toISOString(),
             },
-            { onConflict: "participant_1_id,participant_2_id,listing_ref" }
+            { onConflict: conflictTarget }
           )
           .select()
           .single();

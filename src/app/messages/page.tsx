@@ -19,6 +19,16 @@ export default function MessagesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   type InboxFilter = "all" | "unread" | "needsReply" | "offers" | "business";
   const [viewFilter, setViewFilter] = useState<InboxFilter>("all");
+  const persistMeta = useCallback((thread: Thread) => {
+    try {
+      localStorage.setItem(
+        `ms_thread_meta:${thread.id}`,
+        JSON.stringify({ peerId: thread.peer?.id || null, listingRef: thread.listingRef || null })
+      );
+    } catch (err) {
+      console.warn("[messages page] Failed to persist thread meta", err);
+    }
+  }, []);
   const FILTER_CHIPS: { id: InboxFilter; label: string; helper?: string }[] = [
     { id: "all", label: "All" },
     { id: "unread", label: "Unread" },
@@ -38,7 +48,7 @@ export default function MessagesPage() {
   const refreshThreads = useCallback(async () => {
     try {
       const t = await fetchThreads();
-      setThreads(t);
+      t.forEach(persistMeta);
       setThreads(t);
       setLoading(false);
       
@@ -116,6 +126,10 @@ export default function MessagesPage() {
   const toggleSelectMode = () => {
     setSelectMode(!selectMode);
     setSelectedThreads(new Set());
+  };
+
+  const handleOpenThread = (thread: Thread) => {
+    persistMeta(thread);
   };
 
   const toggleThread = (threadId: string) => {
@@ -299,6 +313,7 @@ export default function MessagesPage() {
                 <Link
                   key={thread.id}
                   href={`/messages/${encodeURIComponent(thread.id)}`}
+                  onClick={() => handleOpenThread(thread)}
                   className="inline-flex items-center gap-2 rounded-full bg-white text-emerald-900 text-xs font-semibold px-3 py-1 border border-emerald-200 hover:border-emerald-400 transition"
                 >
                   Review {displayName(thread.peer.name)}
@@ -492,6 +507,7 @@ export default function MessagesPage() {
                   <Link
                     key={t.id}
                     href={`/messages/${encodeURIComponent(t.id)}`}
+                    onClick={() => handleOpenThread(t)}
                     className={`group flex items-center gap-3 p-4 transition ${
                       unread ? "bg-yellow-50" : "bg-white hover:bg-gray-50"
                     }`}
