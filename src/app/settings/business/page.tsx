@@ -198,7 +198,13 @@ export default function BusinessSettingsPage() {
         .eq("id", user.id)
         .single();
 
-      const profileAccountType = typeof profile?.account_type === "string"
+      if (!profile) {
+        setVerificationLoading(false);
+        setVerificationError("Unable to load profile");
+        return;
+      }
+
+      const profileAccountType = typeof profile.account_type === "string"
         ? profile.account_type.toLowerCase().trim()
         : null;
 
@@ -211,12 +217,6 @@ export default function BusinessSettingsPage() {
 
       if (effectiveAccountType !== "business") {
         router.push("/settings");
-        return;
-      }
-
-      if (!profile) {
-        setVerificationLoading(false);
-        setVerificationError("Unable to load profile");
         return;
       }
 
