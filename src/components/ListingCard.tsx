@@ -114,7 +114,7 @@ export default function ListingCard(props: ListingCardProps) {
       <Link
         href={`/listing/${id}`}
         data-listing-card={String(id)}
-        className="block border border-gray-200 rounded-none overflow-hidden bg-white hover:shadow-lg hover:border-gray-300 transition-all duration-200"
+        className="block border border-gray-200 rounded-sm overflow-hidden bg-white hover:shadow-lg hover:border-gray-300 transition-all duration-200"
       >
         {/* Image */}
         <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">

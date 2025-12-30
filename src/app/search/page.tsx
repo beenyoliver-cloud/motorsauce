@@ -618,15 +618,6 @@ function SearchPageInner() {
                 {garageOnly ? "Showing my garage" : `Only ${favouriteGarage.make || "my car"}`}
               </button>
             )}
-            <button
-              onClick={() => updateParam("universalOnly", universalOnly ? undefined : "1")}
-              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 shadow-sm transition ${
-                universalOnly ? "border-blue-500 bg-blue-50 text-blue-900 shadow-blue-100" : "border-gray-300 text-gray-700 hover:border-blue-400"
-              }`}
-            >
-              <MapPin className="h-3.5 w-3.5" />
-              Universal fit
-            </button>
           </div>
 
           {/* Summary + sort + save search */}
