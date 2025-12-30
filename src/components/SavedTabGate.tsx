@@ -11,7 +11,7 @@ function TabLink({ href, label, isActive }: { href: string; label: string; isAct
     <Link
       href={href}
       aria-current={isActive ? "page" : undefined}
-      className={`relative flex-1 min-w-[140px] rounded-2xl border px-4 py-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-yellow-400 ${
+      className={`relative flex-1 min-w-[140px] rounded-sm border px-4 py-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-yellow-400 ${
         isActive
           ? "border-gray-900 bg-gray-900 text-white shadow-lg"
           : "border-gray-200 bg-white text-gray-700 hover:border-gray-900"

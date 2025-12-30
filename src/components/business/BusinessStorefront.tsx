@@ -125,7 +125,7 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
 
       {/* Highlights */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 mt-6 grid gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-2">
+        <div className="rounded-sm border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-2">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">About the shop</p>
           <p className="text-sm text-gray-700 leading-relaxed">
             {business.about_business && business.about_business.trim().length > 0
@@ -136,7 +136,7 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
             Learn more →
           </Link>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-2">
+        <div className="rounded-sm border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-2">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Specialities</p>
           <div className="flex flex-wrap gap-2">
             {(business.specialties && business.specialties.length > 0
@@ -149,7 +149,7 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
             ))}
           </div>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-2">
+        <div className="rounded-sm border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-2">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Customer care</p>
           <p className="text-sm text-gray-700">
             Avg response time:{" "}

@@ -88,7 +88,7 @@ export default function QuickViewModal({ listingId, isOpen, onClose }: QuickView
       onClick={onClose}
     >
       <div 
-        className="relative bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
+        className="relative bg-white rounded-sm max-w-5xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}

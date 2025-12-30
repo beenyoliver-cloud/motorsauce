@@ -168,9 +168,9 @@ export default function SuggestedParts({ limit = 12 }: Props) {
                   <article
                     key={`${filter.id}-${p.id}`}
                     data-listing-card={String(p.id)}
-                    className="rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all flex flex-col shrink-0 w-[36%] sm:w-[140px] md:w-auto"
+                    className="rounded-sm border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all flex flex-col shrink-0 w-[36%] sm:w-[140px] md:w-auto"
                   >
-                    <Link href={`/listing/${p.id}`} className="block relative aspect-[4/3] overflow-hidden rounded-t-2xl">
+                    <Link href={`/listing/${p.id}`} className="block relative aspect-[4/3] overflow-hidden rounded-t-sm">
                       <SafeImage src={p.image} alt={p.title} className="absolute inset-0 w-full h-full object-cover" />
                     </Link>
                     <div className="p-4 flex flex-col gap-3 flex-1">
@@ -178,11 +178,11 @@ export default function SuggestedParts({ limit = 12 }: Props) {
                         <h4 className="text-base font-semibold text-gray-900 line-clamp-2">{p.title}</h4>
                         <div className="mt-1 text-lg font-bold text-gray-900">{p.price}</div>
                       </div>
-                      <div className="mt-auto flex items-center gap-2">
+                      <div className="mt-auto flex gap-2">
                         <button
                           onClick={() => quickAdd(p.id)}
                           disabled={addingId === p.id}
-                          className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-slate-900 text-white text-sm font-semibold px-3 py-2 hover:bg-slate-800 disabled:opacity-70"
+                          className="flex-1 inline-flex items-center justify-center gap-1 rounded-sm bg-slate-900 text-white text-sm font-semibold px-3 py-2 hover:bg-slate-800 active:bg-slate-950 disabled:opacity-70 transition-colors"
                         >
                           {addingId === p.id ? (
                             <span className="inline-flex items-center gap-2 text-xs">
@@ -198,7 +198,7 @@ export default function SuggestedParts({ limit = 12 }: Props) {
                         </button>
                         <Link
                           href={`/listing/${p.id}`}
-                          className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+                          className="flex-1 inline-flex items-center justify-center rounded-sm border border-gray-300 bg-gray-50 text-sm font-semibold text-gray-900 px-3 py-2 hover:bg-gray-100 active:bg-gray-200 transition-colors"
                         >
                           View
                         </Link>

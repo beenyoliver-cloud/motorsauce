@@ -70,7 +70,7 @@ export default function MyListingsTab({ sellerName }: { sellerName?: string }) {
   if (items.length === 0) {
     const isMe = sellerName ? norm(sellerName) === norm(getCurrentUserSync()?.name || "") : true;
     return (
-      <div className="rounded-2xl border-2 border-dashed border-gray-300 bg-white p-8 text-center space-y-3">
+      <div className="rounded-sm border-2 border-dashed border-gray-300 bg-white p-8 text-center space-y-3">
         <h3 className="text-lg font-semibold text-gray-900">No listings yet</h3>
         <p className="text-sm text-gray-600">
           {isMe

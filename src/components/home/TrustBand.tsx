@@ -13,7 +13,7 @@ const soldTicker = [
 export default function TrustBand() {
   return (
     <section className="mb-6 sm:mb-8">
-      <div className="relative overflow-hidden rounded-2xl border border-slate-900/10 bg-slate-900 text-white px-4 py-6 sm:px-6">
+      <div className="relative overflow-hidden rounded-sm border border-slate-900/10 bg-slate-900 text-white px-4 py-6 sm:px-6">
         <div className="absolute inset-0 trustband-diagonal" />
         <div className="absolute inset-0 opacity-40 mix-blend-screen" style={{ backgroundImage: "radial-gradient(circle at 20% 20%, #facc15 0%, transparent 45%)" }} />
         <div className="relative z-10 flex flex-col gap-4">

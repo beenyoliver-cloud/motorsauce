@@ -117,7 +117,7 @@ export default function DisplayWall({ cars, onPhotoClick, autoBlur = true }: Dis
 
   if (allPhotos.length === 0) {
     return (
-      <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center">
+      <div className="rounded-sm border border-gray-200 bg-white p-8 text-center">
         <p className="text-gray-600">No photos in the display wall yet.</p>
         <p className="text-sm text-gray-500 mt-2">Add photos to your vehicles to create your showcase!</p>
       </div>
@@ -126,7 +126,7 @@ export default function DisplayWall({ cars, onPhotoClick, autoBlur = true }: Dis
 
   return (
     <>
-      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div className="rounded-sm border border-gray-200 bg-white overflow-hidden">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
           <h3 className="text-lg font-bold text-black flex items-center gap-2">

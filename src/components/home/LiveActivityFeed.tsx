@@ -93,7 +93,7 @@ export default function LiveActivityFeed() {
   return (
     <Link 
       href={`/listing/${listingId}`}
-      className="block bg-white border border-gray-200 rounded-2xl p-5 hover:border-gray-300 hover:shadow-md transition-all lg:h-[var(--home-tiles-block-height)] lg:flex lg:flex-col"
+      className="block bg-white border border-gray-200 rounded-sm p-5 hover:border-gray-300 hover:shadow-md transition-all lg:h-[var(--home-tiles-block-height)] lg:flex lg:flex-col"
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">

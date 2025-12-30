@@ -69,7 +69,7 @@ export default function CategoryTiles() {
           <Link
             key={t.label}
             href={t.href}
-            className="group relative overflow-hidden rounded-2xl p-3 sm:p-4 min-h-[130px] flex flex-col justify-between text-white shadow-lg hover:-translate-y-1 transition-all duration-300 animate-fadeInUp"
+            className="group relative overflow-hidden rounded-sm p-3 sm:p-4 min-h-[130px] flex flex-col justify-between text-white shadow-lg hover:-translate-y-1 transition-all duration-300 animate-fadeInUp"
             style={{
               animationDelay: `${idx * 60}ms`,
               backgroundImage: `linear-gradient(135deg, ${t.accentFrom} 0%, ${t.accentTo} 70%), url(${t.image})`,
