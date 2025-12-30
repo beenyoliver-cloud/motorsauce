@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, X, ChevronDown, Plus } from "lucide-react";
+import { Upload, X, ChevronDown, Plus, Lightbulb } from "lucide-react";
 import { uploadImage, validateFileSize, validateTotalSize, MAX_FILE_SIZE, MAX_TOTAL_SIZE } from "@/lib/storage";
 import { VEHICLES as VEHICLES_FALLBACK } from "@/data/vehicles";
 import { updateListing } from "@/lib/listingsService";
@@ -78,6 +78,7 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
   const dropRef = useRef<HTMLLabelElement>(null);
   const [vehicles, setVehicles] = useState<Record<string, string[]>>(VEHICLES_FALLBACK);
   const [detailed, setDetailed] = useState<DetailedVehicles | null>(null);
+  const totalImages = existingImages.length + newFiles.length;
 
   const isVehicleSpecific = category !== "Tool" && category !== "";
   const canSave = useMemo(() => {
@@ -682,6 +683,16 @@ export default function EditListingForm({ listing }: EditListingFormProps) {
         {fileValidationError && (
           <div className="mb-4 p-4 bg-red-50 border-2 border-red-200 text-red-800 rounded-xl">
             {fileValidationError}
+          </div>
+        )}
+
+        {totalImages < 3 && (
+          <div className="mb-4 flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+            <Lightbulb className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-700" />
+            <div>
+              <p className="font-semibold">Add more photos to sell faster</p>
+              <p>Listings with 3+ photos (front, back, labels) get significantly more views and offers.</p>
+            </div>
           </div>
         )}
 

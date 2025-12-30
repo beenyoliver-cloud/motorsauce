@@ -84,6 +84,9 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
           </div>
 
           <footer className="border-t border-gray-200 p-4">
+            <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              Stay protected: keep chat and checkout on Motorsauce. Avoid off-platform payments and ask sellers for OEM/VIN when unsure.
+            </div>
             {cart.items.length > 0 && (
               <>
                 <div className="mb-2 text-sm flex items-center justify-between">

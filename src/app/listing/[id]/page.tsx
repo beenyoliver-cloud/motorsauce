@@ -724,6 +724,43 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
     },
   ];
 
+  const riskFlags: Array<{ title: string; body: string; tone: "amber" | "red" | "blue" }> = [];
+  if (priceAnomaly.flagged) {
+    riskFlags.push({
+      title: "Unusually low price",
+      body:
+        priceGapPercent && medianPriceLabel
+          ? `This part is ${priceGapPercent}% cheaper than the median ${medianPriceLabel}. Double-check fitment and ask for photos in chat.`
+          : "Priced significantly lower than similar listings. Verify details before paying.",
+      tone: "amber",
+    });
+  }
+  if (!sellerInsights?.businessVerified && (!sellerInsights?.totalSales || sellerInsights.totalSales < 5)) {
+    riskFlags.push({
+      title: "New seller",
+      body: "Few sales on record. Use on-platform chat and checkout so funds stay protected.",
+      tone: "amber",
+    });
+  }
+  const descText = listing.description?.toLowerCase() || "";
+  const offPlatformHints = ["whatsapp", "telegram", "venmo", "cashapp", "bitcoin", "btc", "bank transfer", "wire"].some((kw) =>
+    descText.includes(kw)
+  );
+  if (offPlatformHints) {
+    riskFlags.push({
+      title: "Off-platform contact detected",
+      body: "Avoid off-platform payments. Keep chat and checkout on Motorsauce for protection.",
+      tone: "red",
+    });
+  }
+  if (!listing.oem && listing.category === "OEM") {
+    riskFlags.push({
+      title: "OEM not provided",
+      body: "Seller did not include OEM reference. Ask for OEM or VIN before buying.",
+      tone: "blue",
+    });
+  }
+
   return (
     <section className="mx-auto max-w-6xl px-3 sm:px-4 py-4 sm:py-8">
       {/* Track recently viewed (client side) */}
@@ -866,24 +903,43 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             </div>
           )}
 
-          {/* Price anomaly / verification warning */}
-          {priceAnomaly.flagged && (
-            <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 flex gap-3">
-              <AlertTriangle className="h-5 w-5 text-amber-700 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-semibold text-amber-900">Flagged for manual verification</p>
-                <p className="text-sm text-amber-900/80">
-                  {priceGapPercent && medianPriceLabel
-                    ? `This part is ${priceGapPercent}% cheaper than the median ${medianPriceLabel} across ${priceAnomaly.sampleSize} comparable listings.`
-                    : "This part is priced significantly lower than similar listings on Motorsource."}
-                </p>
-                <p className="mt-2 text-xs text-amber-800">
-                  Our trust team is double-checking the images, seller history, and paperwork before promoting it elsewhere.
-                  You can still buy it today—funds remain in escrow until you confirm delivery.
-                </p>
-              </div>
+          {/* Risk panel */}
+          <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-800">Stay protected</span>
+              <span className="text-xs text-gray-600">On-platform chat & checkout recommended</span>
             </div>
-          )}
+            {riskFlags.length === 0 ? (
+              <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800 flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4" />
+                No issues detected. Pay through Motorsauce to keep funds safe.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {riskFlags.map((flag) => (
+                  <div
+                    key={flag.title}
+                    className={`rounded-lg px-3 py-2 text-sm flex items-start gap-2 border ${
+                      flag.tone === "red"
+                        ? "border-red-200 bg-red-50 text-red-800"
+                        : flag.tone === "amber"
+                        ? "border-amber-200 bg-amber-50 text-amber-900"
+                        : "border-blue-200 bg-blue-50 text-blue-900"
+                    }`}
+                  >
+                    <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold">{flag.title}</p>
+                      <p className="text-sm">{flag.body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="text-xs text-gray-600">
+              Tips: keep conversations in Messages, never pay off-platform, ask for OEM/VIN when unsure, and report anything that feels off.
+            </div>
+          </div>
 
           {/* Fitment + analytics */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

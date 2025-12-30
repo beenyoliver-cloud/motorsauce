@@ -108,6 +108,10 @@ export default function ListingCard(props: ListingCardProps) {
     isNewToday ? "New today" : null,
     isPopularSeller ? "Popular seller" : null,
   ].filter(Boolean) as string[];
+  const riskBadges = [
+    !seller?.rating ? "New seller" : null,
+    priceNum > 0 && priceNum < 5 ? "Unusually low price" : null,
+  ].filter(Boolean) as string[];
 
   return (
     <div className={`group relative ${className}`}>
@@ -201,6 +205,11 @@ export default function ListingCard(props: ListingCardProps) {
             <div className="flex flex-wrap gap-1.5">
               {utilityBadges.map((badge) => (
                 <span key={badge} className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] font-semibold text-gray-800">
+                  {badge}
+                </span>
+              ))}
+              {riskBadges.map((badge) => (
+                <span key={badge} className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
                   {badge}
                 </span>
               ))}
