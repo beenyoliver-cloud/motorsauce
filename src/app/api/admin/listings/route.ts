@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { supabaseAdmin } = auth;
+    console.log("[Admin Listings] Starting fetch...");
     const { searchParams } = new URL(request.url);
 
     const page = Math.max(parseInt(searchParams.get("page") || "1", 10), 1);
@@ -119,7 +120,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ listings, total: count || 0, page, pageSize });
   } catch (error) {
     console.error("Admin listings GET error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Internal server error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

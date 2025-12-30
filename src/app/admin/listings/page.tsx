@@ -90,7 +90,11 @@ export default function AdminListingsPage() {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
-      if (!res.ok) throw new Error("Failed to load listings");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: "Unknown error" }));
+        const errorMsg = errorData.error || `HTTP ${res.status}`;
+        throw new Error(errorMsg);
+      }
 
       const data = await res.json();
       const totalCount = typeof data.total === "number" ? data.total : 0;
