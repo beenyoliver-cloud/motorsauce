@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CSSProperties, useState, useMemo, useCallback } from "react";
+import { CSSProperties, useState, useMemo, useCallback, useEffect } from "react";
 import type { ReactNode } from "react";
 import BusinessHeader from "./BusinessHeader";
 import BusinessStats from "./BusinessStats";
@@ -9,6 +9,7 @@ import BusinessAbout from "./BusinessAbout";
 import BusinessCatalogue from "./BusinessCatalogue";
 import BusinessReviews from "./BusinessReviews";
 import BusinessContact from "./BusinessContact";
+import BusinessInsights from "./BusinessInsights";
 import { Boxes, Info, Star as StarIcon, PhoneCall, ChartBar, ShieldCheck, Settings as SettingsIcon, UploadCloud } from "lucide-react";
 
 export type BusinessProfile = {
@@ -80,6 +81,29 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
     },
     []
   );
+  const [ownerListings, setOwnerListings] = useState<Array<{ id: string | number; price?: number | string; created_at?: string; view_count?: number; oem?: string | null; images?: string[] }>>([]);
+
+  useEffect(() => {
+    if (!isOwner) return;
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/listings?seller_id=${business.id}&limit=200`, { cache: "no-store" });
+        if (!active) return;
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            setOwnerListings(data as any);
+          }
+        }
+      } catch (err) {
+        console.error("[BusinessStorefront] Failed to load owner listings", err);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [business.id, isOwner]);
 
   const tabs: Array<{ id: Tab; label: string; icon: ReactNode }> = [
     { id: 'catalogue', label: 'Catalogue', icon: <Boxes className="h-4 w-4" /> },
@@ -195,9 +219,9 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
       )}
       */}
 
-      {/* Owner Quick Links */}
+      {/* Owner Quick Links + Insights */}
       {isOwner && (
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 mt-6 mb-6">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 mt-6 mb-6 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Link
               href="/analytics"
@@ -224,6 +248,63 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
               </div>
             </Link>
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Link
+              href="/admin/dashboard"
+              className="rounded-xl border border-gray-200 bg-white p-4 flex items-start gap-3 hover:shadow-sm transition"
+            >
+              <div className="p-2 rounded-md bg-blue-50 text-blue-700">
+                <ChartBar className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Seller analytics</p>
+                <p className="text-xs text-gray-600">Monitor views, offers, and conversion on your catalogue.</p>
+              </div>
+            </Link>
+            <Link
+              href="/settings?tab=storefront"
+              className="rounded-xl border border-gray-200 bg-white p-4 flex items-start gap-3 hover:shadow-sm transition"
+            >
+              <div className="p-2 rounded-md bg-gray-50 text-gray-800">
+                <SettingsIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Storefront controls</p>
+                <p className="text-xs text-gray-600">Update branding, specialties, and contact details.</p>
+              </div>
+            </Link>
+            <Link
+              href="/settings?tab=compliance"
+              className="rounded-xl border border-gray-200 bg-white p-4 flex items-start gap-3 hover:shadow-sm transition"
+            >
+              <div className="p-2 rounded-md bg-green-50 text-green-700">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Compliance & documents</p>
+                <p className="text-xs text-gray-600">Upload verification, return policy, VAT details.</p>
+              </div>
+            </Link>
+          </div>
+          <div className="mt-1 rounded-xl border border-dashed border-gray-300 bg-white p-4 flex items-center justify-between">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-md bg-yellow-50 text-yellow-700">
+                <UploadCloud className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Bulk upload stock</p>
+                <p className="text-xs text-gray-600">CSV uploads with images and OEM fitment fields supported.</p>
+              </div>
+            </div>
+            <Link href="#catalogue" className="text-sm font-semibold text-yellow-700 hover:text-yellow-800">
+              Open catalogue →
+            </Link>
+          </div>
+
+          {ownerListings.length > 0 && (
+            <BusinessInsights listings={ownerListings} />
+          )}
         </div>
       )}
 
