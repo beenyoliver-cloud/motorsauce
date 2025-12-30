@@ -49,6 +49,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabaseAdmin.from("listings").select(columnsWithViews, { count: "exact" });
     let hasViewCount = true;
+    let reportedIds: string[] = [];
 
     if (status === "reported") {
       let reportedRows: { listing_id: string }[] | null = null;
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest) {
         reportedRows = reportedData;
       }
 
-      const reportedIds = Array.from(new Set((reportedRows || []).map((row) => row.listing_id).filter(Boolean)));
+      reportedIds = Array.from(new Set((reportedRows || []).map((row) => row.listing_id).filter(Boolean)));
       if (!reportedIds.length) {
         return NextResponse.json({ listings: [], total: 0, page, pageSize });
       }
@@ -85,12 +86,25 @@ export async function GET(request: NextRequest) {
     if (error && hasViewCount && error.code === "42703") {
       console.warn("[Admin Listings] view_count column missing; retrying without it.");
       hasViewCount = false;
-      const fallbackQuery = supabaseAdmin
+      let fallbackQuery = supabaseAdmin
         .from("listings")
-        .select(baseColumns, { count: "exact" })
-        .order("created_at", { ascending: false })
-        .range(from, to);
-      ({ data, count, error } = await fallbackQuery);
+        .select(baseColumns, { count: "exact" });
+      
+      if (status === "reported" && reportedIds.length) {
+        fallbackQuery = fallbackQuery.in("id", reportedIds);
+      } else if (status && status !== "all") {
+        fallbackQuery = fallbackQuery.eq("status", status);
+      }
+      
+      if (search) {
+        fallbackQuery = fallbackQuery.or(`title.ilike.%${search}%,category.ilike.%${search}%`);
+      }
+      
+      fallbackQuery = fallbackQuery.order("created_at", { ascending: false }).range(from, to);
+      const result = await fallbackQuery;
+      data = result.data as typeof data;
+      count = result.count;
+      error = result.error;
     }
     if (error) throw error;
 
@@ -98,10 +112,10 @@ export async function GET(request: NextRequest) {
     const idFilter = listingIds.length ? listingIds : ["__none__"];
 
     const safeQuery = async <T>(
-      promise: Promise<{ data: T[] | null; error: any }>,
+      query: any,
       label: string
     ): Promise<T[]> => {
-      const { data, error } = await promise;
+      const { data, error } = await query;
       if (error) {
         if (error.code === "42P01") {
           console.warn(`[Admin Listings] ${label} table missing; returning empty set.`);
@@ -114,9 +128,9 @@ export async function GET(request: NextRequest) {
     };
 
     const [saves, offers, reports] = await Promise.all([
-      safeQuery<{ listing_id: string }[]>(supabaseAdmin.from("saved_listings").select("listing_id").in("listing_id", idFilter), "saved_listings"),
-      safeQuery<{ listing_id: string }[]>(supabaseAdmin.from("offers").select("listing_id").in("listing_id", idFilter), "offers"),
-      safeQuery<{ listing_id: string; status?: string }[]>(supabaseAdmin.from("listing_reports").select("listing_id, status").in("listing_id", idFilter), "listing_reports"),
+      safeQuery<{ listing_id: string }>(supabaseAdmin.from("saved_listings").select("listing_id").in("listing_id", idFilter), "saved_listings"),
+      safeQuery<{ listing_id: string }>(supabaseAdmin.from("offers").select("listing_id").in("listing_id", idFilter), "offers"),
+      safeQuery<{ listing_id: string; status?: string }>(supabaseAdmin.from("listing_reports").select("listing_id, status").in("listing_id", idFilter), "listing_reports"),
     ]);
 
     const countByListing = (rows: { listing_id: string; status?: string }[] | null | undefined, statusFilter?: string) => {
