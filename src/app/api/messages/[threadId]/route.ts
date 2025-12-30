@@ -273,7 +273,6 @@ export async function POST(
       if (peerId && peerId !== user.id) {
         const [p1, p2] = [user.id, peerId].sort();
         const conflictTarget = listingRef ? "participant_1_id,participant_2_id,listing_ref" : "participant_1_id,participant_2_id";
-        const conflictTarget = listingRef ? "participant_1_id,participant_2_id,listing_ref" : "participant_1_id,participant_2_id";
         let recreated = await supabase
           .from("threads")
           .upsert(
