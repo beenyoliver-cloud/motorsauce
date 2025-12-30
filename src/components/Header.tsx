@@ -476,7 +476,6 @@ export default function Header() {
               </div>
             </div>
           </div>
-          </div>
 
           {/* Categories rail */}
           <div className="hidden sm:flex items-center justify-center gap-3 text-sm text-gray-700 py-2 border-t border-gray-100">
