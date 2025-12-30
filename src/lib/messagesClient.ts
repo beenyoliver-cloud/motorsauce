@@ -219,6 +219,9 @@ export async function sendMessage(threadId: string, text: string): Promise<Messa
       try { errorDetail = await res.json(); } catch {}
       const msg = errorDetail?.error || errorDetail?.message || `HTTP ${res.status}`;
       console.error("[messagesClient] Failed to send message:", res.status, msg);
+      if (res.status === 404) {
+        throw new Error("Thread not found. Please reopen the conversation from Messages.");
+      }
       throw new Error(msg);
     }
 

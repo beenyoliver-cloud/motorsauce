@@ -314,6 +314,7 @@ export async function POST(req: Request) {
             b_user: p2,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
+            listing_ref: listingRef || null,
           },
           { onConflict: "a_user,b_user" }
         )
@@ -397,6 +398,25 @@ export async function POST(req: Request) {
         if (systemInsert.error) {
           console.warn("[threads API POST] Failed to create initial system message after fallback", systemInsert.error);
         }
+      }
+    }
+
+    // If conversation is about a listing, add a system message with link/preview for clarity
+    if (listingRef) {
+      const listingUrl =
+        (process.env.NEXT_PUBLIC_SITE_URL ||
+          (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")) +
+        `/listing/${encodeURIComponent(listingRef)}`;
+      try {
+        await supabase.from("messages").insert({
+          thread_id: threadNormalized.id,
+          from_user_id: user.id,
+          sender: user.id,
+          message_type: "system",
+          text_content: `Listing link: ${listingUrl}`,
+        });
+      } catch (linkErr: any) {
+        console.warn("[threads API POST] Failed to add listing link system message", linkErr?.message || linkErr);
       }
     }
 

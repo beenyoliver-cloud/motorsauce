@@ -11,6 +11,7 @@ import {
   markThreadRead,
   markThreadUnread,
   deleteThread as apiDeleteThread,
+  createThread,
   Message,
 } from "@/lib/messagesClient";
 import { getCurrentUser } from "@/lib/auth";
@@ -67,6 +68,8 @@ export default function ThreadClientNew({
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [hasHadMessages, setHasHadMessages] = useState(false);
+  const [peerId, setPeerId] = useState<string | null>(null);
+  const [listingRef, setListingRef] = useState<string | null>(null);
   const draftKey = `ms_thread_draft:${threadId}`;
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
@@ -134,7 +137,7 @@ export default function ThreadClientNew({
         if (initial) {
           setIsInitialLoading(true);
         } else {
-          setIsRefreshing(true);
+          if (messages.length > 0) setIsRefreshing(true);
         }
         const msgs = await fetchMessages(threadId);
         if (!active) return;
@@ -172,6 +175,8 @@ export default function ThreadClientNew({
             if (!peerId && participant_1_id && participant_2_id) {
               peerId = participant_1_id === currentUserId ? participant_2_id : participant_1_id;
             }
+            if (peerId) setPeerId(peerId);
+            if (listing_ref) setListingRef(listing_ref);
             if (listing_ref && !threadListing) {
               const { data: listingData } = await supabase
                 .from("listings")
@@ -304,7 +309,19 @@ export default function ThreadClientNew({
       }
     } catch (err: any) {
       console.error("[ThreadClientNew] send error", err);
-      setSendError(err.message || "Failed to send message");
+      const msg = err?.message || "";
+      if (msg.includes("Thread not found") && peerId) {
+        try {
+          const newThread = await createThread(peerId, listingRef || undefined);
+          if (newThread?.id) {
+            router.push(`/messages/${encodeURIComponent(newThread.id)}`);
+            return;
+          }
+        } catch (createErr) {
+          console.error("[ThreadClientNew] failed to recreate thread", createErr);
+        }
+      }
+      setSendError(msg || "Failed to send message");
       isSendingRef.current = false;
     } finally {
       setIsSending(false);
