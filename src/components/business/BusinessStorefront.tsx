@@ -195,7 +195,37 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
       )}
       */}
 
-      {/* Owner management cards removed - access via Settings page instead */}
+      {/* Owner Quick Links */}
+      {isOwner && (
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 mt-6 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Link
+              href="/analytics"
+              className="rounded-lg border border-gray-200 bg-white p-4 flex items-start gap-3 hover:shadow-sm transition"
+            >
+              <div className="p-2 rounded-md bg-blue-50 text-blue-700">
+                <ChartBar className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Your Analytics</p>
+                <p className="text-xs text-gray-600">Views, offers, and performance metrics</p>
+              </div>
+            </Link>
+            <Link
+              href="/settings/business"
+              className="rounded-lg border border-gray-200 bg-white p-4 flex items-start gap-3 hover:shadow-sm transition"
+            >
+              <div className="p-2 rounded-md bg-gray-50 text-gray-800">
+                <SettingsIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Business Settings</p>
+                <p className="text-xs text-gray-600">Storefront, compliance, bulk uploads</p>
+              </div>
+            </Link>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 mt-6">
         <div className="rounded-3xl border border-gray-200 bg-white p-6 flex flex-col lg:flex-row gap-4 shadow">
