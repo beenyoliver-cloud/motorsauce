@@ -9,8 +9,6 @@ import {
   User,
   Search as SearchIcon,
   ChevronDown,
-  Menu,
-  X,
   ShoppingCart,
   MessageSquare,
   Tag,
@@ -66,7 +64,6 @@ function readCartCount(): number {
 }
 
 export default function Header() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const [user, setUser] = useState<LocalUser | null>(null);
   const [avatar, setAvatar] = useState<string | null>(null);
@@ -74,10 +71,6 @@ export default function Header() {
   const [cartOpen, setCartOpen] = useState(false);
   const [isUserLoaded, setIsUserLoaded] = useState(false);
   const [isAdminUser, setIsAdminUser] = useState(false);
-  const [isDesktop, setIsDesktop] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return window.innerWidth >= 768;
-  });
 
   const categories = [
     ["OEM Parts", "/categories/oem"],
@@ -247,35 +240,6 @@ export default function Header() {
     };
   }, []);
 
-   // Open cart drawer on custom event
-   useEffect(() => {
-     const handleOpenCart = () => setCartOpen(true);
-     window.addEventListener("ms:opencart", handleOpenCart as EventListener);
-     return () => window.removeEventListener("ms:opencart", handleOpenCart as EventListener);
-   }, []);
-
-  // Lock body scroll when mobile menu is open
-  useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [mobileMenuOpen]);
-
-  // Detect viewport to render only one header (mobile OR desktop) at a time
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mq = window.matchMedia("(min-width: 768px)");
-    const handler = (event: MediaQueryListEvent) => setIsDesktop(event.matches);
-    setIsDesktop(mq.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-
   const displayName = useMemo(() => getDisplayName(user), [user]);
   const initials = useMemo(() => getInitials(displayName), [displayName]);
   const profileHref = user ? `/profile/${encodeURIComponent(user.name)}` : "/auth/login";
@@ -294,440 +258,177 @@ export default function Header() {
 
   return (
     <>
-      {!isDesktop && (
-        <>
-        {/* Mobile header - Compact two-row design */}
-        <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        {/* Top row: Menu, Logo, Icons */}
-        <div className="relative h-14 flex items-center justify-between px-2">
-          {/* Left: Menu button */}
-          <button
-            className="flex items-center justify-center text-black hover:text-yellow-500 w-9 h-9"
-            aria-label="Toggle menu"
-            onClick={() => setMobileMenuOpen((v) => !v)}
-          >
-            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
-
-          {/* Center: Logo */}
-          <Link
-            href="/"
-            aria-label="Motorsource home"
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 inline-flex items-center justify-center px-1"
-          >
-            <img
-              src="/images/MSlogoreal.png"
-              alt="Motorsauce"
-              className="w-auto object-contain h-[4.5rem]"
-            />
-          </Link>
-
-          {/* Right: Notifications, Profile, Cart - tight spacing */}
-          <div className="flex items-center">
-            {isUserLoaded && user && (
-              <>
-                <NotificationsDropdown />
-                <Link
-                  href={profileHref}
-                  aria-label="Profile"
-                  className="flex items-center justify-center text-black hover:text-yellow-500 w-8 h-9"
-                >
-                  <User size={20} />
-                </Link>
-              </>
-            )}
-            <Link
-              href="/basket"
-              aria-label="Open basket"
-              className="relative flex items-center justify-center text-black hover:text-yellow-500 w-8 h-9"
-            >
-              <ShoppingCart size={20} />
-              {cartCount > 0 && (
-                <span className="absolute top-0.5 right-0 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[9px] font-bold min-w-[15px] h-[15px] px-0.5">
-                  {cartCount > 9 ? '9+' : cartCount}
-                </span>
-              )}
-            </Link>
-          </div>
-        </div>
-
-        {/* Search bar - always visible */}
-        <div className="px-2 pt-2 pb-3">
-          <SearchBar placeholder="Search parts or sellers…" compact />
-        </div>
-      </div>
-
-      {/* Mobile menu backdrop and panel - OUTSIDE the header div to fix stacking context */}
-      {mobileMenuOpen && (
-        <div>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/30 z-[100]"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          {/* Menu panel */}
-          <div className="fixed inset-0 bg-white z-[110] overflow-y-auto flex flex-col">
-            {/* Menu Header with Logo and Close */}
-            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between shrink-0">
-              <Link
-                href="/"
-                aria-label="Motorsource home"
-                className="inline-flex items-center"
-              >
+      <nav className="w-full bg-white border-b border-gray-200 shadow-sm fixed top-0 z-40">
+        <div className="mx-auto max-w-6xl px-3 sm:px-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 py-2">
+            {/* Left: Logo */}
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <Link href="/" aria-label="Motorsauce home" className="inline-flex items-center">
                 <img
                   src="/images/MSlogoreal.png"
                   alt="Motorsauce"
-                  className="w-auto object-contain h-[6rem]"
+                  className="h-12 w-auto object-contain"
                 />
               </Link>
-              <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="p-2 -mr-2 rounded-md hover:bg-gray-100 transition text-black"
-                aria-label="Close menu"
-              >
-                <X size={22} />
-              </button>
+              <div className="relative group hidden sm:block">
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-sm font-medium text-black hover:text-yellow-500 transition-colors"
+                >
+                  Categories <ChevronDown size={14} aria-hidden="true" />
+                </button>
+                <div
+                  className="absolute left-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible
+                             group-hover:visible group-hover:opacity-100 transform -translate-y-2 group-hover:translate-y-0
+                             transition-all duration-200 ease-out z-50"
+                  role="menu"
+                >
+                  {categories.map(([name, href], index) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      style={{ transitionDelay: `${index * 40}ms` }}
+                      className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600 transition-all"
+                      role="menuitem"
+                    >
+                      {name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            {/* Quick access bar for logged-in users */}
-            {isUserLoaded && user && (
-              <div className="flex items-center justify-around py-3 px-4 bg-gray-50 border-b border-gray-200">
-                <Link
-                  href={profileHref}
-                  className="flex flex-col items-center gap-1 text-gray-600 hover:text-yellow-600"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <User size={20} />
-                  <span className="text-xs">Profile</span>
-                </Link>
-                <Link
-                  href="/messages"
-                  className="relative flex flex-col items-center gap-1 text-gray-600 hover:text-yellow-600"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <div className="relative">
-                    <MessageSquare size={20} />
-                    {unread > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[9px] font-bold min-w-[16px] h-[16px] px-0.5">
-                        {unread > 9 ? '9+' : unread}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-xs">Messages</span>
-                </Link>
+            {/* Middle: Search */}
+            <div className="flex-1 w-full" role="search">
+              <div className="w-full max-w-3xl mx-auto">
+                <SearchBar placeholder="Search parts or sellers…" compact />
+              </div>
+            </div>
+
+            {/* Right actions */}
+            <div className="flex items-center justify-end gap-3 flex-shrink-0">
+              {isUserLoaded && user && (
                 <Link
                   href="/sell"
-                  className="flex flex-col items-center gap-1 text-gray-600 hover:text-yellow-600"
-                  onClick={() => setMobileMenuOpen(false)}
+                  className="hidden sm:inline-flex items-center gap-1 text-sm font-medium text-black hover:text-yellow-500 transition-colors"
                 >
-                  <PlusCircle size={20} />
-                  <span className="text-xs">Sell</span>
+                  <PlusCircle size={16} /> Sell
                 </Link>
-              </div>
-            )}
-
-            {/* Menu Content */}
-            <nav className="flex flex-col flex-1">
-              <Link
-                href="/"
-                className="block px-4 py-3 text-sm font-semibold text-yellow-600 hover:bg-yellow-50 border-b border-gray-200"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Home
-              </Link>
-              {categories.map(([name, href]) => (
+              )}
+              {isUserLoaded && isAdminUser && (
                 <Link
-                  key={href}
-                  href={href}
-                  className="block px-4 py-3 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600 border-b border-gray-100"
-                  onClick={() => setMobileMenuOpen(false)}
+                  href="/admin/dashboard"
+                  className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-black hover:text-yellow-500 transition-colors bg-yellow-100 px-2 py-1 rounded"
                 >
-                  {name}
+                  Admin
                 </Link>
-              ))}
-              <div className="border-t border-gray-200" />
-              {isUserLoaded && user ? (
-                <>
-                  <Link
-                    href="/sell"
-                    className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      <PlusCircle size={16} /> Sell
+              )}
+              {isUserLoaded && user && <NotificationsDropdown />}
+              {isUserLoaded && user && (
+                <Link
+                  href="/messages"
+                  className="relative flex items-center text-black hover:text-yellow-500 transition-colors"
+                  aria-label="Messages"
+                >
+                  <MessageSquare size={20} />
+                  {unread > 0 && (
+                    <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[11px] font-bold min-w-[18px] h-[18px] px-1">
+                      {unread > 9 ? '9+' : unread}
                     </span>
-                  </Link>
-                  {isAdminUser && (
-                    <Link
-                      href="/admin/dashboard"
-                      className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <span className="inline-flex items-center gap-1">
-                        <User size={16} /> Admin
-                      </span>
-                    </Link>
                   )}
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      setCartOpen(true);
-                    }}
-                    className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      <ShoppingCart size={16} /> Basket {cartCount > 0 ? `(${cartCount})` : ""}
-                    </span>
-                  </button>
-                  <Link
-                    href={profileHref}
-                    className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    My Profile
-                  </Link>
-                  <Link
-                    href="/messages"
-                    className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    My Messages {unread > 0 ? `(${unread})` : ""}
-                  </Link>
-                  <Link
-                    href="/sales"
-                    className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Previous Sales
-                  </Link>
-                  <Link
-                    href="/reviews"
-                    className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    My Reviews
-                  </Link>
-                  <Link
-                    href="/settings"
-                    className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Account Settings
-                  </Link>
-                  <Link
-                    href="/auth/logout"
-                    className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Log out
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link
-                    href="/basket"
-                    className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      <ShoppingCart size={16} /> Basket {cartCount > 0 ? `(${cartCount})` : ""}
-                    </span>
-                  </Link>
-                  <div className="border-t border-gray-100" />
-                  <Link
-                    href="/auth/login"
-                    className="block px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-50 hover:text-yellow-600"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Sign in
-                  </Link>
-                  <Link
-                    href="/auth/register"
-                    className="block px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-50 hover:text-yellow-600"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Register
-                  </Link>
-                </>
+                </Link>
               )}
-            </nav>
-          </div>
-        </div>
-      )}
-      </>
-      )}
-
-      {isDesktop && (
-      <nav className="w-full bg-white border-b border-gray-200 items-center justify-between px-6 py-2 shadow-sm fixed top-0 z-40 min-h-[72px]">
-        <Link href="/" aria-label="Motorsauce home" className="flex-shrink-0 inline-flex items-center h-full">
-          <img
-            src="/images/MSlogoreal.png"
-            alt="Motorsauce"
-            className="h-14 lg:h-16 w-auto object-contain"
-          />
-        </Link>
-
-      <div className="flex-1 flex justify-center px-4" role="search">
-        <div className="w-full max-w-2xl">
-          <SearchBar placeholder="Search parts or sellers…" compact />
-        </div>
-      </div>
-
-  <div className="hidden md:flex items-center gap-4">
-        {/* Categories dropdown */}
-        <div className="relative group">
-          <button
-            type="button"
-            className="flex items-center gap-1 text-sm font-medium text-black hover:text-yellow-500 transition-colors"
-          >
-            Categories <ChevronDown size={14} className="mt-[1px]" aria-hidden="true" />
-          </button>
-          <div
-            className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible
-                       group-hover:visible group-hover:opacity-100 transform -translate-y-2 group-hover:translate-y-0
-                       transition-all duration-200 ease-out z-50"
-            role="menu"
-          >
-            {categories.map(([name, href], index) => (
-              <Link
-                key={href}
-                href={href}
-                style={{ transitionDelay: `${index * 50}ms` }}
-                className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600 transition-all"
-                role="menuitem"
+              <button
+                onClick={() => setCartOpen(true)}
+                className="relative flex items-center text-black hover:text-yellow-500 transition-colors"
+                aria-label="Open basket"
               >
-                {name}
-              </Link>
-            ))}
-          </div>
-        </div>
+                <ShoppingCart size={20} />
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[11px] font-bold min-w-[18px] h-[18px] px-1">
+                    {cartCount > 9 ? '9+' : cartCount}
+                  </span>
+                )}
+              </button>
 
-          {isUserLoaded && user && (
-          <Link
-            href="/sell"
-            className="flex items-center gap-1 text-sm font-medium text-black hover:text-yellow-500 transition-colors"
-          >
-            <PlusCircle size={16} /> Sell
-          </Link>
-        )}
-        {isUserLoaded && isAdminUser && (
-          <Link
-            href="/admin/dashboard"
-            className="flex items-center gap-1 text-sm font-medium text-black hover:text-yellow-500 transition-colors bg-yellow-100 px-2 py-1 rounded"
-          >
-            Admin
-          </Link>
-        )}
-        {isUserLoaded && user && (
-            <>
-              <NotificationsDropdown />
-          <Link
-            href="/messages"
-            className="relative flex items-center text-black hover:text-yellow-500 transition-colors"
-            aria-label="Messages"
-          >
-                <MessageSquare size={20} />
-            {unread > 0 && (
-              <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[11px] font-bold min-w-[18px] h-[18px] px-1">
-                {unread > 9 ? '9+' : unread}
-              </span>
-            )}
-          </Link>
-            </>
-        )}
-        <button
-  onClick={() => setCartOpen(true)}
-  className="relative flex items-center text-black hover:text-yellow-500 transition-colors"
-  aria-label="Open basket"
->
-  <ShoppingCart size={20} />
-  {cartCount > 0 && (
-  <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[11px] font-bold min-w-[18px] h-[18px] px-1">
-      {cartCount}
-    </span>
-  )}
-</button>
-
-        {/* Profile with dropdown */}
-        <div className="relative group">
-            <Link href={profileHref} className="flex items-center gap-2 focus:outline-none">
-            <div className="h-9 w-9 rounded-full ring-2 ring-yellow-500 ring-offset-2 ring-offset-white overflow-hidden shrink-0">
-              {isUserLoaded && user && avatar ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatar} alt="" className="site-image" />
-              ) : (
-                <div className="h-full w-full bg-yellow-500 text-black flex items-center justify-center text-xs font-semibold">
-                  {isUserLoaded && user ? initials : <User size={18} />}
-                </div>
-              )}
-            </div>
-            <span className="text-sm font-medium text-black">
-              {isUserLoaded && user ? displayName : "Sign in"}
-            </span>
-            <ChevronDown size={14} className="text-gray-500" aria-hidden="true" />
-          </Link>
-
-          {/* ▼ Dropdown menu */}
-          <div
-            className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible
-                       group-hover:visible group-hover:opacity-100 transform -translate-y-2 group-hover:translate-y-0
-                       transition-all duration-200 ease-out z-50"
-            role="menu"
-          >
-            {isUserLoaded && user ? (
-              <>
-                {profileLinks.map(([name, href], i) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    style={{ transitionDelay: `${i * 50}ms` }}
-                    className="flex items-center justify-between px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600 transition-all"
-                    role="menuitem"
-                  >
-                    <span>{name}</span>
-                    {name === "My Messages" && unread > 0 && (
-                      <span className="ml-2 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-xs font-bold px-2 py-0.5">
-                        {unread > 9 ? '9+' : unread}
-                      </span>
+              {/* Profile */}
+              <div className="relative group">
+                <Link href={profileHref} className="flex items-center gap-2 focus:outline-none">
+                  <div className="h-9 w-9 rounded-full ring-2 ring-yellow-500 ring-offset-2 ring-offset-white overflow-hidden shrink-0">
+                    {isUserLoaded && user && avatar ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={avatar} alt="" className="site-image" />
+                    ) : (
+                      <div className="h-full w-full bg-yellow-500 text-black flex items-center justify-center text-xs font-semibold">
+                        {isUserLoaded && user ? initials : <User size={18} />}
+                      </div>
                     )}
-                  </Link>
-                ))}
-                <Link
-                  href="/auth/logout"
-                  className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                  role="menuitem"
-                >
-                  Log out
+                  </div>
+                  <span className="text-sm font-medium text-black hidden sm:block">
+                    {isUserLoaded && user ? displayName : "Sign in"}
+                  </span>
+                  <ChevronDown size={14} className="text-gray-500 hidden sm:block" aria-hidden="true" />
                 </Link>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/auth/login"
-                  className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                  role="menuitem"
+
+                <div
+                  className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible
+                             group-hover:visible group-hover:opacity-100 transform -translate-y-2 group-hover:translate-y-0
+                             transition-all duration-200 ease-out z-50"
+                  role="menu"
                 >
-                  Sign in
-                </Link>
-                <Link
-                  href="/auth/register"
-                  className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
-                  role="menuitem"
-                >
-                  Register
-                </Link>
-              </>
-            )}
+                  {isUserLoaded && user ? (
+                    <>
+                      {profileLinks.map(([name, href], i) => (
+                        <Link
+                          key={href}
+                          href={href}
+                          style={{ transitionDelay: `${i * 40}ms` }}
+                          className="flex items-center justify-between px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600 transition-all"
+                          role="menuitem"
+                        >
+                          <span>{name}</span>
+                          {name === "My Messages" && unread > 0 && (
+                            <span className="ml-2 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-xs font-bold px-2 py-0.5">
+                              {unread > 9 ? '9+' : unread}
+                            </span>
+                          )}
+                        </Link>
+                      ))}
+                      <Link
+                        href="/auth/logout"
+                        className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                        role="menuitem"
+                      >
+                        Log out
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        href="/auth/login"
+                        className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                        role="menuitem"
+                      >
+                        Sign in
+                      </Link>
+                      <Link
+                        href="/auth/register"
+                        className="block px-4 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600"
+                        role="menuitem"
+                      >
+                        Register
+                      </Link>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Cart drawer - desktop only (mobile navigates to /basket page) */}
-      <div>
+        {/* Cart drawer */}
         <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
-      </div>
-    </nav>
-      )}
+      </nav>
     </>
   );
 }
