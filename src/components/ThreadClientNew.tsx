@@ -310,12 +310,21 @@ export default function ThreadClientNew({
     } catch (err: any) {
       console.error("[ThreadClientNew] send error", err);
       const msg = err?.message || "";
-      if (msg.includes("Thread not found") && peerId) {
+      const missing = err?.threadMissing || msg === "THREAD_MISSING" || msg.includes("Thread missing") || msg.includes("Thread not found");
+      if (missing && peerId) {
         try {
           const newThread = await createThread(peerId, listingRef || undefined);
           if (newThread?.id) {
-            router.push(`/messages/${encodeURIComponent(newThread.id)}`);
-            return;
+            const resent = await sendMessage(newThread.id, text.trim(), { peerId, listingRef });
+            if (resent) {
+              setMessages(prev => [...prev, resent]);
+              setDraft("");
+              setShouldAutoScroll(true);
+              setHasHadMessages(true);
+              router.replace(`/messages/${encodeURIComponent(newThread.id)}`);
+              isSendingRef.current = false;
+              return;
+            }
           }
         } catch (createErr) {
           console.error("[ThreadClientNew] failed to recreate thread", createErr);

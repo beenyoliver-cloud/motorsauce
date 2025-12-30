@@ -219,19 +219,26 @@ export async function sendMessage(
       body: JSON.stringify({ type: "text", text, peerId: opts?.peerId, listingRef: opts?.listingRef }),
     });
 
+    const payload = await res.json().catch(() => ({} as any));
     if (!res.ok) {
-      let errorDetail: any = null;
-      try { errorDetail = await res.json(); } catch {}
-      const msg = errorDetail?.error || errorDetail?.message || `HTTP ${res.status}`;
+      const msg = payload?.error || payload?.message || `HTTP ${res.status}`;
       console.error("[messagesClient] Failed to send message:", res.status, msg);
-      if (res.status === 404) {
-        throw new Error("Thread not found. Please reopen the conversation from Messages.");
+      if (payload?.threadMissing || res.status === 404) {
+        const err: any = new Error("THREAD_MISSING");
+        err.threadMissing = true;
+        err.detail = msg;
+        throw err;
       }
       throw new Error(msg);
     }
 
-    const data = await res.json();
-    const raw = data.message;
+    if (payload?.threadMissing) {
+      const err: any = new Error("THREAD_MISSING");
+      err.threadMissing = true;
+      throw err;
+    }
+
+    const raw = payload.message;
     if (!raw) return null;
 
     // Enrich raw message row to Message shape expected by UI

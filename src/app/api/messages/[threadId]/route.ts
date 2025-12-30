@@ -304,7 +304,7 @@ export async function POST(
 
         if (recreated.error || !recreated.data) {
           console.error("[messages POST] Thread recreation failed", recreated.error);
-          return NextResponse.json({ error: "Thread not found. Please reopen the conversation from Messages." }, { status: 404 });
+          return NextResponse.json({ error: "Thread missing", threadMissing: true }, { status: 200 });
         }
 
         const recreatedThread = recreated.data;
@@ -312,7 +312,7 @@ export async function POST(
         threadId = recreatedThread.id;
         await supabase.from("thread_deletions").delete().eq("thread_id", threadId).eq("user_id", user.id);
       } else {
-        return NextResponse.json({ error: "Thread not found. Please reopen the conversation from Messages." }, { status: 404 });
+        return NextResponse.json({ error: "Thread missing", threadMissing: true }, { status: 200 });
       }
     }
     
