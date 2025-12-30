@@ -71,9 +71,9 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
+      <Suspense fallback={null}>
         <RecentlyViewedRow />
-      </div>
+      </Suspense>
       
       <ToastContainer />
     </main>
