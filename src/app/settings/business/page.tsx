@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useState, useEffect, useRef } from "react";
 import type { ComponentType } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -66,7 +67,7 @@ const BRAND_COLOR_FIELDS: { key: "brand_primary_color" | "brand_secondary_color"
 
 type Tab = "general" | "verification";
 
-export default function BusinessSettingsPage() {
+function BusinessSettingsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<Tab>("general");
@@ -685,22 +686,24 @@ export default function BusinessSettingsPage() {
                     )}
                     {latestVerification && (
                       <div className="mt-4 text-sm text-gray-600">
-                    <p>
-                      Last submission:{" "}
-                      <strong>{new Date(latestVerification.created_at).toLocaleString()}</strong>
-                    </p>
-                    {latestVerification.document_type && (
-                      <p className="mt-1">
-                        Document type:{" "}
-                        <span className="capitalize">{latestVerification.document_type.replace(/_/g, " ")}</span>
-                      </p>
+                        <p>
+                          Last submission:{" "}
+                          <strong>{new Date(latestVerification.created_at).toLocaleString()}</strong>
+                        </p>
+                        {latestVerification.document_type && (
+                          <p className="mt-1">
+                            Document type:{" "}
+                            <span className="capitalize">{latestVerification.document_type.replace(/_/g, " ")}</span>
+                          </p>
+                        )}
+                        {latestVerification.review_notes && (
+                          <p className="mt-1 text-red-700">
+                            Review note: {latestVerification.review_notes}
+                          </p>
+                        )}
+                      </div>
                     )}
-                    {latestVerification.review_notes && (
-                      <p className="mt-1 text-red-700">
-                        Review note: {latestVerification.review_notes}
-                      </p>
-                    )}
-                  </div>
+                  </>
                 )}
 
                 {verificationStatus === "approved" ? (
@@ -798,7 +801,7 @@ export default function BusinessSettingsPage() {
               </div>
             )}
           </div>
-        </div>
+
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Business Identity</h2>
             <div className="space-y-4">
@@ -1323,5 +1326,21 @@ export default function BusinessSettingsPage() {
 
       </div>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-yellow-500" />
+    </div>
+  );
+}
+
+export default function BusinessSettingsPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <BusinessSettingsContent />
+    </Suspense>
   );
 }
