@@ -292,7 +292,7 @@ export default function ThreadClientNew({
     setIsSending(true);
     isSendingRef.current = true; // Block polling during send
     try {
-      const sent = await sendMessage(threadId, text.trim());
+      const sent = await sendMessage(threadId, text.trim(), { peerId, listingRef });
       if (sent) {
         setMessages(prev => [...prev, sent]);
         setDraft("");

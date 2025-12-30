@@ -48,7 +48,8 @@ export async function GET(
       .single();
 
     if (threadError || !thread) {
-      return NextResponse.json({ error: "Thread not found" }, { status: 404 });
+      // Gracefully return empty messages so UI can recreate thread if needed
+      return NextResponse.json({ error: "Thread not found", threadMissing: true, messages: [] }, { status: 200 });
     }
     const participants = [
       thread.participant_1_id,
@@ -194,7 +195,8 @@ export async function POST(
   { params }: { params: Promise<{ threadId: string }> }
 ) {
   try {
-    const { threadId } = await params;
+    const { threadId: initialThreadId } = await params;
+    let threadId = initialThreadId;
     const authHeader = req.headers.get("authorization");
     
     if (!authHeader) {
@@ -209,7 +211,16 @@ export async function POST(
     }
 
     const body = await req.json();
-    const { type = "text", text, offerId, offerAmountCents, offerCurrency, offerStatus } = body;
+    const {
+      type = "text",
+      text,
+      offerId,
+      offerAmountCents,
+      offerCurrency,
+      offerStatus,
+      peerId,
+      listingRef,
+    } = body;
 
     if (!["text", "offer", "system"].includes(type)) {
       return NextResponse.json({ error: "Invalid message type" }, { status: 400 });
@@ -238,9 +249,9 @@ export async function POST(
 
     // Verify thread access
     console.log("[messages POST] Looking for thread:", threadId, "for user:", user.id);
-    const { data: thread, error: threadError } = await supabase
+    let { data: thread, error: threadError } = await supabase
       .from("threads")
-      .select("id, participant_1_id, participant_2_id, a_user, b_user")
+      .select("id, participant_1_id, participant_2_id, a_user, b_user, listing_ref")
       .eq("id", threadId)
       .single();
 
@@ -255,7 +266,53 @@ export async function POST(
 
     if (threadError || !thread) {
       console.error("[messages POST] Thread not found for threadId:", threadId);
-      return NextResponse.json({ error: "Thread not found. Please reopen the conversation from Messages." }, { status: 404 });
+      // Try to recreate if we have enough info (peerId/listingRef)
+      if (peerId && peerId !== user.id) {
+        const [p1, p2] = [user.id, peerId].sort();
+        let recreated = await supabase
+          .from("threads")
+          .upsert(
+            {
+              participant_1_id: p1,
+              participant_2_id: p2,
+              listing_ref: listingRef || null,
+              last_message_text: "Conversation restarted",
+              last_message_at: new Date().toISOString(),
+            },
+            { onConflict: "participant_1_id,participant_2_id,listing_ref" }
+          )
+          .select()
+          .single();
+
+        if (recreated.error && recreated.error.code === "42703") {
+          console.warn("[messages POST] Recreate falling back to legacy thread schema", recreated.error);
+          recreated = await supabase
+            .from("threads")
+            .upsert(
+              {
+                a_user: p1,
+                b_user: p2,
+                listing_ref: listingRef || null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: "a_user,b_user" }
+            )
+            .select()
+            .single();
+        }
+
+        if (recreated.error || !recreated.data) {
+          console.error("[messages POST] Thread recreation failed", recreated.error);
+          return NextResponse.json({ error: "Thread not found. Please reopen the conversation from Messages." }, { status: 404 });
+        }
+
+        thread = recreated.data;
+        threadId = thread.id;
+        await supabase.from("thread_deletions").delete().eq("thread_id", threadId).eq("user_id", user.id);
+      } else {
+        return NextResponse.json({ error: "Thread not found. Please reopen the conversation from Messages." }, { status: 404 });
+      }
     }
     const participants = [
       thread.participant_1_id,

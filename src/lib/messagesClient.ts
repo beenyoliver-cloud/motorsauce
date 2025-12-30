@@ -198,9 +198,14 @@ export async function fetchMessages(threadId: string): Promise<Message[]> {
 }
 
 /**
- * Send a text message to a thread
+ * Send a text message to a thread.
+ * Optionally pass peerId/listingRef so the API can recreate the thread if it was pruned.
  */
-export async function sendMessage(threadId: string, text: string): Promise<Message | null> {
+export async function sendMessage(
+  threadId: string,
+  text: string,
+  opts?: { peerId?: string | null; listingRef?: string | null }
+): Promise<Message | null> {
   try {
     const authHeader = await getAuthHeader();
     if (!authHeader) return null;
@@ -211,7 +216,7 @@ export async function sendMessage(threadId: string, text: string): Promise<Messa
         "Content-Type": "application/json",
         Authorization: authHeader,
       },
-      body: JSON.stringify({ type: "text", text }),
+      body: JSON.stringify({ type: "text", text, peerId: opts?.peerId, listingRef: opts?.listingRef }),
     });
 
     if (!res.ok) {

@@ -117,7 +117,7 @@ export async function GET(req: Request) {
     if (listingRefs.length > 0) {
       const { data: listings } = await supabase
         .from("listings")
-        .select("id, title, images, image_urls")
+        .select("id, title, price, condition, images, image_urls")
         .in("id", listingRefs);
       
       if (listings) {
@@ -131,6 +131,8 @@ export async function GET(req: Request) {
               (Array.isArray(l.image_urls) && l.image_urls.length > 0 ? l.image_urls[0] : null) ||
               null
             ),
+            price: typeof l.price === "number" ? l.price : (l.price ?? null),
+            condition: l.condition || null,
           }
         ]));
       }
@@ -146,14 +148,16 @@ export async function GET(req: Request) {
 
     const threadIds = visibleThreads.map((t: ThreadRow) => t.id);
 
-    // Determine last message sender for "needs reply"
-    const lastSenderMap = new Map<string, { from_user_id?: string | null; sender?: string | null }>();
+    // Determine last message sender for "needs reply" with a bounded query
+    const lastSenderMap = new Map<string, { from_user_id?: string | null; sender?: string | null; created_at?: string | null }>();
     if (threadIds.length > 0) {
+      const limit = Math.max(threadIds.length * 3, 20); // cap scan size to avoid large payloads
       const { data: lastRows, error: lastErr } = await supabase
         .from("messages")
         .select("thread_id, from_user_id, sender, created_at")
         .in("thread_id", threadIds)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(limit);
       if (!lastErr && lastRows) {
         for (const row of lastRows) {
           if (!lastSenderMap.has(row.thread_id)) lastSenderMap.set(row.thread_id, row);
@@ -225,7 +229,13 @@ export async function GET(req: Request) {
           responseRate: peer?.response_rate || null,
         },
         listingRef: t.listing_ref || null,
-        listing: listing,
+        listing: listing
+          ? {
+              ...listing,
+              price: listing.price,
+              condition: listing.condition,
+            }
+          : null,
         lastMessage: t.last_message_text || null,
         lastMessageAt: t.last_message_at || t.created_at || new Date().toISOString(),
         isRead: readSet.has(t.id),
