@@ -241,9 +241,11 @@ export default function ThreadClientNew({
         console.error("[ThreadClientNew] Load error:", err);
         if (active) {
           const missing = err?.threadMissing || err?.message === "THREAD_MISSING";
-          if (missing && peerId) {
+          const fallbackPeer = peerId || searchParams.get("peer");
+          const fallbackListing = listingRef || searchParams.get("listing");
+          if (missing && fallbackPeer) {
             try {
-              const newThread = await createThread(peerId, listingRef || undefined);
+              const newThread = await createThread(fallbackPeer, fallbackListing || undefined);
               if (newThread?.id) {
                 router.replace(`/messages/${encodeURIComponent(newThread.id)}`);
                 return;

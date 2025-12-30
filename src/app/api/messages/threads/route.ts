@@ -61,11 +61,10 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch threads (RLS will filter to only user's threads). We request both legacy & new columns explicitly.
+    // Fetch thread summaries (RLS will filter to only user's threads)
     const { data: threads, error: threadsError } = await supabase
-      .from("threads")
-      .select("id, participant_1_id, participant_2_id, a_user, b_user, listing_ref, last_message_text, last_message_at, created_at, updated_at")
-      .order("last_message_at", { ascending: false });
+      .from("thread_summaries")
+      .select("id, participant_1_id, participant_2_id, listing_ref, last_message_preview, last_message_at, created_at, updated_at");
 
     if (threadsError) {
       console.error("[threads API] Error fetching threads:", threadsError);
@@ -89,13 +88,13 @@ export async function GET(req: Request) {
     const visibleThreads = (threads || []).filter((t: any) => !deletedIds.has(t.id));
 
     // Determine schema style (legacy vs new)
-    const isLegacy = visibleThreads.length > 0 && !visibleThreads[0].participant_1_id && 'a_user' in visibleThreads[0];
+    const isLegacy = false; // summaries view only returns new columns
 
     // Enrich with peer profile data and read status
     const participantIds = new Set<string>();
     visibleThreads.forEach((t: ThreadRow) => {
-      const p1 = t.participant_1_id || t.a_user!;
-      const p2 = t.participant_2_id || t.b_user!;
+      const p1 = t.participant_1_id!;
+      const p2 = t.participant_2_id!;
       if (p1 !== user.id) participantIds.add(p1);
       if (p2 !== user.id) participantIds.add(p2);
     });
@@ -205,8 +204,8 @@ export async function GET(req: Request) {
 
     // Build response
     const enriched = visibleThreads.map((t: ThreadRow) => {
-      const p1 = t.participant_1_id || t.a_user!;
-      const p2 = t.participant_2_id || t.b_user!;
+      const p1 = t.participant_1_id!;
+      const p2 = t.participant_2_id!;
       const peerId = p1 === user.id ? p2 : p1;
       const peer = profileMap.get(peerId);
       const listing = t.listing_ref ? listingMap.get(t.listing_ref) : null;
@@ -236,7 +235,7 @@ export async function GET(req: Request) {
               condition: listing.condition,
             }
           : null,
-        lastMessage: t.last_message_text || null,
+        lastMessage: (t as any).last_message_preview || null,
         lastMessageAt: t.last_message_at || t.created_at || new Date().toISOString(),
         isRead: readSet.has(t.id),
         needsReply,
