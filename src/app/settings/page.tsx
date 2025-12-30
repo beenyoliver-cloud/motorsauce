@@ -65,13 +65,17 @@ function SettingsContent() {
         .single();
       
       if (profile) {
+        const normalizedAccountType = typeof (profile as any).account_type === 'string'
+          ? (profile as any).account_type.toLowerCase().trim()
+          : null;
+
         setAvatar(profile.avatar || "");
         setBackgroundImage(profile.background_image || "");
         setAbout(profile.about || "");
         setPostcode(profile.postcode || "");
         setCounty(profile.county || "");
         setCountry(profile.country || "United Kingdom");
-        setAccountType((profile as any).account_type || null);
+        setAccountType(normalizedAccountType);
       }
       
       setLoading(false);

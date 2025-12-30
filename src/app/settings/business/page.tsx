@@ -180,13 +180,25 @@ export default function BusinessSettingsPage() {
 
       const supabase = supabaseBrowser();
       setCurrentUserId(user.id);
+
       const { data: profile } = await supabase
         .from("profiles")
         .select("account_type, show_in_activity_feed, business_verified, verification_status, verification_notes")
         .eq("id", user.id)
         .single();
 
-      if (profile?.account_type !== "business") {
+      const profileAccountType = typeof profile?.account_type === "string"
+        ? profile.account_type.toLowerCase().trim()
+        : null;
+
+      const { data: authData } = await supabase.auth.getUser();
+      const metaAccountType = typeof authData?.user?.user_metadata?.account_type === "string"
+        ? authData.user.user_metadata.account_type.toLowerCase().trim()
+        : null;
+
+      const effectiveAccountType = profileAccountType || metaAccountType;
+
+      if (effectiveAccountType !== "business") {
         router.push("/settings");
         return;
       }
