@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import type { ComponentType } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { supabaseBrowser } from "@/lib/supabase";
 import { uploadComplianceDocument } from "@/lib/storage";
 import { logTelemetry } from "@/lib/telemetry";
-import { Building2, Upload, Loader2, Image as ImageIcon, X, Check, ShieldCheck, AlertTriangle, Clock3, FileCheck2 } from "lucide-react";
+import { Building2, Upload, Loader2, Image as ImageIcon, X, Check, ShieldCheck, AlertTriangle, Clock3, FileCheck2, Settings } from "lucide-react";
 import Cropper from "react-easy-crop";
 
 type BusinessInfo = {
@@ -64,8 +64,12 @@ const BRAND_COLOR_FIELDS: { key: "brand_primary_color" | "brand_secondary_color"
   { key: "brand_accent_color", label: "Accent", helper: "Badges & chips" },
 ];
 
+type Tab = "general" | "verification";
+
 export default function BusinessSettingsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<Tab>("general");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -155,6 +159,13 @@ export default function BusinessSettingsPage() {
   useEffect(() => {
     loadBusinessInfo();
   }, []);
+
+  useEffect(() => {
+    const tab = searchParams?.get("tab");
+    if (tab && ["general", "verification"].includes(tab)) {
+      setActiveTab(tab as Tab);
+    }
+  }, [searchParams]);
 
   // Warn user about unsaved changes
   useEffect(() => {
@@ -567,7 +578,7 @@ export default function BusinessSettingsPage() {
             <Building2 className="w-8 h-8" />
             Business Settings
           </h1>
-          <p className="text-gray-600 mt-2">Manage your business storefront appearance and information</p>
+          <p className="text-gray-600 mt-2">Manage your business storefront, branding, and verification</p>
         </div>
 
         {error && (
@@ -582,50 +593,98 @@ export default function BusinessSettingsPage() {
           </div>
         )}
 
-        <div className="space-y-6">
-          {/* Seller Verification */}
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Seller verification</h2>
-                <p className="text-sm text-gray-600">
-                  Upload compliance documents so the trust team can approve your storefront.
-                </p>
-              </div>
-              {currentStatusMeta && (
-                <div className="text-right">
-                  <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold ${currentStatusMeta.className}`}>
-                    {CurrentStatusIcon && <CurrentStatusIcon className="h-4 w-4" />}
-                    {currentStatusMeta.label}
-                  </span>
-                  <p className="mt-1 text-xs text-gray-500">{currentStatusMeta.helper}</p>
-                </div>
-              )}
-            </div>
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Sidebar Navigation */}
+          <div className="w-full md:w-48 shrink-0">
+            <nav className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <button
+                onClick={() => {
+                  setActiveTab("general");
+                  setError(null);
+                  router.push(`/settings/business?tab=general`);
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors border-b border-gray-100 ${
+                  activeTab === "general"
+                    ? 'bg-gray-50 text-gray-900 border-l-4 border-l-gray-900'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-l-4 border-l-transparent'
+                }`}
+              >
+                <Settings size={18} />
+                General
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("verification");
+                  setError(null);
+                  router.push(`/settings/business?tab=verification`);
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors ${
+                  activeTab === "verification"
+                    ? 'bg-gray-50 text-gray-900 border-l-4 border-l-gray-900'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-l-4 border-l-transparent'
+                }`}
+              >
+                <ShieldCheck size={18} />
+                Verification
+              </button>
+            </nav>
+          </div>
 
-            {verificationLoading && (
-              <p className="mt-4 text-sm text-gray-500">Checking your verification status…</p>
+          {/* Main Content */}
+          <div className="flex-1">
+            {activeTab === "general" && (
+              <div className="space-y-6">
+                {/* Placeholder for general tab content */}
+                <div className="bg-white rounded-lg shadow-sm border p-6">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">Business Settings</h2>
+                  <p className="text-gray-600">General settings content coming soon...</p>
+                </div>
+              </div>
             )}
 
-            {!verificationLoading && (
-              <>
-                {verificationNote && (
-                  <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-900">
-                    {verificationNote}
+            {activeTab === "verification" && (
+              <div className="bg-white rounded-lg shadow-sm border p-6">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">Seller verification</h2>
+                    <p className="text-sm text-gray-600">
+                      Upload compliance documents so the trust team can approve your storefront.
+                    </p>
                   </div>
+                  {currentStatusMeta && (
+                    <div className="text-right">
+                      <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold ${currentStatusMeta.className}`}>
+                        {CurrentStatusIcon && <CurrentStatusIcon className="h-4 w-4" />}
+                        {currentStatusMeta.label}
+                      </span>
+                      <p className="mt-1 text-xs text-gray-500">{currentStatusMeta.helper}</p>
+                    </div>
+                  )}
+                </div>
+
+                {verificationLoading && (
+                  <p className="mt-4 text-sm text-gray-500">Checking your verification status…</p>
                 )}
-                {verificationError && (
-                  <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-                    {verificationError}
-                  </div>
-                )}
-                {verificationSuccess && (
-                  <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
-                    {verificationSuccess}
-                  </div>
-                )}
-                {latestVerification && (
-                  <div className="mt-4 text-sm text-gray-600">
+
+                {!verificationLoading && (
+                  <>
+                    {verificationNote && (
+                      <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-900">
+                        {verificationNote}
+                      </div>
+                    )}
+                    {verificationError && (
+                      <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                        {verificationError}
+                      </div>
+                    )}
+                    {verificationSuccess && (
+                      <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+                        {verificationSuccess}
+                      </div>
+                    )}
+                    {latestVerification && (
+                      <div className="mt-4 text-sm text-gray-600">
                     <p>
                       Last submission:{" "}
                       <strong>{new Date(latestVerification.created_at).toLocaleString()}</strong>
@@ -736,11 +795,10 @@ export default function BusinessSettingsPage() {
                     </div>
                   </div>
                 )}
-              </>
+              </div>
             )}
           </div>
-
-          {/* Business Identity */}
+        </div>
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Business Identity</h2>
             <div className="space-y-4">
