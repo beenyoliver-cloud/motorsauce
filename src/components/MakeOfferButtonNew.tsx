@@ -57,12 +57,20 @@ export default function MakeOfferButtonNew({
   async function handleOfferCreated(result?: { threadId?: string }) {
     setIsModalOpen(false);
     if (result?.threadId) {
-      router.push(`/messages/${encodeURIComponent(result.threadId)}?offer=new`);
+      const params = new URLSearchParams();
+      params.set("peer", sellerId);
+      params.set("listing", String(listingId));
+      params.set("offer", "new");
+      router.push(`/messages/${encodeURIComponent(result.threadId)}?${params.toString()}`);
       return;
     }
     const thread = await createThread(sellerId, String(listingId));
     if (thread) {
-      router.push(`/messages/${encodeURIComponent(thread.id)}?offer=new`);
+      const params = new URLSearchParams();
+      params.set("peer", sellerId);
+      params.set("listing", String(listingId));
+      params.set("offer", "new");
+      router.push(`/messages/${encodeURIComponent(thread.id)}?${params.toString()}`);
     } else {
       router.push("/messages");
     }

@@ -103,7 +103,9 @@ export default function ProfileActions({
         return;
       }
 
-      router.push(`/messages/${encodeURIComponent(thread.id)}`);
+      const params = new URLSearchParams();
+      params.set("peer", userId);
+      router.push(`/messages/${encodeURIComponent(thread.id)}?${params.toString()}`);
     } catch (error) {
       alert(`Unexpected error: ${error instanceof Error ? error.message : "Please try again"}`);
       setIsLoading(false);

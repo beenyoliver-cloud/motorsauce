@@ -176,8 +176,11 @@ export default function ThreadClientNew({
         setMessages(msgs);
         if (msgs.length > 0) setHasHadMessages(true);
 
-        // Derive peer from messages if any (fallback to cached state)
-        let derivedPeerId = msgs.find(m => m.from.id !== currentUserId)?.from.id || peerId;
+        const queryPeer = searchParams.get("peer");
+        const queryListing = searchParams.get("listing");
+
+        // Derive peer from messages if any (fallback to cached state or URL)
+        let derivedPeerId = msgs.find(m => m.from.id !== currentUserId)?.from.id || peerId || queryPeer;
 
         // Load thread metadata (participants/listing) once
         if (!threadMetaFetched.current) {
@@ -194,6 +197,7 @@ export default function ThreadClientNew({
             }
             if (derivedPeerId) setPeerId(derivedPeerId);
             if (listing_ref) setListingRef(listing_ref);
+            else if (queryListing) setListingRef(queryListing);
             if (listing_ref && !threadListing) {
               const { data: listingData } = await supabase
                 .from("listings")
@@ -527,7 +531,7 @@ export default function ThreadClientNew({
         </div>
       </div>
 
-      {(peerProfile || threadListing) && (
+      {(peerProfile || (listingRef && threadListing)) && (
         <div className="border-b border-gray-100 bg-gray-50 px-3 py-3 md:px-4 grid gap-3 md:grid-cols-2">
           {peerProfile && (
             <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm flex flex-col gap-3">
@@ -562,7 +566,7 @@ export default function ThreadClientNew({
               </dl>
             </div>
           )}
-          {threadListing && (
+          {listingRef && threadListing && (
             <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm flex items-center gap-3">
               <div className="h-12 w-12 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden">
                 {threadListing.image ? (

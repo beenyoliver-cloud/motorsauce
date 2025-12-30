@@ -50,7 +50,10 @@ export default function ContactSellerButton({
       }
 
       // Navigate to the thread
-      router.push(`/messages/${encodeURIComponent(thread.id)}`);
+      const params = new URLSearchParams();
+      params.set("peer", sellerId);
+      params.set("listing", String(listingId));
+      router.push(`/messages/${encodeURIComponent(thread.id)}?${params.toString()}`);
     } catch (error) {
       console.error("Error in ContactSellerButton:", error);
       alert(`Unexpected error: ${error instanceof Error ? error.message : "Please try again"}`);
