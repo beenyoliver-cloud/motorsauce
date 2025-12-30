@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Package, Search, Star, Flame, Sparkles, UploadCloud } from "lucide-react";
+import { Package, Search, Star, Flame, Sparkles, UploadCloud, AlertCircle, Filter } from "lucide-react";
 import BulkUploadDialog from "./BulkUploadDialog";
 
 type Props = {
@@ -16,6 +16,10 @@ type Listing = {
   price: number | string;
   images: string[];
   created_at: string;
+  status?: string;
+  quantity?: number;
+  oem?: string | null;
+  view_count?: number;
 };
 
 type Promotion = {
@@ -31,6 +35,7 @@ export default function BusinessCatalogue({ businessId, isOwner }: Props) {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterMode, setFilterMode] = useState<"all" | "stale" | "needs-oem" | "low-photos">("all");
   const [refreshKey, setRefreshKey] = useState(0);
   const [uploadOpen, setUploadOpen] = useState(false);
 
@@ -84,9 +89,29 @@ export default function BusinessCatalogue({ businessId, isOwner }: Props) {
     }
   }
 
-  const filteredListings = listings.filter((listing) =>
-    listing.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const isStale = (createdAt: string) => {
+    const age = Date.now() - new Date(createdAt).getTime();
+    return age > 1000 * 60 * 60 * 24 * 45; // 45 days
+  };
+
+  const hasLowPhotos = (listing: Listing) => !listing.images || listing.images.length < 3;
+  const isMissingOem = (listing: Listing) => !listing.oem;
+
+  const filteredListings = listings.filter((listing) => {
+    const matchesSearch = listing.title.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!matchesSearch) return false;
+
+    switch (filterMode) {
+      case "stale":
+        return isStale(listing.created_at);
+      case "needs-oem":
+        return isMissingOem(listing);
+      case "low-photos":
+        return hasLowPhotos(listing);
+      default:
+        return true;
+    }
+  });
 
   const formatPrice = (value: number | string) => {
     const numeric = Number(String(value).replace(/[^\d.]/g, ""));
@@ -105,7 +130,7 @@ export default function BusinessCatalogue({ businessId, isOwner }: Props) {
   return (
     <div>
       {/* Search and Filters */}
-      <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center">
+      <div className="mb-6 flex flex-col gap-3">
         <div className="flex-1 relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
@@ -116,10 +141,63 @@ export default function BusinessCatalogue({ businessId, isOwner }: Props) {
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
           />
         </div>
+        
+        {/* Filter Controls */}
+        <div className="flex flex-wrap gap-2 items-center">
+          <div className="flex items-center gap-1 text-sm text-gray-600">
+            <Filter className="h-4 w-4" />
+            <span>Filter:</span>
+          </div>
+          <button
+            onClick={() => setFilterMode("all")}
+            className={`px-3 py-1 text-sm rounded-full transition ${
+              filterMode === "all"
+                ? "bg-yellow-500 text-black font-medium"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setFilterMode("stale")}
+            className={`px-3 py-1 text-sm rounded-full transition flex items-center gap-1 ${
+              filterMode === "stale"
+                ? "bg-amber-500 text-white font-medium"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            <AlertCircle className="h-3.5 w-3.5" />
+            Stale
+          </button>
+          <button
+            onClick={() => setFilterMode("needs-oem")}
+            className={`px-3 py-1 text-sm rounded-full transition flex items-center gap-1 ${
+              filterMode === "needs-oem"
+                ? "bg-blue-500 text-white font-medium"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            <AlertCircle className="h-3.5 w-3.5" />
+            Needs OEM
+          </button>
+          <button
+            onClick={() => setFilterMode("low-photos")}
+            className={`px-3 py-1 text-sm rounded-full transition flex items-center gap-1 ${
+              filterMode === "low-photos"
+                ? "bg-purple-500 text-white font-medium"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            <AlertCircle className="h-3.5 w-3.5" />
+            Low Photos
+          </button>
+        </div>
+
+        {/* Bulk Upload Button */}
         {isOwner && (
           <button
             onClick={() => setUploadOpen(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm hover:border-yellow-400 hover:text-yellow-600 transition"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm hover:border-yellow-400 hover:text-yellow-600 transition self-start"
           >
             <UploadCloud className="h-4 w-4" />
             Bulk upload parts
@@ -175,10 +253,41 @@ export default function BusinessCatalogue({ businessId, isOwner }: Props) {
                       -{promo.discount_percentage}%
                     </div>
                   )}
+
+                  {/* Status & Issues Badges */}
+                  <div className="absolute bottom-2 left-2 right-2 flex flex-wrap gap-1">
+                    {isStale(listing.created_at) && (
+                      <span className="bg-amber-500 text-white text-xs font-semibold px-2 py-1 rounded">
+                        Stale
+                      </span>
+                    )}
+                    {isMissingOem(listing) && (
+                      <span className="bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded">
+                        No OEM
+                      </span>
+                    )}
+                    {hasLowPhotos(listing) && (
+                      <span className="bg-purple-500 text-white text-xs font-semibold px-2 py-1 rounded">
+                        {listing.images?.length || 0} photo{(listing.images?.length || 0) !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                    {listing.status === "sold" && (
+                      <span className="bg-gray-500 text-white text-xs font-semibold px-2 py-1 rounded">
+                        Sold
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="p-4">
                   <h3 className="font-semibold text-gray-900 line-clamp-2 mb-2">{listing.title}</h3>
-                  <p className="text-lg font-bold text-gray-900">{formatPrice(listing.price)}</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-lg font-bold text-gray-900">{formatPrice(listing.price)}</p>
+                    {listing.quantity !== undefined && (
+                      <span className="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                        {listing.quantity} in stock
+                      </span>
+                    )}
+                  </div>
                 </div>
               </Link>
             );

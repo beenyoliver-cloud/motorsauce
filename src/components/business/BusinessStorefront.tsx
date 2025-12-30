@@ -10,7 +10,7 @@ import BusinessCatalogue from "./BusinessCatalogue";
 import BusinessReviews from "./BusinessReviews";
 import BusinessContact from "./BusinessContact";
 import BusinessInsights from "./BusinessInsights";
-import { Boxes, Info, Star as StarIcon, PhoneCall, ChartBar, ShieldCheck, Settings as SettingsIcon, UploadCloud } from "lucide-react";
+import { Boxes, Info, Star as StarIcon, PhoneCall, ChartBar, ShieldCheck, Settings as SettingsIcon, UploadCloud, Loader2 } from "lucide-react";
 
 export type BusinessProfile = {
   id: string;
@@ -82,10 +82,14 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
     []
   );
   const [ownerListings, setOwnerListings] = useState<Array<{ id: string | number; price?: number | string; created_at?: string; view_count?: number; oem?: string | null; images?: string[] }>>([]);
+  const [listingsLoading, setListingsLoading] = useState(false);
+  const [listingsError, setListingsError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOwner) return;
     let active = true;
+    setListingsLoading(true);
+    setListingsError(null);
     (async () => {
       try {
         const res = await fetch(`/api/listings?seller_id=${business.id}&limit=200`, { cache: "no-store" });
@@ -95,9 +99,14 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
           if (Array.isArray(data)) {
             setOwnerListings(data as any);
           }
+        } else {
+          setListingsError("Failed to load inventory insights");
         }
       } catch (err) {
         console.error("[BusinessStorefront] Failed to load owner listings", err);
+        setListingsError("Error loading inventory insights");
+      } finally {
+        setListingsLoading(false);
       }
     })();
     return () => {
@@ -222,7 +231,7 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
       {/* Owner Quick Links + Insights */}
       {isOwner && (
         <div className="max-w-7xl mx-auto px-3 sm:px-4 mt-6 mb-6 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Link
               href="/analytics"
               className="rounded-lg border border-gray-200 bg-white p-4 flex items-start gap-3 hover:shadow-sm transition"
@@ -232,7 +241,7 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-900">Your Analytics</p>
-                <p className="text-xs text-gray-600">Views, offers, and performance metrics</p>
+                <p className="text-xs text-gray-600">Views, offers, performance</p>
               </div>
             </Link>
             <Link
@@ -243,13 +252,35 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
                 <SettingsIcon className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-900">Business Settings</p>
-                <p className="text-xs text-gray-600">Branding, compliance, bulk uploads, and more</p>
+                <p className="text-sm font-semibold text-gray-900">Settings</p>
+                <p className="text-xs text-gray-600">Branding, compliance, docs</p>
               </div>
             </Link>
+            <button
+              onClick={() => setActiveTab('catalogue')}
+              className="rounded-lg border border-yellow-300 bg-yellow-50 p-4 flex items-start gap-3 hover:shadow-sm transition"
+            >
+              <div className="p-2 rounded-md bg-yellow-200 text-yellow-700">
+                <UploadCloud className="h-5 w-5" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-gray-900">Bulk Upload</p>
+                <p className="text-xs text-gray-600">Add parts to your catalogue</p>
+              </div>
+            </button>
           </div>
 
-          {ownerListings.length > 0 && (
+          {listingsLoading && (
+            <div className="bg-white rounded-lg border border-gray-200 p-6 flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-yellow-500" />
+            </div>
+          )}
+          {listingsError && (
+            <div className="bg-red-50 rounded-lg border border-red-200 p-4 text-sm text-red-700">
+              {listingsError}
+            </div>
+          )}
+          {!listingsLoading && ownerListings.length > 0 && (
             <BusinessInsights listings={ownerListings} />
           )}
         </div>
