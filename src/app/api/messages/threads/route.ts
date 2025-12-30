@@ -317,13 +317,20 @@ export async function POST(req: Request) {
     console.log("[threads API POST] Creating thread with participants:", { p1, p2, listingRef });
 
     // Try to find existing thread first (matching partial unique indexes)
-    const { data: existingThread, error: fetchError } = await supabase
+    let baseQuery = supabase
       .from("threads")
       .select("*")
       .eq("participant_1_id", p1)
-      .eq("participant_2_id", p2)
-      .match(listingRef ? { listing_ref: listingRef } : { listing_ref: null })
-      .maybeSingle();
+      .eq("participant_2_id", p2);
+
+    // Use explicit null check to avoid sending the string "null" to PostgREST (causes invalid UUID casting)
+    if (listingRef) {
+      baseQuery = baseQuery.eq("listing_ref", listingRef);
+    } else {
+      baseQuery = baseQuery.is("listing_ref", null);
+    }
+
+    const { data: existingThread, error: fetchError } = await baseQuery.maybeSingle();
 
     let threadAttempt: any;
     if (existingThread) {
