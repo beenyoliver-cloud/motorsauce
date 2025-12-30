@@ -15,15 +15,13 @@ import ToastContainer from "@/components/Toast";
 
 export default function Home() {
   return (
-    <main className="mx-auto max-w-6xl px-3 sm:px-4 py-5 sm:py-8 space-y-6 sm:space-y-8 md:space-y-10 bg-[#f5f5f5]">
+    <main className="mx-auto max-w-6xl px-3 sm:px-4 py-5 sm:py-8 space-y-8 sm:space-y-10 md:space-y-12 bg-[#f5f5f5]">
       <SEOJsonLd />
       <div className="space-y-3 sm:space-y-4">
         <Suspense fallback={null}>
           <HomeHero />
         </Suspense>
       </div>
-
-      <TrustBand />
 
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
         <JustSoldTicker />
@@ -45,7 +43,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="space-y-4 sm:space-y-5">
+      <div className="space-y-5 sm:space-y-6">
         <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
           <FeaturedRow title="New this week" variant="new" />
         </div>
@@ -74,6 +72,8 @@ export default function Home() {
       <Suspense fallback={null}>
         <RecentlyViewedRow />
       </Suspense>
+
+      <TrustBand />
       
       <ToastContainer />
     </main>
