@@ -169,6 +169,7 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
         </div>
       </div>
 
+      {/* Featured collections - Disabled for now, will be used later
       {specialtyCollections.length > 0 && (
       <div className="max-w-7xl mx-auto px-3 sm:px-4 mt-6 space-y-2">
         <div className="flex items-center justify-between">
@@ -192,63 +193,9 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
           </div>
         </div>
       )}
+      */}
 
-      {isOwner && (
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <Link
-              href="/admin/dashboard"
-              className="rounded-xl border border-gray-200 bg-white p-4 flex items-start gap-3 hover:shadow-sm transition"
-            >
-              <div className="p-2 rounded-md bg-blue-50 text-blue-700">
-                <ChartBar className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-900">Seller analytics</p>
-                <p className="text-xs text-gray-600">Monitor views, offers, and conversion on your catalogue.</p>
-              </div>
-            </Link>
-            <Link
-              href="/settings?tab=storefront"
-              className="rounded-xl border border-gray-200 bg-white p-4 flex items-start gap-3 hover:shadow-sm transition"
-            >
-              <div className="p-2 rounded-md bg-gray-50 text-gray-800">
-                <SettingsIcon className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-900">Storefront controls</p>
-                <p className="text-xs text-gray-600">Update branding, banners, specialties, and contact details.</p>
-              </div>
-            </Link>
-            <Link
-              href="/settings?tab=compliance"
-              className="rounded-xl border border-gray-200 bg-white p-4 flex items-start gap-3 hover:shadow-sm transition"
-            >
-              <div className="p-2 rounded-md bg-green-50 text-green-700">
-                <ShieldCheck className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-900">Compliance & documents</p>
-                <p className="text-xs text-gray-600">Upload business verification, return policy, and VAT details.</p>
-              </div>
-            </Link>
-          </div>
-          <div className="mt-3 rounded-xl border border-dashed border-gray-300 bg-white p-4 flex items-center justify-between">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-md bg-yellow-50 text-yellow-700">
-                <UploadCloud className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-900">Bulk upload stock</p>
-                <p className="text-xs text-gray-600">CSV uploads with images and OEM fitment fields supported.</p>
-              </div>
-            </div>
-            <Link href="#catalogue" className="text-sm font-semibold text-yellow-700 hover:text-yellow-800">
-              Open catalogue →
-            </Link>
-          </div>
-        </div>
-      )}
+      {/* Owner management cards removed - access via Settings page instead */}
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 mt-6">
         <div className="rounded-3xl border border-gray-200 bg-white p-6 flex flex-col lg:flex-row gap-4 shadow">
