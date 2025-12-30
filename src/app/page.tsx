@@ -30,9 +30,8 @@ export default function Home() {
       </div>
 
       <section className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-2 sm:mb-3">
+        <div className="mb-2 sm:mb-3">
           <h2 className="text-lg sm:text-xl font-bold text-black">Shop by intent</h2>
-          <Link href="/search" className="text-xs sm:text-sm text-gray-600 hover:underline">View all</Link>
         </div>
         <SuggestedParts limit={8} />
       </section>
