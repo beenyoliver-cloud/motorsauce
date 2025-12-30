@@ -282,7 +282,9 @@ export async function POST(req: Request) {
     console.log("[threads API POST] Authenticated user:", user.id);
 
     const body = await req.json();
-    const { peerId, listingRef } = body;
+    const { peerId } = body;
+    const listingRefRaw = body?.listingRef;
+    const listingRef = listingRefRaw && `${listingRefRaw}`.trim().length > 0 ? `${listingRefRaw}` : null;
 
     console.log("[threads API POST] Request body:", { peerId, listingRef });
 
@@ -300,27 +302,22 @@ export async function POST(req: Request) {
     const [p1, p2] = [user.id, peerId].sort();
     console.log("[threads API POST] Creating thread with participants:", { p1, p2, listingRef });
 
-    // Try to find existing thread first
-    let threadQuery = supabase
+    // Try to find existing thread first (matching partial unique indexes)
+    const { data: existingThread, error: fetchError } = await supabase
       .from("threads")
       .select("*")
       .eq("participant_1_id", p1)
-      .eq("participant_2_id", p2);
-    
-    if (listingRef) {
-      threadQuery = threadQuery.eq("listing_ref", listingRef);
-    } else {
-      threadQuery = threadQuery.is("listing_ref", null);
-    }
-
-    const { data: existingThread, error: fetchError } = await threadQuery.single();
+      .eq("participant_2_id", p2)
+      .match(listingRef ? { listing_ref: listingRef } : { listing_ref: null })
+      .maybeSingle();
 
     let threadAttempt: any;
     if (existingThread) {
       console.log("[threads API POST] Found existing thread:", existingThread.id);
       threadAttempt = { data: existingThread, error: null };
-    } else if (fetchError && fetchError.code === "PGRST116") {
-      // No row found - this is expected, create a new thread
+    } else if (fetchError && fetchError.code !== "PGRST116") {
+      threadAttempt = { error: fetchError };
+    } else {
       console.log("[threads API POST] No existing thread found, creating new one");
       threadAttempt = await supabase
         .from("threads")
@@ -333,39 +330,6 @@ export async function POST(req: Request) {
         })
         .select()
         .single();
-    } else if (fetchError && fetchError.code === "42703") {
-      // Undefined column => legacy schema fallback
-      console.warn("[threads API POST] Falling back to legacy schema (a_user/b_user)");
-      
-      // Try to find existing thread in legacy schema
-      const { data: legacyThread, error: legacyFetchError } = await supabase
-        .from("threads")
-        .select("*")
-        .eq("a_user", p1)
-        .eq("b_user", p2)
-        .single();
-
-      if (legacyThread) {
-        console.log("[threads API POST] Found existing legacy thread:", legacyThread.id);
-        threadAttempt = { data: legacyThread, error: null };
-      } else if (legacyFetchError && legacyFetchError.code === "PGRST116") {
-        // Create new legacy thread
-        threadAttempt = await supabase
-          .from("threads")
-          .insert({
-            a_user: p1,
-            b_user: p2,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            listing_ref: listingRef || null,
-          })
-          .select()
-          .single();
-      } else {
-        threadAttempt = { error: legacyFetchError };
-      }
-    } else {
-      threadAttempt = { error: fetchError };
     }
 
     if (threadAttempt.error) {
@@ -385,18 +349,7 @@ export async function POST(req: Request) {
     }
 
     const raw = threadAttempt.data as ThreadRow;
-    const threadNormalized: ThreadRow = raw.participant_1_id
-      ? raw
-      : {
-          id: raw.id,
-          participant_1_id: (raw.a_user! < raw.b_user! ? raw.a_user : raw.b_user)!,
-          participant_2_id: (raw.a_user! < raw.b_user! ? raw.b_user : raw.a_user)!,
-          listing_ref: raw.listing_ref || null,
-          last_message_text: raw.last_message_text || "New conversation",
-          last_message_at: raw.last_message_at || raw.created_at || new Date().toISOString(),
-          created_at: raw.created_at || new Date().toISOString(),
-          updated_at: raw.updated_at || raw.created_at || new Date().toISOString(),
-        } as ThreadRow;
+    const threadNormalized: ThreadRow = raw;
 
     // Determine if this is a brand new thread (no messages yet)
     let isNew = false;
