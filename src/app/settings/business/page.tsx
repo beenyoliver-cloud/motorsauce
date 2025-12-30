@@ -203,14 +203,20 @@ export default function BusinessSettingsPage() {
         return;
       }
 
+      if (!profile) {
+        setVerificationLoading(false);
+        setVerificationError("Unable to load profile");
+        return;
+      }
+
       // Load activity feed preference from profile
       setShowInActivityFeed(profile.show_in_activity_feed !== false);
       const profileStatus: SellerVerificationStatus =
-        profile?.business_verified
+        profile.business_verified
           ? "approved"
-          : (profile?.verification_status as SellerVerificationStatus) || "unverified";
+          : (profile.verification_status as SellerVerificationStatus) || "unverified";
       setVerificationStatus(profileStatus);
-      setVerificationNote(profile?.verification_notes ?? null);
+      setVerificationNote(profile.verification_notes ?? null);
 
       const { data, error } = await supabase
         .from("business_info")
