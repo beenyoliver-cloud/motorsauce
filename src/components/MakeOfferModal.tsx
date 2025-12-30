@@ -29,6 +29,7 @@ export default function MakeOfferModal({
   const [notes, setNotes] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -52,14 +53,20 @@ export default function MakeOfferModal({
 
       const listingImage = listing.images?.[0]?.url || undefined;
 
-      const thread = await createThread(sellerId, listing.id);
+      if (!uuidRegex.test(sellerId)) {
+        throw new Error("Seller account is unavailable. Please try again later.");
+      }
+
+      const listingRef = uuidRegex.test(listing.id) ? listing.id : undefined;
+
+      const thread = await createThread(sellerId, listingRef);
       if (!thread) {
         throw new Error("Couldn't start chat thread with seller");
       }
 
       const offer = await createOffer({
         threadId: thread.id,
-        listingId: listing.id,
+        listingId: listingRef || listing.id,
         listingTitle: listing.title,
         listingImage,
         recipientId: sellerId,

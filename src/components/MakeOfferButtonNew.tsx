@@ -27,6 +27,7 @@ export default function MakeOfferButtonNew({
   className = "",
 }: MakeOfferButtonNewProps) {
   const router = useRouter();
+  const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isOwnListing, setIsOwnListing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,6 +57,10 @@ export default function MakeOfferButtonNew({
 
   async function handleOfferCreated(result?: { threadId?: string }) {
     setIsModalOpen(false);
+    if (!uuidRegex.test(sellerId)) {
+      router.push("/messages");
+      return;
+    }
     if (result?.threadId) {
       const params = new URLSearchParams();
       params.set("peer", sellerId);

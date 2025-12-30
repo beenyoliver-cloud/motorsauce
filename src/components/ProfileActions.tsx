@@ -47,6 +47,7 @@ export default function ProfileActions({
     setIsLoading(true);
     try {
       let userId = initialUserId;
+      const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 
       // If no user ID was provided, fetch it from the API
       if (!userId) {
@@ -89,7 +90,7 @@ export default function ProfileActions({
         }
       }
 
-      if (!userId) {
+      if (!userId || !uuidRegex.test(userId)) {
         alert("Unable to message this user - user not found. Please refresh the page and try again.");
         setIsLoading(false);
         return;

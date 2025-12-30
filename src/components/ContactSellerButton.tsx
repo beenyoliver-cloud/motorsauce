@@ -23,6 +23,7 @@ export default function ContactSellerButton({
 }: ContactSellerButtonProps) {
   const router = useRouter();
   const me = getCurrentUserSync();
+  const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
   
   // Disable if viewing own listing
   const isOwn = me?.id === sellerId || me?.name === sellerName;
@@ -33,9 +34,9 @@ export default function ContactSellerButton({
       return;
     }
 
-    if (!sellerId) {
-      console.error("ContactSellerButton: No sellerId provided");
-      alert("Unable to contact seller - seller information is missing");
+    if (!sellerId || !uuidRegex.test(sellerId)) {
+      console.error("ContactSellerButton: Invalid or missing sellerId", sellerId);
+      alert("Unable to contact seller - seller account could not be identified.");
       return;
     }
 

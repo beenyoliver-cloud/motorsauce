@@ -282,7 +282,14 @@ export async function POST(req: Request) {
     console.log("[threads API POST] Authenticated user:", user.id);
 
     const body = await req.json();
-    const { peerId } = body;
+    const { peerId: peerIdRaw } = body;
+    const peerId = typeof peerIdRaw === "string" ? peerIdRaw.trim() : "";
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+    if (!peerId || !uuidRegex.test(peerId)) {
+      console.error("[threads API POST] Invalid peerId:", peerIdRaw);
+      return NextResponse.json({ error: "Valid peerId is required" }, { status: 400 });
+    }
+
     const listingRefRaw = body?.listingRef;
     const listingRefCandidate =
       listingRefRaw &&
@@ -291,7 +298,6 @@ export async function POST(req: Request) {
       `${listingRefRaw}` !== "undefined"
         ? `${listingRefRaw}`.trim()
         : null;
-    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
     const listingRef = listingRefCandidate && uuidRegex.test(listingRefCandidate) ? listingRefCandidate : null;
 
     console.log("[threads API POST] Request body:", { peerId, listingRef });
