@@ -212,8 +212,18 @@ export async function POST(
       offerCurrency,
       offerStatus,
       peerId,
-      listingRef,
+      listingRef: listingRefRaw,
     } = body;
+
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+    const listingRef =
+      listingRefRaw &&
+      `${listingRefRaw}`.trim().length > 0 &&
+      `${listingRefRaw}` !== "null" &&
+      `${listingRefRaw}` !== "undefined" &&
+      uuidRegex.test(`${listingRefRaw}`.trim())
+        ? `${listingRefRaw}`.trim()
+        : null;
 
     if (!["text", "offer", "system"].includes(type)) {
       return NextResponse.json({ error: "Invalid message type" }, { status: 400 });
@@ -263,6 +273,7 @@ export async function POST(
       if (peerId && peerId !== user.id) {
         const [p1, p2] = [user.id, peerId].sort();
         const conflictTarget = listingRef ? "participant_1_id,participant_2_id,listing_ref" : "participant_1_id,participant_2_id";
+        const conflictTarget = listingRef ? "participant_1_id,participant_2_id,listing_ref" : "participant_1_id,participant_2_id";
         let recreated = await supabase
           .from("threads")
           .upsert(
@@ -277,24 +288,6 @@ export async function POST(
           )
           .select()
           .single();
-
-        if (recreated.error && recreated.error.code === "42703") {
-          console.warn("[messages POST] Recreate falling back to legacy thread schema", recreated.error);
-          recreated = await supabase
-            .from("threads")
-            .upsert(
-              {
-                a_user: p1,
-                b_user: p2,
-                listing_ref: listingRef || null,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              },
-              { onConflict: "a_user,b_user" }
-            )
-            .select()
-            .single();
-        }
 
         if (recreated.error || !recreated.data) {
           console.error("[messages POST] Thread recreation failed", recreated.error);
