@@ -108,34 +108,51 @@ export async function POST(req: Request) {
       currency = "GBP",
     } = body;
 
-    if (!threadId || !listingId || !recipientId || !amountCents) {
+    if (!threadId || !amountCents) {
       return NextResponse.json(
-        { error: "threadId, listingId, recipientId, and amountCents are required" },
+        { error: "threadId and amountCents are required" },
         { status: 400 }
       );
     }
 
-    if (recipientId === user.id) {
-      return NextResponse.json({ error: "Cannot make offer to yourself" }, { status: 400 });
-    }
-
-    // Verify thread exists and user has access
-    const { data: thread, error: threadError } = await supabase
-      .from("threads")
-      .select("*")
+    // Verify conversation exists and user has access
+    const { data: conversation, error: convError } = await supabase
+      .from("conversations")
+      .select("id, type, listing_id, buyer_user_id, seller_user_id")
       .eq("id", threadId)
       .single();
 
-    if (threadError || !thread) {
-      return NextResponse.json({ error: "Thread not found" }, { status: 404 });
+    if (convError || !conversation) {
+      return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
+    }
+
+    const isBuyer = conversation.buyer_user_id === user.id;
+    const isSeller = conversation.seller_user_id === user.id;
+    if (!isBuyer && !isSeller) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (conversation.type !== "LISTING" || !conversation.listing_id) {
+      return NextResponse.json({ error: "Offers are only allowed in listing conversations" }, { status: 400 });
+    }
+
+    const enforcedListingId = conversation.listing_id;
+    if (listingId && listingId !== enforcedListingId) {
+      return NextResponse.json({ error: "Listing mismatch" }, { status: 400 });
+    }
+
+    const resolvedRecipientId = isBuyer ? conversation.seller_user_id : conversation.buyer_user_id;
+
+    if (resolvedRecipientId === user.id) {
+      return NextResponse.json({ error: "Cannot make offer to yourself" }, { status: 400 });
     }
 
     // Create offer
     console.log("[offers API] Creating offer with data:", {
       thread_id: threadId,
-      listing_id: listingId,
+      listing_id: enforcedListingId,
       starter_id: user.id,
-      recipient_id: recipientId,
+      recipient_id: resolvedRecipientId,
       amount_cents: amountCents,
     });
 
@@ -152,7 +169,7 @@ export async function POST(req: Request) {
     // Prefer a disambiguated wrapper to avoid PostgREST overload ambiguity
     const { data: offerData, error: rpcError } = await supabase.rpc("create_offer_uuid", {
       p_thread_id: threadId,
-      p_listing_id: listingId,
+      p_listing_id: enforcedListingId,
       p_amount_cents: amountCents,
       p_currency: currency || "GBP",
       p_listing_title: listingTitle || null,
@@ -232,6 +249,27 @@ export async function PATCH(req: Request) {
     if (fetchError || !offer) {
       console.error("[offers API] Offer fetch error:", fetchError);
       return NextResponse.json({ error: "Offer not found" }, { status: 404 });
+    }
+
+    // Fetch conversation to ensure offer is in a LISTING conversation and user is participant
+    const { data: conversation, error: convError } = await supabase
+      .from("conversations")
+      .select("id, type, listing_id, buyer_user_id, seller_user_id")
+      .eq("id", offer.thread_id)
+      .single();
+
+    if (convError || !conversation) {
+      return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
+    }
+
+    const isBuyer = conversation.buyer_user_id === user.id;
+    const isSeller = conversation.seller_user_id === user.id;
+    if (!isBuyer && !isSeller) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (conversation.type !== "LISTING" || !conversation.listing_id) {
+      return NextResponse.json({ error: "Offers are only allowed in listing conversations" }, { status: 400 });
     }
 
     console.log("[offers API] Updating offer:", {
