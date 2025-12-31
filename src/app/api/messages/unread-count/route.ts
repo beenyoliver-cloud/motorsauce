@@ -82,9 +82,35 @@ export async function GET(req: Request) {
       return NextResponse.json({ count: 0 }, { status: 200 });
     }
 
+    // Fetch last message sender per conversation (bounded)
+    const convoIds = conversations.map((c) => c.id);
+    const limit = Math.max(convoIds.length * 3, 20);
+    const lastSenderMap = new Map<string, string | null>();
+    if (convoIds.length > 0) {
+      const { data: lastRows, error: lastErr } = await supabase
+        .from("messages_v2")
+        .select("conversation_id, sender_user_id, created_at")
+        .in("conversation_id", convoIds)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (!lastErr && lastRows) {
+        for (const row of lastRows) {
+          if (!lastSenderMap.has(row.conversation_id)) {
+            lastSenderMap.set(row.conversation_id, row.sender_user_id || null);
+          }
+        }
+      } else if (lastErr) {
+        console.warn("[unread-count] last message lookup error", lastErr);
+      }
+    }
+
     const count = (conversations || []).reduce((acc, c: any) => {
       const lastMessageAt = c.last_message_at || c.created_at;
       if (!lastMessageAt) return acc;
+      const lastSenderId = lastSenderMap.get(c.id) || null;
+      if (lastSenderId && lastSenderId === user.id) {
+        return acc; // self-sent latest message should not count as unread
+      }
       const lastRead = c.buyer_user_id === user.id ? c.buyer_last_read_at : c.seller_last_read_at;
       const isRead = lastRead ? new Date(lastRead).getTime() >= new Date(lastMessageAt).getTime() : false;
       return acc + (isRead ? 0 : 1);

@@ -299,10 +299,6 @@ export async function sendMessage(
         updatedAt: raw.updated_at,
       };
       
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("ms:unread"));
-      }
-      
       return enriched;
     } catch (enrichErr) {
       console.warn("[messagesClient] Failed to enrich sent message, falling back to raw", enrichErr);
