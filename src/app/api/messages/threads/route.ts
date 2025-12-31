@@ -304,7 +304,7 @@ export async function POST(req: Request) {
     }
 
     // Fetch peer profile for enrichment
-    const peerProfileId = isSeller ? peerId : sellerId;
+    const peerProfileId = buyerId === user.id ? sellerId : buyerId;
     let peer: ProfileRow | null = null;
     const { data: peerProfile } = await supabase
       .from("profiles")
