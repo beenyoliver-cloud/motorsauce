@@ -40,19 +40,18 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Verify user has access to this thread
-    const { data: thread, error: threadError } = await supabase
-      .from("threads")
-      .select("id, participant_1_id, participant_2_id")
+    // Verify user has access to this conversation (bridge to new schema)
+    const { data: conversation, error: convError } = await supabase
+      .from("conversations")
+      .select("id, buyer_user_id, seller_user_id")
       .eq("id", threadId)
       .single();
 
-    if (threadError || !thread) {
+    if (convError || !conversation) {
       // Gracefully return empty messages so UI can recreate thread if needed
       return NextResponse.json({ error: "Thread not found", threadMissing: true, messages: [] }, { status: 200 });
     }
-    const participants = [thread.participant_1_id, thread.participant_2_id].filter(Boolean).map((x) => String(x));
-    if (!participants.includes(user.id)) {
+    if (conversation.buyer_user_id !== user.id && conversation.seller_user_id !== user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -60,11 +59,12 @@ export async function GET(
     const limit = Math.min(Number(searchParams.get("limit") || 100), 200);
     const before = searchParams.get("before");
 
-    // Fetch messages (RLS will enforce access control)
+    // Fetch messages from new schema
     let query = supabase
-      .from("messages")
+      .from("messages_v2")
       .select("*")
-      .eq("thread_id", threadId)
+      .eq("conversation_id", threadId)
+      .is("deleted_at", null)
       .order("created_at", { ascending: true })
       .limit(limit);
     if (before) {
@@ -77,8 +77,8 @@ export async function GET(
       return NextResponse.json({ error: messagesError.message }, { status: 500 });
     }
 
-    // Fetch profiles for message senders
-    const senderIds = [...new Set((messages || []).map((m: any) => m.from_user_id || m.sender).filter(Boolean))];
+    // Fetch profiles for message senders (new schema uses sender_user_id)
+    const senderIds = [...new Set((messages || []).map((m: any) => m.sender_user_id).filter(Boolean))];
     let profileMap = new Map();
     if (senderIds.length > 0) {
       const { data: profiles, error: profileError } = await supabase
@@ -92,10 +92,10 @@ export async function GET(
       }
     }
 
-    // Fetch offers for messages that reference offers
+    // Fetch offers from metadata
     const offerIds = (messages || [])
-      .filter((m: any) => m.offer_id)
-      .map((m: any) => m.offer_id);
+      .filter((m: any) => m.metadata?.offer_id)
+      .map((m: any) => m.metadata.offer_id);
     
     let offerMap = new Map();
     let listingsMap = new Map();
@@ -130,34 +130,30 @@ export async function GET(
       }
     }
 
-    // Enrich messages
+    // Enrich messages (map new schema to old format expected by UI)
     const enriched = (messages || []).map((m: any) => {
-      const senderId = m.from_user_id || m.sender;
+      const senderId = m.sender_user_id;
       const sender = profileMap.get(senderId);
-      const offer = m.offer_id ? offerMap.get(m.offer_id) : null;
+      const offerId = m.metadata?.offer_id;
+      const offer = offerId ? offerMap.get(offerId) : null;
       const listing = offer?.listing_id ? listingsMap.get(offer.listing_id) : null;
-      const starterId = offer?.starter_id || offer?.buyer_id || null;
-      const recipientId = offer?.recipient_id || offer?.seller_id || null;
-      const buyerId = offer?.buyer_id || null;
-      const sellerId = offer?.seller_id || null;
       
       return {
         id: m.id,
-        threadId: m.thread_id,
+        threadId: m.conversation_id, // map conversation_id to threadId for old UI
         from: {
-          id: senderId,
-          name: sender?.name || "Unknown",
+          id: senderId || "",
+          name: sender?.name || "System",
           avatar: sender?.avatar,
         },
-        type: m.message_type || m.type || "text",
-        text: m.text_content || m.text,
-        offer: m.message_type === "offer" ? {
-          id: m.offer_id,
-          listingId: offer?.listing_id || "",
-          amountCents: offer?.amount_cents || m.offer_amount_cents,
-          currency: offer?.currency || m.offer_currency || "GBP",
-          status: offer?.status || m.offer_status,
-          // Use listings table data as primary source, fallback to offer columns
+        type: m.type?.toLowerCase() || "text",
+        text: m.body,
+        offer: m.type === "OFFER_CARD" && offer ? {
+          id: offer.id,
+          listingId: offer.listing_id || "",
+          amountCents: offer.offered_amount ? Math.round(Number(offer.offered_amount) * 100) : 0,
+          currency: offer.currency || "GBP",
+          status: offer.status || "pending",
           listingTitle: listing?.title || offer?.listing_title || null,
           listingImage: (
             listing?.images && Array.isArray(listing.images) && listing.images.length > 0
@@ -165,13 +161,9 @@ export async function GET(
               : (offer?.listing_image || null)
           ),
           listingPrice: listing?.price ? Math.round(Number(listing.price) * 100) : undefined,
-          starterId,
-          recipientId,
-          buyerId,
-          sellerId,
         } : undefined,
         createdAt: m.created_at,
-        updatedAt: m.updated_at,
+        updatedAt: m.updated_at || m.created_at,
       };
     });
 
@@ -250,99 +242,87 @@ export async function POST(
       return NextResponse.json({ error: "Offer details required for offer messages" }, { status: 400 });
     }
 
-    // Verify thread access
-    console.log("[messages POST] Looking for thread:", threadId, "for user:", user.id);
-    let { data: thread, error: threadError } = await supabase
-      .from("threads")
-      .select("id, participant_1_id, participant_2_id, listing_ref")
+    // Verify conversation access (use new schema)
+    console.log("[messages POST] Looking for conversation:", threadId, "for user:", user.id);
+    let { data: conversation, error: convError } = await supabase
+      .from("conversations")
+      .select("id, buyer_user_id, seller_user_id, listing_id")
       .eq("id", threadId)
       .single();
 
-    if (threadError) {
-      console.error("[messages POST] Thread lookup error:", {
-        code: threadError.code,
-        message: threadError.message,
-        details: threadError.details,
+    if (convError) {
+      console.error("[messages POST] Conversation lookup error:", {
+        code: convError.code,
+        message: convError.message,
+        details: convError.details,
       });
     }
-    console.log("[messages POST] Thread found:", thread);
+    console.log("[messages POST] Conversation found:", conversation);
 
-    if (threadError || !thread) {
-      console.error("[messages POST] Thread not found for threadId:", threadId);
-
-      // If the user had soft-deleted this thread, remove the deletion marker and try again once.
-      try {
-        await supabase.from("thread_deletions").delete().eq("thread_id", threadId).eq("user_id", user.id);
-        const retry = await supabase
-          .from("threads")
-          .select("id, participant_1_id, participant_2_id, listing_ref")
-          .eq("id", threadId)
+    if (convError || !conversation) {
+      console.error("[messages POST] Conversation not found for threadId:", threadId);
+      // Try to recreate if we have peerId/listingRef
+      if (peerId && peerId !== user.id && listingRef) {
+        // Fetch listing to get seller
+        const { data: listing } = await supabase
+          .from("listings")
+          .select("seller_id")
+          .eq("id", listingRef)
           .single();
-        if (!retry.error && retry.data) {
-          thread = retry.data;
-          threadError = null;
+        
+        if (listing) {
+          const buyerUserId = listing.seller_id === user.id ? peerId : user.id;
+          const sellerUserId = listing.seller_id === user.id ? user.id : listing.seller_id;
+          
+          const recreated = await supabase
+            .from("conversations")
+            .insert({
+              listing_id: listingRef,
+              buyer_user_id: buyerUserId,
+              seller_user_id: sellerUserId,
+              status: "ACTIVE",
+            })
+            .select()
+            .single();
+
+          if (recreated.error || !recreated.data) {
+            console.error("[messages POST] Conversation recreation failed", recreated.error);
+            return NextResponse.json({ error: "Thread missing", threadMissing: true }, { status: 200 });
+          }
+
+          conversation = recreated.data;
+          threadId = recreated.data.id;
         }
-      } catch (undeleteErr) {
-        console.warn("[messages POST] Unable to clear deletion marker", undeleteErr);
       }
-
-      // Try to recreate if still missing and we have enough info (peerId/listingRef)
-      if ((!thread || threadError) && peerId && peerId !== user.id) {
-        const [p1, p2] = [user.id, peerId].sort();
-        const conflictTarget = listingRef ? "participant_1_id,participant_2_id,listing_ref" : "participant_1_id,participant_2_id";
-        let recreated = await supabase
-          .from("threads")
-          .upsert(
-            {
-              participant_1_id: p1,
-              participant_2_id: p2,
-              listing_ref: listingRef || null,
-              last_message_text: "Conversation restarted",
-              last_message_at: new Date().toISOString(),
-            },
-            { onConflict: conflictTarget }
-          )
-          .select()
-          .single();
-
-        if (recreated.error || !recreated.data) {
-          console.error("[messages POST] Thread recreation failed", recreated.error);
-          return NextResponse.json({ error: "Thread missing", threadMissing: true }, { status: 200 });
-        }
-
-        const recreatedThread = recreated.data;
-        thread = recreatedThread;
-        threadId = recreatedThread.id;
-        await supabase.from("thread_deletions").delete().eq("thread_id", threadId).eq("user_id", user.id);
-      } else if (!thread) {
+      
+      if (!conversation) {
         return NextResponse.json({ error: "Thread missing", threadMissing: true }, { status: 200 });
       }
     }
     
-    // At this point, thread is guaranteed to be non-null (either from initial query or recreation)
-    if (!thread) {
+    // At this point, conversation is guaranteed to be non-null
+    if (!conversation) {
       return NextResponse.json({ error: "Thread not found. Please reopen the conversation from Messages." }, { status: 404 });
     }
     
-    const participants = [thread.participant_1_id, thread.participant_2_id].filter(Boolean).map((x) => String(x));
-    if (!participants.includes(user.id)) {
+    if (conversation.buyer_user_id !== user.id && conversation.seller_user_id !== user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Attempt insert using new schema (from_user_id). Also include legacy columns to satisfy NOT NULL if present.
+    // Insert message into new schema
     let insert = await supabase
-      .from("messages")
+      .from("messages_v2")
       .insert({
-        thread_id: threadId,
-        from_user_id: user.id,
-        sender: user.id, // legacy support; ignored if column doesn't exist
-        message_type: type,
-        text_content: type === "system" || type === "text" ? text : null,
-        content: type === "system" || type === "text" ? text : null, // legacy content column
-        offer_id: type === "offer" ? offerId : null,
-        offer_amount_cents: type === "offer" ? offerAmountCents : null,
-        offer_currency: type === "offer" ? (offerCurrency || "GBP") : null,
-        offer_status: type === "offer" ? offerStatus : null,
+        conversation_id: threadId,
+        sender_user_id: user.id,
+        type: type.toUpperCase(),
+        body: type === "system" || type === "text" ? text : null,
+        metadata: type === "offer" ? {
+          offer_id: offerId,
+          amount_cents: offerAmountCents,
+          currency: offerCurrency || "GBP",
+          status: offerStatus,
+        } : {},
       })
       .select()
       .single();
@@ -365,24 +345,13 @@ export async function POST(
           })
           .select()
           .single();
-      }
-    }
+
 
     if (insert.error) {
-      console.error("[messages API] Insert error after fallback:", insert.error);
+      console.error("[messages API] Insert error:", insert.error);
       return NextResponse.json({ error: insert.error.message }, { status: 500 });
     }
     const message = insert.data;
-
-    // If the sender had previously soft-deleted this thread, "undelete" it now that they sent a message
-    const { error: undeleteError } = await supabase
-      .from("thread_deletions")
-      .delete()
-      .eq("thread_id", threadId)
-      .eq("user_id", user.id);
-    if (undeleteError) {
-      console.warn("[messages API] Failed to remove deletion marker on send:", undeleteError);
-    }
 
     return NextResponse.json({ message }, { status: 201 });
   } catch (error: any) {
