@@ -203,7 +203,7 @@ export async function POST(req: Request) {
         : null;
     if (!listingRef || !uuidRegex.test(listingRef)) {
       console.error("[threads API POST] listingRef is required for conversations", listingRefRaw);
-      return NextResponse.json({ error: "listingRef is required for this conversation" }, { status: 400 });
+      return NextResponse.json({ error: "Thread not found for this peer", threadMissing: true }, { status: 200 });
     }
 
     if (peerId === user.id) {
@@ -220,7 +220,7 @@ export async function POST(req: Request) {
 
     if (listingError || !listing) {
       console.error("[threads API POST] Listing lookup failed", listingError);
-      return NextResponse.json({ error: "Listing not found" }, { status: 404 });
+      return NextResponse.json({ error: "Thread not found for this peer", threadMissing: true }, { status: 200 });
     }
 
     const sellerId = listing.seller_id;
