@@ -218,6 +218,8 @@ export default function ThreadClientNew({
                   location: listingData.location ?? null,
                 });
               }
+            } else if (!listing_id) {
+              setThreadListing(null);
             }
           }
         }

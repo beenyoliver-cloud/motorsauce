@@ -201,46 +201,78 @@ export async function POST(req: Request) {
       listingRefRaw && `${listingRefRaw}`.trim().length > 0 && `${listingRefRaw}` !== "null" && `${listingRefRaw}` !== "undefined"
         ? `${listingRefRaw}`.trim()
         : null;
-    if (!listingRef || !uuidRegex.test(listingRef)) {
-      console.error("[threads API POST] listingRef is required for conversations", listingRefRaw);
-      return NextResponse.json({ error: "Thread not found for this peer", threadMissing: true }, { status: 200 });
-    }
+    const hasListing = Boolean(listingRef && uuidRegex.test(listingRef));
 
     if (peerId === user.id) {
       console.error("[threads API POST] User trying to message themselves");
       return NextResponse.json({ error: "Cannot create thread with yourself" }, { status: 400 });
     }
 
-    // Fetch listing to determine seller/buyer roles
-    const { data: listing, error: listingError } = await supabase
-      .from("listings")
-      .select("id, seller_id, title, price, images")
-      .eq("id", listingRef)
-      .single();
+    let sellerId: string | null = null;
+    let buyerId: string | null = null;
+    let context: any = null;
 
-    if (listingError || !listing) {
-      console.error("[threads API POST] Listing lookup failed", listingError);
-      return NextResponse.json({ error: "Thread not found for this peer", threadMissing: true }, { status: 200 });
-    }
+    if (hasListing) {
+      // Fetch listing to determine roles
+      const { data: listing, error: listingError } = await supabase
+        .from("listings")
+        .select("id, seller_id, title, price, images")
+        .eq("id", listingRef)
+        .single();
 
-    const sellerId = listing.seller_id;
-    const isSeller = sellerId === user.id;
-    const buyerId = isSeller ? peerId : user.id;
+      if (listingError || !listing) {
+        console.error("[threads API POST] Listing lookup failed", listingError);
+        return NextResponse.json({ error: "Thread not found for this peer", threadMissing: true }, { status: 200 });
+      }
 
-    // If current user is buyer, peer must be seller
-    if (!isSeller && peerId !== sellerId) {
-      console.error("[threads API POST] peerId must be the listing seller for buyers", { peerId, sellerId });
-      return NextResponse.json({ error: "Conversation must be with the listing seller" }, { status: 400 });
+      sellerId = listing.seller_id;
+      const isSeller = sellerId === user.id;
+      buyerId = isSeller ? peerId : user.id;
+
+      if (!isSeller && peerId !== sellerId) {
+        console.error("[threads API POST] peerId must be the listing seller for buyers", { peerId, sellerId });
+        return NextResponse.json({ error: "Conversation must be with the listing seller" }, { status: 400 });
+      }
+
+      context = {
+        listing_title: listing.title,
+        listing_price: listing.price,
+        listing_image: Array.isArray(listing.images) && listing.images.length > 0 ? (listing.images[0]?.url || listing.images[0]) : null,
+      };
+    } else {
+      // Listing-less conversation: treat initiator as buyer and peer as seller for consistent roles
+      buyerId = user.id;
+      sellerId = peerId;
     }
 
     // Find existing conversation
-    const { data: existingConv, error: convFetchError } = await supabase
-      .from("conversations")
-      .select("*")
-      .eq("listing_id", listingRef)
-      .eq("buyer_user_id", buyerId)
-      .eq("seller_user_id", sellerId)
-      .maybeSingle();
+    let existingConv = null;
+    let convFetchError = null;
+
+    if (hasListing) {
+      const { data, error } = await supabase
+        .from("conversations")
+        .select("*")
+        .eq("listing_id", listingRef)
+        .eq("buyer_user_id", buyerId)
+        .eq("seller_user_id", sellerId)
+        .maybeSingle();
+      existingConv = data;
+      convFetchError = error;
+    } else {
+      // listing-less: find by participant pair, listing_id is null
+      const { data, error } = await supabase
+        .from("conversations")
+        .select("*")
+        .is("listing_id", null)
+        .or(
+          `and(buyer_user_id.eq.${buyerId},seller_user_id.eq.${sellerId}),and(buyer_user_id.eq.${sellerId},seller_user_id.eq.${buyerId})`
+        )
+        .limit(1)
+        .maybeSingle();
+      existingConv = data;
+      convFetchError = error;
+    }
 
     if (convFetchError && convFetchError.code !== "PGRST116") {
       console.error("[threads API POST] Fetch conversation error", convFetchError);
@@ -251,16 +283,10 @@ export async function POST(req: Request) {
     let isNew = false;
 
     if (!conversation) {
-      const context: any = {
-        listing_title: listing.title,
-        listing_price: listing.price,
-        listing_image: Array.isArray(listing.images) && listing.images.length > 0 ? (listing.images[0]?.url || listing.images[0]) : null,
-      };
-
       const { data: inserted, error: insertError } = await supabase
         .from("conversations")
         .insert({
-          listing_id: listingRef,
+          listing_id: hasListing ? listingRef : null,
           buyer_user_id: buyerId,
           seller_user_id: sellerId,
           status: "ACTIVE",
