@@ -27,6 +27,10 @@ export async function GET(
 ) {
   try {
     const { threadId } = await params;
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+    if (!threadId || !uuidRegex.test(threadId)) {
+      return NextResponse.json({ error: "Invalid threadId" }, { status: 400 });
+    }
     const authHeader = req.headers.get("authorization");
     
     if (!authHeader) {
@@ -218,6 +222,10 @@ export async function POST(
   try {
     const { threadId: initialThreadId } = await params;
     let threadId = initialThreadId;
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+    if (!threadId || !uuidRegex.test(threadId)) {
+      return NextResponse.json({ error: "Invalid threadId" }, { status: 400 });
+    }
     const authHeader = req.headers.get("authorization");
     
     if (!authHeader) {

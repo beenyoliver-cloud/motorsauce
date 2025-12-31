@@ -182,6 +182,11 @@ export async function createThread(peerId: string, listingRef?: string): Promise
  * Fetch all messages in a thread
  */
 export async function fetchMessages(threadId: string): Promise<Message[]> {
+  const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+  if (!threadId || !uuidRegex.test(threadId)) {
+    console.warn("[messagesClient] Skipping fetchMessages due to invalid threadId", threadId);
+    return [];
+  }
   try {
     const authHeader = await getAuthHeader();
     if (!authHeader) return [];
@@ -328,6 +333,11 @@ export async function sendMessage(
  * Mark a thread as read
  */
 export async function markThreadRead(threadId: string): Promise<boolean> {
+  const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+  if (!threadId || !uuidRegex.test(threadId)) {
+    console.warn("[messagesClient] markThreadRead called with invalid threadId", threadId);
+    return false;
+  }
   try {
     console.log("[messagesClient] Marking thread as read:", threadId);
     const authHeader = await getAuthHeader();
@@ -364,6 +374,11 @@ export async function markThreadRead(threadId: string): Promise<boolean> {
  * Mark a thread as unread (eBay-style)
  */
 export async function markThreadUnread(threadId: string): Promise<boolean> {
+  const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+  if (!threadId || !uuidRegex.test(threadId)) {
+    console.warn("[messagesClient] markThreadUnread called with invalid threadId", threadId);
+    return false;
+  }
   try {
     const authHeader = await getAuthHeader();
     if (!authHeader) return false;
@@ -388,6 +403,11 @@ export async function markThreadUnread(threadId: string): Promise<boolean> {
  * Soft-delete a thread (only hides for current user)
  */
 export async function deleteThread(threadId: string): Promise<boolean> {
+  const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+  if (!threadId || !uuidRegex.test(threadId)) {
+    console.warn("[messagesClient] deleteThread called with invalid threadId", threadId);
+    return false;
+  }
   try {
     const authHeader = await getAuthHeader();
     if (!authHeader) return false;
