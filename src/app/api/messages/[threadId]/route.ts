@@ -56,7 +56,8 @@ export async function GET(
     }
 
     const { searchParams } = new URL(req.url);
-    const limit = Math.min(Number(searchParams.get("limit") || 100), 200);
+    // Fetch newest-first to avoid dropping recent messages when a thread has more than the default page size.
+    const limit = Math.min(Number(searchParams.get("limit") || 200), 500);
     const before = searchParams.get("before");
 
     // Fetch messages from new schema
@@ -65,12 +66,12 @@ export async function GET(
       .select("*")
       .eq("conversation_id", threadId)
       .is("deleted_at", null)
-      .order("created_at", { ascending: true })
+      .order("created_at", { ascending: false })
       .limit(limit);
     if (before) {
       query = query.lt("created_at", before);
     }
-    const { data: messages, error: messagesError } = await query;
+    const { data: messageRows, error: messagesError } = await query;
 
     if (messagesError) {
       console.error("[messages API] Error fetching messages:", messagesError);
@@ -78,7 +79,11 @@ export async function GET(
     }
 
     // Fetch profiles for message senders (new schema uses sender_user_id)
-    const senderIds = [...new Set((messages || []).map((m: any) => m.sender_user_id).filter(Boolean))];
+    const orderedMessages = (messageRows || []).sort(
+      (a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+
+    const senderIds = [...new Set(orderedMessages.map((m: any) => m.sender_user_id).filter(Boolean))];
     let profileMap = new Map();
     if (senderIds.length > 0) {
       const { data: profiles, error: profileError } = await supabase
@@ -93,7 +98,7 @@ export async function GET(
     }
 
     // Fetch offers from metadata
-    const offerIds = (messages || [])
+    const offerIds = orderedMessages
       .filter((m: any) => m.metadata?.offer_id)
       .map((m: any) => m.metadata.offer_id);
     
@@ -131,7 +136,7 @@ export async function GET(
     }
 
     // Enrich messages (map new schema to old format expected by UI)
-    const enriched = (messages || []).map((m: any) => {
+    const enriched = orderedMessages.map((m: any) => {
       const senderId = m.sender_user_id;
       const sender = profileMap.get(senderId);
       const offerId = m.metadata?.offer_id;
