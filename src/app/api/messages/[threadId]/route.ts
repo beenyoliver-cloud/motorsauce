@@ -310,7 +310,7 @@ export async function POST(
     }
 
     // Insert message into new schema
-    let insert = await supabase
+    const insert = await supabase
       .from("messages_v2")
       .insert({
         conversation_id: threadId,
@@ -326,26 +326,6 @@ export async function POST(
       })
       .select()
       .single();
-
-    if (insert.error) {
-      // Fall back if 'from_user_id' or 'text_content' columns not found (legacy schema 42703) by using simpler legacy column names
-      if (insert.error.code === "42703") {
-        console.warn("[messages API] Falling back to legacy message schema", insert.error.details || insert.error.message);
-        insert = await supabase
-          .from("messages")
-          .insert({
-            thread_id: threadId,
-            sender: user.id,
-            message_type: type,
-            content: type === "system" || type === "text" ? text : null,
-            offer_id: type === "offer" ? offerId : null,
-            offer_amount_cents: type === "offer" ? offerAmountCents : null,
-            offer_currency: type === "offer" ? (offerCurrency || "GBP") : null,
-            offer_status: type === "offer" ? offerStatus : null,
-          })
-          .select()
-          .single();
-
 
     if (insert.error) {
       console.error("[messages API] Insert error:", insert.error);
