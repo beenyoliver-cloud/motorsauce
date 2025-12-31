@@ -200,6 +200,10 @@ export async function fetchMessages(threadId: string): Promise<Message[]> {
 
     return payload.messages || [];
   } catch (error) {
+    if ((error as any)?.threadMissing) {
+      // Surface to caller so UI can recreate the thread
+      throw error;
+    }
     console.error("[messagesClient] Error fetching messages:", error);
     return [];
   }
