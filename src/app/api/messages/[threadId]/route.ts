@@ -41,20 +41,50 @@ export async function GET(
     }
 
     // Verify user has access to this conversation (bridge to new schema)
-    const { data: conversation, error: convError } = await supabase
+    // Primary lookup against conversations (RLS-protected)
+    let { data: conversation, error: convError, status: convStatus } = await supabase
       .from("conversations")
-      .select("id, buyer_user_id, seller_user_id")
+      .select("id, buyer_user_id, seller_user_id, listing_id, type")
       .eq("id", threadId)
       .single();
 
-    if (convError || !conversation) {
-      // Gracefully return empty messages so UI can recreate thread if needed
+    // If RLS or a transient error blocks the base table lookup, fall back to the summaries view (manually enforcing access)
+    if ((!conversation || convError) && convStatus !== 406) {
+      const { data: convoView, error: viewErr } = await supabase
+        .from("conversation_summaries")
+        .select("id, buyer_user_id, seller_user_id, listing_id, type")
+        .eq("id", threadId)
+        .maybeSingle();
+
+      if (convoView && !viewErr) {
+        conversation = convoView as any;
+        convError = null;
+      }
+    }
+
+    if (convError && convStatus === 406) {
+      // No rows found; surface threadMissing specifically
       return NextResponse.json({ error: "Thread not found", threadMissing: true, messages: [] }, { status: 200 });
     }
+
+    if (convError) {
+      console.error("[messages POST] Conversation lookup error:", {
+        code: convError?.code,
+        message: convError?.message,
+        details: convError?.details,
+      });
+      return NextResponse.json({ error: convError.message || "Conversation lookup failed" }, { status: 500 });
+    }
+
+    if (!conversation) {
+      return NextResponse.json({ error: "Thread not found", threadMissing: true, messages: [] }, { status: 200 });
+    }
+
     if (conversation.buyer_user_id !== user.id && conversation.seller_user_id !== user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    console.log("[messages POST] Conversation found:", conversation);
     const { searchParams } = new URL(req.url);
     // Fetch newest-first to avoid dropping recent messages when a thread has more than the default page size.
     const limit = Math.min(Number(searchParams.get("limit") || 200), 500);
