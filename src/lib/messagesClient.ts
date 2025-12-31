@@ -152,8 +152,16 @@ export async function createThread(peerId: string, listingRef?: string): Promise
       body: JSON.stringify({ peerId, listingRef }),
     });
 
+    const data = await res.json();
+
+    if (data?.threadMissing) {
+      console.warn("[messagesClient] Thread creation blocked: threadMissing", data?.error);
+      alert("We need a listing to start this conversation. Please start from a listing page.");
+      return null;
+    }
+
     if (!res.ok) {
-      const errorData = await res.json().catch(() => ({ error: "Unknown error" }));
+      const errorData = data || { error: "Unknown error" };
       console.error("[messagesClient] Failed to create thread:", res.status, errorData);
       
       // Show more specific error message to user
@@ -161,8 +169,6 @@ export async function createThread(peerId: string, listingRef?: string): Promise
       alert(`Failed to start conversation: ${errorMsg}\n\nStatus: ${res.status}`);
       return null;
     }
-
-    const data = await res.json();
     console.log("[messagesClient] Thread created successfully:", data.thread);
     return data.thread;
   } catch (error) {
