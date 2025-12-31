@@ -197,27 +197,13 @@ export async function POST(req: Request) {
     }
 
     const listingRefRaw = body?.listingRef;
-    let listingRef =
+    const listingRef =
       listingRefRaw && `${listingRefRaw}`.trim().length > 0 && `${listingRefRaw}` !== "null" && `${listingRefRaw}` !== "undefined"
         ? `${listingRefRaw}`.trim()
         : null;
-
-    // Fallback: if no listingRef provided (e.g., profile entrypoint), pick the peer's most recent listing
     if (!listingRef || !uuidRegex.test(listingRef)) {
-      const { data: latestListing, error: latestErr } = await supabase
-        .from("listings")
-        .select("id")
-        .eq("seller_id", peerId)
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .single();
-
-      if (latestErr || !latestListing) {
-        console.error("[threads API POST] listingRef missing and no seller listings found", latestErr);
-        return NextResponse.json({ error: "Thread not found for this peer", threadMissing: true }, { status: 200 });
-      }
-
-      listingRef = latestListing.id;
+      console.error("[threads API POST] listingRef is required for conversations", listingRefRaw);
+      return NextResponse.json({ error: "Thread not found for this peer", threadMissing: true }, { status: 200 });
     }
 
     if (peerId === user.id) {
