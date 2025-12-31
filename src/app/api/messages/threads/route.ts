@@ -51,7 +51,7 @@ export async function GET(req: Request) {
     // conversation_summaries view reads conversations/messages_v2 and respects RLS on conversations
     const { data: conversations, error: convError } = await supabase
       .from("conversation_summaries")
-      .select("id, listing_id, buyer_user_id, seller_user_id, status, last_message_at, buyer_last_read_at, seller_last_read_at, created_at, updated_at, last_message_preview")
+      .select("id, type, listing_id, buyer_user_id, seller_user_id, status, last_message_at, buyer_last_read_at, seller_last_read_at, created_at, updated_at, last_message_preview")
       .order("last_message_at", { ascending: false });
 
     if (convError) {
@@ -134,6 +134,7 @@ export async function GET(req: Request) {
 
       return {
         id: c.id,
+        type: c.type,
         peer: {
           id: peerId,
           name: peer?.name || "Unknown",
@@ -202,6 +203,7 @@ export async function POST(req: Request) {
         ? `${listingRefRaw}`.trim()
         : null;
     const hasListing = Boolean(listingRef && uuidRegex.test(listingRef));
+    const conversationType = hasListing ? "LISTING" : "DIRECT";
 
     if (peerId === user.id) {
       console.error("[threads API POST] User trying to message themselves");
@@ -256,6 +258,7 @@ export async function POST(req: Request) {
         .eq("listing_id", listingRef)
         .eq("buyer_user_id", buyerId)
         .eq("seller_user_id", sellerId)
+        .eq("type", "LISTING")
         .maybeSingle();
       existingConv = data;
       convFetchError = error;
@@ -268,6 +271,7 @@ export async function POST(req: Request) {
         .or(
           `and(buyer_user_id.eq.${buyerId},seller_user_id.eq.${sellerId}),and(buyer_user_id.eq.${sellerId},seller_user_id.eq.${buyerId})`
         )
+        .eq("type", "DIRECT")
         .limit(1)
         .maybeSingle();
       existingConv = data;
@@ -286,6 +290,7 @@ export async function POST(req: Request) {
       const { data: inserted, error: insertError } = await supabase
         .from("conversations")
         .insert({
+          type: conversationType,
           listing_id: hasListing ? listingRef : null,
           buyer_user_id: buyerId,
           seller_user_id: sellerId,
@@ -318,6 +323,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       thread: {
         id: conversation.id,
+        type: conversation.type,
         participant_1_id: conversation.buyer_user_id,
         participant_2_id: conversation.seller_user_id,
         listing_ref: conversation.listing_id,
