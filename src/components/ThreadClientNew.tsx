@@ -182,27 +182,27 @@ export default function ThreadClientNew({
         // Derive peer from messages if any (fallback to cached state or URL)
         let derivedPeerId = msgs.find(m => m.from.id !== currentUserId)?.from.id || peerId || queryPeer;
 
-        // Load thread metadata (participants/listing) once
+        // Load conversation metadata (participants/listing) once
         if (!threadMetaFetched.current) {
-          const { data: threadRow, error: threadErr } = await supabase
-            .from("threads")
-            .select("participant_1_id, participant_2_id, listing_ref")
+          const { data: convoRow, error: convoErr } = await supabase
+            .from("conversations")
+            .select("buyer_user_id, seller_user_id, listing_id")
             .eq("id", threadId)
             .single();
-          if (!threadErr && threadRow) {
+          if (!convoErr && convoRow) {
             threadMetaFetched.current = true;
-            const { participant_1_id, participant_2_id, listing_ref } = threadRow as any;
-            if (!derivedPeerId && participant_1_id && participant_2_id) {
-              derivedPeerId = participant_1_id === currentUserId ? participant_2_id : participant_1_id;
+            const { buyer_user_id, seller_user_id, listing_id } = convoRow as any;
+            if (!derivedPeerId && buyer_user_id && seller_user_id) {
+              derivedPeerId = buyer_user_id === currentUserId ? seller_user_id : buyer_user_id;
             }
             if (derivedPeerId) setPeerId(derivedPeerId);
-            if (listing_ref) setListingRef(listing_ref);
+            if (listing_id) setListingRef(listing_id);
             else if (queryListing) setListingRef(queryListing);
-            if (listing_ref && !threadListing) {
+            if (listing_id && !threadListing) {
               const { data: listingData } = await supabase
                 .from("listings")
                 .select("id, title, price, images, category, location")
-                .eq("id", listing_ref)
+                .eq("id", listing_id)
                 .single();
               if (listingData) {
                 const image =

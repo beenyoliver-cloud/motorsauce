@@ -20,19 +20,6 @@ function getSupabase(authHeader?: string | null) {
   return client;
 }
 
-type ThreadRow = {
-  id: string;
-  participant_1_id?: string; // new schema
-  participant_2_id?: string; // new schema
-  a_user?: string; // legacy schema
-  b_user?: string; // legacy schema
-  listing_ref?: string | null;
-  last_message_text?: string | null;
-  last_message_at?: string;
-  created_at?: string;
-  updated_at?: string;
-};
-
 type ProfileRow = {
   id: string;
   name: string;
@@ -45,7 +32,7 @@ type ProfileRow = {
   response_rate?: number | null;
 };
 
-// GET /api/messages/threads - List all threads for the authenticated user
+// GET /api/messages/threads - List all conversations for the authenticated user (bridge to new schema)
 export async function GET(req: Request) {
   try {
     const authHeader = req.headers.get("authorization");
@@ -61,64 +48,39 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch thread summaries (RLS will filter to only user's threads)
-    const { data: threads, error: threadsError } = await supabase
-      .from("thread_summaries")
-      .select("id, participant_1_id, participant_2_id, listing_ref, last_message_preview, last_message_at, created_at, updated_at");
+    // conversation_summaries view reads conversations/messages_v2 and respects RLS on conversations
+    const { data: conversations, error: convError } = await supabase
+      .from("conversation_summaries")
+      .select("id, listing_id, buyer_user_id, seller_user_id, status, last_message_at, buyer_last_read_at, seller_last_read_at, created_at, updated_at, last_message_preview")
+      .order("last_message_at", { ascending: false });
 
-    if (threadsError) {
-      console.error("[threads API] Error fetching threads:", threadsError);
-      return NextResponse.json({ error: threadsError.message }, { status: 500 });
+    if (convError) {
+      console.error("[threads API] Error fetching conversations:", convError);
+      return NextResponse.json({ error: convError.message }, { status: 500 });
     }
 
-    if (!threads || threads.length === 0) {
+    const visible = (conversations || []).filter((c) => c.buyer_user_id === user.id || c.seller_user_id === user.id);
+    if (visible.length === 0) {
       return NextResponse.json({ threads: [] }, { status: 200 });
     }
 
-    // Defensive filter: in case legacy schema or missing RLS, remove threads the user soft-deleted
-    // This complements RLS which already hides deleted threads in the new schema.
-    const { data: deletions, error: deletionsError } = await supabase
-      .from("thread_deletions")
-      .select("thread_id")
-      .eq("user_id", user.id);
-    if (deletionsError) {
-      console.warn("[threads API] Could not fetch deletions; proceeding without client-side filter", deletionsError);
-    }
-    const deletedIds = new Set((deletions || []).map((d: { thread_id: string }) => d.thread_id));
-    const visibleThreads = (threads || []).filter((t: any) => !deletedIds.has(t.id));
-
-    // Determine schema style (legacy vs new)
-    const isLegacy = false; // summaries view only returns new columns
-
-    // Enrich with peer profile data and read status
-    const participantIds = new Set<string>();
-    visibleThreads.forEach((t: ThreadRow) => {
-      const p1 = t.participant_1_id!;
-      const p2 = t.participant_2_id!;
-      if (p1 !== user.id) participantIds.add(p1);
-      if (p2 !== user.id) participantIds.add(p2);
-    });
-
+    // Peer profiles
+    const peerIds = Array.from(new Set(visible.map((c) => (c.buyer_user_id === user.id ? c.seller_user_id : c.buyer_user_id))));
     const { data: profiles } = await supabase
       .from("profiles")
       .select("id, name, email, avatar, account_type, business_verified, total_sales, avg_response_time_minutes, response_rate")
-      .in("id", Array.from(participantIds));
-
+      .in("id", peerIds);
     const profileMap = new Map<string, ProfileRow>();
     (profiles || []).forEach((p: ProfileRow) => profileMap.set(p.id, p));
 
-    // Fetch listing data for threads that have listing_ref
-    const listingRefs = visibleThreads
-      .filter((t: ThreadRow) => t.listing_ref)
-      .map((t: ThreadRow) => t.listing_ref!);
-    
+    // Listing metadata
+    const listingIds = Array.from(new Set(visible.map((c) => c.listing_id).filter(Boolean)));
     let listingMap = new Map<string, any>();
-    if (listingRefs.length > 0) {
+    if (listingIds.length > 0) {
       const { data: listings } = await supabase
         .from("listings")
         .select("id, title, price, condition, images, image_urls")
-        .in("id", listingRefs);
-      
+        .in("id", listingIds);
       if (listings) {
         listingMap = new Map(listings.map((l: any) => [
           l.id,
@@ -137,85 +99,41 @@ export async function GET(req: Request) {
       }
     }
 
-    // Fetch read status
-    const { data: readStatus } = await supabase
-      .from("thread_read_status")
-      .select("thread_id")
-      .eq("user_id", user.id);
-
-    const readSet = new Set((readStatus || []).map((r: { thread_id: string }) => r.thread_id));
-
-    const threadIds = visibleThreads.map((t: ThreadRow) => t.id);
-
-    // Determine last message sender for "needs reply" with a bounded query
-    const lastSenderMap = new Map<string, { from_user_id?: string | null; sender?: string | null; created_at?: string | null }>();
-    if (threadIds.length > 0) {
-      const limit = Math.max(threadIds.length * 3, 20); // cap scan size to avoid large payloads
+    // Last message sender for needs-reply calculation
+    const conversationIds = visible.map((c) => c.id);
+    const lastSenderMap = new Map<string, string | null>();
+    if (conversationIds.length > 0) {
+      const limit = Math.max(conversationIds.length * 3, 20);
       const { data: lastRows, error: lastErr } = await supabase
-        .from("messages")
-        .select("thread_id, from_user_id, sender, created_at")
-        .in("thread_id", threadIds)
+        .from("messages_v2")
+        .select("conversation_id, sender_user_id, created_at")
+        .in("conversation_id", conversationIds)
         .order("created_at", { ascending: false })
         .limit(limit);
       if (!lastErr && lastRows) {
         for (const row of lastRows) {
-          if (!lastSenderMap.has(row.thread_id)) lastSenderMap.set(row.thread_id, row);
+          if (!lastSenderMap.has(row.conversation_id)) {
+            lastSenderMap.set(row.conversation_id, row.sender_user_id);
+          }
         }
       } else if (lastErr) {
         console.warn("[threads API] Unable to fetch last message senders:", lastErr);
       }
     }
 
-    // Fetch open offers for quick filtering
-    type OfferMeta = {
-      id: string;
-      amount_cents: number;
-      currency: string;
-      status: string;
-      starter_id: string;
-      recipient_id: string;
-      created_at: string | null;
-    };
-    const offerMap = new Map<string, OfferMeta>();
-    if (threadIds.length > 0) {
-      const { data: offerRows, error: offerError } = await supabase
-        .from("offers")
-        .select("id, thread_id, amount_cents, currency, status, starter_id, recipient_id, created_at")
-        .in("thread_id", threadIds)
-        .in("status", ["pending", "countered"])
-        .order("created_at", { ascending: false });
-      if (!offerError && offerRows) {
-        offerRows.forEach((offer) => {
-          const existing = offerMap.get(offer.thread_id);
-          if (!existing) {
-            offerMap.set(offer.thread_id, offer as OfferMeta);
-            return;
-          }
-          const existingTs = existing.created_at ? Date.parse(existing.created_at) : 0;
-          const currentTs = offer.created_at ? Date.parse(offer.created_at) : 0;
-          if (currentTs > existingTs) {
-            offerMap.set(offer.thread_id, offer as OfferMeta);
-          }
-        });
-      } else if (offerError) {
-        console.warn("[threads API] Unable to fetch offers:", offerError);
-      }
-    }
-
-    // Build response
-    const enriched = visibleThreads.map((t: ThreadRow) => {
-      const p1 = t.participant_1_id!;
-      const p2 = t.participant_2_id!;
-      const peerId = p1 === user.id ? p2 : p1;
+    const enriched = visible.map((c: any) => {
+      const peerId = c.buyer_user_id === user.id ? c.seller_user_id : c.buyer_user_id;
       const peer = profileMap.get(peerId);
-      const listing = t.listing_ref ? listingMap.get(t.listing_ref) : null;
-      const lastMeta = lastSenderMap.get(t.id);
-      const lastSenderId = lastMeta?.from_user_id || lastMeta?.sender || null;
+      const listing = c.listing_id ? listingMap.get(c.listing_id) : null;
+      const lastMessageAt = c.last_message_at || c.updated_at || c.created_at || new Date().toISOString();
+      const lastRead = c.buyer_user_id === user.id ? c.buyer_last_read_at : c.seller_last_read_at;
+      const isRead = lastRead ? new Date(lastRead).getTime() >= new Date(lastMessageAt).getTime() : false;
+      const lastSenderId = lastSenderMap.get(c.id) || null;
       const lastMessageFromSelf = lastSenderId ? lastSenderId === user.id : false;
-      const openOffer = offerMap.get(t.id) || null;
-      const needsReply = !readSet.has(t.id) && !lastMessageFromSelf;
+      const needsReply = !isRead && !lastMessageFromSelf;
+
       return {
-        id: t.id,
+        id: c.id,
         peer: {
           id: peerId,
           name: peer?.name || "Unknown",
@@ -227,7 +145,7 @@ export async function GET(req: Request) {
           avgResponseMinutes: peer?.avg_response_time_minutes || null,
           responseRate: peer?.response_rate || null,
         },
-        listingRef: t.listing_ref || null,
+        listingRef: c.listing_id || null,
         listing: listing
           ? {
               ...listing,
@@ -235,23 +153,13 @@ export async function GET(req: Request) {
               condition: listing.condition,
             }
           : null,
-        lastMessage: (t as any).last_message_preview || null,
-        lastMessageAt: t.last_message_at || t.created_at || new Date().toISOString(),
-        isRead: readSet.has(t.id),
+        lastMessage: c.last_message_preview || null,
+        lastMessageAt,
+        isRead,
         needsReply,
         lastMessageFromSelf,
-        openOffer: openOffer
-          ? {
-              id: openOffer.id,
-              status: openOffer.status,
-              amountCents: openOffer.amount_cents,
-              currency: openOffer.currency,
-              fromSelf: openOffer.starter_id === user.id,
-              needsResponse: openOffer.recipient_id === user.id && openOffer.status === "pending",
-              createdAt: openOffer.created_at,
-            }
-          : null,
-        createdAt: t.created_at || new Date().toISOString(),
+        openOffer: null,
+        createdAt: c.created_at || new Date().toISOString(),
       };
     });
 
@@ -262,7 +170,7 @@ export async function GET(req: Request) {
   }
 }
 
-// POST /api/messages/threads - Create or get existing thread
+// POST /api/messages/threads - Create or get existing conversation (bridge to new schema)
 export async function POST(req: Request) {
   try {
     const authHeader = req.headers.get("authorization");
@@ -279,8 +187,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized - Invalid token" }, { status: 401 });
     }
 
-    console.log("[threads API POST] Authenticated user:", user.id);
-
     const body = await req.json();
     const { peerId: peerIdRaw } = body;
     const peerId = typeof peerIdRaw === "string" ? peerIdRaw.trim() : "";
@@ -291,20 +197,13 @@ export async function POST(req: Request) {
     }
 
     const listingRefRaw = body?.listingRef;
-    const listingRefCandidate =
-      listingRefRaw &&
-      `${listingRefRaw}`.trim().length > 0 &&
-      `${listingRefRaw}` !== "null" &&
-      `${listingRefRaw}` !== "undefined"
+    const listingRef =
+      listingRefRaw && `${listingRefRaw}`.trim().length > 0 && `${listingRefRaw}` !== "null" && `${listingRefRaw}` !== "undefined"
         ? `${listingRefRaw}`.trim()
         : null;
-    const listingRef = listingRefCandidate && uuidRegex.test(listingRefCandidate) ? listingRefCandidate : null;
-
-    console.log("[threads API POST] Request body:", { peerId, listingRef });
-
-    if (!peerId) {
-      console.error("[threads API POST] Missing peerId");
-      return NextResponse.json({ error: "peerId is required" }, { status: 400 });
+    if (!listingRef || !uuidRegex.test(listingRef)) {
+      console.error("[threads API POST] listingRef is required for conversations", listingRefRaw);
+      return NextResponse.json({ error: "listingRef is required for this conversation" }, { status: 400 });
     }
 
     if (peerId === user.id) {
@@ -312,159 +211,94 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Cannot create thread with yourself" }, { status: 400 });
     }
 
-    // Participants ordered by UUID for consistency
-    const [p1, p2] = [user.id, peerId].sort();
-    console.log("[threads API POST] Creating thread with participants:", { p1, p2, listingRef });
+    // Fetch listing to determine seller/buyer roles
+    const { data: listing, error: listingError } = await supabase
+      .from("listings")
+      .select("id, seller_id, title, price, images")
+      .eq("id", listingRef)
+      .single();
 
-    // Try to find existing thread first (matching partial unique indexes)
-    let baseQuery = supabase
-      .from("threads")
-      .select("*")
-      .eq("participant_1_id", p1)
-      .eq("participant_2_id", p2);
-
-    // Use explicit null check to avoid sending the string "null" to PostgREST (causes invalid UUID casting)
-    if (listingRef) {
-      baseQuery = baseQuery.eq("listing_ref", listingRef);
-    } else {
-      baseQuery = baseQuery.is("listing_ref", null);
+    if (listingError || !listing) {
+      console.error("[threads API POST] Listing lookup failed", listingError);
+      return NextResponse.json({ error: "Listing not found" }, { status: 404 });
     }
 
-    const { data: existingThread, error: fetchError } = await baseQuery.maybeSingle();
+    const sellerId = listing.seller_id;
+    const isSeller = sellerId === user.id;
+    const buyerId = isSeller ? peerId : user.id;
 
-    let threadAttempt: any;
-    if (existingThread) {
-      console.log("[threads API POST] Found existing thread:", existingThread.id);
-      threadAttempt = { data: existingThread, error: null };
-    } else if (fetchError && fetchError.code !== "PGRST116") {
-      threadAttempt = { error: fetchError };
-    } else {
-      console.log("[threads API POST] No existing thread found, creating new one");
-      threadAttempt = await supabase
-        .from("threads")
+    // If current user is buyer, peer must be seller
+    if (!isSeller && peerId !== sellerId) {
+      console.error("[threads API POST] peerId must be the listing seller for buyers", { peerId, sellerId });
+      return NextResponse.json({ error: "Conversation must be with the listing seller" }, { status: 400 });
+    }
+
+    // Find existing conversation
+    const { data: existingConv, error: convFetchError } = await supabase
+      .from("conversations")
+      .select("*")
+      .eq("listing_id", listingRef)
+      .eq("buyer_user_id", buyerId)
+      .eq("seller_user_id", sellerId)
+      .maybeSingle();
+
+    if (convFetchError && convFetchError.code !== "PGRST116") {
+      console.error("[threads API POST] Fetch conversation error", convFetchError);
+      return NextResponse.json({ error: convFetchError.message }, { status: 500 });
+    }
+
+    let conversation = existingConv;
+    let isNew = false;
+
+    if (!conversation) {
+      const context: any = {
+        listing_title: listing.title,
+        listing_price: listing.price,
+        listing_image: Array.isArray(listing.images) && listing.images.length > 0 ? (listing.images[0]?.url || listing.images[0]) : null,
+      };
+
+      const { data: inserted, error: insertError } = await supabase
+        .from("conversations")
         .insert({
-          participant_1_id: p1,
-          participant_2_id: p2,
-          listing_ref: listingRef || null,
-          last_message_text: "New conversation",
-          last_message_at: new Date().toISOString(),
+          listing_id: listingRef,
+          buyer_user_id: buyerId,
+          seller_user_id: sellerId,
+          status: "ACTIVE",
+          context,
         })
         .select()
         .single();
-    }
 
-    if (threadAttempt.error) {
-      const upsertError = threadAttempt.error;
-      console.error("[threads API POST] Error creating/fetching thread:", {
-        error: upsertError,
-        code: upsertError.code,
-        message: upsertError.message,
-        details: upsertError.details,
-        hint: upsertError.hint,
-      });
-      return NextResponse.json({
-        error: `Failed to create thread: ${upsertError.message}`,
-        details: upsertError.details,
-        hint: upsertError.hint,
-      }, { status: 500 });
-    }
-
-    const raw = threadAttempt.data as ThreadRow;
-    const threadNormalized: ThreadRow = raw;
-
-    // Determine if this is a brand new thread (no messages yet)
-    let isNew = false;
-    const { count: messageCount, error: countError } = await supabase
-      .from("messages")
-      .select("id", { count: "exact", head: true })
-      .eq("thread_id", threadNormalized.id);
-    if (!countError && (messageCount === 0 || messageCount === null)) {
+      if (insertError || !inserted) {
+        console.error("[threads API POST] Insert conversation failed", insertError);
+        return NextResponse.json({ error: insertError?.message || "Failed to create conversation" }, { status: 500 });
+      }
+      conversation = inserted;
       isNew = true;
     }
 
-    // If the current user had previously soft-deleted this thread, "undelete" it by removing the deletion marker
-    const { error: undeleteError } = await supabase
-      .from("thread_deletions")
-      .delete()
-      .eq("thread_id", threadNormalized.id)
-      .eq("user_id", user.id);
-    if (undeleteError) {
-      console.warn("[threads API POST] Failed to remove deletion marker for user", undeleteError);
-    }
-
-    if (isNew) {
-      // Insert initial system message to seed context
-      const messagesToInsert: any[] = [
-        {
-          thread_id: threadNormalized.id,
-          from_user_id: user.id, // system message authored by creator for RLS compliance
-          message_type: "system",
-          text_content: listingRef ? "Conversation started regarding listing" : "Conversation started",
-        },
-      ];
-
-      // If listing_ref exists, add a listing context system message (lightweight "share")
-      if (listingRef) {
-        messagesToInsert.push({
-          thread_id: threadNormalized.id,
-          from_user_id: user.id,
-          message_type: "system",
-          text_content: `Listing: ${listingRef}`,
-        });
-      }
-
-      const systemInsert = await supabase.from("messages").insert(messagesToInsert);
-      if (systemInsert.error) {
-        console.warn("[threads API POST] Failed to create initial system messages", systemInsert.error);
-      }
-    }
-
-    // If conversation is about a listing, add a system message with link/preview for clarity
-    if (listingRef) {
-      const listingUrl =
-        (process.env.NEXT_PUBLIC_SITE_URL ||
-          (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")) +
-        `/listing/${encodeURIComponent(listingRef)}`;
-      try {
-        await supabase.from("messages").insert({
-          thread_id: threadNormalized.id,
-          from_user_id: user.id,
-          sender: user.id,
-          message_type: "system",
-          text_content: `Listing link: ${listingUrl}`,
-        });
-      } catch (linkErr: any) {
-        console.warn("[threads API POST] Failed to add listing link system message", linkErr?.message || linkErr);
-      }
-    }
-
-    // Create read status entry for creator if not exists
-    const { error: readStatusError } = await supabase
-      .from("thread_read_status")
-      .upsert({
-        thread_id: threadNormalized.id,
-        user_id: user.id,
-        last_read_at: new Date().toISOString(),
-      }, { onConflict: "thread_id,user_id" });
-    if (readStatusError) {
-      console.warn("[threads API POST] Failed to upsert read status", readStatusError);
-    }
-
     // Fetch peer profile for enrichment
-    const derivedPeerId = threadNormalized.participant_1_id === user.id
-      ? threadNormalized.participant_2_id
-      : threadNormalized.participant_1_id;
+    const peerProfileId = isSeller ? peerId : sellerId;
     let peer: ProfileRow | null = null;
     const { data: peerProfile } = await supabase
       .from("profiles")
       .select("id, name, email, avatar")
-  .eq("id", derivedPeerId)
+      .eq("id", peerProfileId)
       .single();
     if (peerProfile) peer = peerProfile as ProfileRow;
 
-    console.log("[threads API POST] Thread created successfully (normalized):", threadNormalized, { isNew });
+    console.log("[threads API POST] Conversation ready:", conversation.id, { isNew });
+
     return NextResponse.json({
-      thread: threadNormalized,
+      thread: {
+        id: conversation.id,
+        participant_1_id: conversation.buyer_user_id,
+        participant_2_id: conversation.seller_user_id,
+        listing_ref: conversation.listing_id,
+        last_message_at: conversation.last_message_at,
+        created_at: conversation.created_at,
+        updated_at: conversation.updated_at,
+      },
       peer: peer ? { id: peer.id, name: peer.name, email: peer.email, avatar: peer.avatar } : null,
       isNew,
     }, { status: 200 });

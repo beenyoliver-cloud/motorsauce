@@ -19,7 +19,7 @@ function getSupabase(authHeader?: string | null) {
   return client;
 }
 
-// POST /api/messages/read - Mark thread as read
+// POST /api/messages/read - Mark conversation as read
 export async function POST(req: Request) {
   try {
     const authHeader = req.headers.get("authorization");
@@ -41,22 +41,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "threadId is required" }, { status: 400 });
     }
 
-    // Upsert read status
-    console.log(`[read API] Marking thread ${threadId} as read for user ${user.id}`);
-    const { error: upsertError } = await supabase
-      .from("thread_read_status")
-      .upsert(
-        {
-          thread_id: threadId,
-          user_id: user.id,
-          last_read_at: new Date().toISOString(),
-        },
-        { onConflict: "thread_id,user_id" }
-      );
+    // Verify conversation and update the correct read column
+    const { data: conversation, error: convError } = await supabase
+      .from("conversations")
+      .select("id, buyer_user_id, seller_user_id")
+      .eq("id", threadId)
+      .single();
 
-    if (upsertError) {
-      console.error("[read API] Upsert error:", upsertError);
-      return NextResponse.json({ error: upsertError.message }, { status: 500 });
+    if (convError || !conversation) {
+      console.error("[read API] Conversation not found", convError);
+      return NextResponse.json({ error: "Thread not found", threadMissing: true }, { status: 200 });
+    }
+
+    const isBuyer = conversation.buyer_user_id === user.id;
+    const isSeller = conversation.seller_user_id === user.id;
+    if (!isBuyer && !isSeller) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const payload = isBuyer
+      ? { buyer_last_read_at: new Date().toISOString() }
+      : { seller_last_read_at: new Date().toISOString() };
+
+    const { error: updateError } = await supabase
+      .from("conversations")
+      .update(payload)
+      .eq("id", threadId);
+
+    if (updateError) {
+      console.error("[read API] Update error:", updateError);
+      return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
     console.log(`[read API] Successfully marked thread ${threadId} as read`);
@@ -89,15 +103,34 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "threadId is required" }, { status: 400 });
     }
 
-    // Delete read status to mark as unread
-    const { error: deleteError } = await supabase
-      .from("thread_read_status")
-      .delete()
-      .match({ thread_id: threadId, user_id: user.id });
+    const { data: conversation, error: convError } = await supabase
+      .from("conversations")
+      .select("id, buyer_user_id, seller_user_id")
+      .eq("id", threadId)
+      .single();
 
-    if (deleteError) {
-      console.error("[read API] Delete error:", deleteError);
-      return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    if (convError || !conversation) {
+      return NextResponse.json({ error: "Thread not found", threadMissing: true }, { status: 200 });
+    }
+
+    const isBuyer = conversation.buyer_user_id === user.id;
+    const isSeller = conversation.seller_user_id === user.id;
+    if (!isBuyer && !isSeller) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const payload = isBuyer
+      ? { buyer_last_read_at: null }
+      : { seller_last_read_at: null };
+
+    const { error: updateError } = await supabase
+      .from("conversations")
+      .update(payload)
+      .eq("id", threadId);
+
+    if (updateError) {
+      console.error("[read API] Update error:", updateError);
+      return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true }, { status: 200 });

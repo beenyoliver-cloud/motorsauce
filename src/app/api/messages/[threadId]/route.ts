@@ -137,6 +137,7 @@ export async function GET(
       const offerId = m.metadata?.offer_id;
       const offer = offerId ? offerMap.get(offerId) : null;
       const listing = offer?.listing_id ? listingsMap.get(offer.listing_id) : null;
+      const normalizedType = m.type === "OFFER_CARD" ? "offer" : (m.type === "SYSTEM" ? "system" : "text");
       
       return {
         id: m.id,
@@ -146,7 +147,7 @@ export async function GET(
           name: sender?.name || "System",
           avatar: sender?.avatar,
         },
-        type: m.type?.toLowerCase() || "text",
+        type: normalizedType,
         text: m.body,
         offer: m.type === "OFFER_CARD" && offer ? {
           id: offer.id,
@@ -360,32 +361,30 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Verify thread exists and user has access
-    const { data: thread, error: threadError } = await supabase
-      .from("threads")
-      .select("*")
+    // Verify conversation exists and user has access
+    const { data: conversation, error: convError } = await supabase
+      .from("conversations")
+      .select("id, buyer_user_id, seller_user_id")
       .eq("id", threadId)
       .single();
 
-    if (threadError || !thread) {
-      return NextResponse.json({ error: "Thread not found" }, { status: 404 });
+    if (convError || !conversation) {
+      return NextResponse.json({ error: "Thread not found", threadMissing: true }, { status: 200 });
     }
 
-    // Insert/update deletion record
-    const { error: deleteError } = await supabase
-      .from("thread_deletions")
-      .upsert(
-        {
-          thread_id: threadId,
-          user_id: user.id,
-          deleted_at: new Date().toISOString(),
-        },
-        { onConflict: "thread_id,user_id" }
-      );
+    if (conversation.buyer_user_id !== user.id && conversation.seller_user_id !== user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
-    if (deleteError) {
-      console.error("[messages API] Delete error:", deleteError);
-      return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    // Soft archive the conversation for now
+    const { error: updateError } = await supabase
+      .from("conversations")
+      .update({ status: "ARCHIVED" })
+      .eq("id", threadId);
+
+    if (updateError) {
+      console.error("[messages API] Delete error:", updateError);
+      return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true }, { status: 200 });

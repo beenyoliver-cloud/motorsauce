@@ -253,6 +253,11 @@ export async function sendMessage(
     const raw = payload.message;
     if (!raw) return null;
 
+    const threadIdNormalized = raw.thread_id || raw.conversation_id || threadId;
+    const messageTypeRaw = (raw.type || raw.message_type || "text").toLowerCase();
+    const messageType = messageTypeRaw === "offer_card" ? "offer" : messageTypeRaw;
+    const messageText = raw.body || raw.text_content || raw.text;
+
     // Enrich raw message row to Message shape expected by UI
     // We only know current sender (the user) so we can fetch their profile for name/avatar.
     try {
@@ -274,21 +279,20 @@ export async function sendMessage(
       }
       const enriched: Message = {
         id: raw.id,
-        threadId: raw.thread_id,
+        threadId: threadIdNormalized,
         from: { id: userId || "", name, avatar },
-        type: raw.message_type,
-        text: raw.text_content,
-        offer: raw.message_type === "offer" ? {
-          id: raw.offer_id,
-          amountCents: raw.offer_amount_cents,
-          currency: raw.offer_currency,
-          status: raw.offer_status,
+        type: messageType as Message["type"],
+        text: messageText,
+        offer: raw.metadata && raw.metadata.offer_id ? {
+          id: raw.metadata.offer_id,
+          amountCents: raw.metadata.amount_cents,
+          currency: raw.metadata.currency,
+          status: raw.metadata.status,
         } : undefined,
         createdAt: raw.created_at,
         updatedAt: raw.updated_at,
       };
       
-      // Trigger unread count update in header
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("ms:unread"));
       }
@@ -298,11 +302,16 @@ export async function sendMessage(
       console.warn("[messagesClient] Failed to enrich sent message, falling back to raw", enrichErr);
       return {
         id: raw.id,
-        threadId: raw.thread_id,
-        from: { id: raw.from_user_id, name: "You" },
-        type: raw.message_type,
-        text: raw.text_content,
-        offer: undefined,
+        threadId: threadIdNormalized,
+        from: { id: raw.sender_user_id || raw.from_user_id || "", name: "You" },
+        type: messageType as Message["type"],
+        text: messageText,
+        offer: raw.metadata && raw.metadata.offer_id ? {
+          id: raw.metadata.offer_id,
+          amountCents: raw.metadata.amount_cents,
+          currency: raw.metadata.currency,
+          status: raw.metadata.status,
+        } : undefined,
         createdAt: raw.created_at,
         updatedAt: raw.updated_at,
       };

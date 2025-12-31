@@ -45,7 +45,7 @@ function setCachedCount(userId: string, count: number): void {
   }
 }
 
-// GET /api/messages/unread-count - Number of threads with at least one message and not marked read
+// GET /api/messages/unread-count - Number of conversations with unread messages (bridge to new schema)
 export async function GET(req: Request) {
   try {
     const authHeader = req.headers.get("authorization");
@@ -66,62 +66,34 @@ export async function GET(req: Request) {
       return NextResponse.json({ count: cachedCount }, { status: 200 });
     }
 
-    // Fetch threads where user is a participant (new schema only; legacy columns removed)
-    let threads: any[] | null = null;
-    let threadsError: any = null;
-    const result = await supabase
-      .from("threads")
-      .select("id, last_message_at, created_at")
-      .or(`participant_1_id.eq.${user.id},participant_2_id.eq.${user.id}`)
+    // Fetch conversations; RLS will scope to participants
+    const { data: conversations, error: convError } = await supabase
+      .from("conversations")
+      .select("id, buyer_user_id, seller_user_id, last_message_at, buyer_last_read_at, seller_last_read_at, created_at")
       .order("last_message_at", { ascending: false });
 
-    threads = result.data;
-    threadsError = result.error;
-
-    if (threadsError) {
-      console.error("[unread-count] threads error:", threadsError);
-      return NextResponse.json({ error: threadsError.message }, { status: 500 });
+    if (convError) {
+      console.error("[unread-count] conversations error:", convError);
+      return NextResponse.json({ error: convError.message }, { status: 500 });
     }
 
-    if (!threads || threads.length === 0) {
+    if (!conversations || conversations.length === 0) {
       setCachedCount(user.id, 0);
       return NextResponse.json({ count: 0 }, { status: 200 });
     }
 
-    // Read status for current user
-    const { data: readRows, error: readError } = await supabase
-      .from("thread_read_status")
-      .select("thread_id")
-      .eq("user_id", user.id);
-
-    if (readError) {
-      console.warn("[unread-count] read status error:", readError);
-    }
-
-    // Deleted threads for current user
-    const { data: deletedRows, error: deletedError } = await supabase
-      .from("thread_deletions")
-      .select("thread_id")
-      .eq("user_id", user.id);
-
-    if (deletedError) {
-      console.warn("[unread-count] deleted status error:", deletedError);
-    }
-
-    const readSet = new Set((readRows || []).map((r: any) => r.thread_id));
-    const deletedSet = new Set((deletedRows || []).map((r: any) => r.thread_id));
-    const count = (threads || []).reduce((acc, t: any) => {
-      // Only count threads that have at least a created_at/last_message_at (defensive)
-      const hasAny = Boolean(t.last_message_at || t.created_at);
-      const isRead = readSet.has(t.id);
-      const isDeleted = deletedSet.has(t.id);
-      return acc + (hasAny && !isRead && !isDeleted ? 1 : 0);
+    const count = (conversations || []).reduce((acc, c: any) => {
+      const lastMessageAt = c.last_message_at || c.created_at;
+      if (!lastMessageAt) return acc;
+      const lastRead = c.buyer_user_id === user.id ? c.buyer_last_read_at : c.seller_last_read_at;
+      const isRead = lastRead ? new Date(lastRead).getTime() >= new Date(lastMessageAt).getTime() : false;
+      return acc + (isRead ? 0 : 1);
     }, 0);
 
     // Cache the result
     setCachedCount(user.id, count);
 
-    console.log(`[unread-count] User ${user.id}: ${threads?.length} participating threads, ${readSet.size} marked read, ${deletedSet.size} deleted, ${count} unread (cached)`);
+    console.log(`[unread-count] User ${user.id}: ${conversations?.length} conversations, ${count} unread (cached)`);
     return NextResponse.json({ count }, { status: 200 });
   } catch (error: any) {
     console.error("[unread-count] Unexpected error:", error);
