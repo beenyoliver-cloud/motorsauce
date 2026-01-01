@@ -40,25 +40,7 @@ export default function ContactSellerButton({
       return;
     }
 
-    try {
-      // Create or find thread with this seller using new Supabase system
-      const thread = await createThread(sellerId, String(listingId));
-      
-      if (!thread) {
-        console.error("Failed to create thread - createThread returned null");
-        // Error already shown by createThread function
-        return;
-      }
-
-      // Navigate to the thread
-      const params = new URLSearchParams();
-      params.set("peer", sellerId);
-      params.set("listing", String(listingId));
-      router.push(`/messages/${encodeURIComponent(thread.id)}?${params.toString()}`);
-    } catch (error) {
-      console.error("Error in ContactSellerButton:", error);
-      alert(`Unexpected error: ${error instanceof Error ? error.message : "Please try again"}`);
-    }
+    alert("Messaging feature is temporarily unavailable. Please try again later.");
   }
 
   return (

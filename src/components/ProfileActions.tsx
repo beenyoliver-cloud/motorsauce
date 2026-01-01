@@ -97,17 +97,8 @@ export default function ProfileActions({
         return;
       }
 
-      // Create or find thread with this user using new Supabase system
-      const thread = await createThread(userId);
-      if (!thread) {
-        // Error already shown by createThread function
-        setIsLoading(false);
-        return;
-      }
-
-      const params = new URLSearchParams();
-      params.set("peer", userId);
-      router.push(`/messages/${encodeURIComponent(thread.id)}?${params.toString()}`);
+      alert("Messaging feature is temporarily unavailable. Please try again later.");
+      setIsLoading(false);
     } catch (error) {
       alert(`Unexpected error: ${error instanceof Error ? error.message : "Please try again"}`);
       setIsLoading(false);
