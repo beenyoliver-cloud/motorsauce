@@ -3,6 +3,15 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { analyzeMessageSafety } from "@/lib/messagingSafety";
 
+const DB_TO_CLIENT_STATUS: Record<string, string> = {
+  PENDING: "pending",
+  ACCEPTED: "accepted",
+  REJECTED: "declined",
+  COUNTERED: "countered",
+  CANCELLED: "withdrawn",
+  EXPIRED: "expired",
+};
+
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
@@ -140,10 +149,9 @@ export async function GET(
     let listingsMap = new Map();
     
     if (offerIds.length > 0) {
-      // Fetch offers
       const { data: offers, error: offersError } = await supabase
         .from("offers")
-        .select("id, listing_id, listing_title, listing_image, amount_cents, currency, status, starter_id, recipient_id, starter, recipient, buyer_id, seller_id")
+        .select("id, listing_id, amount, currency, status, created_by_user_id, offered_to_user_id, conversation_id")
         .in("id", offerIds);
       
       if (offersError) {
@@ -152,20 +160,30 @@ export async function GET(
       
       offerMap = new Map((offers || []).map((o: any) => [o.id, o]));
       
-      // Get unique listing IDs and fetch their details
       const listingIds = Array.from(new Set((offers || []).map((o: any) => o.listing_id).filter(Boolean)));
       if (listingIds.length > 0) {
         const { data: listings, error: listingsError } = await supabase
           .from("listings")
-          .select("id, title, price, images")
+          .select("id, title, price, images, image_urls")
           .in("id", listingIds);
         
         if (listingsError) {
           console.error("[messages API] Error fetching listings:", listingsError);
         }
         
-        listingsMap = new Map((listings || []).map((l: any) => [l.id, l]));
-        // no-op
+        listingsMap = new Map(
+          (listings || []).map((l: any) => [
+            l.id,
+            {
+              title: l.title,
+              price: l.price,
+              image:
+                (Array.isArray(l.images) && l.images.length > 0 && (l.images[0]?.url || l.images[0])) ||
+                (Array.isArray(l.image_urls) && l.image_urls.length > 0 ? l.image_urls[0] : null) ||
+                null,
+            },
+          ])
+        );
       }
     }
 
@@ -191,19 +209,15 @@ export async function GET(
         offer: m.type === "OFFER_CARD" && offer ? {
           id: offer.id,
           listingId: offer.listing_id || "",
-          amountCents: offer.offered_amount ? Math.round(Number(offer.offered_amount) * 100) : 0,
+          amountCents: typeof offer.amount === "number" ? offer.amount : Number(offer.amount) || 0,
           currency: offer.currency || "GBP",
-          status: offer.status || "pending",
-          listingTitle: listing?.title || offer?.listing_title || null,
-          listingImage: (
-            listing?.images && Array.isArray(listing.images) && listing.images.length > 0
-              ? (listing.images[0]?.url || listing.images[0])
-              : (offer?.listing_image || null)
-          ),
+          status: DB_TO_CLIENT_STATUS[offer.status] || offer.status?.toLowerCase?.() || offer.status || "pending",
+          listingTitle: listing?.title || null,
+          listingImage: listing?.image || null,
           listingPrice: listing?.price ? Math.round(Number(listing.price) * 100) : undefined,
         } : undefined,
         createdAt: m.created_at,
-        updatedAt: m.updated_at || m.created_at,
+        updatedAt: m.created_at,
       };
     });
 
@@ -224,7 +238,8 @@ export async function POST(
     let threadId = initialThreadId;
     const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
     if (!threadId || !uuidRegex.test(threadId)) {
-      return NextResponse.json({ error: "Invalid threadId" }, { status: 400 });
+      console.error("[messages POST] Invalid threadId received:", threadId);
+      return NextResponse.json({ error: "Invalid threadId", received: threadId }, { status: 400 });
     }
     const authHeader = req.headers.get("authorization");
     

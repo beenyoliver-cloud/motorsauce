@@ -146,9 +146,13 @@ export async function POST(req: Request) {
             id,
             amount,
             status,
-            starter,
+            currency,
             listing_id,
-            listings:listing_id (
+            conversation_id,
+            created_by_user_id,
+            offered_to_user_id,
+            conversation:conversation_id (buyer_user_id, seller_user_id),
+            listing:listing_id (
               id,
               title,
               images,
@@ -164,19 +168,19 @@ export async function POST(req: Request) {
       if (offerError || !offer) {
         return NextResponse.json({ error: "Offer not found" }, { status: 404 });
       }
-      if (offer.starter !== user.id) {
+      if (offer.conversation?.buyer_user_id && offer.conversation.buyer_user_id !== user.id) {
         return NextResponse.json({ error: "Unauthorized offer access" }, { status: 403 });
       }
-      if (offer.status !== "accepted") {
+      if (offer.status !== "ACCEPTED") {
         return NextResponse.json({ error: "Offer is not accepted" }, { status: 400 });
       }
 
-      const listing = offer.listings as any;
+      const listing = offer.listing as any;
       if (!listing || listing.status !== "active") {
         return NextResponse.json({ error: "Listing is no longer available" }, { status: 400 });
       }
 
-      const amountCents = Math.round(Number(offer.amount) * 100);
+      const amountCents = typeof offer.amount === "number" ? offer.amount : Math.round(Number(offer.amount) || 0);
       const image = Array.isArray(listing.images) && listing.images.length ? listing.images[0] : null;
 
       line_items.push({
@@ -196,7 +200,7 @@ export async function POST(req: Request) {
       normalizedItems.push({
         listing_id: listing.id,
         title: listing.title,
-        price: Number(offer.amount),
+        price: amountCents / 100,
         quantity: 1,
         seller_id: listing.seller_id || null,
         seller_name: listing.seller?.name || null,

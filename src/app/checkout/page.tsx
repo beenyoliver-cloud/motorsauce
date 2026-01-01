@@ -91,8 +91,9 @@ function CheckoutContent() {
             id,
             amount,
             status,
-            starter,
+            created_by_user_id,
             listing_id,
+            conversation:conversation_id (buyer_user_id, seller_user_id),
             listings:listing_id (
               id,
               title,
@@ -110,14 +111,14 @@ function CheckoutContent() {
           return;
         }
         
-        // Verify the user is the buyer (starter of the offer)
-        if (offer.starter !== user.id) {
+        // Verify the user is the buyer (conversation buyer)
+        if (offer.conversation?.buyer_user_id && offer.conversation.buyer_user_id !== user.id) {
           setOfferError("This offer doesn't belong to you");
           return;
         }
         
         // Verify the offer is accepted
-        if (offer.status !== "accepted") {
+        if (offer.status !== "ACCEPTED") {
           setOfferError("This offer has not been accepted");
           return;
         }
@@ -142,7 +143,7 @@ function CheckoutContent() {
           listingId: listing.id,
           title: listing.title,
           image: listing.images?.[0] || "/images/placeholder.png",
-          offerPrice: offer.amount,
+          offerPrice: (offer.amount || 0) / 100,
           originalPrice: listing.price,
           sellerId: listing.seller_id,
           sellerName: seller?.name || "Seller",
