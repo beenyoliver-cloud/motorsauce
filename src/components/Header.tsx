@@ -128,6 +128,10 @@ export default function Header() {
     async function fetchUnreadImmediate() {
       try {
         console.log("[Header] Fetching unread count...");
+        // Messaging temporarily disabled
+        setUnread(0);
+        return;
+        
         // Get auth token for API call
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.access_token) {

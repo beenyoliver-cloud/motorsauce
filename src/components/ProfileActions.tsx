@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { MessageSquare, Share2 } from "lucide-react";
 import { getCurrentUserSync } from "@/lib/auth";
-import { createThread } from "@/lib/messagesClient";
 import { useState } from "react";
 
 type ProfileActionsProps = {
@@ -39,6 +38,8 @@ export default function ProfileActions({
   }
 
   async function handleMessage() {
+    alert("Messaging feature temporarily disabled");
+    return;
     if (!me) {
       router.push(`/auth/login?next=/profile/${encodeURIComponent(toUsername)}`);
       return;
