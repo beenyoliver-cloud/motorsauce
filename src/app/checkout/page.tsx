@@ -112,7 +112,8 @@ function CheckoutContent() {
         }
         
         // Verify the user is the buyer (conversation buyer)
-        if (offer.conversation?.buyer_user_id && offer.conversation.buyer_user_id !== user.id) {
+        const conversation = Array.isArray(offer.conversation) ? offer.conversation[0] : offer.conversation;
+        if (conversation?.buyer_user_id && conversation.buyer_user_id !== user.id) {
           setOfferError("This offer doesn't belong to you");
           return;
         }
