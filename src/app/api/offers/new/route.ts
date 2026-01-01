@@ -159,7 +159,9 @@ export async function GET(req: Request) {
     }
 
     const conversationMap = new Map<string, any>(
-      (offers || []).map((o: any) => [o.conversation_id, o.conversation]).filter(([, v]) => Boolean(v))
+      (offers || [])
+        .map((o: any) => [o.conversation_id, o.conversation] as [string, any])
+        .filter(([, v]) => Boolean(v))
     );
 
     const shaped = (offers || []).map((o: any) => mapOffer(o, listingMap, conversationMap));
