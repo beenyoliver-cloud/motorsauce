@@ -168,7 +168,8 @@ export async function POST(req: Request) {
       if (offerError || !offer) {
         return NextResponse.json({ error: "Offer not found" }, { status: 404 });
       }
-      if (offer.conversation?.buyer_user_id && offer.conversation.buyer_user_id !== user.id) {
+      const conversation = Array.isArray(offer.conversation) ? offer.conversation[0] : offer.conversation;
+      if (conversation?.buyer_user_id && conversation.buyer_user_id !== user.id) {
         return NextResponse.json({ error: "Unauthorized offer access" }, { status: 403 });
       }
       if (offer.status !== "ACCEPTED") {
