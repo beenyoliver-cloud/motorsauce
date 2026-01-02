@@ -57,28 +57,7 @@ export default function MakeOfferButtonNew({
 
   async function handleOfferCreated(result?: { threadId?: string }) {
     setIsModalOpen(false);
-    if (!uuidRegex.test(sellerId)) {
-      router.push("/messages");
-      return;
-    }
-    if (result?.threadId) {
-      const params = new URLSearchParams();
-      params.set("peer", sellerId);
-      params.set("listing", String(listingId));
-      params.set("offer", "new");
-      router.push(`/messages/${encodeURIComponent(result.threadId)}?${params.toString()}`);
-      return;
-    }
-    const thread = await createThread(sellerId, String(listingId));
-    if (thread) {
-      const params = new URLSearchParams();
-      params.set("peer", sellerId);
-      params.set("listing", String(listingId));
-      params.set("offer", "new");
-      router.push(`/messages/${encodeURIComponent(thread.id)}?${params.toString()}`);
-    } else {
-      router.push("/messages");
-    }
+    alert("Offer created! Messaging feature is temporarily unavailable.");
   }
 
   if (isLoading) {

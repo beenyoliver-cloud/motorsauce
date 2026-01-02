@@ -68,11 +68,8 @@ export default function ListingActions({
     if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
       return setError("Enter a valid amount greater than £0.");
     }
-    const body =
-      `Hi ${sellerName}, I’d like to offer £${parsedAmount.toFixed(2)} ` +
-      `for "${listingTitle || `listing #${String(listingId)}`}".`;
     closeOffer();
-    router.push(`/messages/new?to=${encodeURIComponent(sellerName)}&body=${encodeURIComponent(body)}`);
+    alert("Messaging feature is temporarily unavailable. Please try again later.");
   };
 
   // ---- Button style tokens (higher contrast) ----
@@ -100,14 +97,15 @@ export default function ListingActions({
         </button>
 
         {/* Message seller — DARK for contrast */}
-        <Link
-          href={`/messages/new?to=${encodeURIComponent(sellerName)}`}
+        <button
+          type="button"
+          onClick={() => alert("Messaging feature is temporarily unavailable.")}
           className={btnMessage}
           aria-label={`Message ${sellerName}`}
         >
           <MessageSquare className="h-4 w-4" />
           <span className="whitespace-nowrap">Message seller</span>
-        </Link>
+        </button>
 
         {/* Save (favorites) */}
         <div>

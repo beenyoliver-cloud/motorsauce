@@ -472,13 +472,14 @@ function OfferInboxCard({
 
       {/* View Conversation Button */}
       {offer.thread_id && (
-        <Link
-          href={`/messages/${offer.thread_id}`}
+        <button
+          type="button"
+          onClick={() => alert("Messaging feature is temporarily unavailable.")}
           className="flex items-center justify-center gap-2 w-full mt-2 px-3 py-2 bg-white text-gray-900 rounded-lg text-sm font-medium hover:bg-gray-50 transition border border-gray-300"
         >
           <MessageSquare size={16} />
           View conversation
-        </Link>
+        </button>
       )}
     </div>
   );
