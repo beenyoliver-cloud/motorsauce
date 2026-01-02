@@ -51,6 +51,10 @@ export default function MakeOfferModal({
         return;
       }
 
+      setError("Offer feature is temporarily unavailable. Please try again later.");
+      setLoading(false);
+      return;
+
       const listingImage = listing.images?.[0]?.url || undefined;
 
       if (!uuidRegex.test(sellerId)) {
