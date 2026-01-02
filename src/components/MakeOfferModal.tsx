@@ -53,39 +53,6 @@ export default function MakeOfferModal({
 
       setError("Offer feature is temporarily unavailable. Please try again later.");
       setLoading(false);
-      return;
-
-      const listingImage = listing.images?.[0]?.url || undefined;
-
-      if (!uuidRegex.test(sellerId)) {
-        throw new Error("Seller account is unavailable. Please try again later.");
-      }
-
-      const listingRef = uuidRegex.test(listing.id) ? listing.id : undefined;
-
-      const thread = await createThread(sellerId, listingRef);
-      if (!thread) {
-        throw new Error("Couldn't start chat thread with seller");
-      }
-
-      const offer = await createOffer({
-        threadId: thread.id,
-        listingId: listingRef || listing.id,
-        listingTitle: listing.title,
-        listingImage,
-        recipientId: sellerId,
-        amountCents: Math.round(amount * 100),
-        currency: "GBP",
-      });
-
-      if (!offer) {
-        throw new Error("Failed to create offer");
-      }
-
-      setOfferAmount("");
-      setNotes("");
-      onClose();
-      onOfferCreated?.({ threadId: thread.id, offerId: offer.id });
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
