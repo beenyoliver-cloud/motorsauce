@@ -127,40 +127,8 @@ export default function Header() {
 
     async function fetchUnreadImmediate() {
       try {
-        console.log("[Header] Fetching unread count...");
         // Messaging temporarily disabled
         setUnread(0);
-        return;
-        
-        // Get auth token for API call
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.access_token) {
-          console.warn("[Header] No auth session, skipping unread count");
-          return;
-        }
-        
-        const res = await fetch("/api/messages/unread-count", { 
-          cache: "no-store",
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        });
-        if (!res.ok) {
-          console.warn("[Header] Unread count fetch failed:", res.status);
-          return;
-        }
-        const data = await res.json();
-        const n = Number(data?.count || 0);
-        console.log("[Header] Unread count received:", n);
-        if (!Number.isFinite(n)) return;
-        if (!abort) {
-          setUnread(n);
-          console.log("[Header] Badge updated to:", n);
-          try {
-            localStorage.setItem(nsKey("unread_count"), String(n));
-            window.dispatchEvent(new Event("ms:unread"));
-          } catch {}
-        }
       } catch (err) {
         console.error("[Header] Error fetching unread:", err);
       }
