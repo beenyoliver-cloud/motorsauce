@@ -50,10 +50,22 @@ export default function MakeOfferModal({
         setError("Please enter a valid offer amount");
         return;
       }
+      
+      // Ensure conversation exists (buyer = current user, seller = sellerId)
+      const threadResp = await createThread(sellerId, listing.id);
+      const threadId = threadResp?.thread?.id || threadResp?.threadId;
+      if (!threadId) {
+        throw new Error("Failed to create conversation");
+      }
 
-      setError("Offer feature is temporarily unavailable. Please try again later.");
-      setLoading(false);
+      const amountCents = Math.round(amount * 100);
+      const offer = await createOffer({ threadId, amountCents });
+
+      onOfferCreated?.({ threadId, offerId: offer.id });
+      onClose();
+      alert("Offer sent! We'll notify the seller.");
     } catch (err) {
+      console.error("[MakeOfferModal] Error creating offer:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);

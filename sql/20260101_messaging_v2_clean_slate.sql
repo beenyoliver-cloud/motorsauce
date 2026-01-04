@@ -1,10 +1,10 @@
 -- Messaging V2 clean slate (destructive)
--- Drops legacy threads/messages/offers artifacts and recreates conversations/messages/offers
--- Supports LISTING and DIRECT conversation types with clean uniqueness and summaries
+-- Recreates conversations, messages_v2, offers with typed conversations (LISTING/DIRECT)
+-- Run only when you are OK wiping legacy messaging/offers data
 
 BEGIN;
 
--- 0) Drop legacy objects
+-- Drop legacy artifacts
 DROP VIEW IF EXISTS public.conversation_summaries CASCADE;
 DROP VIEW IF EXISTS public.thread_summaries CASCADE;
 DROP FUNCTION IF EXISTS public.update_thread_on_message_v2() CASCADE;
@@ -19,7 +19,7 @@ DROP TABLE IF EXISTS public.threads CASCADE;
 DROP TABLE IF EXISTS public.conversations CASCADE;
 DROP TABLE IF EXISTS public.offers CASCADE;
 
--- 1) Conversations
+-- Conversations
 CREATE TABLE public.conversations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   type TEXT NOT NULL DEFAULT 'LISTING' CHECK (type IN ('LISTING', 'DIRECT')),
@@ -40,7 +40,6 @@ CREATE TABLE public.conversations (
   )
 );
 
--- Conversation uniqueness and lookup indexes
 CREATE UNIQUE INDEX conversations_unique_listing_thread
   ON public.conversations (listing_id, buyer_user_id, seller_user_id)
   WHERE type = 'LISTING';
@@ -58,22 +57,21 @@ CREATE INDEX idx_conversations_listing ON public.conversations(listing_id);
 CREATE INDEX idx_conversations_type ON public.conversations(type);
 CREATE INDEX idx_conversations_status_active ON public.conversations(status) WHERE status = 'ACTIVE';
 
--- RLS for conversations
 ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "conversations_select_participants" ON public.conversations;
-CREATE POLICY "conversations_select_participants" ON public.conversations
+DROP POLICY IF EXISTS conversations_select_participants ON public.conversations;
+CREATE POLICY conversations_select_participants ON public.conversations
   FOR SELECT USING (auth.uid() = buyer_user_id OR auth.uid() = seller_user_id);
 
-DROP POLICY IF EXISTS "conversations_insert_participants" ON public.conversations;
-CREATE POLICY "conversations_insert_participants" ON public.conversations
+DROP POLICY IF EXISTS conversations_insert_participants ON public.conversations;
+CREATE POLICY conversations_insert_participants ON public.conversations
   FOR INSERT WITH CHECK (auth.uid() = buyer_user_id OR auth.uid() = seller_user_id);
 
-DROP POLICY IF EXISTS "conversations_update_participants" ON public.conversations;
-CREATE POLICY "conversations_update_participants" ON public.conversations
+DROP POLICY IF EXISTS conversations_update_participants ON public.conversations;
+CREATE POLICY conversations_update_participants ON public.conversations
   FOR UPDATE USING (auth.uid() = buyer_user_id OR auth.uid() = seller_user_id);
 
--- 2) Messages timeline
+-- Messages (timeline)
 CREATE TABLE public.messages_v2 (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   conversation_id UUID NOT NULL REFERENCES public.conversations(id) ON DELETE CASCADE,
@@ -94,8 +92,8 @@ CREATE INDEX idx_messages_v2_metadata_offer ON public.messages_v2 USING gin(meta
 
 ALTER TABLE public.messages_v2 ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "messages_v2_select_participants" ON public.messages_v2;
-CREATE POLICY "messages_v2_select_participants" ON public.messages_v2
+DROP POLICY IF EXISTS messages_v2_select_participants ON public.messages_v2;
+CREATE POLICY messages_v2_select_participants ON public.messages_v2
   FOR SELECT USING (
     EXISTS (
       SELECT 1 FROM public.conversations c
@@ -104,8 +102,8 @@ CREATE POLICY "messages_v2_select_participants" ON public.messages_v2
     )
   );
 
-DROP POLICY IF EXISTS "messages_v2_insert_participants" ON public.messages_v2;
-CREATE POLICY "messages_v2_insert_participants" ON public.messages_v2
+DROP POLICY IF EXISTS messages_v2_insert_participants ON public.messages_v2;
+CREATE POLICY messages_v2_insert_participants ON public.messages_v2
   FOR INSERT WITH CHECK (
     EXISTS (
       SELECT 1 FROM public.conversations c
@@ -115,7 +113,6 @@ CREATE POLICY "messages_v2_insert_participants" ON public.messages_v2
     AND (sender_user_id IS NULL OR sender_user_id = auth.uid())
   );
 
--- Trigger to keep conversation timestamps updated
 CREATE OR REPLACE FUNCTION public.update_conversation_on_message()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -134,7 +131,7 @@ CREATE TRIGGER trigger_update_conversation_on_message
   FOR EACH ROW
   EXECUTE FUNCTION public.update_conversation_on_message();
 
--- 3) Offers (structured negotiation)
+-- Offers
 CREATE TABLE public.offers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   conversation_id UUID NOT NULL REFERENCES public.conversations(id) ON DELETE CASCADE,
@@ -162,15 +159,14 @@ CREATE INDEX idx_offers_created_by ON public.offers(created_by_user_id);
 CREATE INDEX idx_offers_offered_to ON public.offers(offered_to_user_id);
 CREATE INDEX idx_offers_parent ON public.offers(parent_offer_id) WHERE parent_offer_id IS NOT NULL;
 
--- Single pending offer per conversation
 CREATE UNIQUE INDEX idx_offers_one_pending_per_conversation
   ON public.offers(conversation_id)
   WHERE status = 'PENDING';
 
 ALTER TABLE public.offers ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "offers_select_participants" ON public.offers;
-CREATE POLICY "offers_select_participants" ON public.offers
+DROP POLICY IF EXISTS offers_select_participants ON public.offers;
+CREATE POLICY offers_select_participants ON public.offers
   FOR SELECT USING (
     EXISTS (
       SELECT 1 FROM public.conversations c
@@ -179,8 +175,8 @@ CREATE POLICY "offers_select_participants" ON public.offers
     )
   );
 
-DROP POLICY IF EXISTS "offers_insert_creator_is_participant" ON public.offers;
-CREATE POLICY "offers_insert_creator_is_participant" ON public.offers
+DROP POLICY IF EXISTS offers_insert_creator_is_participant ON public.offers;
+CREATE POLICY offers_insert_creator_is_participant ON public.offers
   FOR INSERT WITH CHECK (
     created_by_user_id = auth.uid()
     AND EXISTS (
@@ -190,8 +186,8 @@ CREATE POLICY "offers_insert_creator_is_participant" ON public.offers
     )
   );
 
-DROP POLICY IF EXISTS "offers_update_participants" ON public.offers;
-CREATE POLICY "offers_update_participants" ON public.offers
+DROP POLICY IF EXISTS offers_update_participants ON public.offers;
+CREATE POLICY offers_update_participants ON public.offers
   FOR UPDATE USING (
     EXISTS (
       SELECT 1 FROM public.conversations c
@@ -200,7 +196,7 @@ CREATE POLICY "offers_update_participants" ON public.offers
     )
   );
 
--- Utility: expire pending offers past their deadline
+-- Expire pending offers past deadline
 CREATE OR REPLACE FUNCTION public.expire_old_offers()
 RETURNS INTEGER AS $$
 DECLARE
@@ -217,7 +213,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 4) Summaries view
+-- Summaries view
 CREATE OR REPLACE VIEW public.conversation_summaries AS
 SELECT
   c.id,

@@ -224,7 +224,6 @@ export default function Header() {
     ["Drafts", `${profileHref}?tab=drafts`],
     ["Saved", `${profileHref}?tab=saved`],
     ["Saved Searches", "/saved-searches"],
-    ["My Messages", "/messages"],
     ["Previous Sales", "/sales"],
     ["Account Settings", "/settings"],
   ] as const;
@@ -270,23 +269,9 @@ export default function Header() {
                 <SearchBar placeholder="Search parts or sellers…" compact />
               </div>
 
-              {/* Right side: Messages, Notifications, Basket, Profile */}
+              {/* Right side: Notifications, Basket, Profile */}
               <div className="flex items-center gap-4 flex-shrink-0">
                 {isUserLoaded && user && <NotificationsDropdown />}
-                {isUserLoaded && user && (
-                  <Link
-                    href="/messages"
-                    className="relative flex items-center text-black hover:text-yellow-500 transition-colors"
-                    aria-label="Messages"
-                  >
-                    <MessageSquare size={20} />
-                    {unread > 0 && (
-                      <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[11px] font-bold min-w-[18px] h-[18px] px-1">
-                        {unread > 9 ? '9+' : unread}
-                      </span>
-                    )}
-                  </Link>
-                )}
                 <button
                   onClick={() => setCartOpen(true)}
                   className="relative flex items-center text-black hover:text-yellow-500 transition-colors"
@@ -336,11 +321,6 @@ export default function Header() {
                             role="menuitem"
                           >
                             <span>{name}</span>
-                            {name === "My Messages" && unread > 0 && (
-                              <span className="ml-2 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-xs font-bold px-2 py-0.5">
-                                {unread > 9 ? '9+' : unread}
-                              </span>
-                            )}
                           </Link>
                         ))}
                         <Link
@@ -442,20 +422,6 @@ export default function Header() {
                       className="block px-3 py-2 text-sm font-medium text-black hover:bg-yellow-50 hover:text-yellow-600 rounded"
                     >
                       Sell
-                    </Link>
-                  )}
-                  {isUserLoaded && user && (
-                    <Link
-                      href="/messages"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center justify-between px-3 py-2 text-sm font-medium text-black hover:bg-yellow-50 hover:text-yellow-600 rounded"
-                    >
-                      <span>Messages</span>
-                      {unread > 0 && (
-                        <span className="inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-xs font-bold px-2 py-0.5">
-                          {unread > 9 ? '9+' : unread}
-                        </span>
-                      )}
                     </Link>
                   )}
                   {profileLinks.map(([name, href]) => (

@@ -195,10 +195,6 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
 
       const created = await createOfferAPI({
         threadId: msg.threadId,
-        listingId: String(o.listingId),
-        listingTitle: o.listingTitle || "",
-        listingImage: o.listingImage,
-        recipientId: targetRecipientId,
         amountCents: counterAmountCents,
         currency: o.currency || "GBP",
       });

@@ -40,7 +40,15 @@ export default function ContactSellerButton({
       return;
     }
 
-    alert("Messaging feature is temporarily unavailable. Please try again later.");
+    try {
+      const result = await createThread(sellerId, String(listingId));
+      const threadId = result?.thread?.id || result?.threadId;
+      console.log("[ContactSeller] Conversation ready", { threadId, isNew: result?.isNew });
+      alert("Conversation started. We'll notify the seller.");
+    } catch (err) {
+      console.error("[ContactSeller] Failed to start conversation:", err);
+      alert("Unable to start conversation. Please try again.");
+    }
   }
 
   return (

@@ -57,7 +57,11 @@ export default function MakeOfferButtonNew({
 
   async function handleOfferCreated(result?: { threadId?: string }) {
     setIsModalOpen(false);
-    alert("Offer created! Messaging feature is temporarily unavailable.");
+    if (result?.threadId && uuidRegex.test(result.threadId)) {
+      // Placeholder: when messaging UI exists, route to the conversation
+      console.log("[MakeOfferButton] Offer created in conversation", result.threadId);
+    }
+    alert("Offer sent! We'll notify the seller.");
   }
 
   if (isLoading) {

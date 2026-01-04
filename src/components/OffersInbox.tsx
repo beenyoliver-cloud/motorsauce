@@ -5,58 +5,11 @@ import Link from "next/link";
 import { MessageSquare, TrendingUp, Clock, CheckCircle, XCircle, Check, X as XIcon } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase";
 import { displayName } from "@/lib/names";
-import { updateOfferStatus } from "@/lib/messagesClient";
+import { fetchOffers, updateOfferStatus, Offer } from "@/lib/messagesClient";
 
-type OfferWithThread = {
-  id: string;
-  amount: number;
-  status: string;
-  message: string | null;
-  counter_amount: number | null;
-  counter_message: string | null;
-  created_at: string;
-  expires_at: string | null;
-  listing_id: string;
-  buyer_id: string;
-  buyer_name: string;
-  buyer_avatar: string | null;
-  thread_id: string | null;
-  listing_title: string | null;
-  listing_price: number | null;
-  listing_image: string | null;
-};
-
-type RawOffer = {
-  id: string;
-  amount: number;
-  status: string;
-  message: string | null;
-  counter_amount: number | null;
-  counter_message: string | null;
-  created_at: string;
-  expires_at: string | null;
-  listing_id: string;
-  starter: string;
-};
-
-type ListingData = {
-  id: string;
-  title: string;
-  price: number;
-  images: string[] | null;
-};
-
-type ProfileData = {
-  id: string;
-  name: string;
-  avatar: string | null;
-};
-
-type ThreadData = {
-  id: string;
-  participant_1_id: string;
-  participant_2_id: string;
-  listing_ref: string;
+type OfferWithThread = Offer & {
+  buyerName?: string;
+  buyerAvatar?: string | null;
 };
 
 export default function OffersInbox() {
@@ -66,120 +19,29 @@ export default function OffersInbox() {
   async function loadOffersWithThreads() {
       try {
         const supabase = supabaseBrowser();
-        
-        // Get current user
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // First, get listing IDs owned by current user
-        const { data: userListings } = await supabase
-          .from("listings")
-          .select("id")
-          .eq("user_id", user.id);
+        const allOffers = await fetchOffers();
+        const incoming = allOffers.filter((o) => o.recipientId === user.id);
 
-        if (!userListings || userListings.length === 0) {
-          setOffers([]);
-          setLoading(false);
-          return;
+        const buyerIds = Array.from(new Set(incoming.map((o) => o.starterId).filter(Boolean)));
+        let profileMap = new Map<string, { name?: string; avatar?: string | null }>();
+        if (buyerIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, name, avatar")
+            .in("id", buyerIds);
+          if (profiles) profileMap = new Map(profiles.map((p: any) => [p.id, p]));
         }
 
-        const listingIds = userListings.map(l => l.id);
+        const enriched = incoming.map((o) => ({
+          ...o,
+          buyerName: profileMap.get(o.starterId)?.name || "Unknown",
+          buyerAvatar: profileMap.get(o.starterId)?.avatar || null,
+        }));
 
-        // Get offers on those listings
-        const { data: offersData, error: offersError } = await supabase
-          .from("offers")
-          .select(`
-            id,
-            amount,
-            status,
-            message,
-            counter_amount,
-            counter_message,
-            created_at,
-            expires_at,
-            listing_id,
-            starter
-          `)
-          .in("listing_id", listingIds)
-          .order("created_at", { ascending: false });
-
-        if (offersError) {
-          console.error("[OffersInbox] Error loading offers:", offersError);
-          return;
-        }
-
-        if (!offersData || offersData.length === 0) {
-          setOffers([]);
-          setLoading(false);
-          return;
-        }
-
-        // Get listing details for these offers
-        const offerListingIds = [...new Set(offersData.map((o: RawOffer) => o.listing_id))];
-        const { data: listingsData } = await supabase
-          .from("listings")
-          .select("id, title, price, images")
-          .in("id", offerListingIds);
-
-        const listingsMap = new Map<string, ListingData>(
-          (listingsData || []).map(l => [l.id, l])
-        );
-
-        // Get buyer profiles
-        const buyerIds = [...new Set(offersData.map((o: RawOffer) => o.starter))];
-        const { data: profilesData } = await supabase
-          .from("profiles")
-          .select("id, name, avatar")
-          .in("id", buyerIds);
-
-        const profilesMap = new Map<string, ProfileData>(
-          (profilesData || []).map(p => [p.id, p])
-        );
-
-        // Get threads for these listings and buyers
-        const { data: threadsData } = await supabase
-          .from("threads")
-          .select("id, participant_1_id, participant_2_id, listing_ref")
-          .or(`participant_1_id.eq.${user.id},participant_2_id.eq.${user.id}`)
-          .in("listing_ref", offersData.map((o: RawOffer) => o.listing_id));
-
-        const threadsMap = new Map<string, string>(
-          (threadsData || []).map((t: ThreadData) => {
-            const otherId = t.participant_1_id === user.id ? t.participant_2_id : t.participant_1_id;
-            return [`${otherId}-${t.listing_ref}`, t.id];
-          })
-        );
-
-        // Combine data
-        const enrichedOffers: OfferWithThread[] = offersData.map((offer: RawOffer) => {
-          const buyer = profilesMap.get(offer.starter);
-          const listing = listingsMap.get(offer.listing_id);
-          const threadKey = `${offer.starter}-${offer.listing_id}`;
-          const threadId = threadsMap.get(threadKey);
-          const images = listing?.images;
-          const firstImage = Array.isArray(images) && images.length > 0 ? images[0] : null;
-          
-          return {
-            id: offer.id,
-            amount: offer.amount,
-            status: offer.status,
-            message: offer.message,
-            counter_amount: offer.counter_amount,
-            counter_message: offer.counter_message,
-            created_at: offer.created_at,
-            expires_at: offer.expires_at,
-            listing_id: offer.listing_id,
-            buyer_id: offer.starter,
-            buyer_name: buyer?.name || "Unknown",
-            buyer_avatar: buyer?.avatar || null,
-            thread_id: threadId || null,
-            listing_title: listing?.title || null,
-            listing_price: listing?.price || null,
-            listing_image: firstImage,
-          };
-        });
-
-        setOffers(enrichedOffers);
+        setOffers(enriched);
       } catch (err) {
         console.error("[OffersInbox] Unexpected error:", err);
       } finally {
@@ -201,10 +63,13 @@ export default function OffersInbox() {
         return <Clock size={16} className="text-yellow-600" />;
       case "accepted":
         return <CheckCircle size={16} className="text-green-600" />;
+      case "declined":
       case "rejected":
         return <XCircle size={16} className="text-red-600" />;
       case "countered":
         return <TrendingUp size={16} className="text-blue-600" />;
+      case "withdrawn":
+        return <XCircle size={16} className="text-gray-500" />;
       default:
         return <Clock size={16} className="text-gray-400" />;
     }
@@ -216,10 +81,14 @@ export default function OffersInbox() {
         return "text-yellow-700 bg-yellow-50 border-yellow-200";
       case "accepted":
         return "text-green-700 bg-green-50 border-green-200";
+      case "declined":
       case "rejected":
         return "text-red-700 bg-red-50 border-red-200";
       case "countered":
         return "text-blue-700 bg-blue-50 border-blue-200";
+      case "withdrawn":
+      case "expired":
+        return "text-gray-700 bg-gray-50 border-gray-200";
       default:
         return "text-gray-700 bg-gray-50 border-gray-200";
     }
@@ -256,9 +125,7 @@ export default function OffersInbox() {
     <div className="space-y-3 p-3">
       {offers.map((offer) => {
         const isExpired = !!(offer.expires_at && new Date(offer.expires_at) < new Date());
-        const displayAmount = offer.status === "countered" && offer.counter_amount 
-          ? offer.counter_amount 
-          : offer.amount;
+        const displayAmount = offer.amountCents;
         const isPending = offer.status === "pending" || offer.status === "countered";
         const canRespond = isPending && !isExpired;
 
@@ -351,26 +218,23 @@ function OfferInboxCard({
   return (
     <div className={`p-3 rounded-lg border transition ${getStatusColor(offer.status)}`}>
       {/* Listing Preview with Image */}
-      {offer.listing_image && (
+      {offer.listingImage && (
         <Link 
-          href={`/listing/${offer.listing_id}`}
+          href={`/listing/${offer.listingId}`}
           className="flex items-center gap-3 mb-3 pb-3 border-b border-current border-opacity-20 hover:bg-white hover:bg-opacity-30 transition-colors rounded -mx-1 px-1 py-1"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={offer.listing_image}
-            alt={offer.listing_title || "Listing"}
+            src={offer.listingImage}
+            alt={offer.listingTitle || "Listing"}
             className="w-16 h-16 object-cover rounded border border-current border-opacity-30 shrink-0"
           />
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium opacity-75 mb-0.5">Listing:</p>
-            <p className="text-sm font-semibold truncate mb-1">{offer.listing_title}</p>
-            {offer.listing_price && (
-              <div className="flex items-center gap-2 text-xs">
-                <span className="line-through opacity-60">£{(offer.listing_price / 100).toFixed(2)}</span>
-                <span className="font-bold text-base">£{(displayAmount / 100).toFixed(2)}</span>
-              </div>
-            )}
+            <p className="text-sm font-semibold truncate mb-1">{offer.listingTitle}</p>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="font-bold text-base">£{(displayAmount / 100).toFixed(2)}</span>
+            </div>
           </div>
         </Link>
       )}
@@ -378,23 +242,23 @@ function OfferInboxCard({
       {/* Buyer Info */}
       <div className="flex items-start gap-3 mb-2">
         <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-white shrink-0 bg-gray-100">
-          {offer.buyer_avatar ? (
+          {offer.buyerAvatar ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={offer.buyer_avatar}
-              alt={displayName(offer.buyer_name)}
+              src={offer.buyerAvatar}
+              alt={displayName(offer.buyerName || "Buyer")}
               className="w-full h-full object-cover"
             />
           ) : (
             <div className="w-full h-full bg-yellow-500 flex items-center justify-center text-black font-bold text-xs">
-              {(offer.buyer_name || "?").slice(0, 2).toUpperCase()}
+              {(offer.buyerName || "?").slice(0, 2).toUpperCase()}
             </div>
           )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-sm font-semibold text-gray-900 truncate">
-              {displayName(offer.buyer_name)}
+              {displayName(offer.buyerName || "Buyer")}
             </span>
             {getStatusIcon(offer.status)}
           </div>
@@ -471,10 +335,10 @@ function OfferInboxCard({
       )}
 
       {/* View Conversation Button */}
-      {offer.thread_id && (
+      {offer.threadId && (
         <button
           type="button"
-          onClick={() => alert("Messaging feature is temporarily unavailable.")}
+          onClick={() => alert("Conversation view coming soon")}
           className="flex items-center justify-center gap-2 w-full mt-2 px-3 py-2 bg-white text-gray-900 rounded-lg text-sm font-medium hover:bg-gray-50 transition border border-gray-300"
         >
           <MessageSquare size={16} />
