@@ -359,14 +359,13 @@ export default function OrdersPage() {
                     </button>
                   )}
                   {order.order_items.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => alert("Messaging feature is temporarily unavailable.")}
+                    <Link
+                      href="/messages"
                       className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                     >
                       <MessageCircle size={16} />
                       Contact Seller
-                    </button>
+                    </Link>
                   )}
                 </div>
               </div>

@@ -69,7 +69,8 @@ export default function ListingActions({
       return setError("Enter a valid amount greater than £0.");
     }
     closeOffer();
-    alert("Messaging feature is temporarily unavailable. Please try again later.");
+    // Redirect to messages where offer can be made through proper flow
+    router.push("/messages");
   };
 
   // ---- Button style tokens (higher contrast) ----
@@ -99,7 +100,13 @@ export default function ListingActions({
         {/* Message seller — DARK for contrast */}
         <button
           type="button"
-          onClick={() => alert("Messaging feature is temporarily unavailable.")}
+          onClick={() => {
+            if (!sellerId) {
+              alert("Unable to message seller - seller ID not available.");
+              return;
+            }
+            router.push("/messages");
+          }}
           className={btnMessage}
           aria-label={`Message ${sellerName}`}
         >

@@ -38,8 +38,13 @@ export default function ProfileActions({
   }
 
   async function handleMessage() {
-    alert("Messaging feature temporarily disabled");
-    setIsLoading(false);
+    if (!me) {
+      router.push(`/auth/login?next=/profile/${encodeURIComponent(toUsername)}`);
+      return;
+    }
+    
+    // Direct to messages page - conversation will be created when user sends first message
+    router.push("/messages");
   }
 
   return (
