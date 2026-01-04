@@ -42,12 +42,17 @@ export default function ContactSellerButton({
 
     try {
       const result = await createThread(sellerId, String(listingId));
-      const threadId = result?.thread?.id || result?.threadId;
-      console.log("[ContactSeller] Conversation ready", { threadId, isNew: result?.isNew });
-      alert("Conversation started. We'll notify the seller.");
+      const conversationId = result?.thread?.id || result?.threadId;
+      
+      if (conversationId) {
+        console.log("[ContactSeller] Navigating to conversation", { conversationId, isNew: result?.isNew });
+        router.push(`/messages/${conversationId}`);
+      } else {
+        throw new Error("Failed to get conversation ID");
+      }
     } catch (err) {
       console.error("[ContactSeller] Failed to start conversation:", err);
-      alert("Unable to start conversation. Please try again.");
+      alert(err instanceof Error ? err.message : "Unable to start conversation. Please try again.");
     }
   }
 

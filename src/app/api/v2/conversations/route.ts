@@ -30,41 +30,76 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { listingId } = body;
+    const { listingId, peerId } = body;
 
-    if (!listingId) {
-      return NextResponse.json({ error: "listingId is required" }, { status: 400 });
+    // Support both LISTING and DIRECT conversations
+    let conversationType: "LISTING" | "DIRECT" = "LISTING";
+    let buyerUserId = user.id;
+    let sellerUserId: string;
+    let listing: any = null;
+
+    if (listingId) {
+      // LISTING conversation
+      const { data: fetchedListing, error: listingError } = await supabase
+        .from("listings")
+        .select("id, seller_id, title, price, status")
+        .eq("id", listingId)
+        .single();
+
+      if (listingError || !fetchedListing) {
+        return NextResponse.json({ error: "Listing not found" }, { status: 404 });
+      }
+
+      if (fetchedListing.status !== "active") {
+        return NextResponse.json({ error: "Listing is not available" }, { status: 400 });
+      }
+
+      if (fetchedListing.seller_id === user.id) {
+        return NextResponse.json({ error: "Cannot start conversation with yourself" }, { status: 400 });
+      }
+
+      listing = fetchedListing;
+      sellerUserId = fetchedListing.seller_id;
+    } else if (peerId) {
+      // DIRECT conversation
+      conversationType = "DIRECT";
+      
+      if (peerId === user.id) {
+        return NextResponse.json({ error: "Cannot start conversation with yourself" }, { status: 400 });
+      }
+
+      // Verify peer exists
+      const { data: peerProfile, error: peerError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", peerId)
+        .single();
+
+      if (peerError || !peerProfile) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+
+      // For DIRECT conversations, normalize buyer/seller to ensure uniqueness
+      [buyerUserId, sellerUserId] = [user.id, peerId].sort();
+    } else {
+      return NextResponse.json({ error: "Either listingId or peerId is required" }, { status: 400 });
     }
-
-    // Fetch listing to determine seller
-    const { data: listing, error: listingError } = await supabase
-      .from("listings")
-      .select("id, seller_id, title, price, status")
-      .eq("id", listingId)
-      .single();
-
-    if (listingError || !listing) {
-      return NextResponse.json({ error: "Listing not found" }, { status: 404 });
-    }
-
-    if (listing.status !== "active") {
-      return NextResponse.json({ error: "Listing is not available" }, { status: 400 });
-    }
-
-    if (listing.seller_id === user.id) {
-      return NextResponse.json({ error: "Cannot start conversation with yourself" }, { status: 400 });
-    }
-
-    const buyerUserId = user.id;
-    const sellerUserId = listing.seller_id;
 
     // Check if conversation already exists
-    const { data: existing, error: existingError } = await supabase
-      .from("conversations")
-      .select("*")
-      .eq("listing_id", listingId)
-      .eq("buyer_user_id", buyerUserId)
-      .maybeSingle();
+    let query = supabase.from("conversations").select("*");
+    
+    if (conversationType === "LISTING") {
+      query = query
+        .eq("listing_id", listingId)
+        .eq("buyer_user_id", buyerUserId);
+    } else {
+      query = query
+        .eq("type", "DIRECT")
+        .is("listing_id", null)
+        .or(`and(buyer_user_id.eq.${buyerUserId},seller_user_id.eq.${sellerUserId}),and(buyer_user_id.eq.${sellerUserId},seller_user_id.eq.${buyerUserId})`);
+    }
+
+    const { data: existing, error: existingError } = await query.maybeSingle();
 
     if (existingError && existingError.code !== "PGRST116") {
       console.error("[conversations] Error checking existing:", existingError);
@@ -76,16 +111,20 @@ export async function POST(req: Request) {
     }
 
     // Create new conversation
-    const context = {
-      listing_title: listing.title,
-      listing_price: listing.price,
+    const context: any = {
       created_at: new Date().toISOString(),
     };
+
+    if (listing) {
+      context.listing_title = listing.title;
+      context.listing_price = listing.price;
+    }
 
     const { data: conversation, error: createError } = await supabase
       .from("conversations")
       .insert({
-        listing_id: listingId,
+        type: conversationType,
+        listing_id: listingId || null,
         buyer_user_id: buyerUserId,
         seller_user_id: sellerUserId,
         status: "ACTIVE",
@@ -100,14 +139,24 @@ export async function POST(req: Request) {
     }
 
     // Create initial system message
+    const systemMessage = conversationType === "LISTING" && listing
+      ? `Conversation started about ${listing.title}`
+      : "Conversation started";
+
+    const messageMetadata: any = { conversation_type: conversationType };
+    if (listing) {
+      messageMetadata.listing_id = listingId;
+      messageMetadata.listing_title = listing.title;
+    }
+
     const { error: messageError } = await supabase
       .from("messages_v2")
       .insert({
         conversation_id: conversation.id,
         sender_user_id: null, // system message
         type: "SYSTEM",
-        body: `Conversation started about ${listing.title}`,
-        metadata: { listing_id: listingId, listing_title: listing.title },
+        body: systemMessage,
+        metadata: messageMetadata,
       });
 
     if (messageError) {

@@ -121,11 +121,21 @@ async function apiFetch<T>(path: string, opts: RequestInit = {}): Promise<T> {
 }
 
 export async function createThread(peerId: string, listingRef?: string | null) {
-  if (!listingRef || !uuidRegex.test(listingRef)) throw new Error("listingRef is required for v2 conversations");
+  const body: any = {};
+  
+  if (listingRef && uuidRegex.test(listingRef)) {
+    // LISTING conversation
+    body.listingId = listingRef;
+  } else if (peerId && uuidRegex.test(peerId)) {
+    // DIRECT conversation
+    body.peerId = peerId;
+  } else {
+    throw new Error("Valid peerId or listingRef is required");
+  }
   
   const data = await apiFetch<{ conversation: any; isNew?: boolean }>("/api/v2/conversations", {
     method: "POST",
-    body: JSON.stringify({ listingId: listingRef }),
+    body: JSON.stringify(body),
   });
   
   // Map v2 response to legacy format for compatibility

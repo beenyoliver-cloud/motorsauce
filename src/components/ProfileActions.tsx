@@ -42,9 +42,32 @@ export default function ProfileActions({
       router.push(`/auth/login?next=/profile/${encodeURIComponent(toUsername)}`);
       return;
     }
-    
-    // Direct to messages page - conversation will be created when user sends first message
-    router.push("/messages");
+
+    if (!initialUserId) {
+      alert("Unable to start conversation - user ID not available.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Import createThread dynamically
+      const { createThread } = await import("@/lib/messagesClient");
+      
+      // Create or get existing DIRECT conversation with this user
+      const result = await createThread(initialUserId, null);
+      const conversationId = result?.threadId || result?.thread?.id;
+      
+      if (conversationId) {
+        router.push(`/messages/${conversationId}`);
+      } else {
+        throw new Error("Failed to create conversation");
+      }
+    } catch (err) {
+      console.error("[ProfileActions] Failed to start conversation:", err);
+      alert(err instanceof Error ? err.message : "Failed to start conversation. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
