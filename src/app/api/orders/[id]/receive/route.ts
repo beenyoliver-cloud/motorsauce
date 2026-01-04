@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 
 /**
  * POST /api/orders/:id/receive
- * Buyer confirms item received. This is the trigger to release funds (escrow).
+ * Buyer confirms item received. This is the trigger to release held funds.
  */
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {

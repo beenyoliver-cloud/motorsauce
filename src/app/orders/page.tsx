@@ -296,7 +296,7 @@ export default function OrdersPage() {
                   </div>
                 </div>
 
-                {/* Fulfillment / Escrow */}
+                {/* Fulfillment / Payment holding */}
                 <div className="mb-4 rounded-md border border-gray-200 bg-gray-50 p-3 text-sm text-gray-800">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="font-semibold">Delivery status</div>

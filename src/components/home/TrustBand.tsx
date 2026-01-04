@@ -1,5 +1,5 @@
 const highlights = [
-  { label: "Payment protected", detail: "Escrow until delivery", tone: "from-emerald-500/10 via-emerald-500/5 to-transparent" },
+  { label: "Payment protected", detail: "Payments held until approval", tone: "from-emerald-500/10 via-emerald-500/5 to-transparent" },
   { label: "Seller verified", detail: "ID + business checks", tone: "from-blue-500/10 via-blue-500/5 to-transparent" },
   { label: "Returns & disputes", detail: "Humans review every case", tone: "from-amber-500/10 via-amber-500/5 to-transparent" },
 ];
@@ -21,7 +21,7 @@ export default function TrustBand() {
             <div className="flex-1 space-y-2">
               <p className="text-xs uppercase tracking-[0.4em] text-white/70">Trust & protection</p>
               <h3 className="text-2xl sm:text-3xl font-black">Confidence built-in for every deal.</h3>
-              <p className="text-sm text-white/80">Escrowed payments, verified sellers, and humans on support when you need them.</p>
+              <p className="text-sm text-white/80">Payments held until approval, verified sellers, and humans on support when you need them.</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <a href="/about" className="px-4 py-2 rounded-full bg-white text-slate-900 font-semibold text-sm hover:translate-y-0.5 transition">

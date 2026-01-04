@@ -234,7 +234,7 @@ export default function SellPage() {
             </p>
             <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-600">
               <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1">
-                • Secure payments via escrow
+                • Secure payments held until approval
               </span>
               <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1">
                 • Buyer chats stay in one inbox

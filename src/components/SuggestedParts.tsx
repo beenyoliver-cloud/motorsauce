@@ -147,7 +147,7 @@ export default function SuggestedParts({ limit = 12 }: Props) {
 
       {filters.map((filter) => {
         const list = (listingsByFilter.get(filter.id) || []).slice(0, 6);
-        if (list.length === 0 || list.length <= 5) return null;
+        if (list.length === 0) return null;
 
         return (
           <section key={filter.id} className="space-y-3">
@@ -163,7 +163,7 @@ export default function SuggestedParts({ limit = 12 }: Props) {
 
             {/* Mobile: horizontal scroll, Desktop: fixed grid of 5 */}
             <div className="overflow-x-auto scrollbar-hide md:overflow-visible">
-              <div className="flex gap-4 md:grid md:grid-cols-5">
+              <div className="flex gap-6 md:grid md:grid-cols-5 md:gap-6">
                 {list.slice(0, 5).map((p) => (
                   <article
                     key={`${filter.id}-${p.id}`}

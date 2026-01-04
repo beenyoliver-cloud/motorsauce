@@ -919,7 +919,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               </div>
             </div>
             <ul className="space-y-2 text-sm text-gray-700">
-              <li>• Payments stay in escrow until you confirm delivery or raise a dispute.</li>
+              <li>• Payments held until you confirm delivery or raise a dispute.</li>
               <li>• We monitor chats for off-platform payment requests and intervene on repeat offenders.</li>
               <li>
                 • Use the <span className="font-semibold">Report listing</span> button above if anything feels off—the trust desk reviews reports within hours.
@@ -1150,7 +1150,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               </div>
             </div>
             <ul className="mt-3 space-y-2 text-sm text-gray-700">
-              <li>• Payments stay in escrow until you confirm delivery or raise a dispute.</li>
+              <li>• Payments held until you confirm delivery or raise a dispute.</li>
               <li>• We monitor chats for off-platform payment requests and intervene on repeat offenders.</li>
               <li>
                 • Use the <span className="font-semibold">Report listing</span> button above if anything feels off—the trust desk reviews reports within hours.
