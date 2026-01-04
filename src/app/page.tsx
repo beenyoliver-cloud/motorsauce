@@ -25,20 +25,38 @@ export default function Home() {
           </Suspense>
         </div>
 
-        {/* Activity + ticker, storefront-style */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-4">
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg sm:text-xl font-semibold">Trending now</h2>
-              <Link href="/search" className="text-sm font-semibold text-slate-700 hover:text-slate-900">
-                View all →
-              </Link>
-            </div>
-            <LiveActivityFeed />
+        {/* Quick links */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Link
+            href="/search"
+            className="rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 transition shadow-sm px-4 py-3 text-sm font-semibold text-slate-800"
+          >
+            Browse all parts →
+          </Link>
+          <Link
+            href="/categories"
+            className="rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 transition shadow-sm px-4 py-3 text-sm font-semibold text-slate-800"
+          >
+            Shop by category →
+          </Link>
+          <Link
+            href="/sell"
+            className="rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 transition shadow-sm px-4 py-3 text-sm font-semibold text-amber-900"
+          >
+            List an item →
+          </Link>
+        </div>
+
+        {/* Activity + ticker in a single card */}
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg sm:text-xl font-semibold">Trending right now</h2>
+            <Link href="/search" className="text-sm font-semibold text-slate-700 hover:text-slate-900">
+              View all →
+            </Link>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <JustSoldTicker />
-          </div>
+          <JustSoldTicker />
+          <LiveActivityFeed />
         </div>
 
         {/* Shop by intent */}
@@ -75,7 +93,6 @@ export default function Home() {
         <div className="space-y-4">
           <FeaturedRow title="Fresh this week" variant="new" />
           <FeaturedRow title="Deals under £250" variant="under250" />
-          <FeaturedRow title="Budget picks under £20" variant="under20" />
         </div>
 
         {/* Popular sellers */}
