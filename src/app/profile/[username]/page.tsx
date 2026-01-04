@@ -55,7 +55,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
     const baseUrl =
       process.env.NEXT_PUBLIC_SITE_URL ||
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-    const fullUrl = `${baseUrl}/api/seller-profile?name=${encodeURIComponent(displayName)}`;
+    const fullUrl = `${baseUrl}/api/seller-profile?name=${encodeURIComponent(displayName)}&t=${Date.now()}`;
     const res = await fetch(fullUrl, { cache: "no-store" });
     if (res.ok) {
       sellerMetrics = await res.json();

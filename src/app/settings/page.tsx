@@ -166,18 +166,25 @@ function SettingsContent() {
       }
 
       // Update profiles table with ALL fields including name
+      const updatePayload = {
+        name: name.trim(),
+        email: email.trim(),
+        avatar: avatar.trim() || null,
+        background_image: backgroundImage.trim() || null,
+        about: about.trim() || null,
+      };
+      console.log("[Settings] Updating profile with:", { userId: user.id, payload: updatePayload });
+      
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ 
-          name: name.trim(),
-          email: email.trim(),
-          avatar: avatar.trim() || null,
-          background_image: backgroundImage.trim() || null,
-          about: about.trim() || null,
-        })
+        .update(updatePayload)
         .eq('id', user.id);
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error("[Settings] Profile update error:", profileError);
+        throw profileError;
+      }
+      console.log("[Settings] Profile updated successfully");
 
       if (nameChanged && typeof window !== 'undefined') {
         localStorage.setItem(lastNameChangeKey, new Date().toISOString());

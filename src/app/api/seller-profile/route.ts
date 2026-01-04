@@ -11,7 +11,17 @@ const serviceKey =
   "";
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
+// Disable caching for this endpoint to ensure fresh profile data
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(req: NextRequest) {
+  // Set headers to prevent caching
+  const headers = {
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  };
   try {
     const { searchParams } = new URL(req.url);
     const name = searchParams.get("name");
@@ -60,12 +70,24 @@ export async function GET(req: NextRequest) {
 
     if (error || !profile) {
       console.error("[seller-profile] Profile fetch error", { name, error });
-      return NextResponse.json({ error: "Profile not found", code: "PROFILE_NOT_FOUND" }, { status: 404 });
+      if (error) {
+        console.error("[seller-profile] Error details:", {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+        });
+      }
+      return NextResponse.json({ error: "Profile not found", code: "PROFILE_NOT_FOUND" }, { status: 404, headers });
     }
 
-    return NextResponse.json({ ...profile, source: usingService ? "service" : "anon" });
+    console.log("[seller-profile] Profile fetched successfully", {
+      name,
+      about: profile.about,
+      id: profile.id,
+    });
+    return NextResponse.json({ ...profile, source: usingService ? "service" : "anon" }, { headers });
   } catch (error) {
     console.error("[seller-profile] Unhandled error:", error);
-    return NextResponse.json({ error: "Internal server error", code: "UNHANDLED" }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error", code: "UNHANDLED" }, { status: 500, headers });
   }
 }
