@@ -59,12 +59,12 @@ export default function Home() {
           <LiveActivityFeed />
         </div>
 
-        {/* Shop by intent */}
+        {/* Shop by need */}
         <section className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-5">
           <div className="flex items-center justify-between mb-3 sm:mb-4">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500 font-semibold">Shop by intent</p>
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Find the right part, quickly</h2>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500 font-semibold">Shop by need</p>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Choose a path and we'll surface the right parts</h2>
             </div>
             <Link href="/search" className="text-sm font-semibold text-slate-700 hover:text-slate-900">
               Browse all →
@@ -73,20 +73,20 @@ export default function Home() {
           <SuggestedParts limit={8} />
         </section>
 
-        {/* Categories + sell CTA */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1.25fr_0.95fr] gap-4">
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-5">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h2 className="text-xl font-bold text-slate-900">Browse by category</h2>
-              <Link href="/categories" className="text-sm font-semibold text-slate-700 hover:text-slate-900">
-                View all →
-              </Link>
-            </div>
-            <CategoryTiles />
+        {/* Categories */}
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-5">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 className="text-xl font-bold text-slate-900">Browse by category</h2>
+            <Link href="/categories" className="text-sm font-semibold text-slate-700 hover:text-slate-900">
+              View all →
+            </Link>
           </div>
-          <div className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 via-white to-white shadow-sm p-4 sm:p-5">
-            <SellCta />
-          </div>
+          <CategoryTiles />
+        </div>
+
+        {/* Sell CTA */}
+        <div className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 via-white to-white shadow-sm p-4 sm:p-5">
+          <SellCta />
         </div>
 
         {/* Featured rows, marketplace spacing */}
