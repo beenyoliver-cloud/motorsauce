@@ -10,6 +10,7 @@ import BusinessStorefrontWrapper from "@/components/business/BusinessStorefrontW
 import FollowButton from "@/components/profile/FollowButton";
 import FollowStats from "@/components/profile/FollowStats";
 import SellerRating from "@/components/profile/SellerRating";
+import SellerReviewsTab from "@/components/profile/SellerReviewsTab";
 import { MapPin, Clock3 } from "lucide-react";
 import { formatJoined } from "@/lib/profileFormatting";
 
@@ -36,7 +37,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
   const { username } = await params;
   const sp = await searchParams;
   const displayName = decodeURIComponent(username);
-  const activeTab = (sp?.tab ?? "my") as "my" | "garage" | "sold";
+  const activeTab = (sp?.tab ?? "my") as "my" | "garage" | "sold" | "reviews";
   const autoEdit = sp?.edit === "1";
   const baseHref = `/profile/${encodeURIComponent(displayName)}`;
 
@@ -180,6 +181,16 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
               >
                 Sold
               </Link>
+              <Link
+                href={`${baseHref}?tab=reviews`}
+                className={`flex-1 py-4 text-center text-sm font-semibold border-b-2 transition-colors ${
+                  activeTab === "reviews"
+                    ? "border-gray-900 text-gray-900"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Reviews
+              </Link>
             </nav>
           </div>
           
@@ -188,6 +199,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
             {activeTab === "my" && <MyListingsTab sellerName={displayName} />}
             {activeTab === "garage" && !isBusinessAccount && <MyGarageCard displayName={displayName} />}
             {activeTab === "sold" && <MySoldTab sellerName={displayName} />}
+            {activeTab === "reviews" && <SellerReviewsTab sellerId={sellerMetrics.id} sellerName={displayName} />}
           </div>
         </div>
       </section>

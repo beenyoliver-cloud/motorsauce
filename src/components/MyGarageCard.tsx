@@ -158,17 +158,21 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
 
   useEffect(() => {
     if (mine) {
-      // First load from localStorage
-      setCars(loadMyCars());
+      // Load from localStorage first (this is the source of truth for the current session)
+      const localCars = loadMyCars();
+      setCars(localCars);
       setSelectedId(getSelectedCarId());
       setPubState(isPublic());
       
-      // Then try to sync from database (for logged-in users)
-      loadGarageFromDatabase().then((dbCars) => {
-        if (dbCars && dbCars.length > 0) {
-          setCars(dbCars);
-        }
-      });
+      // For logged-in users, only load from database if localStorage is empty
+      // This preserves local changes even if user logs out and back in
+      if (localCars.length === 0) {
+        loadGarageFromDatabase().then((dbCars) => {
+          if (dbCars && dbCars.length > 0) {
+            setCars(dbCars);
+          }
+        });
+      }
       
       const onGarage = () => {
         setCars(loadMyCars());
