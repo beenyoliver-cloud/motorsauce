@@ -56,7 +56,7 @@ export default async function FeaturedRow({
         </div>
       ) : (
         <div className="overflow-x-auto md:overflow-visible">
-          <div className="flex gap-4 md:grid md:grid-cols-5 md:gap-5">
+          <div className="flex gap-4 md:grid md:grid-cols-5 md:gap-8">
             {items.slice(0, 5).map((p) => (
               <ListingCard
                 key={p.id}
