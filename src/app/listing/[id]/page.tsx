@@ -762,7 +762,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
   }
 
   return (
-    <section className="mx-auto max-w-6xl px-3 sm:px-4 py-4 sm:py-8">
+    <section className="mx-auto max-w-6xl px-3 sm:px-4 py-4 sm:py-8 space-y-4">
       {/* Track recently viewed (client side) */}
       {/* @ts-ignore Server -> Client component mount */}
       <TrackRecentlyViewed id={listing.id} />
@@ -789,6 +789,21 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
         ]}
         className="mb-4"
       />
+
+      <div className="mb-3 flex flex-wrap gap-2 sm:gap-3 rounded-2xl bg-white shadow-sm border border-slate-200 px-4 py-3 sm:py-4">
+        <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-100 px-3 py-1 text-xs font-semibold">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          Buyer protection on every checkout
+        </div>
+        <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 text-blue-800 border border-blue-100 px-3 py-1 text-xs font-semibold">
+          <Clock3 className="h-3.5 w-3.5" />
+          Seller responds in under {formatResponseTime(sellerInsights?.avgResponseTimeMinutes) || "a day"}
+        </div>
+        <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 text-amber-800 border border-amber-100 px-3 py-1 text-xs font-semibold">
+          <ShoppingCart className="h-3.5 w-3.5" />
+          Complete checkout to reserve this part
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-3">
         {/* ---------- Left column: Gallery + Description + Details (desktop) ---------- */}
@@ -946,8 +961,13 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
-          {/* Price */}
-          <div className="text-2xl sm:text-3xl font-extrabold text-gray-900">{listing.price}</div>
+          {/* Price + urgency */}
+          <div className="flex items-center gap-3">
+            <div className="text-3xl sm:text-4xl font-extrabold text-gray-900">{listing.price}</div>
+            <span className="rounded-full bg-green-50 text-green-800 border border-green-200 px-3 py-1 text-xs font-semibold">
+              In stock • ships fast
+            </span>
+          </div>
 
           {/* Description (mobile only) */}
           {listing.description && (
@@ -958,14 +978,17 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
           )}
 
           {/* Purchase Options (compact) */}
-          <div className="rounded-sm border border-gray-200 bg-white p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-gray-600" />
-              <span className="text-xs text-gray-600">Buyer protection active</span>
+          <div className="rounded-2xl border border-amber-100 bg-white shadow-sm p-4 sm:p-5 space-y-3">
+            <div className="flex items-center justify-between gap-2 text-xs text-gray-700">
+              <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-100 px-3 py-1 font-semibold">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Protected checkout
+              </div>
+              <span>Free to message seller before paying</span>
             </div>
             <Link
               href={`/basket/add?listing=${encodeURIComponent(String(listing.id))}&redirect=checkout`}
-              className="flex w-full items-center justify-center gap-2 rounded-sm bg-yellow-500 px-4 py-3 text-sm font-semibold text-black transition hover:bg-yellow-400"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-yellow-500 px-4 py-3 text-base font-semibold text-black transition hover:bg-yellow-400"
             >
               <ShoppingCart className="h-4 w-4" />
               Buy now
@@ -973,7 +996,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             <div className="grid grid-cols-2 gap-2">
               <Link
                 href={`/basket/add?listing=${encodeURIComponent(String(listing.id))}`}
-                className="inline-flex items-center justify-center gap-1.5 rounded-sm border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-900 hover:bg-gray-50"
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-xs font-semibold text-gray-900 hover:bg-gray-50"
               >
                 <PlusCircle className="h-3.5 w-3.5" />
                 Add to basket
@@ -983,7 +1006,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
                 sellerId={listing.sellerId}
                 listingId={listing.id}
                 listingTitle={listing.title}
-                className="justify-center rounded-sm bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-black"
+                className="justify-center rounded-lg bg-gray-900 px-3 py-2.5 text-xs font-semibold text-white hover:bg-black"
               />
             </div>
             <MakeOfferButtonNew
@@ -993,8 +1016,22 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               listingTitle={listing.title}
               listingImage={gallery[0] || listing.image}
               listingPrice={Number(String(listing.price).replace(/[^\d.]/g, "")) || 0}
-              className="w-full justify-center rounded-sm border border-yellow-500 bg-white text-xs font-semibold text-gray-900 hover:bg-yellow-50"
+              className="w-full justify-center rounded-lg border border-yellow-500 bg-white text-sm font-semibold text-gray-900 hover:bg-yellow-50"
             />
+            <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-xs text-gray-700 space-y-1">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-3.5 w-3.5 text-gray-600" />
+                Funds held until delivery confirmed
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock3 className="h-3.5 w-3.5 text-gray-600" />
+                Seller replies in {formatResponseTime(sellerInsights?.avgResponseTimeMinutes) || "under a day"}
+              </div>
+              <div className="flex items-center gap-2">
+                <ListChecks className="h-3.5 w-3.5 text-gray-600" />
+                Ask for OEM/VIN in chat before paying
+              </div>
+            </div>
           </div>
 
           {/* Save and Report (moved outside purchase box) */}
