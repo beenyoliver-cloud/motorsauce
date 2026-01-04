@@ -37,37 +37,44 @@ export default async function FeaturedRow({
   const activeCar = await readActiveCarPreference();
   const items = pickVariant(allListings, variant, limit, activeCar);
 
-  if (!items.length || items.length <= 5) return null;
-
   return (
-    <section className="mb-10">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-black tracking-tight">{title}</h2>
-        <Link href="/search" className="text-sm text-gray-700 hover:text-yellow-600 inline-flex items-center gap-1 transition-colors duration-300">
+    <section className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-5">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <h2 className="text-xl font-bold text-slate-900 tracking-tight">{title}</h2>
+        <Link
+          href="/search"
+          className="text-sm text-slate-700 hover:text-slate-900 inline-flex items-center gap-1 transition-colors duration-200"
+        >
           View all
           <span aria-hidden>→</span>
         </Link>
       </div>
-      {/* Mobile: horizontal scroll, Desktop: fixed grid of 5 */}
-      <div className="overflow-x-auto md:overflow-visible">
-        <div className="flex gap-6 md:grid md:grid-cols-5 md:gap-6">
-          {items.slice(0, 5).map((p) => (
-            <ListingCard
-              key={p.id}
-              id={p.id}
-              title={p.title}
-              price={p.price}
-              image={p.image}
-              make={p.make}
-              model={p.model}
-              year={p.year}
-              createdAt={p.createdAt}
-              tight
-              className="min-w-[120px] max-w-[140px] sm:min-w-[140px] sm:max-w-[160px] md:min-w-0 md:max-w-none"
-            />
-          ))}
+
+      {items.length < 3 ? (
+        <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+          Not many listings here yet. Check back soon or browse all.
         </div>
-      </div>
+      ) : (
+        <div className="overflow-x-auto md:overflow-visible">
+          <div className="flex gap-4 md:grid md:grid-cols-5 md:gap-5">
+            {items.slice(0, 5).map((p) => (
+              <ListingCard
+                key={p.id}
+                id={p.id}
+                title={p.title}
+                price={p.price}
+                image={p.image}
+                make={p.make}
+                model={p.model}
+                year={p.year}
+                createdAt={p.createdAt}
+                tight
+                className="min-w-[140px] max-w-[160px] sm:min-w-[150px] sm:max-w-[180px] md:min-w-0 md:max-w-none"
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 }

@@ -73,15 +73,9 @@ export default function Home() {
 
         {/* Featured rows, marketplace spacing */}
         <div className="space-y-4">
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-5">
-            <FeaturedRow title="Fresh this week" variant="new" />
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-5">
-            <FeaturedRow title="Deals under £250" variant="under250" />
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-5">
-            <FeaturedRow title="Budget picks under £20" variant="under20" />
-          </div>
+          <FeaturedRow title="Fresh this week" variant="new" />
+          <FeaturedRow title="Deals under £250" variant="under250" />
+          <FeaturedRow title="Budget picks under £20" variant="under20" />
         </div>
 
         {/* Popular sellers */}
