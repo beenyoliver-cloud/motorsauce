@@ -52,6 +52,7 @@ export default function MobileTabBar({ currentUser }: { currentUser?: string | n
     { href: "/", label: "Home", icon: <Home size={20} /> , exact: true },
     { href: "/search", label: "Search", icon: <Search size={20} /> },
     { href: "/sell", label: "Sell", icon: <PlusCircle size={20} /> },
+    { href: "/messages", label: "Msgs", icon: <MessageSquare size={20} />, badge: unread },
     { href: currentUser ? `/profile/${encodeURIComponent(currentUser)}` : "/auth/login", label: "Me", icon: <User size={20} /> },
   ];
 

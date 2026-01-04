@@ -127,10 +127,33 @@ export default function Header() {
 
     async function fetchUnreadImmediate() {
       try {
-        // Messaging temporarily disabled
-        setUnread(0);
+        if (!user) {
+          setUnread(0);
+          return;
+        }
+
+        // Fetch from v2 unread count API
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          setUnread(0);
+          return;
+        }
+
+        const res = await fetch("/api/v2/conversations/unread", {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setUnread(data.count || 0);
+        } else {
+          setUnread(0);
+        }
       } catch (err) {
         console.error("[Header] Error fetching unread:", err);
+        setUnread(0);
       }
     }
 
@@ -151,36 +174,20 @@ export default function Header() {
 
     // Subscribe to real-time changes for immediate updates
     const channel = supabase
-      .channel("header-unread")
+      .channel("header-unread-v2")
       .on(
         "postgres_changes",
-        { event: "DELETE", schema: "public", table: "thread_read_status" },
-        (payload) => {
-          console.log("[Header] Real-time: thread marked UNREAD (DELETE)", payload);
-          fetchUnread();
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "thread_read_status" },
-        (payload) => {
-          console.log("[Header] Real-time: thread marked READ (INSERT)", payload);
-          fetchUnread();
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "thread_read_status" },
-        (payload) => {
-          console.log("[Header] Real-time: thread read status UPDATED (UPDATE)", payload);
-          fetchUnread();
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages" },
+        { event: "INSERT", schema: "public", table: "messages_v2" },
         (payload) => {
           console.log("[Header] Real-time: new message inserted", payload);
+          fetchUnread();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "conversations" },
+        (payload) => {
+          console.log("[Header] Real-time: conversation updated", payload);
           fetchUnread();
         }
       )
@@ -224,6 +231,7 @@ export default function Header() {
     ["Drafts", `${profileHref}?tab=drafts`],
     ["Saved", `${profileHref}?tab=saved`],
     ["Saved Searches", "/saved-searches"],
+    ["My Messages", "/messages"],
     ["Previous Sales", "/sales"],
     ["Account Settings", "/settings"],
   ] as const;
@@ -269,9 +277,23 @@ export default function Header() {
                 <SearchBar placeholder="Search parts or sellers…" compact />
               </div>
 
-              {/* Right side: Notifications, Basket, Profile */}
+              {/* Right side: Messages, Notifications, Basket, Profile */}
               <div className="flex items-center gap-4 flex-shrink-0">
                 {isUserLoaded && user && <NotificationsDropdown />}
+                {isUserLoaded && user && (
+                  <Link
+                    href="/messages"
+                    className="relative flex items-center text-black hover:text-yellow-500 transition-colors"
+                    aria-label="Messages"
+                  >
+                    <MessageSquare size={20} />
+                    {unread > 0 && (
+                      <span className="absolute -top-2 -right-3 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[11px] font-bold min-w-[18px] h-[18px] px-1">
+                        {unread > 99 ? '99+' : unread}
+                      </span>
+                    )}
+                  </Link>
+                )}
                 <button
                   onClick={() => setCartOpen(true)}
                   className="relative flex items-center text-black hover:text-yellow-500 transition-colors"
@@ -422,6 +444,20 @@ export default function Header() {
                       className="block px-3 py-2 text-sm font-medium text-black hover:bg-yellow-50 hover:text-yellow-600 rounded"
                     >
                       Sell
+                    </Link>
+                  )}
+                  {isUserLoaded && user && (
+                    <Link
+                      href="/messages"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-between px-3 py-2 text-sm font-medium text-black hover:bg-yellow-50 hover:text-yellow-600 rounded"
+                    >
+                      <span>Messages</span>
+                      {unread > 0 && (
+                        <span className="inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-xs font-bold px-2 py-0.5">
+                          {unread > 99 ? '99+' : unread}
+                        </span>
+                      )}
                     </Link>
                   )}
                   {profileLinks.map(([name, href]) => (
