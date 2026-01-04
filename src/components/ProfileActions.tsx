@@ -39,70 +39,7 @@ export default function ProfileActions({
 
   async function handleMessage() {
     alert("Messaging feature temporarily disabled");
-    return;
-    if (!me) {
-      router.push(`/auth/login?next=/profile/${encodeURIComponent(toUsername)}`);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      let userId = initialUserId;
-      const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
-
-      // If no user ID was provided, fetch it from the API
-      if (!userId) {
-        try {
-          const res = await fetch(`/api/seller-profile?name=${encodeURIComponent(toUsername)}`);
-          if (res.ok) {
-            const data = await res.json();
-            userId = data.id;
-            if (!userId) {
-              alert("Unable to message this user - user ID not found in response. Please try again.");
-              setIsLoading(false);
-              return;
-            }
-          } else {
-            // Fallback: try direct Supabase browser query
-            try {
-              const { supabaseBrowser } = await import("@/lib/supabase");
-              const supabase = supabaseBrowser();
-              const { data, error } = await supabase
-                .from("profiles")
-                .select("id")
-                .eq("name", toUsername)
-                .single();
-              if (error || !data?.id) {
-                alert(`Unable to message this user - lookup failed (${res.status}). Please try again later.`);
-                setIsLoading(false);
-                return;
-              }
-              userId = data.id;
-            } catch (supErr) {
-              alert(`Unable to message this user - internal error. Please try again.`);
-              setIsLoading(false);
-              return;
-            }
-          }
-        } catch {
-          alert("Unable to message this user - network error. Please check your connection and try again.");
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      if (!userId || !uuidRegex.test(userId)) {
-        alert("Unable to message this user - user not found. Please refresh the page and try again.");
-        setIsLoading(false);
-        return;
-      }
-
-      alert("Messaging feature is temporarily unavailable. Please try again later.");
-      setIsLoading(false);
-    } catch (error) {
-      alert(`Unexpected error: ${error instanceof Error ? error.message : "Please try again"}`);
-      setIsLoading(false);
-    }
+    setIsLoading(false);
   }
 
   return (
