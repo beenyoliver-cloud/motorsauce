@@ -93,48 +93,95 @@ export default function LiveActivityFeed() {
   return (
     <Link 
       href={`/listing/${listingId}`}
-      className="block bg-white border border-gray-200 rounded-sm p-3 sm:p-5 hover:border-gray-300 hover:shadow-md transition-all lg:h-[var(--home-tiles-block-height)] lg:flex lg:flex-col"
+      className="block bg-white border border-gray-200 rounded-sm p-3 sm:p-4 hover:border-gray-300 hover:shadow-md transition-all"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-2 sm:mb-3">
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
-          <span className="text-xs font-semibold text-gray-500 tracking-wide uppercase">Live activity</span>
-        </div>
-        <span className="text-xs text-gray-400">{timeAgo(current.timestamp)}</span>
-      </div>
-
-      <div className="bg-gray-50 rounded-xl overflow-hidden mb-2 sm:mb-3 aspect-[16/9] sm:aspect-[5/3] flex items-center justify-center lg:aspect-auto lg:flex-1">
-        {current.image ? (
-          <img
-            src={current.image}
-            alt={current.title}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="text-center px-4 text-gray-400 text-xs">
-            Recent activity from {current.sellerName}
+      {/* Mobile/Tablet: Vertical Layout */}
+      <div className="lg:hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-xs font-semibold text-gray-500 tracking-wide uppercase">Live activity</span>
           </div>
-        )}
+          <span className="text-xs text-gray-400">{timeAgo(current.timestamp)}</span>
+        </div>
+
+        <div className="bg-gray-50 rounded-xl overflow-hidden mb-2 aspect-[16/9] flex items-center justify-center">
+          {current.image ? (
+            <img
+              src={current.image}
+              alt={current.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="text-center px-4 text-gray-400 text-xs">
+              Recent activity from {current.sellerName}
+            </div>
+          )}
+        </div>
+
+        {/* Activity message */}
+        <p className="text-xs text-gray-800 leading-snug">
+          {current.type === "sale" ? (
+            <>
+              <span className="text-green-600 font-medium">Sold: </span>
+              {current.title.length > 40 ? current.title.slice(0, 40) + "..." : current.title}
+            </>
+          ) : (
+            <>
+              New <span className="font-medium">{current.title.length > 35 ? current.title.slice(0, 35) + "..." : current.title}</span> listed
+            </>
+          )}
+        </p>
       </div>
 
-      {/* Activity message */}
-      <p className="text-xs sm:text-sm text-gray-800 leading-snug lg:line-clamp-3">
-        {current.type === "sale" ? (
-          <>
-            <span className="text-green-600 font-medium">Sold: </span>
-            {current.title.length > 40 ? current.title.slice(0, 40) + "..." : current.title}
-          </>
-        ) : (
-          <>
-            New <span className="font-medium">{current.title.length > 35 ? current.title.slice(0, 35) + "..." : current.title}</span> listed
-          </>
-        )}
-      </p>
+      {/* Desktop: Horizontal Layout */}
+      <div className="hidden lg:flex lg:items-center lg:gap-4">
+        {/* Thumbnail */}
+        <div className="flex-shrink-0 w-28 h-28 bg-gray-50 rounded-lg overflow-hidden">
+          {current.image ? (
+            <img
+              src={current.image}
+              alt={current.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+              No image
+            </div>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-xs font-semibold text-gray-500 tracking-wide uppercase">Live activity</span>
+            <span className="text-xs text-gray-400 ml-auto">{timeAgo(current.timestamp)}</span>
+          </div>
+          
+          <p className="text-sm text-gray-800 leading-relaxed line-clamp-2">
+            {current.type === "sale" ? (
+              <>
+                <span className="text-green-600 font-medium">Sold: </span>
+                {current.title}
+              </>
+            ) : (
+              <>
+                New <span className="font-medium">{current.title}</span> listed
+              </>
+            )}
+          </p>
+          
+          <p className="text-xs text-gray-500 mt-1">
+            by {current.sellerName}
+          </p>
+        </div>
+      </div>
 
       {/* Dots indicator - only show if multiple activities */}
       {activities.length > 1 && (
-        <div className="flex justify-center gap-1.5 mt-4 lg:mt-auto">
+        <div className="flex justify-center gap-1.5 mt-3">
           {activities.slice(0, Math.min(5, activities.length)).map((_, i) => (
             <span
               key={i}
