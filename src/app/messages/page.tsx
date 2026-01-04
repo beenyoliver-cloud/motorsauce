@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { fetchThreads, fetchMessages, sendMessage, markThreadRead, Thread, Message, updateOfferStatus } from "@/lib/messagesClient";
@@ -116,7 +116,7 @@ function MessageBubble({ m, onOfferUpdate }: { m: Message; onOfferUpdate: (statu
         </div>
       ) : (
         <div className="max-w-[80%] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm">
-          {m.text || m.body || "(no text)"}
+          {m.text || "(no text)"}
         </div>
       )}
       <span className="text-[11px] text-slate-400 mt-1">{formatDistanceToNow(new Date(m.createdAt), { addSuffix: true })}</span>
@@ -206,7 +206,7 @@ function MessagePane({
   );
 }
 
-export default function MessagesPage() {
+function MessagesPageInner() {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messagesById, setMessagesById] = useState<Record<string, Message[]>>({});
@@ -309,5 +309,13 @@ export default function MessagesPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-50 text-slate-700 flex items-center justify-center">Loading messages…</div>}>
+      <MessagesPageInner />
+    </Suspense>
   );
 }
