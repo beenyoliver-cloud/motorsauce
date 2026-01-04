@@ -279,7 +279,7 @@ export default function Header() {
 
               {/* Right side: Messages, Notifications, Basket, Profile */}
               <div className="flex items-center gap-4 flex-shrink-0">
-                {isUserLoaded && user && <NotificationsDropdown />}
+                {isUserLoaded && user && <NotificationsDropdown messageUnread={unread} />}
                 {isUserLoaded && user && (
                   <Link
                     href="/messages"

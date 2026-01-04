@@ -46,7 +46,7 @@ export default function ContactSellerButton({
       
       if (conversationId) {
         console.log("[ContactSeller] Navigating to conversation", { conversationId, isNew: result?.isNew });
-        router.push(`/messages/${conversationId}`);
+        router.push(`/messages?selected=${conversationId}`);
       } else {
         throw new Error("Failed to get conversation ID");
       }

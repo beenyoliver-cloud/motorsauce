@@ -16,7 +16,7 @@ type Notification = {
   created_at: string;
 };
 
-export function NotificationsDropdown() {
+export function NotificationsDropdown({ messageUnread = 0 }: { messageUnread?: number }) {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -131,6 +131,8 @@ export function NotificationsDropdown() {
     setIsOpen(false);
   }
 
+  const combinedUnread = (unreadCount || 0) + (messageUnread || 0);
+
   return (
     <div className="relative z-[85]">
       {/* Bell Icon Button */}
@@ -149,9 +151,9 @@ export function NotificationsDropdown() {
         aria-label="Notifications"
       >
         <Bell size={20} />
-        {unreadCount > 0 && (
+        {combinedUnread > 0 && (
           <span className="absolute -top-1.5 -right-2 inline-flex items-center justify-center rounded-full bg-yellow-500 text-black text-[10px] font-bold min-w-[16px] h-[16px] px-1">
-            {unreadCount > 9 ? "9+" : unreadCount}
+            {combinedUnread > 9 ? "9+" : combinedUnread}
           </span>
         )}
       </button>

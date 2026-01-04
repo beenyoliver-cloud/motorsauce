@@ -63,7 +63,7 @@ export default function MakeOfferModal({
 
       onOfferCreated?.({ threadId, offerId: offer.id });
       onClose();
-      alert("Offer sent! We'll notify the seller.");
+      window.location.href = `/messages?selected=${encodeURIComponent(threadId)}`;
     } catch (err) {
       console.error("[MakeOfferModal] Error creating offer:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
