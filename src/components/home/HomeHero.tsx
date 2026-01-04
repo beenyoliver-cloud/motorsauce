@@ -116,8 +116,8 @@ export default function HomeHero() {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white text-slate-900 p-4 sm:p-5 shadow-sm max-w-5xl mx-auto mt-2 sm:mt-4">
-      <div className="space-y-3 relative">
+    <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white text-slate-900 p-3 sm:p-5 shadow-sm max-w-5xl mx-auto mt-1 sm:mt-4">
+      <div className="space-y-2 sm:space-y-3 relative">
         <div className="flex flex-wrap items-center gap-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-gray-600">
             <Zap className="h-3.5 w-3.5 text-yellow-500" />
@@ -125,8 +125,8 @@ export default function HomeHero() {
           </div>
           <div className="text-xs font-semibold text-gray-600">eBay-inspired layout • Keep all features</div>
         </div>
-        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Find parts that fit your car—fast.</h1>
-        <p className="text-sm text-gray-600 break-words sm:whitespace-nowrap sm:overflow-hidden sm:text-ellipsis">
+        <h1 className="text-lg sm:text-2xl font-semibold tracking-tight">Find parts that fit your car—fast.</h1>
+        <p className="text-xs sm:text-sm text-gray-600 break-words sm:whitespace-nowrap sm:overflow-hidden sm:text-ellipsis">
           Enter your UK registration to filter listings by compatibility.
         </p>
 

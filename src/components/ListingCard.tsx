@@ -176,9 +176,9 @@ export default function ListingCard(props: ListingCardProps) {
         </div>
 
         {/* Content */}
-        <div className={`p-3 flex flex-col gap-2 ${tight ? "min-h-[140px]" : ""}`}>
+        <div className={`p-2 sm:p-3 flex flex-col gap-1.5 sm:gap-2 ${tight ? "min-h-[140px]" : ""}`}>
           {/* Title */}
-          <h3 className={`text-sm font-semibold text-gray-900 line-clamp-2 ${tight ? "" : "min-h-[2.5rem]"}`}>
+          <h3 className={`text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2 ${tight ? "" : "min-h-[2.5rem]"}`}>
             {title}
           </h3>
 
@@ -208,18 +208,18 @@ export default function ListingCard(props: ListingCardProps) {
           <div className="mt-1 flex items-end justify-between gap-2">
             <div className="flex flex-wrap gap-1.5">
               {utilityBadges.map((badge) => (
-                <span key={badge} className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] font-semibold text-gray-800">
+                <span key={badge} className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold text-gray-800">
                   {badge}
                 </span>
               ))}
               {riskBadges.map((badge) => (
-                <span key={badge} className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+                <span key={badge} className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold text-amber-800">
                   {badge}
                 </span>
               ))}
             </div>
             <div className="text-right">
-              <span className="block text-lg font-bold text-gray-900 leading-none">
+              <span className="block text-base sm:text-lg font-bold text-gray-900 leading-none">
                 {formatPrice(price)}
               </span>
               {hasPriceDrop && previousPrice && (
@@ -232,7 +232,7 @@ export default function ListingCard(props: ListingCardProps) {
 
           {/* Seller Info */}
           {seller && (
-            <div className="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
+            <div className="mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-gray-100 flex items-center justify-between text-[10px] sm:text-xs">
               <div className="flex items-center gap-1.5 min-w-0 flex-1">
                 <span className="text-gray-600 truncate">{seller.name || "Seller"}</span>
                 {typeof seller.rating === "number" && (

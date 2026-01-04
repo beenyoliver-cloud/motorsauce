@@ -123,9 +123,9 @@ export default function SuggestedParts({ limit = 12 }: Props) {
         if (list.length === 0) return null;
 
         return (
-          <section key={filter.id} className="space-y-3">
+          <section key={filter.id} className="space-y-2 sm:space-y-3">
             <div className="flex items-baseline justify-between">
-              <h3 className="text-base sm:text-lg font-bold text-gray-900">{filter.label}</h3>
+              <h3 className="text-sm sm:text-lg font-bold text-gray-900">{filter.label}</h3>
               <Link
                 href={`/search${filter.id === 'under100' ? '?priceMax=100' : filter.id === 'all' ? '' : `?q=${filter.id}`}`}
                 className="text-xs sm:text-sm text-gray-600 hover:text-gray-900 hover:underline"
@@ -136,7 +136,7 @@ export default function SuggestedParts({ limit = 12 }: Props) {
 
             {/* Mobile: horizontal scroll, Desktop: fixed grid of 5 */}
             <div className="overflow-x-auto scrollbar-hide md:overflow-visible">
-              <div className="flex gap-4 md:grid md:grid-cols-5 md:gap-8">
+              <div className="flex gap-3 md:grid md:grid-cols-5 md:gap-8">
                 {list.slice(0, 5).map((p) => (
                   <ListingCard
                     key={`${filter.id}-${p.id}`}
@@ -144,7 +144,7 @@ export default function SuggestedParts({ limit = 12 }: Props) {
                     title={p.title}
                     price={p.price}
                     image={p.image}
-                    className="min-w-[140px] max-w-[160px] sm:min-w-[150px] sm:max-w-[180px] md:min-w-0 md:max-w-none"
+                    className="min-w-[130px] max-w-[145px] sm:min-w-[150px] sm:max-w-[165px] md:min-w-0 md:max-w-none flex-shrink-0"
                   />
                 ))}
               </div>

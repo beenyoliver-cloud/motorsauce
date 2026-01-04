@@ -93,10 +93,10 @@ export default function LiveActivityFeed() {
   return (
     <Link 
       href={`/listing/${listingId}`}
-      className="block bg-white border border-gray-200 rounded-sm p-5 hover:border-gray-300 hover:shadow-md transition-all lg:h-[var(--home-tiles-block-height)] lg:flex lg:flex-col"
+      className="block bg-white border border-gray-200 rounded-sm p-3 sm:p-5 hover:border-gray-300 hover:shadow-md transition-all lg:h-[var(--home-tiles-block-height)] lg:flex lg:flex-col"
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2 sm:mb-3">
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
           <span className="text-xs font-semibold text-gray-500 tracking-wide uppercase">Live activity</span>
@@ -104,7 +104,7 @@ export default function LiveActivityFeed() {
         <span className="text-xs text-gray-400">{timeAgo(current.timestamp)}</span>
       </div>
 
-      <div className="bg-gray-50 rounded-xl overflow-hidden mb-3 aspect-[5/3] flex items-center justify-center lg:aspect-auto lg:flex-1">
+      <div className="bg-gray-50 rounded-xl overflow-hidden mb-2 sm:mb-3 aspect-[16/9] sm:aspect-[5/3] flex items-center justify-center lg:aspect-auto lg:flex-1">
         {current.image ? (
           <img
             src={current.image}
@@ -119,7 +119,7 @@ export default function LiveActivityFeed() {
       </div>
 
       {/* Activity message */}
-      <p className="text-sm text-gray-800 leading-snug lg:line-clamp-3">
+      <p className="text-xs sm:text-sm text-gray-800 leading-snug lg:line-clamp-3">
         {current.type === "sale" ? (
           <>
             <span className="text-green-600 font-medium">Sold: </span>
