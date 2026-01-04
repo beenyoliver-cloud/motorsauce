@@ -20,7 +20,7 @@ export default function CenteredCard({
   overlayImage,
 }: CenteredCardProps) {
   return (
-    <div className="relative min-h-screen flex items-center justify-center px-4 py-10">
+    <div className="relative min-h-screen flex items-center justify-center px-4 py-4 sm:py-6">
       {overlayImage && (
         <>
           <div
