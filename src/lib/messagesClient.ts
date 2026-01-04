@@ -165,16 +165,44 @@ export async function fetchThreads(): Promise<Thread[]> {
 export async function fetchMessages(threadId: string): Promise<Message[]> {
   if (!uuidRegex.test(threadId)) throw new Error("Invalid threadId");
   const data = await apiFetch<{ messages: any[] }>(`/api/v2/conversations/${encodeURIComponent(threadId)}/messages`);
-  return (data.messages || []).map((m) => ({
-    id: m.id,
-    threadId: m.conversation_id || threadId,
-    from: m.sender || { id: m.sender_user_id || "" },
-    type: m.type?.toLowerCase() as Message["type"] || "text",
-    text: m.body || null,
-    offer: m.type === "OFFER_CARD" && m.metadata?.offer_id ? mapOffer({ ...m.metadata, threadId }) : undefined,
-    createdAt: m.created_at || new Date().toISOString(),
-    updatedAt: m.edited_at || m.created_at,
-  }));
+  return (data.messages || []).map((m) => {
+    const message: Message = {
+      id: m.id,
+      threadId: m.conversation_id || threadId,
+      from: m.sender || { id: m.sender_user_id || "", name: m.sender?.name, avatar: m.sender?.avatar },
+      type: m.type === "OFFER_CARD" ? "offer" : (m.type === "SYSTEM" ? "system" : "text"),
+      text: m.body || null,
+      createdAt: m.created_at || new Date().toISOString(),
+      updatedAt: m.edited_at || m.created_at,
+    };
+    
+    // Add offer data for OFFER_CARD messages
+    if (m.type === "OFFER_CARD" && m.metadata?.offer_id) {
+      message.offer = mapOffer({
+        id: m.metadata.offer_id,
+        threadId: m.metadata.threadId || threadId,
+        conversation_id: m.metadata.threadId || threadId,
+        listingId: m.metadata.listing_id,
+        listing_id: m.metadata.listing_id,
+        listingTitle: m.metadata.listing_title,
+        listing_title: m.metadata.listing_title,
+        listingImage: m.metadata.listing_image,
+        listing_image: m.metadata.listing_image,
+        starterId: m.metadata.created_by_user_id,
+        created_by_user_id: m.metadata.created_by_user_id,
+        recipientId: m.metadata.offered_to_user_id,
+        offered_to_user_id: m.metadata.offered_to_user_id,
+        amount: m.metadata.amount,
+        currency: m.metadata.currency,
+        status: m.metadata.status,
+        created_at: m.metadata.created_at,
+        updated_at: m.metadata.updated_at,
+        quantity: m.metadata.quantity,
+      });
+    }
+    
+    return message;
+  });
 }
 
 export async function sendMessage(threadId: string, text: string, opts?: { type?: "text" | "system" }) {

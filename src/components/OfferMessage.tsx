@@ -18,17 +18,19 @@ type Props = {
       id: string;
       amountCents: number;
       currency: string;
-      status: "pending" | "accepted" | "declined" | "countered" | "withdrawn";
+      status: "pending" | "accepted" | "declined" | "rejected" | "countered" | "withdrawn" | "expired";
       starter?: string;
       recipient?: string;
-      starterId?: string;   // ← added
-      recipientId?: string; // ← added
-      buyerId?: string;     // optional (we infer from starterId on first offer)
-      sellerId?: string;    // optional (we infer from recipientId on first offer)
+      starterId?: string;
+      recipientId?: string;
+      buyerId?: string | null;
+      sellerId?: string | null;
       listingId: string | number;
-      listingTitle?: string;
-      listingImage?: string;
+      listingTitle?: string | null;
+      listingImage?: string | null;
       peerName?: string;
+      expires_at?: string | null;
+      quantity?: number;
     };
   };
   currentUser: string;

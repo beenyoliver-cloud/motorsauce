@@ -8,6 +8,7 @@ import { ArrowLeft, Send, Package, User as UserIcon } from "lucide-react";
 import { fetchMessages, sendMessage, type Message, fetchThreads } from "@/lib/messagesClient";
 import { displayName } from "@/lib/names";
 import { getCurrentUserSync } from "@/lib/auth";
+import OfferMessage from "@/components/OfferMessage";
 
 export default function ConversationPage({
   params,
@@ -31,6 +32,14 @@ export default function ConversationPage({
   useEffect(() => {
     loadConversation();
     loadMessages();
+    
+    // Listen for offer actions (accept/decline/counter) to refresh messages
+    const handleRefresh = () => {
+      loadMessages();
+    };
+    
+    window.addEventListener("ms:threads", handleRefresh);
+    return () => window.removeEventListener("ms:threads", handleRefresh);
   }, [conversationId]);
 
   useEffect(() => {
@@ -203,6 +212,7 @@ export default function ConversationPage({
               {messages.map((message) => {
                 const isOwnMessage = message.from.id === currentUser?.id;
                 const isSystem = message.type === "system";
+                const isOffer = message.type === "offer";
 
                 if (isSystem) {
                   return (
@@ -210,6 +220,22 @@ export default function ConversationPage({
                       <div className="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">
                         {message.text}
                       </div>
+                    </div>
+                  );
+                }
+
+                if (isOffer && message.offer) {
+                  return (
+                    <div key={message.id} className="w-full max-w-2xl mx-auto">
+                      <OfferMessage 
+                        msg={{
+                          id: message.id,
+                          threadId: message.threadId,
+                          type: "offer",
+                          offer: message.offer,
+                        }}
+                        currentUser={currentUser?.id || ""}
+                      />
                     </div>
                   );
                 }

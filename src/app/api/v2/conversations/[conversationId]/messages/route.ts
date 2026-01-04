@@ -86,11 +86,69 @@ export async function GET(
       profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
     }
 
-    // Enrich messages with sender info
-    const enriched = messages?.map(m => ({
-      ...m,
-      sender: m.sender_user_id ? profileMap.get(m.sender_user_id) : null,
-    }));
+    // Fetch offer data for OFFER_CARD messages
+    const offerMessageIds = messages?.filter(m => m.type === "OFFER_CARD" && m.metadata?.offer_id).map(m => m.metadata.offer_id) || [];
+    let offerMap = new Map();
+    
+    if (offerMessageIds.length > 0) {
+      const { data: offers } = await supabase
+        .from("offers")
+        .select(`
+          id,
+          conversation_id,
+          listing_id,
+          created_by_user_id,
+          offered_to_user_id,
+          currency,
+          amount,
+          quantity,
+          status,
+          created_at,
+          updated_at,
+          listings:listing_id (
+            id,
+            title,
+            images
+          )
+        `)
+        .in("id", offerMessageIds);
+      
+      offerMap = new Map(offers?.map(o => [o.id, o]) || []);
+    }
+
+    // Enrich messages with sender info and offer data
+    const enriched = messages?.map(m => {
+      const enrichedMsg: any = {
+        ...m,
+        sender: m.sender_user_id ? profileMap.get(m.sender_user_id) : null,
+      };
+      
+      // Add offer data for OFFER_CARD messages
+      if (m.type === "OFFER_CARD" && m.metadata?.offer_id) {
+        const offer = offerMap.get(m.metadata.offer_id);
+        if (offer) {
+          const listing = Array.isArray(offer.listings) ? offer.listings[0] : offer.listings;
+          enrichedMsg.metadata = {
+            ...m.metadata,
+            offer_id: offer.id,
+            threadId: offer.conversation_id,
+            listing_id: offer.listing_id,
+            created_by_user_id: offer.created_by_user_id,
+            offered_to_user_id: offer.offered_to_user_id,
+            currency: offer.currency,
+            amount: offer.amount,
+            quantity: offer.quantity,
+            status: offer.status,
+            created_at: offer.created_at,
+            updated_at: offer.updated_at,
+            listing_title: listing?.title,
+            listing_image: listing?.images?.[0],
+          };
+        }
+      }
+      
+      return enrichedMsg;
+    });
 
     // Update read status
     const isBuyer = conversation.buyer_user_id === user.id;
