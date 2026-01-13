@@ -38,7 +38,7 @@ export default async function FeaturedRow({
   const items = pickVariant(allListings, variant, limit, activeCar);
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white shadow-sm p-3 sm:p-5">
+    <section className="rounded-xl border border-gray-200 bg-white shadow-sm p-3 sm:p-5">
       <div className="flex items-center justify-between mb-2 sm:mb-4">
         <h2 className="text-base sm:text-xl font-bold text-slate-900 tracking-tight">{title}</h2>
         <Link
@@ -51,7 +51,7 @@ export default async function FeaturedRow({
       </div>
 
       {items.length < 3 ? (
-        <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+        <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-slate-600">
           Not many listings here yet. Check back soon or browse all.
         </div>
       ) : (
