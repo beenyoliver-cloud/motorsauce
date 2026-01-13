@@ -123,6 +123,7 @@ function SettingsContent() {
         throw new Error(data.error || 'Upload failed');
       }
 
+      // Update state with the returned URL
       if (type === 'avatar') {
         setAvatar(data.url);
         try {
@@ -137,6 +138,15 @@ function SettingsContent() {
       }
 
       setMessage({ type: 'success', text: `${type === 'avatar' ? 'Avatar' : 'Background'} updated successfully!` });
+      
+      // Refresh user data from database to ensure persistence
+      const updatedUser = await getCurrentUser();
+      if (updatedUser) {
+        setUser(updatedUser);
+        setAvatar(updatedUser.avatar || "");
+        setBackgroundImage(updatedUser.background_image || "");
+      }
+      
       window.dispatchEvent(new Event("ms:auth"));
     } catch (err) {
       setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Upload failed' });
