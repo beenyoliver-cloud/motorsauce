@@ -253,7 +253,7 @@ export default function Header() {
               {/* Logo */}
               <Link href="/" aria-label="Motorsource home" className="inline-flex items-center flex-shrink-0">
                 <img
-                  src="/images/MSSlogon.png"
+                  src="/images/mslogonn.png"
                   alt="Motorsource"
                   className="h-14 w-auto object-contain"
                 />
@@ -400,7 +400,7 @@ export default function Header() {
               {/* Center: Logo */}
               <Link href="/" aria-label="Motorsource home" className="justify-self-center">
                 <img
-                  src="/images/MSSlogon.png"
+                  src="/images/mslogonn.png"
                   alt="Motorsource"
                   className="h-10 w-auto object-contain"
                 />

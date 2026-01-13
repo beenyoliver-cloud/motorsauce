@@ -51,7 +51,7 @@ const projects = [
 ];
 
 export default function WrenchingWall() {
-  const FALLBACK_IMAGE = "/images/motorsource_header_white_2000x600.png";
+  const FALLBACK_IMAGE = "/images/mslogonn.png";
 
   function handleImageError(e: SyntheticEvent<HTMLImageElement, Event>) {
     const img = e.currentTarget;

@@ -77,7 +77,7 @@ function SettingsContent() {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('avatar, background_image, about, postcode, county, country, account_type, email_notifications, message_notifications, marketing_notifications')
+      .select('name, avatar, background_image, about, postcode, county, country, account_type, email_notifications, message_notifications, marketing_notifications')
       .eq('id', currentUser.id)
       .single();
 
