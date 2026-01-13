@@ -51,7 +51,7 @@ const projects = [
 ];
 
 export default function WrenchingWall() {
-  const FALLBACK_IMAGE = "/images/mslogonn.png";
+  const FALLBACK_IMAGE = "/images/mslogonnew.png";
 
   function handleImageError(e: SyntheticEvent<HTMLImageElement, Event>) {
     const img = e.currentTarget;
