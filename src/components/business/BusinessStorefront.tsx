@@ -17,6 +17,9 @@ export type BusinessProfile = {
   name: string;
   email: string;
   avatar: string | null;
+  about?: string | null;
+  county?: string | null;
+  country?: string | null;
   business_verified: boolean;
   total_sales: number;
   avg_response_time_minutes: number | null;
@@ -64,6 +67,7 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
     secondary: business.brand_secondary_color || "#0f172a",
     accent: business.brand_accent_color || "#fde68a",
   });
+  const aboutSnippet = (business.about_business || business.about || "").trim();
   const themeStyles: CSSProperties = useMemo(
     () =>
       ({
@@ -161,8 +165,8 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-2">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">About the shop</p>
           <p className="text-sm text-gray-700 leading-relaxed">
-            {business.about_business && business.about_business.trim().length > 0
-              ? business.about_business.slice(0, 180) + (business.about_business.length > 180 ? "…" : "")
+            {aboutSnippet
+              ? aboutSnippet.slice(0, 180) + (aboutSnippet.length > 180 ? "…" : "")
               : "This business hasn’t shared their story yet. Browse their catalogue or contact them for more details."}
           </p>
           <Link href="#about" className="text-sm font-semibold text-yellow-600 hover:text-yellow-700">

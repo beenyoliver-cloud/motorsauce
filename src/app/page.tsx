@@ -19,7 +19,7 @@ export default function Home() {
       <SEOJsonLd />
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-3 sm:py-8 space-y-3 sm:space-y-8">
         {/* Vehicle compatibility front and center */}
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div>
           <Suspense fallback={null}>
             <HomeHero />
           </Suspense>

@@ -7,14 +7,17 @@ type Props = {
 };
 
 export default function BusinessAbout({ business }: Props) {
+  const aboutText = business.about_business?.trim() || business.about?.trim();
+  const locationLabel = [business.county, business.country].filter(Boolean).join(", ");
+
   return (
     <div className="max-w-6xl">
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">About {business.business_name}</h2>
         
-        {business.about_business ? (
+        {aboutText ? (
           <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
-            {business.about_business}
+            {aboutText}
           </div>
         ) : (
           <p className="text-gray-500 italic">No business description provided yet.</p>
@@ -33,6 +36,13 @@ export default function BusinessAbout({ business }: Props) {
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Established</h3>
               <p className="text-gray-700">{business.years_established}</p>
+            </div>
+          )}
+
+          {locationLabel && (
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-2">Location</h3>
+              <p className="text-gray-700">{locationLabel}</p>
             </div>
           )}
 

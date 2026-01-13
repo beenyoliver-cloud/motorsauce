@@ -127,7 +127,7 @@ export default function Header() {
 
     async function fetchUnreadImmediate() {
       try {
-        if (!user) {
+        if (!user?.id) {
           setUnread(0);
           return;
         }
@@ -206,7 +206,7 @@ export default function Header() {
       window.removeEventListener("ms:auth", fetchUnread as EventListener);
       try { supabase.removeChannel(channel); } catch {}
     };
-  }, []);
+  }, [user?.id]);
 
   // Cart
   useEffect(() => {

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { BusinessProfile } from "./BusinessStorefront";
-import { Building2, CheckCircle, Settings, Phone, Globe, Mail } from "lucide-react";
+import { Building2, CheckCircle, Settings, Phone, Globe, Mail, MapPin } from "lucide-react";
 
 type Props = {
   business: BusinessProfile;
@@ -20,6 +20,8 @@ export default function BusinessHeader({ business, isOwner, onColorsDetected }: 
   const secondary = business.brand_secondary_color || detectedColors?.secondary || "#0f172a";
   const accent = business.brand_accent_color || detectedColors?.accent || "#fde68a";
   const quickActions = quickActionButtons(business);
+  const locationLabel = [business.county, business.country].filter(Boolean).join(", ");
+  const profileAbout = business.about?.trim();
   
   const bannerUrl = business.banner_url;
   const logoUrl = business.logo_url || business.avatar;
@@ -124,11 +126,20 @@ export default function BusinessHeader({ business, isOwner, onColorsDetected }: 
                       {business.business_type.replace(/_/g, ' ')}
                     </span>
                   </div>
+                  {locationLabel && (
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3 md:w-4 md:h-4" />
+                      <span>{locationLabel}</span>
+                    </div>
+                  )}
                   {business.years_established && (
                     <span className="whitespace-nowrap">Est. {business.years_established}</span>
                   )}
                   <span className="whitespace-nowrap">{business.total_sales} sales</span>
                 </div>
+                {profileAbout && (
+                  <p className="mt-2 text-sm text-gray-700">{profileAbout}</p>
+                )}
               </div>
             </div>
 

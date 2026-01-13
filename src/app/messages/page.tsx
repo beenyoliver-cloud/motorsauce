@@ -75,9 +75,9 @@ function MessageBubble({ m, onOfferUpdate }: { m: Message; onOfferUpdate: (statu
   const isOwn = !isSystem && !!meId && m.from.id === meId;
   const align = isSystem ? "items-center" : isOwn ? "items-end" : "items-start";
   const textBubbleClass = isOwn
-    ? "max-w-[80%] rounded-lg border border-emerald-600 bg-emerald-500 px-3 py-2 text-sm text-white shadow-sm"
+    ? "max-w-[80%] rounded-lg border border-yellow-200 bg-yellow-100 px-3 py-2 text-sm text-gray-900 shadow-sm"
     : "max-w-[80%] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm";
-  const timeClass = isOwn ? "text-emerald-100" : "text-slate-400";
+  const timeClass = isOwn ? "text-yellow-700" : "text-slate-400";
 
   const canRespond =
     isOffer &&

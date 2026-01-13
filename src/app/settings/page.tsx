@@ -9,6 +9,17 @@ import { User, Mail, Lock, Save, Upload, MapPin, CreditCard, Bell, ShieldCheck, 
 
 type Tab = "general" | "security" | "location" | "notifications" | "billing" | "compliance";
 
+function normalizePostcode(input: string) {
+  return input.replace(/\s+/g, "").toUpperCase();
+}
+
+function shouldLookupPostcode(input: string) {
+  const clean = normalizePostcode(input);
+  if (clean.length < 5) return false;
+  if (!/[A-Z]{2}$/.test(clean)) return false;
+  return true;
+}
+
 function SettingsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -31,6 +42,10 @@ function SettingsContent() {
   const [postcode, setPostcode] = useState("");
   const [county, setCounty] = useState("");
   const [country, setCountry] = useState("United Kingdom");
+  const [countyOptions, setCountyOptions] = useState<string[]>([]);
+  const [locationLookupLoading, setLocationLookupLoading] = useState(false);
+  const [locationLookupError, setLocationLookupError] = useState<string | null>(null);
+  const [countyManual, setCountyManual] = useState(false);
   const [accountType, setAccountType] = useState<string | null>(null);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -44,6 +59,8 @@ function SettingsContent() {
   // File input refs
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const backgroundInputRef = useRef<HTMLInputElement>(null);
+  const lastLookupPostcodeRef = useRef<string | null>(null);
+  const isBusinessAccount = accountType === "business";
 
   useEffect(() => {
     const tab = searchParams?.get("tab");
@@ -78,9 +95,14 @@ function SettingsContent() {
         setAvatar(profile.avatar || "");
         setBackgroundImage(profile.background_image || "");
         setAbout(profile.about || "");
-        setPostcode(profile.postcode || "");
+        const initialPostcode = profile.postcode || "";
+        setPostcode(initialPostcode);
         setCounty(profile.county || "");
         setCountry(profile.country || "United Kingdom");
+        if (initialPostcode && profile.county) {
+          lastLookupPostcodeRef.current = normalizePostcode(initialPostcode);
+          setCountyManual(true);
+        }
         setAccountType(normalizedAccountType);
         
         // Load notification preferences
@@ -93,6 +115,77 @@ function SettingsContent() {
     };
     loadUser();
   }, []);
+
+  useEffect(() => {
+    const rawPostcode = postcode.trim();
+    const cleanPostcode = normalizePostcode(rawPostcode);
+
+    if (!rawPostcode) {
+      setLocationLookupError(null);
+      setCountyOptions([]);
+      lastLookupPostcodeRef.current = null;
+      setLocationLookupLoading(false);
+      return;
+    }
+
+    if (!shouldLookupPostcode(rawPostcode)) {
+      setLocationLookupError(null);
+      setLocationLookupLoading(false);
+      return;
+    }
+
+    if (lastLookupPostcodeRef.current === cleanPostcode) return;
+
+    let active = true;
+    const timer = setTimeout(async () => {
+      setLocationLookupLoading(true);
+      setLocationLookupError(null);
+      try {
+        const response = await fetch(`/api/geocode/postcode?postcode=${encodeURIComponent(rawPostcode)}`);
+        if (!active) return;
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || "Unable to look up postcode");
+        }
+
+        const data = await response.json();
+        if (!active) return;
+
+        const options = Array.isArray(data.county_options)
+          ? data.county_options.filter((value: string) => Boolean(value))
+          : [];
+        const nextCounty = typeof data.county === "string" ? data.county : "";
+        const preferredCounty =
+          options.length > 0
+            ? options.includes(nextCounty)
+              ? nextCounty
+              : options[0]
+            : nextCounty;
+
+        if (!countyManual) {
+          if (preferredCounty) setCounty(preferredCounty);
+          if (typeof data.country === "string" && data.country.trim()) {
+            setCountry(data.country);
+          }
+        }
+
+        setCountyOptions(options);
+        lastLookupPostcodeRef.current = cleanPostcode;
+        setLocationLookupError(null);
+      } catch (err) {
+        if (!active) return;
+        setLocationLookupError(err instanceof Error ? err.message : "Unable to look up postcode");
+        setCountyOptions([]);
+      } finally {
+        if (active) setLocationLookupLoading(false);
+      }
+    }, 650);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [postcode, countyManual]);
 
   const handleImageUpload = async (file: File, type: 'avatar' | 'background') => {
     setUploading(type);
@@ -195,7 +288,7 @@ function SettingsContent() {
       const nameChanged = trimmedName !== (user.name || "");
       const emailChanged = trimmedEmail !== (user.email || "");
       const avatarChanged = trimmedAvatar !== (user.avatar || "");
-      const backgroundChanged = trimmedBackground !== (user.background_image || "");
+      const backgroundChanged = isBusinessAccount && trimmedBackground !== (user.background_image || "");
       const aboutChanged = trimmedAbout !== (user.about || "");
 
       if (!nameChanged && !emailChanged && !avatarChanged && !backgroundChanged && !aboutChanged) {
@@ -249,8 +342,8 @@ function SettingsContent() {
       const updatePayload = {
         name: trimmedName,
         avatar: trimmedAvatar || null,
-        background_image: trimmedBackground || null,
         about: trimmedAbout || null,
+        ...(isBusinessAccount ? { background_image: trimmedBackground || null } : {}),
         ...(emailChanged ? { email: trimmedEmail } : {}),
       };
       console.log("[Settings] Updating profile with:", { userId: user.id, payload: updatePayload });
@@ -659,49 +752,51 @@ function SettingsContent() {
                     </p>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Profile Background
-                    </label>
-                    {backgroundImage && (
-                      <div className="mb-4 w-full h-32 rounded-lg overflow-hidden border-2 border-green-300 bg-green-50">
-                        <img 
-                          src={backgroundImage} 
-                          alt="Background" 
-                          className="w-full h-full object-cover"
-                          onError={(e) => e.currentTarget.style.display = 'none'} 
-                        />
+                  {isBusinessAccount && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Profile Background
+                      </label>
+                      {backgroundImage && (
+                        <div className="mb-4 w-full h-32 rounded-lg overflow-hidden border-2 border-green-300 bg-green-50">
+                          <img 
+                            src={backgroundImage} 
+                            alt="Background" 
+                            className="w-full h-full object-cover"
+                            onError={(e) => e.currentTarget.style.display = 'none'} 
+                          />
+                        </div>
+                      )}
+                      <div className={`w-full px-4 py-2.5 border rounded-lg mb-3 ${backgroundImage ? 'border-green-300 bg-green-50' : 'border-gray-300 bg-white'}`}>
+                        <p className="text-xs text-gray-600 mb-1">Current image URL:</p>
+                        <p className={`text-sm font-mono break-all ${backgroundImage ? 'text-gray-800' : 'text-gray-500'}`}>
+                          {backgroundImage || '(No image yet)'}
+                        </p>
                       </div>
-                    )}
-                    <div className={`w-full px-4 py-2.5 border rounded-lg mb-3 ${backgroundImage ? 'border-green-300 bg-green-50' : 'border-gray-300 bg-white'}`}>
-                      <p className="text-xs text-gray-600 mb-1">Current image URL:</p>
-                      <p className={`text-sm font-mono break-all ${backgroundImage ? 'text-gray-800' : 'text-gray-500'}`}>
-                        {backgroundImage || '(No image yet)'}
+                      <p className="text-xs text-gray-500 mb-3">
+                        Click "Upload Image" to replace with a new image
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => backgroundInputRef.current?.click()}
+                        disabled={uploading === 'background'}
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
+                      >
+                        <Upload size={16} />
+                        {uploading === 'background' ? 'Uploading...' : 'Upload Image'}
+                      </button>
+                      <input
+                        ref={backgroundInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBackgroundFileChange}
+                        className="hidden"
+                      />
+                      <p className="text-xs text-gray-500 mt-3">
+                        Max 5MB (JPEG, PNG, WebP). Recommended: 1920x400px
                       </p>
                     </div>
-                    <p className="text-xs text-gray-500 mb-3">
-                      Click "Upload Image" to replace with a new image
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => backgroundInputRef.current?.click()}
-                      disabled={uploading === 'background'}
-                      className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
-                    >
-                      <Upload size={16} />
-                      {uploading === 'background' ? 'Uploading...' : 'Upload Image'}
-                    </button>
-                    <input
-                      ref={backgroundInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleBackgroundFileChange}
-                      className="hidden"
-                    />
-                    <p className="text-xs text-gray-500 mt-3">
-                      Max 5MB (JPEG, PNG, WebP). Recommended: 1920x400px
-                    </p>
-                  </div>
+                  )}
 
                   <button
                     type="submit"
@@ -844,13 +939,24 @@ function SettingsContent() {
                     <input
                       type="text"
                       value={postcode}
-                      onChange={(e) => setPostcode(e.target.value.toUpperCase())}
+                      onChange={(e) => {
+                        setPostcode(e.target.value.toUpperCase());
+                        setCountyManual(false);
+                        setLocationLookupError(null);
+                        setCountyOptions([]);
+                      }}
                       placeholder="e.g., SW1A 1AA"
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-gray-900"
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Used for calculating distances (not shown publicly)
                     </p>
+                    {locationLookupLoading && (
+                      <p className="text-xs text-gray-500 mt-1">Looking up county...</p>
+                    )}
+                    {locationLookupError && (
+                      <p className="text-xs text-red-600 mt-1">{locationLookupError}</p>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -858,13 +964,39 @@ function SettingsContent() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         County
                       </label>
-                      <input
-                        type="text"
-                        value={county}
-                        onChange={(e) => setCounty(e.target.value)}
-                        placeholder="e.g., Greater London"
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-gray-900"
-                      />
+                      {countyOptions.length > 1 ? (
+                        <>
+                          <select
+                            value={county}
+                            onChange={(e) => {
+                              setCounty(e.target.value);
+                              setCountyManual(true);
+                            }}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-gray-900"
+                          >
+                            <option value="">Select county</option>
+                            {countyOptions.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Multiple counties match this postcode area. Pick the correct one.
+                          </p>
+                        </>
+                      ) : (
+                        <input
+                          type="text"
+                          value={county}
+                          onChange={(e) => {
+                            setCounty(e.target.value);
+                            setCountyManual(true);
+                          }}
+                          placeholder="e.g., Greater London"
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-gray-900"
+                        />
+                      )}
                     </div>
 
                     <div>

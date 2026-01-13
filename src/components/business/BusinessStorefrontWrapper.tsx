@@ -34,7 +34,7 @@ export default function BusinessStorefrontWrapper({ profileId, displayName, isOw
         // Fetch profile data
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
-          .select("id, name, email, avatar, background_image, account_type, business_verified, total_sales, avg_response_time_minutes, response_rate, created_at")
+          .select("id, name, email, avatar, background_image, about, county, country, account_type, business_verified, total_sales, avg_response_time_minutes, response_rate, created_at")
           .eq("id", profileId)
           .single();
 
@@ -87,6 +87,9 @@ export default function BusinessStorefrontWrapper({ profileId, displayName, isOw
           name: profile.name,
           email: profile.email,
           avatar: profile.avatar,
+          about: (profile as any).about ?? null,
+          county: (profile as any).county ?? null,
+          country: (profile as any).country ?? null,
           business_verified: profile.business_verified || false,
           total_sales: profile.total_sales || 0,
           avg_response_time_minutes: profile.avg_response_time_minutes,

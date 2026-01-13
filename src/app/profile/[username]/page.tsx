@@ -13,6 +13,7 @@ import SellerRating from "@/components/profile/SellerRating";
 import SellerReviewsTab from "@/components/profile/SellerReviewsTab";
 import { MapPin, Clock3 } from "lucide-react";
 import { formatJoined } from "@/lib/profileFormatting";
+import { supabase as supabaseServer } from "@/lib/supabaseServer";
 
 // Force dynamic rendering to prevent stale profile data
 export const dynamic = 'force-dynamic';
@@ -52,19 +53,38 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
     account_type?: string;
   } = {};
   try {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-    const fullUrl = `${baseUrl}/api/seller-profile?name=${encodeURIComponent(displayName)}&t=${Date.now()}`;
-    const res = await fetch(fullUrl, { cache: "no-store" });
-    if (res.ok) {
-      sellerMetrics = await res.json();
-    } else {
-      const errorText = await res.text();
-      console.error("[Profile SSR] Failed to fetch seller metrics", {
-        status: res.status,
-        statusText: res.statusText,
-        body: errorText,
+    const fields = "id, avatar, about, county, country, total_responses, created_at, account_type";
+    let profile: typeof sellerMetrics | null = null;
+    let error: any = null;
+
+    ({ data: profile, error } = await supabaseServer
+      .from("profiles")
+      .select(fields)
+      .eq("name", displayName)
+      .single());
+
+    if ((error || !profile) && displayName) {
+      const fallback = await supabaseServer
+        .from("profiles")
+        .select(fields)
+        .ilike("name", displayName)
+        .single();
+      if (fallback.data) {
+        profile = fallback.data;
+        error = null;
+      } else {
+        error = fallback.error || error;
+      }
+    }
+
+    if (profile) {
+      sellerMetrics = profile;
+    } else if (error) {
+      console.error("[Profile SSR] Failed to load profile data", {
+        name: displayName,
+        message: error.message,
+        details: error.details,
+        code: error.code,
       });
     }
   } catch (error) {
