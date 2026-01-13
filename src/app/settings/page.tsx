@@ -92,7 +92,7 @@ function SettingsContent() {
       setLoading(false);
     };
     loadUser();
-  }, [router, supabase]);
+  }, []);
 
   const handleImageUpload = async (file: File, type: 'avatar' | 'background') => {
     setUploading(type);
@@ -339,6 +339,19 @@ function SettingsContent() {
       if (error) throw error;
 
       setMessage({ type: 'success', text: 'Location updated successfully!' });
+      
+      // Refresh user data from database to ensure persistence
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('postcode, county, country')
+        .eq('id', user.id)
+        .single();
+      
+      if (profile) {
+        setPostcode(profile.postcode || "");
+        setCounty(profile.county || "");
+        setCountry(profile.country || "United Kingdom");
+      }
     } catch (err) {
       setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to update location' });
     } finally {
@@ -368,6 +381,24 @@ function SettingsContent() {
       if (error) throw error;
 
       setMessage({ type: 'success', text: 'Notification preferences saved successfully!' });
+      
+      // Refresh user data from database to ensure persistence
+      const updatedUser = await getCurrentUser();
+      if (updatedUser) {
+        setUser(updatedUser);
+        // Reload notification preferences
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('email_notifications, message_notifications, marketing_notifications')
+          .eq('id', updatedUser.id)
+          .single();
+        
+        if (profile) {
+          setEmailNotifications(profile.email_notifications !== false);
+          setMessageNotifications(profile.message_notifications !== false);
+          setMarketingNotifications(profile.marketing_notifications === true);
+        }
+      }
     } catch (err) {
       setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to update notification preferences' });
     } finally {
