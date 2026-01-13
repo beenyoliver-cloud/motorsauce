@@ -255,7 +255,7 @@ export default function Header() {
                 <img
                   src="/images/mslogonnew.png"
                   alt="Motorsource"
-                  className="h-14 md:h-24 w-auto object-contain"
+                  className="h-[3.1rem] md:h-[5.25rem] w-auto object-contain"
                 />
               </Link>
 
@@ -402,7 +402,7 @@ export default function Header() {
                 <img
                   src="/images/mslogonnew.png"
                   alt="Motorsource"
-                  className="h-10 w-auto object-contain"
+                  className="h-[2.2rem] w-auto object-contain"
                 />
               </Link>
 
