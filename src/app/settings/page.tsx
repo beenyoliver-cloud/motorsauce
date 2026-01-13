@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getCurrentUser, type LocalUser, nsKey } from "@/lib/auth";
 import { supabaseBrowser } from "@/lib/supabase";
-import { User, Mail, Lock, Save, Upload, MapPin, CreditCard, Bell, ShieldCheck } from "lucide-react";
+import { User, Mail, Lock, Save, Upload, MapPin, CreditCard, Bell, ShieldCheck, Edit2, X } from "lucide-react";
 
 type Tab = "general" | "security" | "location" | "notifications" | "billing" | "compliance";
 
@@ -20,6 +20,7 @@ function SettingsContent() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<'avatar' | 'background' | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [editingName, setEditingName] = useState(false);
 
   // Form states
   const [name, setName] = useState("");
@@ -98,12 +99,21 @@ function SettingsContent() {
     setMessage(null);
 
     try {
+      // Get auth token from session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("Not authenticated");
+      }
+
       const formData = new FormData();
       formData.append('file', file);
       formData.append('type', type);
 
       const response = await fetch('/api/profile/upload-image', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
         body: formData,
       });
 
@@ -452,16 +462,44 @@ function SettingsContent() {
                 
                 <form onSubmit={handleUpdateProfile} className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Display Name
-                    </label>
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-gray-900"
-                      required
-                    />
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Display Name
+                      </label>
+                      {!editingName && (
+                        <button
+                          type="button"
+                          onClick={() => setEditingName(true)}
+                          className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                        >
+                          <Edit2 size={14} />
+                          Change
+                        </button>
+                      )}
+                    </div>
+                    {editingName ? (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-gray-900"
+                          required
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setEditingName(false)}
+                          className="px-3 py-2.5 text-gray-600 hover:text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 font-medium">
+                        {name}
+                      </div>
+                    )}
                     <p className="text-xs text-gray-500 mt-1">
                       This is how your name appears on your profile. Changes allowed once every 6 months.
                     </p>
