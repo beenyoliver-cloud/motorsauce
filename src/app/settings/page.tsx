@@ -15,9 +15,9 @@ function normalizePostcode(input: string) {
 
 function shouldLookupPostcode(input: string) {
   const clean = normalizePostcode(input);
-  if (clean.length < 5) return false;
-  if (!/[A-Z]{2}$/.test(clean)) return false;
-  return true;
+  const fullPostcode = /^[A-Z]{1,2}\d[A-Z\d]?\d[A-Z]{2}$/;
+  const outcode = /^[A-Z]{1,2}\d[A-Z\d]?$/;
+  return fullPostcode.test(clean) || outcode.test(clean);
 }
 
 function SettingsContent() {
@@ -62,6 +62,52 @@ function SettingsContent() {
   const lastLookupPostcodeRef = useRef<string | null>(null);
   const isBusinessAccount = accountType === "business";
 
+  const refreshProfileState = async (opts?: { redirectIfMissing?: boolean }) => {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      if (opts?.redirectIfMissing) {
+        router.push("/auth/login?next=/settings");
+      }
+      return null;
+    }
+
+    setUser(currentUser);
+    setName(currentUser.name || "");
+    setEmail(currentUser.email || "");
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('avatar, background_image, about, postcode, county, country, account_type, email_notifications, message_notifications, marketing_notifications')
+      .eq('id', currentUser.id)
+      .single();
+
+    if (profile) {
+      const normalizedAccountType = typeof (profile as any).account_type === 'string'
+        ? (profile as any).account_type.toLowerCase().trim()
+        : null;
+
+      const storedPostcode = profile.postcode || "";
+
+      setAvatar(profile.avatar || "");
+      setBackgroundImage(profile.background_image || "");
+      setAbout(profile.about || "");
+      setPostcode(storedPostcode);
+      setCounty(profile.county || "");
+      setCountry(profile.country || "United Kingdom");
+      setAccountType(normalizedAccountType);
+      setEmailNotifications(profile.email_notifications !== false);
+      setMessageNotifications(profile.message_notifications !== false);
+      setMarketingNotifications(profile.marketing_notifications === true);
+
+      if (storedPostcode && profile.county) {
+        lastLookupPostcodeRef.current = normalizePostcode(storedPostcode);
+        setCountyManual(true);
+      }
+    }
+
+    return currentUser;
+  };
+
   useEffect(() => {
     const tab = searchParams?.get("tab");
     if (tab && ["general", "security", "location", "notifications", "billing", "compliance"].includes(tab)) {
@@ -71,46 +117,7 @@ function SettingsContent() {
 
   useEffect(() => {
     const loadUser = async () => {
-      const currentUser = await getCurrentUser();
-      if (!currentUser) {
-        router.push("/auth/login?next=/settings");
-        return;
-      }
-      setUser(currentUser);
-      setName(currentUser.name || "");
-      setEmail(currentUser.email || "");
-      
-      // Load profile data
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('avatar, background_image, about, postcode, county, country, account_type, email_notifications, message_notifications, marketing_notifications')
-        .eq('id', currentUser.id)
-        .single();
-      
-      if (profile) {
-        const normalizedAccountType = typeof (profile as any).account_type === 'string'
-          ? (profile as any).account_type.toLowerCase().trim()
-          : null;
-
-        setAvatar(profile.avatar || "");
-        setBackgroundImage(profile.background_image || "");
-        setAbout(profile.about || "");
-        const initialPostcode = profile.postcode || "";
-        setPostcode(initialPostcode);
-        setCounty(profile.county || "");
-        setCountry(profile.country || "United Kingdom");
-        if (initialPostcode && profile.county) {
-          lastLookupPostcodeRef.current = normalizePostcode(initialPostcode);
-          setCountyManual(true);
-        }
-        setAccountType(normalizedAccountType);
-        
-        // Load notification preferences
-        setEmailNotifications(profile.email_notifications !== false);
-        setMessageNotifications(profile.message_notifications !== false);
-        setMarketingNotifications(profile.marketing_notifications === true);
-      }
-      
+      await refreshProfileState({ redirectIfMissing: true });
       setLoading(false);
     };
     loadUser();
@@ -393,14 +400,7 @@ function SettingsContent() {
       // Reset edit mode after successful save
       setEditingName(false);
 
-      // Refresh user data from database
-      const updatedUser = await getCurrentUser();
-      setUser(updatedUser);
-      // Only reset fields if update was successful - use updated user data
-      if (updatedUser) {
-        setName(updatedUser.name || "");
-        setEmail(updatedUser.email || "");
-      }
+      await refreshProfileState();
       window.dispatchEvent(new Event("ms:auth"));
     } catch (err) {
       // Keep the edited values on error - don't revert
@@ -432,19 +432,7 @@ function SettingsContent() {
       if (error) throw error;
 
       setMessage({ type: 'success', text: 'Location updated successfully!' });
-      
-      // Refresh user data from database to ensure persistence
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('postcode, county, country')
-        .eq('id', user.id)
-        .single();
-      
-      if (profile) {
-        setPostcode(profile.postcode || "");
-        setCounty(profile.county || "");
-        setCountry(profile.country || "United Kingdom");
-      }
+      await refreshProfileState();
     } catch (err) {
       setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to update location' });
     } finally {
@@ -474,24 +462,7 @@ function SettingsContent() {
       if (error) throw error;
 
       setMessage({ type: 'success', text: 'Notification preferences saved successfully!' });
-      
-      // Refresh user data from database to ensure persistence
-      const updatedUser = await getCurrentUser();
-      if (updatedUser) {
-        setUser(updatedUser);
-        // Reload notification preferences
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('email_notifications, message_notifications, marketing_notifications')
-          .eq('id', updatedUser.id)
-          .single();
-        
-        if (profile) {
-          setEmailNotifications(profile.email_notifications !== false);
-          setMessageNotifications(profile.message_notifications !== false);
-          setMarketingNotifications(profile.marketing_notifications === true);
-        }
-      }
+      await refreshProfileState();
     } catch (err) {
       setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to update notification preferences' });
     } finally {

@@ -48,9 +48,19 @@ type CountyOptions = {
 };
 
 const POSTCODE_API = "https://api.postcodes.io";
+const FULL_POSTCODE_RE = /^[A-Z]{1,2}\d[A-Z\d]?\d[A-Z]{2}$/;
+const OUTCODE_RE = /^[A-Z]{1,2}\d[A-Z\d]?$/;
 
 function normalizePostcode(input: string) {
   return input.replace(/\s+/g, "").toUpperCase();
+}
+
+function isFullPostcode(cleaned: string) {
+  return FULL_POSTCODE_RE.test(cleaned);
+}
+
+function isOutcode(cleaned: string) {
+  return OUTCODE_RE.test(cleaned);
 }
 
 function dedupeList(list: Array<string | null | undefined>) {
@@ -160,6 +170,73 @@ export async function GET(req: NextRequest) {
 
     const cleanPostcode = normalizePostcode(postcode);
     const supabaseAdmin = getSupabaseAdmin();
+    const isFull = isFullPostcode(cleanPostcode);
+    const isOut = !isFull && isOutcode(cleanPostcode);
+
+    if (!isFull && !isOut) {
+      return NextResponse.json({ error: "Invalid postcode" }, { status: 400 });
+    }
+
+    if (isOut) {
+      let countyOptions: CountyOptions = { options: [], source: "none" };
+      let outcodeCache = await readOutcodeCache(supabaseAdmin, cleanPostcode);
+      let latitude: number | null = null;
+      let longitude: number | null = null;
+      let latRounded: number | null = null;
+      let lngRounded: number | null = null;
+      let hasCache = Boolean(outcodeCache);
+
+      if (!outcodeCache) {
+        const outcodeResponse = await fetch(`${POSTCODE_API}/outcodes/${encodeURIComponent(cleanPostcode)}`);
+        if (!outcodeResponse.ok) {
+          return NextResponse.json({ error: "Invalid postcode" }, { status: 404 });
+        }
+        const outcodeData = await outcodeResponse.json();
+        const outcodeResult = outcodeData?.result as OutcodeIoResult | undefined;
+        if (outcodeResult) {
+          countyOptions = buildCountyOptions(outcodeResult);
+          outcodeCache = {
+            outcode: outcodeResult.outcode,
+            counties: dedupeList(outcodeResult.admin_county || []),
+            districts: dedupeList(outcodeResult.admin_district || []),
+            regions: dedupeList(outcodeResult.region || []),
+            countries: dedupeList(outcodeResult.country || []),
+          };
+          hasCache = true;
+          latitude = typeof (outcodeData?.result?.latitude) === "number" ? outcodeData.result.latitude : null;
+          longitude = typeof (outcodeData?.result?.longitude) === "number" ? outcodeData.result.longitude : null;
+          if (latitude !== null && longitude !== null) {
+            latRounded = Math.round(latitude * 100) / 100;
+            lngRounded = Math.round(longitude * 100) / 100;
+          }
+          await upsertOutcodeCache(supabaseAdmin, { ...outcodeCache, source: "postcodes_io" });
+        }
+      } else {
+        countyOptions = buildCountyOptions({
+          outcode: outcodeCache.outcode,
+          admin_county: outcodeCache.counties || [],
+          admin_district: outcodeCache.districts || [],
+          region: outcodeCache.regions || [],
+          country: outcodeCache.countries || [],
+        });
+      }
+
+      const county = countyOptions.options[0] || null;
+      const country = outcodeCache?.countries?.[0] || null;
+
+      return NextResponse.json({
+        outcode: cleanPostcode,
+        county,
+        country,
+        latitude,
+        longitude,
+        lat_rounded: latRounded,
+        lng_rounded: lngRounded,
+        county_options: countyOptions.options,
+        county_source: countyOptions.source,
+        cached: hasCache,
+      });
+    }
 
     // Cache-first lookup
     const cached = await readPostcodeCache(supabaseAdmin, cleanPostcode);
