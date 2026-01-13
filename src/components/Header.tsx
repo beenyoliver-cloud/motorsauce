@@ -242,7 +242,10 @@ export default function Header() {
 
   return (
     <>
-      <nav className="w-full bg-white border-b border-gray-200 shadow-sm fixed top-0 z-40">
+      <nav
+        className="w-full bg-white border-b border-gray-200 shadow-sm fixed top-0 z-40"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
         <div className="mx-auto max-w-6xl px-3 sm:px-6">
           {/* Desktop Header */}
           <div className="hidden sm:flex flex-col gap-2 py-3">
@@ -384,27 +387,27 @@ export default function Header() {
           {/* Mobile Header */}
           <div className="flex sm:hidden flex-col gap-3 py-2">
             {/* Top row: Menu button (left), Logo (center), Basket + Profile (right) */}
-            <div className="flex items-center justify-between">
+            <div className="grid grid-cols-[auto_1fr_auto] items-center">
               {/* Left: Menu button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 text-black hover:text-yellow-500 transition-colors"
+                className="justify-self-start p-2 text-black hover:text-yellow-500 transition-colors"
                 aria-label="Open menu"
               >
                 <Menu size={24} />
               </button>
 
               {/* Center: Logo */}
-              <Link href="/" aria-label="Motorsauce home" className="absolute left-1/2 transform -translate-x-1/2">
+              <Link href="/" aria-label="Motorsauce home" className="justify-self-center">
                 <img
                   src="/images/MSlogoreal.png"
                   alt="Motorsauce"
-                  className="h-15 w-auto object-contain"
+                  className="h-12 w-auto object-contain"
                 />
               </Link>
 
               {/* Right: Basket + Profile */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 justify-self-end">
                 <button
                   onClick={() => setCartOpen(true)}
                   className="relative flex items-center text-black hover:text-yellow-500 transition-colors"

@@ -49,7 +49,7 @@ export default function SellFAB() {
     <Link
       href="/sell"
       className={`
-        md:hidden fixed bottom-6 right-6 z-40
+        md:hidden fixed z-40
         flex items-center justify-center gap-2 px-5 py-3
         bg-yellow-500 text-black
         rounded-full shadow-lg hover:shadow-xl
@@ -58,6 +58,10 @@ export default function SellFAB() {
         hover:scale-105 active:scale-95
         group
       `}
+      style={{
+        bottom: "calc(1.5rem + env(safe-area-inset-bottom))",
+        right: "calc(1.5rem + env(safe-area-inset-right))",
+      }}
       aria-label="Sell your parts"
     >
       <PlusCircle 

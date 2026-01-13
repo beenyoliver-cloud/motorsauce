@@ -148,7 +148,13 @@ export default function ConversationPage({
   }
 
   return (
-    <div className="fixed inset-0 bg-gray-50 flex flex-col">
+    <div
+      className="fixed inset-x-0 bottom-0 bg-gray-50 flex flex-col"
+      style={{
+        top: "var(--layout-offset-total, 150px)",
+        paddingBottom: "env(safe-area-inset-bottom)",
+      }}
+    >
       {/* Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm shrink-0 z-10">
         <div className="mx-auto max-w-4xl px-4 py-4">

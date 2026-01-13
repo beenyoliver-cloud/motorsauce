@@ -194,11 +194,31 @@ function SettingsContent() {
         return;
       }
 
+      // Check 6-month cooldown for name changes
       if (nameChanged && lastChange && now - lastChange < sixMonthsMs) {
         const nextDate = new Date(lastChange + sixMonthsMs).toLocaleDateString();
         setMessage({ type: 'error', text: `Display name can only be changed once every 6 months. Try again after ${nextDate}.` });
         setSaving(false);
         return;
+      }
+
+      // Check if new display name is available (if name changed)
+      if (nameChanged) {
+        const checkResponse = await fetch('/api/profile/check-name', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            displayName: trimmedName,
+            currentUserId: user.id,
+          }),
+        });
+
+        const checkData = await checkResponse.json();
+        if (!checkResponse.ok || !checkData.available) {
+          setMessage({ type: 'error', text: checkData.message || 'Display name is not available' });
+          setSaving(false);
+          return;
+        }
       }
 
       // Keep auth metadata in sync with profile changes
@@ -267,13 +287,20 @@ function SettingsContent() {
         setMessage({ type: 'success', text: 'Profile updated successfully!' });
       }
 
-      // Refresh user data
+      // Reset edit mode after successful save
+      setEditingName(false);
+
+      // Refresh user data from database
       const updatedUser = await getCurrentUser();
       setUser(updatedUser);
-      setName(updatedUser?.name || "");
-      setEmail(updatedUser?.email || "");
+      // Only reset fields if update was successful - use updated user data
+      if (updatedUser) {
+        setName(updatedUser.name || "");
+        setEmail(updatedUser.email || "");
+      }
       window.dispatchEvent(new Event("ms:auth"));
     } catch (err) {
+      // Keep the edited values on error - don't revert
       setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to update profile' });
     } finally {
       setSaving(false);
@@ -336,6 +363,12 @@ function SettingsContent() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCancelNameEdit = () => {
+    // Reset name to original user value
+    setName(user?.name || "");
+    setEditingName(false);
   };
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
@@ -489,8 +522,9 @@ function SettingsContent() {
                         />
                         <button
                           type="button"
-                          onClick={() => setEditingName(false)}
+                          onClick={handleCancelNameEdit}
                           className="px-3 py-2.5 text-gray-600 hover:text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50"
+                          title="Cancel"
                         >
                           <X size={18} />
                         </button>

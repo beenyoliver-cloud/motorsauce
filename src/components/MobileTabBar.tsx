@@ -57,7 +57,10 @@ export default function MobileTabBar({ profileHref }: { profileHref?: string | n
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white border-t border-gray-200 shadow-sm">
+    <nav
+      className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white border-t border-gray-200 shadow-sm"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
       <div className="grid grid-cols-5">
         {items.map(it => {
           const active = it.exact ? pathname === it.href : pathname.startsWith(it.href);
