@@ -81,7 +81,7 @@ function getSupabaseAdmin() {
 }
 
 async function readPostcodeCache(
-  supabase: ReturnType<typeof createClient> | null,
+  supabase: any | null,
   postcode: string
 ): Promise<PostcodeCacheRow | null> {
   if (!supabase) return null;
@@ -99,7 +99,7 @@ async function readPostcodeCache(
 }
 
 async function readOutcodeCache(
-  supabase: ReturnType<typeof createClient> | null,
+  supabase: any | null,
   outcode: string
 ): Promise<OutcodeCacheRow | null> {
   if (!supabase) return null;
@@ -117,7 +117,7 @@ async function readOutcodeCache(
 }
 
 async function upsertPostcodeCache(
-  supabase: ReturnType<typeof createClient> | null,
+  supabase: any | null,
   payload: PostcodeCacheRow & { source: string }
 ) {
   if (!supabase) return;
@@ -133,7 +133,7 @@ async function upsertPostcodeCache(
 }
 
 async function upsertOutcodeCache(
-  supabase: ReturnType<typeof createClient> | null,
+  supabase: any | null,
   payload: OutcodeCacheRow & { source: string }
 ) {
   if (!supabase) return;
