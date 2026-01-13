@@ -254,14 +254,14 @@ export default function ConversationPage({
                     <div
                       className={`max-w-[70%] sm:max-w-[60%] rounded-2xl px-4 py-2 ${
                         isOwnMessage
-                          ? "bg-yellow-500 text-black"
+                          ? "bg-emerald-500 text-white ml-auto"
                           : "bg-white border border-gray-200 text-gray-900"
                       }`}
                     >
                       <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>
                       <p
                         className={`text-xs mt-1 ${
-                          isOwnMessage ? "text-black/70" : "text-gray-500"
+                          isOwnMessage ? "text-white/80" : "text-gray-500"
                         }`}
                       >
                         {formatMessageTime(message.createdAt)}

@@ -72,6 +72,12 @@ function MessageBubble({ m, onOfferUpdate }: { m: Message; onOfferUpdate: (statu
   const meId = me?.id || "";
   const isSystem = m.type === "system";
   const isOffer = m.type === "offer" && m.offer;
+  const isOwn = !isSystem && !!meId && m.from.id === meId;
+  const align = isSystem ? "items-center" : isOwn ? "items-end" : "items-start";
+  const textBubbleClass = isOwn
+    ? "max-w-[80%] rounded-lg border border-emerald-600 bg-emerald-500 px-3 py-2 text-sm text-white shadow-sm"
+    : "max-w-[80%] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm";
+  const timeClass = isOwn ? "text-emerald-100" : "text-slate-400";
 
   const canRespond =
     isOffer &&
@@ -79,7 +85,7 @@ function MessageBubble({ m, onOfferUpdate }: { m: Message; onOfferUpdate: (statu
     ((m.offer?.recipientId && m.offer.recipientId === meId) || (m.offer?.starterId && m.offer.starterId === meId));
 
   return (
-    <div className={`flex flex-col ${isSystem ? "items-center" : ""}`}>
+    <div className={`flex flex-col ${align}`}>
       {isOffer ? (
         <div className="max-w-[80%] rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
           <div className="flex items-center justify-between gap-2">
@@ -117,11 +123,11 @@ function MessageBubble({ m, onOfferUpdate }: { m: Message; onOfferUpdate: (statu
           )}
         </div>
       ) : (
-        <div className="max-w-[80%] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm">
+        <div className={textBubbleClass}>
           {m.text || "(no text)"}
         </div>
       )}
-      <span className="text-[11px] text-slate-400 mt-1">{formatDistanceToNow(new Date(m.createdAt), { addSuffix: true })}</span>
+      <span className={`text-[11px] mt-1 ${timeClass}`}>{formatDistanceToNow(new Date(m.createdAt), { addSuffix: true })}</span>
     </div>
   );
 }

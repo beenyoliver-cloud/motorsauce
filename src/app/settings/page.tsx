@@ -569,18 +569,20 @@ function SettingsContent() {
                         />
                       )}
                       <div className="flex-1">
-                        <input
-                          type="url"
-                          value={avatar}
-                          onChange={(e) => setAvatar(e.target.value)}
-                          placeholder="https://example.com/avatar.jpg"
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-gray-900 mb-2"
-                        />
+                        <div className={`w-full px-4 py-2.5 border rounded-lg mb-2 ${avatar ? 'border-green-300 bg-green-50' : 'border-gray-300 bg-white'}`}>
+                          <p className="text-xs text-gray-600 mb-1">Current image URL:</p>
+                          <p className={`text-sm font-mono break-all ${avatar ? 'text-gray-800' : 'text-gray-500'}`}>
+                            {avatar || '(No image yet)'}
+                          </p>
+                        </div>
+                        <p className="text-xs text-gray-500 mb-3">
+                          Click "Upload Image" to replace with a new image
+                        </p>
                         <button
                           type="button"
                           onClick={() => avatarInputRef.current?.click()}
                           disabled={uploading === 'avatar'}
-                          className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
+                          className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
                         >
                           <Upload size={16} />
                           {uploading === 'avatar' ? 'Uploading...' : 'Upload Image'}
@@ -621,7 +623,7 @@ function SettingsContent() {
                       Profile Background
                     </label>
                     {backgroundImage && (
-                      <div className="mb-4 w-full h-32 rounded-lg overflow-hidden border border-gray-200">
+                      <div className="mb-4 w-full h-32 rounded-lg overflow-hidden border-2 border-green-300 bg-green-50">
                         <img 
                           src={backgroundImage} 
                           alt="Background" 
@@ -630,34 +632,34 @@ function SettingsContent() {
                         />
                       </div>
                     )}
-                    <div className="flex-1">
-                      <input
-                        type="url"
-                        value={backgroundImage}
-                        onChange={(e) => setBackgroundImage(e.target.value)}
-                        placeholder="https://example.com/background.jpg"
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-gray-900 mb-2"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => backgroundInputRef.current?.click()}
-                        disabled={uploading === 'background'}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
-                      >
-                        <Upload size={16} />
-                        {uploading === 'background' ? 'Uploading...' : 'Upload Image'}
-                      </button>
-                      <input
-                        ref={backgroundInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleBackgroundFileChange}
-                        className="hidden"
-                      />
-                      <p className="text-xs text-gray-500 mt-2">
-                        Max 5MB (JPEG, PNG, WebP). Recommended: 1920x400px
+                    <div className={`w-full px-4 py-2.5 border rounded-lg mb-3 ${backgroundImage ? 'border-green-300 bg-green-50' : 'border-gray-300 bg-white'}`}>
+                      <p className="text-xs text-gray-600 mb-1">Current image URL:</p>
+                      <p className={`text-sm font-mono break-all ${backgroundImage ? 'text-gray-800' : 'text-gray-500'}`}>
+                        {backgroundImage || '(No image yet)'}
                       </p>
                     </div>
+                    <p className="text-xs text-gray-500 mb-3">
+                      Click "Upload Image" to replace with a new image
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => backgroundInputRef.current?.click()}
+                      disabled={uploading === 'background'}
+                      className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    >
+                      <Upload size={16} />
+                      {uploading === 'background' ? 'Uploading...' : 'Upload Image'}
+                    </button>
+                    <input
+                      ref={backgroundInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleBackgroundFileChange}
+                      className="hidden"
+                    />
+                    <p className="text-xs text-gray-500 mt-3">
+                      Max 5MB (JPEG, PNG, WebP). Recommended: 1920x400px
+                    </p>
                   </div>
 
                   <button
