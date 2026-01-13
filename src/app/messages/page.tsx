@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { fetchThreads, fetchMessages, sendMessage, markThreadRead, Thread, Message, updateOfferStatus } from "@/lib/messagesClient";
 import { getCurrentUserSync } from "@/lib/auth";
+import { analyzeMessageSafety } from "@/lib/messagingSafety";
 import { formatDistanceToNow } from "date-fns";
+import { AlertCircle, AlertTriangle } from "lucide-react";
 
 type ThreadWithMessages = {
   thread: Thread;
@@ -134,9 +136,22 @@ function MessagePane({
   onOfferUpdate: (offerId: string, status: string) => Promise<void>;
 }) {
   const [text, setText] = useState("");
+  const [safetyAnalysis, setSafetyAnalysis] = useState({ blockReason: null as string | null, warnings: [] as string[] });
+  const [isSending, setIsSending] = useState(false);
+
   useEffect(() => {
     setText("");
+    setSafetyAnalysis({ blockReason: null, warnings: [] });
   }, [convo?.thread.id]);
+
+  // Analyze safety as user types
+  useEffect(() => {
+    if (text) {
+      setSafetyAnalysis(analyzeMessageSafety(text));
+    } else {
+      setSafetyAnalysis({ blockReason: null, warnings: [] });
+    }
+  }, [text]);
 
   if (!convo) {
     return (
@@ -181,26 +196,62 @@ function MessagePane({
       </div>
 
       <form
-        className="border-t border-slate-200 p-3 flex items-center gap-2"
-        onSubmit={(e) => {
+        className="border-t border-slate-200 p-3 flex flex-col gap-2"
+        onSubmit={async (e) => {
           e.preventDefault();
           const trimmed = text.trim();
-          if (!trimmed) return;
-          onSend(trimmed).then(() => setText(""));
+          if (!trimmed || safetyAnalysis.blockReason) return;
+          setIsSending(true);
+          try {
+            await onSend(trimmed);
+            setText("");
+            setSafetyAnalysis({ blockReason: null, warnings: [] });
+          } finally {
+            setIsSending(false);
+          }
         }}
       >
-        <input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Message..."
-          className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
-        />
-        <button
-          type="submit"
-          className="rounded-lg bg-amber-500 text-black font-semibold px-4 py-2 text-sm hover:bg-amber-400 transition"
-        >
-          Send
-        </button>
+        {/* Safety Block - Prevents sending */}
+        {safetyAnalysis.blockReason && (
+          <div className="rounded-lg border border-red-300 bg-red-50 p-2.5 flex gap-2 items-start">
+            <AlertCircle size={16} className="text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="text-xs text-red-700">
+              <p className="font-semibold mb-0.5">Cannot send this message</p>
+              <p>{safetyAnalysis.blockReason}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Safety Warnings - Allows sending but alerts user */}
+        {safetyAnalysis.warnings.length > 0 && !safetyAnalysis.blockReason && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-2.5 flex gap-2 items-start">
+            <AlertTriangle size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
+            <div className="text-xs text-amber-700">
+              <p className="font-semibold mb-1">Safety reminder:</p>
+              <ul className="space-y-0.5">
+                {safetyAnalysis.warnings.map((warning, idx) => (
+                  <li key={idx}>• {warning}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center gap-2">
+          <input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Message..."
+            className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+          />
+          <button
+            type="submit"
+            disabled={!text.trim() || !!safetyAnalysis.blockReason || isSending}
+            className="rounded-lg bg-amber-500 text-black font-semibold px-4 py-2 text-sm hover:bg-amber-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSending ? "Sending..." : "Send"}
+          </button>
+        </div>
       </form>
     </div>
   );
@@ -251,10 +302,11 @@ function MessagesPageInner() {
 
   const handleSend = async (text: string) => {
     if (!selectedId) return;
-    const sent = await sendMessage(selectedId, text);
+    await sendMessage(selectedId, text);
+    const refreshed = await fetchMessages(selectedId);
     setMessagesById((prev) => ({
       ...prev,
-      [selectedId]: [...(prev[selectedId] || []), sent],
+      [selectedId]: refreshed,
     }));
     window.dispatchEvent(new Event("ms:unread"));
   };

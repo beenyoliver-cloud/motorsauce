@@ -222,7 +222,11 @@ export default function Header() {
 
   const displayName = useMemo(() => getDisplayName(user), [user]);
   const initials = useMemo(() => getInitials(displayName), [displayName]);
-  const profileHref = user ? `/profile/${encodeURIComponent(user.name)}` : "/auth/login";
+  const profileHref = user?.id
+    ? `/profile/id/${encodeURIComponent(user.id)}`
+    : user
+    ? `/profile/${encodeURIComponent(user.name)}`
+    : "/auth/login";
 
   const profileLinks = [
     ["My Profile", profileHref],

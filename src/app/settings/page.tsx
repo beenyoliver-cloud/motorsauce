@@ -34,6 +34,11 @@ function SettingsContent() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  
+  // Notification preferences
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [messageNotifications, setMessageNotifications] = useState(true);
+  const [marketingNotifications, setMarketingNotifications] = useState(false);
 
   // File input refs
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -60,7 +65,7 @@ function SettingsContent() {
       // Load profile data
       const { data: profile } = await supabase
         .from('profiles')
-        .select('avatar, background_image, about, postcode, county, country, account_type')
+        .select('avatar, background_image, about, postcode, county, country, account_type, email_notifications, message_notifications, marketing_notifications')
         .eq('id', currentUser.id)
         .single();
       
@@ -76,6 +81,11 @@ function SettingsContent() {
         setCounty(profile.county || "");
         setCountry(profile.country || "United Kingdom");
         setAccountType(normalizedAccountType);
+        
+        // Load notification preferences
+        setEmailNotifications(profile.email_notifications !== false);
+        setMessageNotifications(profile.message_notifications !== false);
+        setMarketingNotifications(profile.marketing_notifications === true);
       }
       
       setLoading(false);
@@ -151,12 +161,28 @@ function SettingsContent() {
     }
 
     try {
+      const trimmedName = name.trim();
+      const trimmedEmail = email.trim();
+      const trimmedAvatar = avatar.trim();
+      const trimmedBackground = backgroundImage.trim();
+      const trimmedAbout = about.trim();
+
       const lastNameChangeKey = nsKey("last_name_change_at");
       const lastChangeRaw = typeof window !== 'undefined' ? localStorage.getItem(lastNameChangeKey) : null;
       const lastChange = lastChangeRaw ? new Date(lastChangeRaw).getTime() : 0;
       const sixMonthsMs = 1000 * 60 * 60 * 24 * 30 * 6;
       const now = Date.now();
-      const nameChanged = name.trim() !== (user.name || "");
+      const nameChanged = trimmedName !== (user.name || "");
+      const emailChanged = trimmedEmail !== (user.email || "");
+      const avatarChanged = trimmedAvatar !== (user.avatar || "");
+      const backgroundChanged = trimmedBackground !== (user.background_image || "");
+      const aboutChanged = trimmedAbout !== (user.about || "");
+
+      if (!nameChanged && !emailChanged && !avatarChanged && !backgroundChanged && !aboutChanged) {
+        setMessage({ type: 'success', text: 'No changes to save.' });
+        setSaving(false);
+        return;
+      }
 
       if (nameChanged && lastChange && now - lastChange < sixMonthsMs) {
         const nextDate = new Date(lastChange + sixMonthsMs).toLocaleDateString();
@@ -165,13 +191,27 @@ function SettingsContent() {
         return;
       }
 
-      // Update profiles table with ALL fields including name
+      // Keep auth metadata in sync with profile changes
+      const authUpdate: { email?: string; data?: { name?: string; avatar?: string | null } } = {};
+      if (emailChanged) authUpdate.email = trimmedEmail;
+      if (nameChanged || avatarChanged) {
+        authUpdate.data = {
+          ...(nameChanged ? { name: trimmedName } : {}),
+          ...(avatarChanged ? { avatar: trimmedAvatar || null } : {}),
+        };
+      }
+      if (Object.keys(authUpdate).length > 0) {
+        const { error: authError } = await supabase.auth.updateUser(authUpdate);
+        if (authError) throw authError;
+      }
+
+      // Update profiles table with all profile fields
       const updatePayload = {
-        name: name.trim(),
-        email: email.trim(),
-        avatar: avatar.trim() || null,
-        background_image: backgroundImage.trim() || null,
-        about: about.trim() || null,
+        name: trimmedName,
+        avatar: trimmedAvatar || null,
+        background_image: trimmedBackground || null,
+        about: trimmedAbout || null,
+        ...(emailChanged ? { email: trimmedEmail } : {}),
       };
       console.log("[Settings] Updating profile with:", { userId: user.id, payload: updatePayload });
       
@@ -196,10 +236,10 @@ function SettingsContent() {
         const avatarKey = nsKey("avatar_v1");
         const aboutKey = nsKey("about_v1");
         
-        if (name.trim()) localStorage.setItem(nameKey, name.trim());
-        if (avatar.trim()) localStorage.setItem(avatarKey, avatar.trim());
+        if (trimmedName) localStorage.setItem(nameKey, trimmedName);
+        if (trimmedAvatar) localStorage.setItem(avatarKey, trimmedAvatar);
         else localStorage.removeItem(avatarKey);
-        if (about.trim()) localStorage.setItem(aboutKey, about.trim());
+        if (trimmedAbout) localStorage.setItem(aboutKey, trimmedAbout);
         else localStorage.removeItem(aboutKey);
         
         window.dispatchEvent(new Event("ms:profile"));
@@ -207,12 +247,8 @@ function SettingsContent() {
         console.error('Failed to update localStorage:', e);
       }
 
-      // Update auth email if changed
-      if (email !== user.email) {
-        const { error: emailError } = await supabase.auth.updateUser({
-          email: email.trim()
-        });
-        if (emailError) throw emailError;
+      // Notify user about email verification if applicable
+      if (emailChanged) {
         setMessage({ 
           type: 'success', 
           text: 'Profile updated! Check your new email for verification.' 
@@ -258,6 +294,35 @@ function SettingsContent() {
       setMessage({ type: 'success', text: 'Location updated successfully!' });
     } catch (err) {
       setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to update location' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateNotifications = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setMessage(null);
+    if (!user) {
+      setSaving(false);
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          email_notifications: emailNotifications,
+          message_notifications: messageNotifications,
+          marketing_notifications: marketingNotifications,
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setMessage({ type: 'success', text: 'Notification preferences saved successfully!' });
+    } catch (err) {
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to update notification preferences' });
     } finally {
       setSaving(false);
     }
@@ -721,44 +786,66 @@ function SettingsContent() {
                   Manage how you receive notifications about activity on Motorsauce
                 </p>
                 
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-900">Email notifications</h3>
-                      <p className="text-xs text-gray-500 mt-1">Receive updates via email</p>
+                <form onSubmit={handleUpdateNotifications} className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-900">Email notifications</h3>
+                        <p className="text-xs text-gray-500 mt-1">Receive updates via email</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer" 
+                          checked={emailNotifications}
+                          onChange={(e) => setEmailNotifications(e.target.checked)}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
+                      </label>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" defaultChecked />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
-                    </label>
+
+                    <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-900">New messages</h3>
+                        <p className="text-xs text-gray-500 mt-1">Alert when you receive messages</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer" 
+                          checked={messageNotifications}
+                          onChange={(e) => setMessageNotifications(e.target.checked)}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex items-center justify-between py-3">
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-900">Marketing updates</h3>
+                        <p className="text-xs text-gray-500 mt-1">Receive news and offers</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer" 
+                          checked={marketingNotifications}
+                          onChange={(e) => setMarketingNotifications(e.target.checked)}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
+                      </label>
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-900">New messages</h3>
-                      <p className="text-xs text-gray-500 mt-1">Alert when you receive messages</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" defaultChecked />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
-                    </label>
-                  </div>
-
-                  <div className="flex items-center justify-between py-3">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-900">Marketing updates</h3>
-                      <p className="text-xs text-gray-500 mt-1">Receive news and offers</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
-                    </label>
-                  </div>
-                </div>
-
-                <p className="text-xs text-gray-500 mt-6 p-3 bg-gray-50 rounded-lg">
-                  Note: Notification preferences will be saved automatically in a future update.
-                </p>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    <Save size={16} />
+                    {saving ? 'Saving...' : 'Save Preferences'}
+                  </button>
+                </form>
               </div>
             )}
 
