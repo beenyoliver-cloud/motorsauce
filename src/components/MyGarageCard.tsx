@@ -395,7 +395,7 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
 
   if (!canShow) {
     return (
-      <div className="rounded-sm border border-gray-200 bg-white p-6">
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
         <h2 className="text-xl font-bold text-black">Garage</h2>
         <p className="mt-1 text-gray-700">This user's garage is private.</p>
       </div>
@@ -403,7 +403,7 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
   }
 
   return (
-    <div className="rounded-sm border border-gray-200 bg-white overflow-hidden">
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       {/* Header */}
       <div className="px-4 sm:px-6 pt-4 pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -907,7 +907,7 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
     </div>
   )}
 
-      {/* Motorsauce-themed animations */}
+      {/* Motorsource-themed animations */}
       <style jsx>{`
         @keyframes msPop {
           0% { transform: scale(0.985); opacity: 0.4; }

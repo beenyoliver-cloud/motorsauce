@@ -209,7 +209,7 @@ export default function OfferToast({
                 />
                 <button
                   onClick={sendCounter}
-                  className="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-black"
+                  className="rounded-md bg-yellow-500 px-3 py-1.5 text-sm font-semibold text-black hover:bg-yellow-600"
                 >
                   Send
                 </button>

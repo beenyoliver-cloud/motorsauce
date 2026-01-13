@@ -2,6 +2,7 @@
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import MobileNavWrapper from "@/components/MobileNavWrapper";
 import SellFAB from "@/components/SellFAB";
 import { LayoutClient } from "@/components/LayoutClient";
 import WarningBanner from "@/components/WarningBanner";
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <Footer />
           </LayoutClient>
         </div>
+        <MobileNavWrapper />
         {/* Floating Action Button for Sell - Mobile Only */}
         <SellFAB />
         {/* Vercel Analytics */}

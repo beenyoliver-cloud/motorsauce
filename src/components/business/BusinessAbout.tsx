@@ -8,8 +8,8 @@ type Props = {
 
 export default function BusinessAbout({ business }: Props) {
   return (
-    <div className="max-w-4xl">
-      <div className="bg-white rounded-lg shadow-sm border p-6">
+    <div className="max-w-6xl">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">About {business.business_name}</h2>
         
         {business.about_business ? (

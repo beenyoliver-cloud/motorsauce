@@ -17,10 +17,10 @@ export default function BusinessContact({ business }: Props) {
   }
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-6xl">
       <div className="grid md:grid-cols-2 gap-6">
         {/* Contact Information */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Contact Information</h2>
           <div className="space-y-4">
             {business.phone_number && (
@@ -72,7 +72,7 @@ export default function BusinessContact({ business }: Props) {
         </div>
 
         {/* Opening Hours */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Opening Hours</h2>
           <div className="space-y-2">
             {daysOfWeek.map((day) => {
@@ -95,7 +95,7 @@ export default function BusinessContact({ business }: Props) {
 
         {/* Customer Service Hours */}
         {business.customer_service_hours && (
-          <div className="bg-yellow-50 rounded-lg border border-yellow-200 p-6 md:col-span-2">
+          <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-6 md:col-span-2">
             <div className="flex items-start gap-3">
               <Clock className="w-5 h-5 text-yellow-600 mt-0.5" />
               <div>
@@ -109,7 +109,7 @@ export default function BusinessContact({ business }: Props) {
         )}
 
         {/* Location Note (GDPR-safe) */}
-        <div className="bg-blue-50 rounded-lg border border-blue-200 p-6 md:col-span-2">
+        <div className="bg-blue-50 rounded-xl border border-blue-200 p-6 md:col-span-2">
           <div className="flex items-start gap-3">
             <MapPin className="w-5 h-5 text-blue-600 mt-0.5" />
             <div>

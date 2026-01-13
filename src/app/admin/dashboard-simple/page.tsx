@@ -76,30 +76,30 @@ export default function AdminDashboardSimple() {
   }, [router, supabase]);
 
   return (
-    <div className="max-w-5xl mx-auto mt-12 px-4">
+    <div className="max-w-7xl mx-auto mt-12 px-4 sm:px-6 lg:px-8">
       <h1 className="text-3xl font-bold mb-6">Simple Admin Dashboard Test</h1>
       
-      <div className="bg-blue-50 border border-blue-200 p-4 rounded mb-4">
+      <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl mb-4">
         <h2 className="font-bold mb-2">Current Step:</h2>
         <p className="text-lg">{step}</p>
       </div>
 
-      <div className="bg-gray-50 border border-gray-200 p-4 rounded mb-4">
+      <div className="bg-white border border-gray-200 shadow-sm p-4 rounded-xl mb-4">
         <h2 className="font-bold mb-2">User Info:</h2>
         <pre className="text-xs overflow-auto">{JSON.stringify(user, null, 2)}</pre>
       </div>
 
-      <div className="bg-gray-50 border border-gray-200 p-4 rounded mb-4">
+      <div className="bg-white border border-gray-200 shadow-sm p-4 rounded-xl mb-4">
         <h2 className="font-bold mb-2">Session Info:</h2>
         <pre className="text-xs overflow-auto">{JSON.stringify(session ? { hasToken: !!session.access_token, expiresAt: session.expires_at } : null, null, 2)}</pre>
       </div>
 
-      <div className="bg-gray-50 border border-gray-200 p-4 rounded">
+      <div className="bg-white border border-gray-200 shadow-sm p-4 rounded-xl">
         <h2 className="font-bold mb-2">Admin Check Result:</h2>
         <pre className="text-xs overflow-auto">{JSON.stringify(adminCheckResult, null, 2)}</pre>
       </div>
 
-      <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded">
+      <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
         <p className="text-sm">
           <strong>Instructions:</strong> Open browser console (F12) and look for logs starting with [Simple Dashboard]
         </p>

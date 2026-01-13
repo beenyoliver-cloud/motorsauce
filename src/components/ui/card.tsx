@@ -2,7 +2,7 @@
 import * as React from "react";
 
 export function Card({ children }: { children: React.ReactNode }) {
-  return <div className="bg-white rounded-xl shadow p-4 border border-gray-200">{children}</div>;
+  return <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">{children}</div>;
 }
 
 export function CardHeader({ children }: { children: React.ReactNode }) {

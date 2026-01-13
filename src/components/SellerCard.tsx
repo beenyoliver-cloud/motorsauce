@@ -28,7 +28,7 @@ export default function SellerCard({
   const profileUrl = `/profile/${encodeURIComponent(name)}`;
 
   return (
-    <div className="border border-gray-200 rounded-xl bg-white p-4 hover:shadow-md transition">
+    <div className="border border-gray-200 rounded-xl bg-white shadow-sm p-4 hover:shadow-md transition">
       <div className="flex items-start gap-4">
         {/* Avatar */}
         <Link href={profileUrl} className="flex-shrink-0">
@@ -93,7 +93,7 @@ export default function SellerCard({
           <div className="mt-3 flex items-center gap-2">
             <Link
               href={profileUrl}
-              className="inline-flex items-center px-3 py-1.5 rounded-md bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition"
+              className="inline-flex items-center px-3 py-1.5 rounded-md bg-yellow-500 text-black text-sm font-semibold hover:bg-yellow-600 transition"
             >
               View profile
             </Link>

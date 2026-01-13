@@ -32,7 +32,7 @@ export default function CenteredCard({
         </>
       )}
       <div
-        className={`relative w-full max-w-${maxWidth} rounded-2xl bg-white/95 backdrop-blur border border-gray-200 shadow-xl ${pad}`}
+        className={`relative w-full max-w-${maxWidth} rounded-xl bg-white border border-gray-200 shadow-sm ${pad}`}
       >
         {title && <h1 className="text-2xl font-bold text-black mb-5 text-center">{title}</h1>}
         {children}

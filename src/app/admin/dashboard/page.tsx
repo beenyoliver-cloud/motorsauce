@@ -104,15 +104,15 @@ export default function AdminDashboard() {
   }
 
   if (loading) {
-    return (<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>);
+    return (<div className="min-h-screen bg-white flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>);
   }
 
   if (error) {
-    return (<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="text-red-600">{error}</div></div>);
+    return (<div className="min-h-screen bg-white flex items-center justify-center"><div className="text-red-600">{error}</div></div>);
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>

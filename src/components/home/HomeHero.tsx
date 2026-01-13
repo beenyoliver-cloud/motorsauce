@@ -116,7 +116,7 @@ export default function HomeHero() {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white text-slate-900 p-3 sm:p-5 shadow-sm max-w-5xl mx-auto mt-1 sm:mt-4">
+    <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white text-slate-900 p-3 sm:p-5 shadow-sm max-w-6xl mx-auto mt-1 sm:mt-4">
       <div className="space-y-2 sm:space-y-3 relative">
         <div className="flex flex-wrap items-center gap-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-gray-600">

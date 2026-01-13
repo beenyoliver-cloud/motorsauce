@@ -46,6 +46,7 @@ html, body {
   --foreground: #171717;
   --header-offset-mobile: 150px;
   --header-offset-desktop: 140px;
+  --bottom-nav-height: 56px;
 
   /*
     Homepage desktop layout sizing
@@ -61,11 +62,18 @@ html, body {
   --layout-offset: var(--header-offset-mobile);
   --layout-offset-total: calc(var(--layout-offset) + env(safe-area-inset-top));
   padding-top: var(--layout-offset-total);
+  padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
 }
 
 @media (min-width: 640px) {
   .layout-offset {
     --layout-offset: var(--header-offset-desktop);
+  }
+}
+
+@media (min-width: 768px) {
+  .layout-offset {
+    padding-bottom: 0;
   }
 }
 

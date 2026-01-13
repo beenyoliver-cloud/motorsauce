@@ -70,7 +70,7 @@ export default function MyListingsTab({ sellerName }: { sellerName?: string }) {
   if (items.length === 0) {
     const isMe = sellerName ? norm(sellerName) === norm(getCurrentUserSync()?.name || "") : true;
     return (
-      <div className="rounded-sm border-2 border-dashed border-gray-300 bg-white p-8 text-center space-y-3">
+      <div className="rounded-xl border-2 border-dashed border-gray-300 bg-white shadow-sm p-8 text-center space-y-3">
         <h3 className="text-lg font-semibold text-gray-900">No listings yet</h3>
         <p className="text-sm text-gray-600">
           {isMe
@@ -80,7 +80,7 @@ export default function MyListingsTab({ sellerName }: { sellerName?: string }) {
         {isMe && (
           <button
             onClick={() => router.push("/sell")}
-            className="inline-flex items-center justify-center rounded-full bg-black px-5 py-2 text-sm font-semibold text-white hover:bg-gray-900"
+            className="inline-flex items-center justify-center rounded-full bg-yellow-500 px-5 py-2 text-sm font-semibold text-black hover:bg-yellow-600"
           >
             List a part
           </button>
@@ -96,12 +96,12 @@ export default function MyListingsTab({ sellerName }: { sellerName?: string }) {
         const uid = u?.id;
         const isMine = Boolean(uid && (l.sellerId === uid || l.ownerId === uid || norm(l?.seller?.name || "") === norm(u?.name || "")));
         return (
-          <div key={String(l.id)} className="group relative border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition">
+          <div key={String(l.id)} className="group relative border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition">
             {/* Edit button - positioned absolutely on top */}
             {isMine && (
               <a
                 href={`/listing/${l.id}/edit`}
-                className="absolute top-1.5 right-1.5 rounded-md bg-yellow-500 text-black px-2 py-1 text-[10px] font-semibold opacity-0 group-hover:opacity-100 bg-black/70 text-white transition z-50 hover:bg-black shadow-sm"
+                className="absolute top-1.5 right-1.5 rounded-md bg-yellow-500 text-black px-2 py-1 text-[10px] font-semibold opacity-0 group-hover:opacity-100 transition z-50 hover:bg-yellow-600 shadow-sm"
               >
                 Edit
               </a>

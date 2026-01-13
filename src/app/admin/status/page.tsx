@@ -49,7 +49,7 @@ export default function AdminStatusPage() {
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto mt-12 px-4">
+      <div className="max-w-7xl mx-auto mt-12 px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-xl border border-gray-200 p-8">
           <p>Checking status...</p>
         </div>
@@ -58,7 +58,7 @@ export default function AdminStatusPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto mt-12 px-4 pb-12">
+    <div className="max-w-7xl mx-auto mt-12 px-4 sm:px-6 lg:px-8 pb-12">
       <div className="bg-white rounded-xl border border-gray-200 p-8">
         <div className="flex items-center gap-3 mb-6">
           <Shield className="text-yellow-600" size={32} />

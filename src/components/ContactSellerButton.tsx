@@ -63,7 +63,7 @@ export default function ContactSellerButton({
       className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold transition border border-transparent ${
         isOwn
           ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-          : "bg-gray-900 text-white hover:bg-black"
+          : "bg-yellow-500 text-black hover:bg-yellow-600"
       } ${className}`}
       title={isOwn ? "You can't message yourself" : "Contact seller"}
     >

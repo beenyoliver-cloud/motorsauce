@@ -53,7 +53,7 @@ const safeguards = [
 export default function AboutPage() {
   return (
     <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
-      <div className="rounded-3xl border border-gray-200 bg-white p-8 sm:p-10 shadow-sm">
+      <div className="rounded-xl border border-gray-200 bg-white p-8 sm:p-10 shadow-sm">
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-yellow-600">
           Built by enthusiasts for enthusiasts
         </p>
@@ -152,7 +152,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="rounded-3xl border border-gray-200 bg-white p-8 sm:p-10 shadow-sm text-center">
+      <section className="rounded-xl border border-gray-200 bg-white p-8 sm:p-10 shadow-sm text-center">
         <h2 className="text-2xl font-bold text-black">Building the future of parts commerce</h2>
         <p className="mt-3 text-gray-700">
           We ship improvements weekly. If you have feedback, inventory to import, or product ideas,

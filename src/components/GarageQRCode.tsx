@@ -84,7 +84,7 @@ export default function GarageQRCode({ username, vehicleCount }: GarageQRCodePro
       try {
         await navigator.share({
           title: `${username}'s Garage`,
-          text: `Check out my ${vehicleCount} vehicle${vehicleCount !== 1 ? "s" : ""} on Motorsauce!`,
+          text: `Check out my ${vehicleCount} vehicle${vehicleCount !== 1 ? "s" : ""} on Motorsource!`,
           url: garageUrl,
         });
       } catch (err) {

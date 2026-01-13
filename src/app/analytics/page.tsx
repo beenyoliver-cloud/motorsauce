@@ -87,7 +87,7 @@ export default function BusinessAnalytics() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-yellow-500" />
       </div>
     );
@@ -95,7 +95,7 @@ export default function BusinessAnalytics() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
           <Link href="/" className="text-yellow-600 hover:text-yellow-700 font-medium">
@@ -111,8 +111,8 @@ export default function BusinessAnalytics() {
     : "0";
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center gap-3 mb-8">
           <Link href="/" className="text-gray-600 hover:text-gray-900">
             <ArrowLeft className="h-5 w-5" />
@@ -157,7 +157,7 @@ export default function BusinessAnalytics() {
 
         {/* Growth Sections */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Package className="h-5 w-5 text-blue-600" />
               Listing Activity
@@ -182,7 +182,7 @@ export default function BusinessAnalytics() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <ShoppingCart className="h-5 w-5 text-green-600" />
               Offer Activity
@@ -212,7 +212,7 @@ export default function BusinessAnalytics() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Eye className="h-5 w-5 text-orange-600" />
               Engagement
@@ -240,7 +240,7 @@ export default function BusinessAnalytics() {
 
         {/* Top Performing & Recent */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Performing Listings</h3>
             {metrics?.top_listings && metrics.top_listings.length > 0 ? (
               <div className="space-y-3">
@@ -351,7 +351,7 @@ function StatCard({
     purple: "bg-purple-100 text-purple-600",
   };
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
         <div className={`p-3 rounded-lg ${colorClasses[color]}`}>{icon}</div>
       </div>

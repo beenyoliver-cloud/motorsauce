@@ -59,7 +59,7 @@ export default function SellFAB() {
         group
       `}
       style={{
-        bottom: "calc(1.5rem + env(safe-area-inset-bottom))",
+        bottom: "calc(1.5rem + env(safe-area-inset-bottom) + var(--bottom-nav-height, 0px))",
         right: "calc(1.5rem + env(safe-area-inset-right))",
       }}
       aria-label="Sell your parts"

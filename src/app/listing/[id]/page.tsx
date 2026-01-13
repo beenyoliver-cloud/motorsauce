@@ -749,7 +749,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
   if (offPlatformHints) {
     riskFlags.push({
       title: "Off-platform contact detected",
-      body: "Avoid off-platform payments. Keep chat and checkout on Motorsauce for protection.",
+      body: "Avoid off-platform payments. Keep chat and checkout on Motorsource for protection.",
       tone: "red",
     });
   }
@@ -762,7 +762,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
   }
 
   return (
-    <section className="mx-auto max-w-6xl px-3 sm:px-4 py-4 sm:py-8 space-y-4">
+    <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4">
       {/* Track recently viewed (client side) */}
       {/* @ts-ignore Server -> Client component mount */}
       <TrackRecentlyViewed id={listing.id} />
@@ -895,7 +895,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             {riskFlags.length === 0 ? (
               <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800 flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4" />
-                No issues detected. Pay through Motorsauce to keep funds safe.
+                No issues detected. Pay through Motorsource to keep funds safe.
               </div>
             ) : (
               <div className="space-y-2">
@@ -978,7 +978,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
           )}
 
           {/* Purchase Options (compact) */}
-          <div className="rounded-2xl border border-amber-100 bg-white shadow-sm p-4 sm:p-5 space-y-3">
+          <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-4 sm:p-5 space-y-3">
             <div className="flex items-center justify-between gap-2 text-xs text-gray-700">
               <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-100 px-3 py-1 font-semibold">
                 <ShieldCheck className="h-3.5 w-3.5" />
@@ -1006,7 +1006,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
                 sellerId={listing.sellerId}
                 listingId={listing.id}
                 listingTitle={listing.title}
-                className="justify-center rounded-lg bg-gray-900 px-3 py-2.5 text-xs font-semibold text-white hover:bg-black"
+                className="justify-center rounded-lg bg-yellow-500 px-3 py-2.5 text-xs font-semibold text-black hover:bg-yellow-600"
               />
             </div>
             <MakeOfferButtonNew
@@ -1080,7 +1080,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             {riskFlags.length === 0 ? (
               <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800 flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4" />
-                No issues detected. Pay through Motorsauce to keep funds safe.
+                No issues detected. Pay through Motorsource to keep funds safe.
               </div>
             ) : (
               <div className="space-y-2">

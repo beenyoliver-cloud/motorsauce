@@ -11,10 +11,10 @@ function TabLink({ href, label, isActive }: { href: string; label: string; isAct
     <Link
       href={href}
       aria-current={isActive ? "page" : undefined}
-      className={`relative flex-1 min-w-[140px] rounded-sm border px-4 py-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-yellow-400 ${
+      className={`relative flex-1 min-w-[140px] rounded-xl border px-4 py-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-yellow-400 ${
         isActive
-          ? "border-gray-900 bg-gray-900 text-white shadow-lg"
-          : "border-gray-200 bg-white text-gray-700 hover:border-gray-900"
+          ? "border-yellow-500 bg-yellow-500 text-black shadow-sm"
+          : "border-gray-200 bg-white text-gray-700 hover:border-yellow-400"
       }`}
     >
       <div className="flex items-center justify-between gap-2">
@@ -100,7 +100,7 @@ export default function SavedTabGate({
 
   return (
     <>
-      <div className="mt-6 rounded-3xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
         <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible scrollbar-hide">
       <TabLink href={`${baseHref}?tab=my`} label={listingsLabel} isActive={activeTab === "my"} />
       <TabLink href={`${baseHref}?tab=about`} label="About" isActive={activeTab === "about"} />

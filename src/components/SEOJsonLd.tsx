@@ -6,7 +6,7 @@ export default function SEOJsonLd() {
   const json = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "Motorsauce",
+    name: "Motorsource",
     url: "https://motorsauce.vercel.app/",
     potentialAction: {
       "@type": "SearchAction",

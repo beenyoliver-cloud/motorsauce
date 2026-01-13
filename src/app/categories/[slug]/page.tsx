@@ -119,8 +119,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   if (!data) return notFound();
 
   return (
-    <section className="max-w-5xl mx-auto">
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 md:p-8">
+    <section className="max-w-6xl mx-auto">
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8">
         <div className="text-sm text-gray-600">
           <Link href="/" className="hover:text-yellow-600">Home</Link>
           <span className="mx-2">/</span>
@@ -155,7 +155,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         )}
 
         {data.howto && data.howto.length > 0 && (
-          <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-4">
+          <div className="mt-6 rounded-xl border border-gray-200 bg-white shadow-sm p-4">
             <div className="text-sm font-semibold text-black">How this works</div>
             <ul className="mt-2 text-sm text-gray-700 space-y-1 list-disc pl-5">
               {data.howto.map((t) => (

@@ -145,7 +145,7 @@ export default function SellPage() {
 
   if (!authChecked) {
     return (
-      <section className="mx-auto max-w-3xl px-4 py-12">
+      <section className="mx-auto max-w-6xl px-4 py-12">
         <div className="rounded-xl border border-gray-200 bg-white p-6 text-gray-800">Checking your account…</div>
       </section>
     );
@@ -156,8 +156,8 @@ export default function SellPage() {
 
   if (sellerGate.status === "checking") {
     return (
-      <section className="mx-auto max-w-3xl px-4 py-12">
-        <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center text-gray-700">
+      <section className="mx-auto max-w-6xl px-4 py-12">
+        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-gray-700">
           <p>Confirming your seller status…</p>
         </div>
       </section>
@@ -166,8 +166,8 @@ export default function SellPage() {
 
   if (sellerGate.status !== "allowed") {
     return (
-      <section className="mx-auto max-w-3xl px-4 py-12">
-        <div className="rounded-2xl border border-yellow-200 bg-white p-8 text-gray-900 shadow-sm">
+      <section className="mx-auto max-w-6xl px-4 py-12">
+        <div className="rounded-xl border border-yellow-200 bg-white p-8 text-gray-900 shadow-sm">
           <div className="flex items-center gap-3 text-yellow-700">
             {sellerGate.status === "pending" ? (
               <ShieldCheck className="h-6 w-6" />
@@ -200,10 +200,10 @@ export default function SellPage() {
   }
 
   return (
-    <section className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
+    <section className="min-h-screen bg-white py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto">
         {!isAuthed && (
-          <div className="mb-6 rounded-2xl border border-blue-200 bg-blue-50 p-5 text-blue-900 shadow-sm">
+          <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 text-gray-900 shadow-sm">
             <h2 className="text-lg font-semibold">You can draft your listing</h2>
             <p className="mt-1 text-sm text-blue-800">
               You’ll need to sign in before publishing so we can attribute ownership and handle payments/messages.
@@ -211,13 +211,13 @@ export default function SellPage() {
             <div className="mt-3 flex flex-wrap gap-3">
               <Link
                 href="/auth/login?next=/sell"
-                className="inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700"
+                className="inline-flex items-center px-4 py-2 rounded-md bg-yellow-500 text-black font-semibold hover:bg-yellow-600"
               >
                 Sign in to publish
               </Link>
               <Link
                 href="/auth/register?next=/sell"
-                className="inline-flex items-center px-4 py-2 rounded-md border border-blue-300 text-blue-900 bg-white hover:bg-blue-50"
+                className="inline-flex items-center px-4 py-2 rounded-md border border-gray-300 text-gray-900 bg-white hover:border-yellow-400 hover:text-yellow-700"
               >
                 Create an account
               </Link>
@@ -226,8 +226,8 @@ export default function SellPage() {
         )}
 
         {sellerProfileType === "individual" && (
-          <div className="mb-6 rounded-2xl border border-gray-200 bg-white/90 p-5 shadow-sm">
-            <h2 className="text-xl font-semibold text-gray-900">Welcome to selling on Motorsauce</h2>
+          <div className="mb-6 rounded-xl border border-gray-200 bg-white shadow-sm p-5">
+            <h2 className="text-xl font-semibold text-gray-900">Welcome to selling on Motorsource</h2>
             <p className="mt-1 text-sm text-gray-600">
               Individuals can list instantly—just keep messages/payments on-platform. Upgrade to a business account in
               Settings if you need storefront controls or compliance tooling.
@@ -252,7 +252,7 @@ export default function SellPage() {
           <p className="text-sm text-gray-500 mt-2">Fields marked with <span className="text-red-500">*</span> are required</p>
         </div>
 
-        <div className="mb-6 rounded-2xl border border-yellow-200 bg-yellow-50 p-5 text-left text-yellow-900 shadow-sm space-y-3">
+        <div className="mb-6 rounded-xl border border-yellow-200 bg-yellow-50 p-5 text-left text-yellow-900 shadow-sm space-y-3">
           <div className="flex items-center gap-3">
             <ShieldAlert className="h-6 w-6 text-yellow-600" />
             <div>
@@ -585,15 +585,15 @@ function SellForm({ isAuthed }: { isAuthed: boolean }) {
   return (
     <form onSubmit={onSubmit} className="space-y-8">
       {!isAuthed && (
-        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-blue-900">
+        <div className="rounded-xl border border-gray-200 bg-white p-4 text-gray-900 shadow-sm">
           <div className="text-sm font-semibold">Sign in required to publish</div>
-          <div className="mt-1 text-sm text-blue-800">
+          <div className="mt-1 text-sm text-gray-600">
             You can fill out the form now, but you’ll need to sign in before we can publish your listing.
           </div>
           <div className="mt-3">
             <Link
               href="/auth/login?next=/sell"
-              className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              className="inline-flex items-center rounded-md bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-600"
             >
               Sign in
             </Link>
@@ -601,7 +601,7 @@ function SellForm({ isAuthed }: { isAuthed: boolean }) {
         </div>
       )}
       {/* Essential Details Card */}
-      <div className="bg-white border-2 border-gray-100 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
+      <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm hover:shadow-md transition-shadow">
         <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-gray-100">
           <div className="w-10 h-10 bg-gradient-to-br from-gold-400 to-gold-600 rounded-xl flex items-center justify-center">
             <span className="text-xl text-white font-bold">1</span>
@@ -765,14 +765,14 @@ function SellForm({ isAuthed }: { isAuthed: boolean }) {
       </div>
 
       {/* Vehicle Details - Collapsible Multi-Vehicle */}
-      <div className="border-2 border-gray-100 rounded-2xl overflow-hidden bg-white shadow-lg hover:shadow-xl transition-shadow">
+      <div className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
         <button
           type="button"
           onClick={() => setVehiclesExpanded(!vehiclesExpanded)}
           className="w-full flex items-center justify-between px-8 py-5 hover:bg-gradient-to-r hover:from-gray-50 hover:to-white transition-all group"
         >
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
               <span className="text-xl text-white font-bold">2</span>
             </div>
             <div className="text-left">
@@ -787,7 +787,7 @@ function SellForm({ isAuthed }: { isAuthed: boolean }) {
               </span>
             )}
             {isUniversal && (
-              <span className="inline-flex items-center bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
+              <span className="inline-flex items-center bg-yellow-500 text-black text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
                 Universal
               </span>
             )}
@@ -796,7 +796,7 @@ function SellForm({ isAuthed }: { isAuthed: boolean }) {
         </button>
         
         {vehiclesExpanded && (
-          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 space-y-4">
+          <div className="px-6 py-4 border-t border-gray-200 bg-white space-y-4">
             {isVehicleSpecific ? (
               <>
                 <p className="text-xs text-gray-600">This part type requires vehicle compatibility information</p>
@@ -930,7 +930,7 @@ function SellForm({ isAuthed }: { isAuthed: boolean }) {
       </div>
 
       {/* Photos Card */}
-      <div className="bg-white border-2 border-gray-100 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
+      <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm hover:shadow-md transition-shadow">
         <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl flex items-center justify-center">
@@ -953,9 +953,9 @@ function SellForm({ isAuthed }: { isAuthed: boolean }) {
 
         <label
           ref={dropRef}
-          className="flex flex-col items-center justify-center gap-4 border-3 border-dashed border-gray-300 rounded-2xl p-12 text-center cursor-pointer hover:bg-gradient-to-br hover:from-gray-50 hover:to-white hover:border-gold-400 transition-all group"
+          className="flex flex-col items-center justify-center gap-4 border-3 border-dashed border-gray-300 rounded-xl p-12 text-center cursor-pointer hover:bg-gradient-to-br hover:from-gray-50 hover:to-white hover:border-gold-400 transition-all group"
         >
-          <div className="w-16 h-16 bg-gradient-to-br from-gold-100 to-gold-200 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+          <div className="w-16 h-16 bg-gradient-to-br from-gold-100 to-gold-200 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
             <Upload className="h-8 w-8 text-gold-600" />
           </div>
           <div>
@@ -1006,7 +1006,7 @@ function SellForm({ isAuthed }: { isAuthed: boolean }) {
       </div>
 
       {/* Shipping & Returns Card */}
-      <div className="bg-white border-2 border-gray-100 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow space-y-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm hover:shadow-md transition-shadow space-y-6">
         <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-100">
           <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center">
             <span className="text-xl text-white font-bold">4</span>
@@ -1047,7 +1047,7 @@ function SellForm({ isAuthed }: { isAuthed: boolean }) {
               type="button"
               onClick={handleGeocodePostcode}
               disabled={geocoding || !postcode.trim()}
-              className="px-5 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all"
+              className="px-5 py-3 bg-yellow-500 text-black rounded-xl text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md hover:bg-yellow-600 transition-all"
             >
               {geocoding ? "Checking..." : "Validate"}
             </button>
@@ -1064,7 +1064,7 @@ function SellForm({ isAuthed }: { isAuthed: boolean }) {
           )}
         </div>
 
-        <div className="border-2 border-gray-200 rounded-xl p-5 bg-gradient-to-br from-gray-50 to-white">
+        <div className="border border-gray-200 rounded-xl p-5 bg-white shadow-sm">
           <div className="flex items-start gap-4">
             <input
               type="checkbox"
@@ -1100,7 +1100,7 @@ function SellForm({ isAuthed }: { isAuthed: boolean }) {
 
       {/* Errors */}
       {errorMsg && (
-        <div className="border-2 border-red-300 bg-red-50 text-red-800 rounded-2xl p-6 shadow-lg flex items-start gap-4">
+        <div className="border border-red-200 bg-red-50 text-red-800 rounded-xl p-6 shadow-sm flex items-start gap-4">
           <span className="text-3xl">⚠️</span>
           <div>
             <h3 className="font-bold text-lg mb-1">Error</h3>
@@ -1114,7 +1114,7 @@ function SellForm({ isAuthed }: { isAuthed: boolean }) {
         <button
           type="submit"
           disabled={!canSubmit || submitting}
-          className={`flex-1 sm:flex-none px-10 py-5 rounded-2xl font-bold text-lg transition-all shadow-lg relative overflow-hidden group ${
+          className={`flex-1 sm:flex-none px-10 py-5 rounded-xl font-bold text-lg transition-all shadow-lg relative overflow-hidden group ${
             !canSubmit || submitting
               ? "bg-gray-200 text-gray-400 cursor-not-allowed border-2 border-gray-300"
               : "bg-gradient-to-r from-gold-500 to-yellow-500 hover:from-gold-600 hover:to-yellow-600 text-black border-2 border-gold-600 hover:border-gold-700 hover:shadow-2xl hover:scale-105 transform"
@@ -1141,7 +1141,7 @@ function SellForm({ isAuthed }: { isAuthed: boolean }) {
           type="button"
           onClick={saveAsDraft}
           disabled={!title.trim() || submitting}
-          className={`flex-1 sm:flex-none px-8 py-5 rounded-2xl font-semibold text-lg transition-all shadow-md border-2 ${
+          className={`flex-1 sm:flex-none px-8 py-5 rounded-xl font-semibold text-lg transition-all shadow-md border-2 ${
             !title.trim() || submitting
               ? "bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed"
               : "bg-white text-gray-800 border-gray-300 hover:border-gray-400 hover:bg-gray-50 hover:shadow-lg"
@@ -1154,7 +1154,7 @@ function SellForm({ isAuthed }: { isAuthed: boolean }) {
         <button
           type="button"
           onClick={() => router.push("/")}
-          className="flex-1 sm:flex-none px-10 py-5 rounded-2xl font-semibold text-lg border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-700 transition-all shadow-md hover:shadow-lg"
+          className="flex-1 sm:flex-none px-10 py-5 rounded-xl font-semibold text-lg border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-700 transition-all shadow-md hover:shadow-lg"
         >
           Cancel
         </button>
@@ -1169,7 +1169,7 @@ function SellForm({ isAuthed }: { isAuthed: boolean }) {
 
       {/* Success */}
       {submitted && (
-        <div className="border-2 border-green-300 bg-green-50 text-green-800 rounded-2xl p-6 shadow-lg flex items-start gap-4 animate-pulse">
+        <div className="border border-green-200 bg-green-50 text-green-800 rounded-xl p-6 shadow-sm flex items-start gap-4 animate-pulse">
           <span className="text-3xl">✓</span>
           <div>
             <h3 className="font-bold text-lg mb-1">Success!</h3>

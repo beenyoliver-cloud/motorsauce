@@ -73,7 +73,7 @@ export default function BusinessHeader({ business, isOwner, onColorsDetected }: 
       </div>
 
       {/* Business Info - Improved mobile layout */}
-      <div className="max-w-7xl mx-auto px-3 md:px-4 -mt-12 md:-mt-16 relative z-10 pb-4">
+      <div className="max-w-6xl mx-auto px-3 md:px-4 -mt-12 md:-mt-16 relative z-10 pb-4">
         <div className="flex flex-col md:flex-row items-start md:items-end gap-3 md:gap-4">
           {/* Logo - Larger for better visibility */}
           <div className="flex-shrink-0">
@@ -99,7 +99,7 @@ export default function BusinessHeader({ business, isOwner, onColorsDetected }: 
           </div>
 
           {/* Business Name and Details - Compact on mobile */}
-          <div className="flex-1 bg-white rounded-lg shadow-lg p-3 md:p-6 w-full">
+          <div className="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm p-3 md:p-6 w-full">
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">

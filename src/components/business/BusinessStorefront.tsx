@@ -151,14 +151,14 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
 
       {/* Stats Bar */}
       <div className="relative mt-4 md:mt-12 px-3 sm:px-4">
-        <div className="max-w-7xl mx-auto">
-          <BusinessStats business={business} className="rounded-3xl shadow-2xl border border-white/10 overflow-hidden" />
+        <div className="max-w-6xl mx-auto">
+          <BusinessStats business={business} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden" />
         </div>
       </div>
 
       {/* Highlights */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 mt-6 grid gap-4 md:grid-cols-3">
-        <div className="rounded-sm border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-2">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 mt-6 grid gap-4 md:grid-cols-3">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-2">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">About the shop</p>
           <p className="text-sm text-gray-700 leading-relaxed">
             {business.about_business && business.about_business.trim().length > 0
@@ -169,7 +169,7 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
             Learn more →
           </Link>
         </div>
-        <div className="rounded-sm border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-2">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-2">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Specialities</p>
           <div className="flex flex-wrap gap-2">
             {(business.specialties && business.specialties.length > 0
@@ -182,7 +182,7 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
             ))}
           </div>
         </div>
-        <div className="rounded-sm border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-2">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-2">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Customer care</p>
           <p className="text-sm text-gray-700">
             Avg response time:{" "}
@@ -197,14 +197,14 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
             </span>
           </p>
           <p className="text-xs text-gray-500">
-            Contact them any time via Motorsauce chat or their preferred channels.
+            Contact them any time via Motorsource chat or their preferred channels.
           </p>
         </div>
       </div>
 
       {/* Featured collections - Disabled for now, will be used later
       {specialtyCollections.length > 0 && (
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 mt-6 space-y-2">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 mt-6 space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">Featured collections</h3>
           <Link href="#catalogue" className="text-sm text-yellow-600 hover:text-yellow-700">
@@ -230,11 +230,11 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
 
       {/* Owner Quick Links + Insights */}
       {isOwner && (
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 mt-6 mb-6 space-y-4">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 mt-6 mb-6 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Link
               href="/analytics"
-              className="rounded-lg border border-gray-200 bg-white p-4 flex items-start gap-3 hover:shadow-sm transition"
+              className="rounded-xl border border-gray-200 bg-white p-4 flex items-start gap-3 shadow-sm hover:shadow-md transition"
             >
               <div className="p-2 rounded-md bg-blue-50 text-blue-700">
                 <ChartBar className="h-5 w-5" />
@@ -246,7 +246,7 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
             </Link>
             <Link
               href="/settings/business"
-              className="rounded-lg border border-gray-200 bg-white p-4 flex items-start gap-3 hover:shadow-sm transition"
+              className="rounded-xl border border-gray-200 bg-white p-4 flex items-start gap-3 shadow-sm hover:shadow-md transition"
             >
               <div className="p-2 rounded-md bg-gray-50 text-gray-800">
                 <SettingsIcon className="h-5 w-5" />
@@ -258,7 +258,7 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
             </Link>
             <button
               onClick={() => setActiveTab('catalogue')}
-              className="rounded-lg border border-yellow-300 bg-yellow-50 p-4 flex items-start gap-3 hover:shadow-sm transition"
+              className="rounded-xl border border-gray-200 bg-white p-4 flex items-start gap-3 shadow-sm hover:shadow-md transition"
             >
               <div className="p-2 rounded-md bg-yellow-200 text-yellow-700">
                 <UploadCloud className="h-5 w-5" />
@@ -271,12 +271,12 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
           </div>
 
           {listingsLoading && (
-            <div className="bg-white rounded-lg border border-gray-200 p-6 flex items-center justify-center">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex items-center justify-center">
               <Loader2 className="h-6 w-6 animate-spin text-yellow-500" />
             </div>
           )}
           {listingsError && (
-            <div className="bg-red-50 rounded-lg border border-red-200 p-4 text-sm text-red-700">
+            <div className="bg-red-50 rounded-xl border border-red-200 p-4 text-sm text-red-700">
               {listingsError}
             </div>
           )}
@@ -287,8 +287,8 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
       )}
 
       {business.review_count > 0 && (
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 mt-6">
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 flex flex-col lg:flex-row gap-4 shadow">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 mt-6">
+          <div className="rounded-xl border border-gray-200 bg-white p-6 flex flex-col lg:flex-row gap-4 shadow-sm">
             <div className="flex-1">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Testimonials</p>
               <p className="mt-1 text-2xl font-semibold text-gray-900">
@@ -319,7 +319,7 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
 
       {/* Navigation Tabs */}
       <div className="bg-white border-b sticky top-0 z-10 shadow-sm">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4">
           <nav className="flex space-x-3 overflow-x-auto py-2" role="tablist" aria-label="Business sections">
             {tabs.map((tab) => (
               <button
@@ -350,7 +350,7 @@ export default function BusinessStorefront({ business, isOwner }: Props) {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-8">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-8">
         {activeTab === 'catalogue' && (
           <div id="catalogue-panel" role="tabpanel" aria-labelledby="catalogue-tab">
             <BusinessCatalogue businessId={business.id} isOwner={isOwner} />

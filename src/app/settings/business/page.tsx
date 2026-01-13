@@ -271,8 +271,8 @@ function BusinessSettingsContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-3xl mx-auto px-4">
+    <div className="min-h-screen bg-white py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
           <Link href="/settings" className="text-sm text-gray-600 hover:text-gray-900 inline-block mb-4">
             ← Back to Account Settings
@@ -281,16 +281,16 @@ function BusinessSettingsContent() {
             <ShieldCheck className="w-8 h-8" />
             Seller Verification
           </h1>
-          <p className="text-gray-600 mt-2">Submit documents to verify your identity and start selling on MotorSauce</p>
+          <p className="text-gray-600 mt-2">Submit documents to verify your identity and start selling on Motorsource</p>
         </div>
 
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800">
             {error}
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="text-xl font-bold text-gray-900">Seller verification</h2>
@@ -316,17 +316,17 @@ function BusinessSettingsContent() {
           {!verificationLoading && (
             <>
               {verificationNote && (
-                <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-900">
+                <div className="mt-4 rounded-xl border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-900">
                   {verificationNote}
                 </div>
               )}
               {verificationError && (
-                <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
                   {verificationError}
                 </div>
               )}
               {verificationSuccess && (
-                <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+                <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-800">
                   {verificationSuccess}
                 </div>
               )}
@@ -452,7 +452,7 @@ function BusinessSettingsContent() {
 
 function LoadingFallback() {
   return (
-    <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+    <div className="min-h-screen bg-white p-6 flex items-center justify-center">
       <Loader2 className="h-8 w-8 animate-spin text-yellow-500" />
     </div>
   );

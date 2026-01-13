@@ -39,6 +39,19 @@ export default function ProfileAboutCard({
     });
   }, [displayName, autoEdit]);
 
+  useEffect(() => {
+    if (!me) return;
+    const syncAbout = () => {
+      try {
+        const v = localStorage.getItem(nsKey("about_v1")) || "";
+        setAbout(v);
+        if (!editing) setDraft(v);
+      } catch {}
+    };
+    window.addEventListener("ms:profile", syncAbout as EventListener);
+    return () => window.removeEventListener("ms:profile", syncAbout as EventListener);
+  }, [me, editing]);
+
   function startEdit() {
     setDraft(about || "");
     setEditing(true);
@@ -60,7 +73,7 @@ export default function ProfileAboutCard({
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6">
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-lg font-semibold text-black">About {displayName}</h2>
 

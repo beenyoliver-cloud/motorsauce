@@ -62,14 +62,14 @@ export default function WrenchingWall() {
   }
 
   return (
-    <section className="rounded-3xl border border-gray-200 bg-white/90 p-4 sm:p-6 md:p-8 shadow-lg">
+    <section className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6 md:p-8 shadow-sm">
       <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-6">
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Community Feed</p>
           <h2 className="text-2xl md:text-3xl font-black text-gray-900 mt-1">What owners are wrenching on</h2>
-          <p className="text-sm text-gray-600 mt-1">Real builds, before-and-afters, and parts credited back to Motorsauce sellers.</p>
+          <p className="text-sm text-gray-600 mt-1">Real builds, before-and-afters, and parts credited back to Motorsource sellers.</p>
         </div>
-        <button className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold hover:bg-black transition">
+        <button className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-yellow-500 text-black text-sm font-semibold hover:bg-yellow-600 transition">
           Share your project
         </button>
       </div>
@@ -78,7 +78,7 @@ export default function WrenchingWall() {
         {projects.map((project) => (
           <article
             key={project.id}
-            className={`relative overflow-hidden rounded-2xl border border-gray-100 shadow-md ${
+            className={`relative overflow-hidden rounded-xl border border-gray-200 shadow-sm ${
               project.size === "tall" ? "md:row-span-2" : ""
             }`}
           >

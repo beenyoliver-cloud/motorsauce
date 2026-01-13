@@ -75,6 +75,15 @@ export default function ConversationPage({
     }
   }
 
+  async function refreshMessages() {
+    try {
+      const msgs = await fetchMessages(conversationId);
+      setMessages(msgs);
+    } catch (err) {
+      console.error("[Conversation] Failed to refresh messages:", err);
+    }
+  }
+
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     
@@ -85,7 +94,7 @@ export default function ConversationPage({
       setSending(true);
       await sendMessage(conversationId, text);
       setMessageText("");
-      await loadMessages(); // Reload to get the new message
+      await refreshMessages(); // Refresh without full-page loading state
     } catch (err) {
       console.error("[Conversation] Failed to send message:", err);
       alert(err instanceof Error ? err.message : "Failed to send message");
@@ -118,7 +127,7 @@ export default function ConversationPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="flex items-center gap-3">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600"></div>
           <span className="text-gray-600">Loading conversation...</span>
@@ -129,14 +138,14 @@ export default function ConversationPage({
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="mx-auto max-w-4xl px-4">
+      <div className="min-h-screen bg-white py-8">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
             <div className="text-center">
               <p className="text-red-600 font-medium mb-4">{error}</p>
               <button
                 onClick={() => router.push("/messages")}
-                className="px-4 py-2 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition"
+                className="px-4 py-2 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 transition"
               >
                 Back to Messages
               </button>
@@ -149,7 +158,7 @@ export default function ConversationPage({
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 bg-gray-50 flex flex-col"
+      className="fixed inset-x-0 bottom-0 bg-white flex flex-col"
       style={{
         top: "var(--layout-offset-total, 150px)",
         paddingBottom: "env(safe-area-inset-bottom)",
@@ -157,7 +166,7 @@ export default function ConversationPage({
     >
       {/* Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm shrink-0 z-10">
-        <div className="mx-auto max-w-4xl px-4 py-4">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.push("/messages")}
@@ -208,7 +217,7 @@ export default function ConversationPage({
 
       {/* Messages - flex-1 makes it fill available space and overflow-y-auto makes it scrollable */}
       <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-4xl px-4 py-6">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6">
           {messages.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-500">No messages yet. Start the conversation!</p>
@@ -278,7 +287,7 @@ export default function ConversationPage({
 
       {/* Input - shrink-0 prevents it from shrinking, keeping it visible */}
       <div className="bg-white border-t border-gray-200 shrink-0">
-        <div className="mx-auto max-w-4xl px-4 py-4">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-4">
           <form onSubmit={handleSend} className="flex gap-2">
             <input
               type="text"

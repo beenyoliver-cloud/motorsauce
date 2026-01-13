@@ -343,11 +343,11 @@ function MessagesPageInner() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="mx-auto max-w-6xl px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
+    <main className="min-h-screen bg-white text-slate-900">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_2fr] gap-4 sm:gap-5">
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            <div className="px-3 py-3 border-b border-slate-200">
+          <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="px-3 py-3 border-b border-gray-200">
               <h1 className="text-lg font-bold">Messages</h1>
             </div>
             {loadingThreads ? (
@@ -372,7 +372,7 @@ function MessagesPageInner() {
 
 export default function MessagesPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-50 text-slate-700 flex items-center justify-center">Loading messages…</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-white text-slate-700 flex items-center justify-center">Loading messages…</div>}>
       <MessagesPageInner />
     </Suspense>
   );

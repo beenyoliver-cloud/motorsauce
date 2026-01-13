@@ -78,8 +78,8 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <section className="max-w-4xl mx-auto px-4 py-6 space-y-4">
+    <div className="bg-white min-h-screen">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
         {/* Compact profile card - Instagram style */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-start gap-6">
@@ -137,7 +137,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
           {/* Actions row */}
           <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
             <ProfileActions
-              shareText={`Check out ${displayName} on Motorsauce`}
+              shareText={`Check out ${displayName} on Motorsource`}
               shareUrl={baseHref}
               toUsername={displayName}
               toUserId={sellerMetrics.id}

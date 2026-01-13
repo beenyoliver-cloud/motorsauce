@@ -37,7 +37,7 @@ export default function SellPage() {
 
   if (!authChecked) {
     return (
-      <section className="mx-auto max-w-3xl px-4 py-12">
+      <section className="mx-auto max-w-6xl px-4 py-12">
         <div className="rounded-xl border border-gray-200 bg-white p-6 text-gray-800">Checking your account…</div>
       </section>
     );
@@ -45,7 +45,7 @@ export default function SellPage() {
 
   if (!isAuthed) {
     return (
-      <section className="mx-auto max-w-3xl px-4 py-12">
+      <section className="mx-auto max-w-6xl px-4 py-12">
         <div className="rounded-2xl border border-gray-200 bg-white p-8 text-gray-900">
           <h1 className="text-2xl font-bold mb-2">Sign in to sell</h1>
           <p className="text-sm text-gray-700 mb-4">You need an account to list parts for sale.</p>

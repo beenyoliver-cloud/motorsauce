@@ -472,7 +472,7 @@ function SearchPageInner() {
   const engineOptions = uniq(all.map((l) => l.engine));
 
   return (
-    <div className="mx-auto max-w-7xl md:grid md:grid-cols-[300px_1fr]">
+    <div className="mx-auto max-w-6xl md:grid md:grid-cols-[300px_1fr]">
       {/* Desktop sidebar column */}
       <SearchFiltersSidebar
         q={q}
@@ -544,7 +544,7 @@ function SearchPageInner() {
               {/* Filters button - first in list */}
               <button
                 onClick={() => setMobileFiltersOpen(true)}
-                className="flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium bg-black text-white hover:bg-gray-800 snap-start flex items-center gap-1.5"
+                className="flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 snap-start flex items-center gap-1.5"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -808,7 +808,7 @@ function SearchPageInner() {
                   <div
                     key={l.id}
                     data-listing-card={String(l.id)}
-                    className="group relative border border-gray-200 rounded-md overflow-hidden bg-white hover:shadow-lg transition-all sm:rounded-xl"
+                    className="group relative border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-all"
                   >
                   <Link href={`/listing/${l.id}`} className="flex items-center gap-3 sm:block">
                     <div className="relative w-[120px] h-[120px] flex-shrink-0 bg-gray-50 overflow-hidden sm:aspect-[4/3] sm:w-full sm:h-auto">

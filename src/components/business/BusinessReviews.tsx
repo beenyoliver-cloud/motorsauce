@@ -57,9 +57,9 @@ export default function BusinessReviews({ businessId, business }: Props) {
   const totalReviews = business.review_count;
 
   return (
-    <div className="max-w-5xl">
+    <div className="max-w-6xl">
       {/* Rating Overview */}
-      <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
         <div className="grid md:grid-cols-2 gap-8">
           {/* Overall Rating */}
           <div className="text-center md:text-left">
@@ -111,11 +111,11 @@ export default function BusinessReviews({ businessId, business }: Props) {
       {/* Reviews List */}
       <div className="space-y-4">
         {loading ? (
-          <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mx-auto"></div>
           </div>
         ) : totalReviews === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center">
             <Star className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No reviews yet</h3>
             <p className="text-gray-600">Be the first to review this business!</p>
@@ -124,7 +124,7 @@ export default function BusinessReviews({ businessId, business }: Props) {
           reviews
             .filter((review) => filter === 'all' || review.rating === filter)
             .map((review) => (
-              <div key={review.id} className="bg-white rounded-lg shadow-sm border p-6">
+              <div key={review.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
                 {/* Review Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">

@@ -194,7 +194,7 @@ function AdminReportsPage() {
   const investigatingCount = reports.filter(r => r.status === "investigating").length;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-white py-8">
       <div className="max-w-7xl mx-auto px-4">
         <Link href="/admin/dashboard" className="text-blue-600 hover:text-blue-800 flex items-center gap-1 mb-2 text-sm font-medium">
           <ArrowLeft className="h-4 w-4" />Back to Dashboard
@@ -431,7 +431,7 @@ function AdminReportsPage() {
 export default function AdminReportsPageWrapper() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-gray-600">Loading...</div>
       </div>
     }>

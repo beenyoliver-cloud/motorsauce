@@ -49,7 +49,7 @@ export default function ModerationLogPage() {
   }
 
   return (
-    <section className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <div className="mb-4">
         <Link href="/admin/dashboard" className="text-sm font-medium text-blue-600 hover:text-blue-800 mb-2 inline-block">
           ← Back to Dashboard
@@ -69,7 +69,7 @@ export default function ModerationLogPage() {
       {error && <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
       {!loading && !error && (
-        <div className="rounded-2xl border border-gray-200 bg-white divide-y divide-gray-100">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm divide-y divide-gray-100">
           {reports.length === 0 ? (
             <div className="p-6 text-sm text-gray-600">No reports yet. Great job keeping things tidy.</div>
           ) : (

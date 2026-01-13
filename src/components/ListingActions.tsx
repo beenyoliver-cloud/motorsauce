@@ -79,7 +79,7 @@ export default function ListingActions({
   const btnSecondary =
     "inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md border border-gray-500 bg-white text-gray-900 hover:bg-gray-100 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2";
   const btnMessage =
-    "inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-gray-900 text-white hover:bg-gray-800 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2";
+    "inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-yellow-500 text-black hover:bg-yellow-600 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2";
 
   return (
     <>

@@ -322,7 +322,7 @@ export default function CompatibilityPage() {
         </div>
 
         {/* Registration lookup (returns to search with filters) */}
-        <form onSubmit={handleRegLookup} className="mt-6 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+        <form onSubmit={handleRegLookup} className="mt-6 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 rounded-xl border border-gray-200 bg-white shadow-sm p-4">
           <div className="flex items-center gap-2">
             <SearchIcon className="h-4 w-4 text-gray-600" />
             <input
@@ -335,7 +335,7 @@ export default function CompatibilityPage() {
           <button
             type="submit"
             disabled={regLoading}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-gray-900 text-white px-4 py-2 text-sm font-semibold hover:bg-black disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-yellow-500 text-black px-4 py-2 text-sm font-semibold hover:bg-yellow-600 disabled:opacity-50"
           >
             {regLoading ? "Looking up…" : "Filter by registration"}
           </button>
@@ -364,7 +364,7 @@ export default function CompatibilityPage() {
         )}
 
         {!loading && selectedCar && compatible.length === 0 && (
-          <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6">
+          <div className="mt-8 rounded-xl border border-gray-200 bg-white shadow-sm p-6">
             <p className="text-gray-700">
               No parts found that match your default vehicle yet.
             </p>

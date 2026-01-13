@@ -210,7 +210,7 @@ export default function QuickViewModal({ listingId, isOpen, onClose }: QuickView
               )}
 
               {/* Seller Info */}
-              <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
+              <div className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="h-12 w-12 rounded-full overflow-hidden bg-gray-100 shrink-0">
                     <SafeImage
@@ -244,7 +244,7 @@ export default function QuickViewModal({ listingId, isOpen, onClose }: QuickView
               <div className="flex gap-3 pt-2">
                 <Link
                   href={`/listing/${listing.id}`}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg font-semibold hover:bg-yellow-500 hover:text-black transition-all duration-300"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-yellow-500 text-black rounded-lg font-semibold hover:bg-yellow-600 transition-all duration-300"
                 >
                   <Eye className="h-4 w-4" />
                   View Full Details

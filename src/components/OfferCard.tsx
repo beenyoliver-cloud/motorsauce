@@ -111,7 +111,7 @@ export default function OfferCard({
   return (
     <div className="w-full max-w-lg mx-auto">
       {/* Professional card matching site theme */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-lg hover:shadow-xl transition-shadow duration-300 p-6">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300 p-6">
         {/* Content wrapper */}
         <div className="space-y-6">
       {/* Header */}

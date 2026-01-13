@@ -76,7 +76,7 @@ export default function ReviewsPage() {
 
   if (loading) {
     return (
-      <section className="max-w-4xl mx-auto py-6 px-4 space-y-4">
+      <section className="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-4">
         <h1 className="text-3xl font-bold">My Reviews</h1>
         <div className="h-40 bg-gray-100 rounded-lg animate-pulse" />
       </section>
@@ -84,7 +84,7 @@ export default function ReviewsPage() {
   }
 
   return (
-    <section className="max-w-4xl mx-auto py-6 px-4 space-y-8">
+    <section className="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-8">
       <h1 className="text-3xl font-bold">My Reviews</h1>
 
       {error && (
@@ -391,4 +391,3 @@ function ReviewModal({
     </div>
   );
 }
-

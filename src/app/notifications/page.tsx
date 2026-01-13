@@ -71,7 +71,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <section className="mx-auto max-w-3xl px-4 py-8 space-y-6">
+    <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
         <button

@@ -84,7 +84,7 @@ export default function ProfileActions({
           type="button"
           onClick={handleMessage}
           disabled={isLoading}
-          className="w-full inline-flex items-center justify-center rounded-md px-3 py-2 bg-gray-900 text-white font-medium hover:bg-gray-800 text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full inline-flex items-center justify-center rounded-md px-3 py-2 bg-yellow-500 text-black font-semibold hover:bg-yellow-600 text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
           title={`Message ${toUsername}`}
         >
           <MessageSquare className="h-4 w-4 mr-2" />

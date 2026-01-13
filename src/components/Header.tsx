@@ -246,15 +246,15 @@ export default function Header() {
         className="w-full bg-white border-b border-gray-200 shadow-sm fixed top-0 z-40"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
-        <div className="mx-auto max-w-6xl px-3 sm:px-6">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           {/* Desktop Header */}
           <div className="hidden sm:flex flex-col gap-2 py-3">
             <div className="flex items-center gap-6">
               {/* Logo */}
-              <Link href="/" aria-label="Motorsauce home" className="inline-flex items-center flex-shrink-0">
+              <Link href="/" aria-label="Motorsource home" className="inline-flex items-center flex-shrink-0">
                 <img
                   src="/images/MSlogoreal.png"
-                  alt="Motorsauce"
+                  alt="Motorsource"
                   className="h-16 w-auto object-contain"
                 />
               </Link>
@@ -398,10 +398,10 @@ export default function Header() {
               </button>
 
               {/* Center: Logo */}
-              <Link href="/" aria-label="Motorsauce home" className="justify-self-center">
+              <Link href="/" aria-label="Motorsource home" className="justify-self-center">
                 <img
                   src="/images/MSlogoreal.png"
-                  alt="Motorsauce"
+                  alt="Motorsource"
                   className="h-12 w-auto object-contain"
                 />
               </Link>
