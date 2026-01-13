@@ -122,9 +122,11 @@ async function upsertPostcodeCache(
 ) {
   if (!supabase) return;
   try {
-    await supabase
-      .from("postcode_cache")
-      .upsert({ ...payload, updated_at: new Date().toISOString() }, { onConflict: "postcode" });
+    const table = (supabase as any).from("postcode_cache");
+    await table.upsert(
+      { ...payload, updated_at: new Date().toISOString() },
+      { onConflict: "postcode" }
+    );
   } catch {
     /* ignore cache failures */
   }
@@ -136,9 +138,11 @@ async function upsertOutcodeCache(
 ) {
   if (!supabase) return;
   try {
-    await supabase
-      .from("postcode_outcode_cache")
-      .upsert({ ...payload, updated_at: new Date().toISOString() }, { onConflict: "outcode" });
+    const table = (supabase as any).from("postcode_outcode_cache");
+    await table.upsert(
+      { ...payload, updated_at: new Date().toISOString() },
+      { onConflict: "outcode" }
+    );
   } catch {
     /* ignore cache failures */
   }
