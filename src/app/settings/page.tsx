@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getCurrentUser, type LocalUser, nsKey } from "@/lib/auth";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { supabaseBrowser } from "@/lib/supabase";
 import { User, Mail, Lock, Save, Upload, MapPin, CreditCard, Bell, ShieldCheck } from "lucide-react";
 
 type Tab = "general" | "security" | "location" | "notifications" | "billing" | "compliance";
@@ -12,7 +12,7 @@ type Tab = "general" | "security" | "location" | "notifications" | "billing" | "
 function SettingsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createClientComponentClient();
+  const supabase = supabaseBrowser();
   
   const [activeTab, setActiveTab] = useState<Tab>("general");
   const [user, setUser] = useState<LocalUser | null>(null);
