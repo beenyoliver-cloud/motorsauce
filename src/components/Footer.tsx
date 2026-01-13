@@ -34,9 +34,9 @@ export default function Footer() {
             className="inline-flex items-center"
           >
             <img
-              src="/images/MSlogoreal.png"
+              src="/images/MSSlogon.png"
               alt="Motorsource"
-              className="h-20 w-auto"
+              className="h-16 w-auto object-contain"
               loading="lazy"
             />
           </Link>

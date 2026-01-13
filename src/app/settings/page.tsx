@@ -103,6 +103,20 @@ function SettingsContent() {
         lastLookupPostcodeRef.current = normalizePostcode(storedPostcode);
         setCountyManual(true);
       }
+
+      try {
+        const nameKey = nsKey("name");
+        const avatarKey = nsKey("avatar_v1");
+        const aboutKey = nsKey("about_v1");
+
+        if (profile.name) localStorage.setItem(nameKey, profile.name);
+        if (profile.avatar) localStorage.setItem(avatarKey, profile.avatar);
+        else localStorage.removeItem(avatarKey);
+        if (profile.about) localStorage.setItem(aboutKey, profile.about);
+        else localStorage.removeItem(aboutKey);
+
+        window.dispatchEvent(new Event("ms:profile"));
+      } catch {}
     }
 
     return currentUser;
@@ -261,6 +275,35 @@ function SettingsContent() {
       const previewUrl = URL.createObjectURL(file);
       setAvatar(previewUrl);
       handleImageUpload(file, 'avatar');
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!user) return;
+    setUploading('avatar');
+    setMessage(null);
+    try {
+      const { error: authError } = await supabase.auth.updateUser({ data: { avatar: null } });
+      if (authError) throw authError;
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ avatar: null })
+        .eq('id', user.id);
+      if (profileError) throw profileError;
+
+      setAvatar("");
+      try {
+        localStorage.removeItem(nsKey("avatar_v1"));
+        window.dispatchEvent(new Event("ms:profile"));
+      } catch {}
+
+      await refreshProfileState();
+      setMessage({ type: 'success', text: 'Profile image removed.' });
+    } catch (err) {
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to remove profile image' });
+    } finally {
+      setUploading(null);
     }
   };
 
@@ -692,6 +735,17 @@ function SettingsContent() {
                           <Upload size={16} />
                           {uploading === 'avatar' ? 'Uploading...' : 'Upload Image'}
                         </button>
+                        {avatar && (
+                          <button
+                            type="button"
+                            onClick={handleRemoveAvatar}
+                            disabled={uploading === 'avatar'}
+                            className="mt-2 inline-flex items-center gap-2 px-4 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                          >
+                            <X size={16} />
+                            Remove image
+                          </button>
+                        )}
                         <input
                           ref={avatarInputRef}
                           type="file"

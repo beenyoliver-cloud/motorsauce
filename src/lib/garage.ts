@@ -126,6 +126,21 @@ function readCarsFromStorage(): Car[] {
   }
 }
 
+function mergeCarsById(serverCars: Car[], localCars: Car[]): Car[] {
+  const serverIds = new Set<string>();
+  const merged: Car[] = [];
+  for (const car of serverCars) {
+    if (!car?.id) continue;
+    serverIds.add(car.id);
+    merged.push(car);
+  }
+  for (const car of localCars) {
+    if (!car?.id || serverIds.has(car.id)) continue;
+    merged.push(car);
+  }
+  return merged;
+}
+
 export function saveMyCars(cars: Car[]) {
   localStorage.setItem(K_CARS(), JSON.stringify(cars));
   window.dispatchEvent(new Event("ms:garage"));
@@ -189,21 +204,30 @@ export async function loadGarageFromDatabase(): Promise<Car[] | null> {
     
     if (error || !garage) return null;
     
-    const cars = Array.isArray(garage.cars) ? garage.cars as Car[] : [];
+    const serverCars = Array.isArray(garage.cars) ? garage.cars as Car[] : [];
+    const localCars = readCarsFromStorage();
+    const serverIds = new Set(serverCars.map((car) => car.id).filter(Boolean));
+    const localOnly = localCars.filter((car) => car?.id && !serverIds.has(car.id));
+    const mergedCars = mergeCarsById(serverCars, localCars);
+    const nextSelected =
+      garage.selected_car_id || getSelectedCarId() || mergedCars[0]?.id || null;
     
-    // Update localStorage with database data
-    if (cars.length > 0) {
-      localStorage.setItem(K_CARS(), JSON.stringify(cars));
-      if (garage.selected_car_id) {
-        localStorage.setItem(K_SELECTED(), garage.selected_car_id);
-      }
-      if (garage.is_public) {
-        localStorage.setItem(K_VIS(), "1");
-      }
-      window.dispatchEvent(new Event("ms:garage"));
+    localStorage.setItem(K_CARS(), JSON.stringify(mergedCars));
+    if (nextSelected) {
+      localStorage.setItem(K_SELECTED(), nextSelected);
+    } else {
+      localStorage.removeItem(K_SELECTED());
     }
+    if (typeof garage.is_public === "boolean") {
+      localStorage.setItem(K_VIS(), garage.is_public ? "1" : "0");
+    }
+    window.dispatchEvent(new Event("ms:garage"));
     
-    return cars;
+    if (localOnly.length > 0) {
+      void syncGarageToDatabase(mergedCars);
+    }
+
+    return mergedCars;
   } catch (err) {
     console.error("Failed to load garage from database:", err);
     return null;
@@ -396,7 +420,10 @@ export async function readPublicGarage(
     const response = await fetch(`/api/garage?username=${encodeURIComponent(username)}`);
     if (response.ok) {
       const data = await response.json();
-      if (data.cars && data.cars.length > 0) {
+      if (data?.is_public === false) {
+        return null;
+      }
+      if (Array.isArray(data.cars)) {
         return {
           cars: data.cars,
           selected: data.selected_car_id || null,

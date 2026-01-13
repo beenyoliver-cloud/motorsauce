@@ -164,15 +164,13 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
       setSelectedId(getSelectedCarId());
       setPubState(isPublic());
       
-      // For logged-in users, only load from database if localStorage is empty
-      // This preserves local changes even if user logs out and back in
-      if (localCars.length === 0) {
-        loadGarageFromDatabase().then((dbCars) => {
-          if (dbCars && dbCars.length > 0) {
-            setCars(dbCars);
-          }
-        });
-      }
+      loadGarageFromDatabase().then((dbCars) => {
+        if (dbCars) {
+          setCars(dbCars);
+          setSelectedId(getSelectedCarId());
+          setPubState(isPublic());
+        }
+      });
       
       const onGarage = () => {
         setCars(loadMyCars());
@@ -678,7 +676,7 @@ export default function MyGarageCard({ displayName }: { displayName: string }) {
 
       {activeTab === "display-wall" && (
         <div className="px-6 py-6">
-          <DisplayWall cars={cars} />
+          <DisplayWall cars={list} />
         </div>
       )}
 

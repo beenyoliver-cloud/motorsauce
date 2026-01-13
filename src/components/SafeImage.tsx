@@ -11,7 +11,7 @@ type Props = {
 };
 
 const EXT_CHAIN = ["jpg", "jpeg", "png", "webp"];
-const BRAND_FALLBACK = "/images/motorsource_logo_square.png";
+const BRAND_FALLBACK = "/images/MSSlogon.png";
 
 function buildCandidates(input: string): string[] {
   const trimmed = (input || "").trim();

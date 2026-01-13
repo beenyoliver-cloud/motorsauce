@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     if (error) {
       if (error.code === "PGRST116") {
         // No rows found
-        return NextResponse.json({ cars: [], selected_car_id: null }, { status: 200 });
+        return NextResponse.json({ cars: [], selected_car_id: null, is_public: false }, { status: 200 });
       }
       throw error;
     }
@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       cars: data.cars || [],
       selected_car_id: data.selected_car_id,
+      is_public: data.is_public ?? false,
     });
   } catch (error) {
     console.error("Error fetching public garage:", error);
