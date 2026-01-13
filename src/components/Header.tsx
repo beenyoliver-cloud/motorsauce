@@ -255,7 +255,7 @@ export default function Header() {
                 <img
                   src="/images/mslogonn.png"
                   alt="Motorsource"
-                  className="h-24 w-auto object-contain"
+                  className="h-24 md:h-40 w-auto object-contain"
                 />
               </Link>
 
