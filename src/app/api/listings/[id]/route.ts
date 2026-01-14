@@ -148,6 +148,10 @@ export async function PUT(
       ...otherFields,
     };
 
+    if (finalStatus === "active") {
+      updateData.images_validation_failed = false;
+    }
+
     // If marking as sold, set timestamp
     if (status === "sold" && listing.status !== "sold") {
       updateData.marked_sold_at = new Date().toISOString();

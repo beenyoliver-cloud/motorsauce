@@ -16,6 +16,7 @@ const DB_TO_CLIENT_STATUS: Record<string, string> = {
   COUNTERED: "countered",
   CANCELLED: "withdrawn",
   EXPIRED: "expired",
+  COMPLETED: "completed",
 };
 
 const CLIENT_TO_DB_STATUS: Record<string, string> = {
@@ -27,6 +28,7 @@ const CLIENT_TO_DB_STATUS: Record<string, string> = {
   withdrawn: "CANCELLED",
   cancelled: "CANCELLED",
   expired: "EXPIRED",
+  completed: "COMPLETED",
 };
 
 // Helper to get authenticated user

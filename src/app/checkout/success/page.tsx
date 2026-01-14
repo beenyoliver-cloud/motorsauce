@@ -55,6 +55,10 @@ function resolveImage(it: { image?: string | null; images?: string[]; id: string
   return "/images/placeholder.png";
 }
 
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export default function CheckoutSuccessPage() {
   const router = useRouter();
   const [order, setOrder] = useState<OrderSummary | null>(null);
@@ -117,21 +121,37 @@ export default function CheckoutSuccessPage() {
   }
 
   async function completeWithoutSession(sessionId: string) {
-    const res = await fetch(`/api/checkout/lookup?session_id=${encodeURIComponent(sessionId)}`, {
-      method: "GET",
-    });
+    let attempt = 0;
+    let backoffMs = 1500;
 
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error(body.error || `Failed to confirm payment (${res.status})`);
+    while (attempt < 6) {
+      const res = await fetch(`/api/checkout/lookup?session_id=${encodeURIComponent(sessionId)}`, {
+        method: "GET",
+      });
+
+      if (res.status === 202) {
+        const body = await res.json().catch(() => ({}));
+        backoffMs = typeof body?.retryAfterMs === "number" ? body.retryAfterMs : backoffMs;
+        attempt += 1;
+        await delay(backoffMs);
+        continue;
+      }
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `Failed to confirm payment (${res.status})`);
+      }
+
+      const data = await res.json();
+      const summary = toOrderSummary(data);
+      addSoldIds(summary.items.map((item) => item.id));
+      clearCart();
+      setOrder(summary);
+      setError(null);
+      return;
     }
 
-    const data = await res.json();
-    const summary = toOrderSummary(data);
-    addSoldIds(summary.items.map((item) => item.id));
-    clearCart();
-    setOrder(summary);
-    setError(null);
+    throw new Error("Payment is still processing. Please refresh in a moment.");
   }
 
   async function completeStripeOrder(sessionId: string) {
@@ -154,6 +174,7 @@ export default function CheckoutSuccessPage() {
         });
 
         if (res.ok) {
+          if (res.status === 202) return;
           const data = await res.json();
           const summary = toOrderSummary(data);
           setOrder(summary);

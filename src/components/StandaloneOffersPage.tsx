@@ -25,7 +25,7 @@ interface Offer {
   listing_price: number;
   offered_amount: number;
   currency: string;
-  status: "pending" | "accepted" | "declined" | "countered" | "withdrawn";
+  status: "pending" | "accepted" | "declined" | "countered" | "withdrawn" | "completed";
   counter_amount: number | null;
   counter_notes: string | null;
   created_at: string;
@@ -135,6 +135,7 @@ export default function StandaloneOffersPage() {
     const statusConfig: Record<string, { bg: string; text: string; icon: any }> = {
       pending: { bg: "bg-yellow-100", text: "text-yellow-800", icon: Clock },
       accepted: { bg: "bg-green-100", text: "text-green-800", icon: CheckCircle },
+      completed: { bg: "bg-emerald-100", text: "text-emerald-800", icon: CheckCircle },
       declined: { bg: "bg-red-100", text: "text-red-800", icon: XCircle },
       countered: { bg: "bg-blue-100", text: "text-blue-800", icon: ArrowRightLeft },
       withdrawn: { bg: "bg-gray-100", text: "text-gray-800", icon: Trash2 },
@@ -389,6 +390,14 @@ export default function StandaloneOffersPage() {
                     >
                       Proceed to Checkout
                     </Link>
+                  )}
+
+                  {offer.status === "completed" && (
+                    <div className="mt-auto pt-4 border-t border-gray-200">
+                      <div className="w-full rounded-lg bg-emerald-50 px-4 py-2 text-center text-sm font-semibold text-emerald-700">
+                        Payment completed
+                      </div>
+                    </div>
                   )}
 
                   {/* View Listing Link */}

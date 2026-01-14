@@ -12,13 +12,21 @@ type Props = {
 
 const EXT_CHAIN = ["jpg", "jpeg", "png", "webp"];
 const BRAND_FALLBACK = "/images/mslogonnew.png";
+const PLACEHOLDER_SUFFIXES = ["/images/placeholder.jpg", "/images/placeholder.png"];
 
 function buildCandidates(input: string): string[] {
   const trimmed = (input || "").trim();
   if (!trimmed) return [];
+  if (trimmed.startsWith("data:") || trimmed.startsWith("blob:")) return [trimmed];
+  if (/[?#]/.test(trimmed)) return [trimmed];
   const m = trimmed.match(/^(.*?)(\.(jpg|jpeg|png|webp))?$/i);
   const base = (m?.[1] || trimmed).trim();
   return EXT_CHAIN.map((ext) => `${base}.${ext}`);
+}
+
+function isPlaceholderUrl(url: string): boolean {
+  const cleaned = url.split("?")[0]?.split("#")[0]?.toLowerCase() || "";
+  return PLACEHOLDER_SUFFIXES.some((suffix) => cleaned.endsWith(suffix));
 }
 
 export default function SafeImage({ src, alt, className, loading = "lazy", draggable }: Props) {
@@ -75,6 +83,13 @@ export default function SafeImage({ src, alt, className, loading = "lazy", dragg
     }
     handleFinalFailure();
   };
+
+  useEffect(() => {
+    if (!src) return;
+    if (isPlaceholderUrl(src)) {
+      handleFinalFailure();
+    }
+  }, [src]);
 
   return (
     <img

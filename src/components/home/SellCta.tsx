@@ -25,8 +25,8 @@ export default function SellCta() {
             <div className="flex items-start gap-2 text-white">
               <Shield className="h-5 w-5 text-yellow-400 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-sm font-semibold">No monthly fees</p>
-                <p className="text-xs text-blue-200">Only pay when you sell</p>
+                <p className="text-sm font-semibold">Detailed categories</p>
+                <p className="text-xs text-blue-200">To help you sell faster</p>
               </div>
             </div>
             <div className="flex items-start gap-2 text-white">

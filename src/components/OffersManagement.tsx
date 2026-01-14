@@ -18,6 +18,7 @@ import SafeImage from "./SafeImage";
 type OfferStatus =
   | "pending"
   | "accepted"
+  | "completed"
   | "rejected"
   | "countered"
   | "expired"
@@ -227,6 +228,12 @@ export default function OffersManagement({ userId }: OffersManagementProps) {
         <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
           <CheckCircle className="h-3 w-3" />
           Accepted
+        </span>
+      ),
+      completed: (
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-800">
+          <CheckCircle className="h-3 w-3" />
+          Paid
         </span>
       ),
       rejected: (

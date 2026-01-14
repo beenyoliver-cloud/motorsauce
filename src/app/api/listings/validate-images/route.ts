@@ -1,8 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createNotificationServer } from "@/lib/notificationsServer";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE!;
+const supabaseServiceKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE;
+const PLACEHOLDER_SUFFIXES = ["/images/placeholder.jpg", "/images/placeholder.png"];
+
+type ImageCheck = { url: string; valid: boolean };
+
+function normalizeImageUrls(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((value) => {
+      if (typeof value === "string") return value.trim();
+      if (value && typeof value === "object" && "url" in value) {
+        const maybeUrl = (value as { url?: unknown }).url;
+        return typeof maybeUrl === "string" ? maybeUrl.trim() : "";
+      }
+      return "";
+    })
+    .filter((url) => url.length > 0);
+}
+
+function stripQuery(url: string) {
+  return url.split("?")[0]?.split("#")[0] || url;
+}
+
+function isPlaceholderUrl(url: string): boolean {
+  const base = stripQuery(url).toLowerCase();
+  return PLACEHOLDER_SUFFIXES.some((suffix) => base.endsWith(suffix));
+}
+
+function isHttpUrl(url: string) {
+  return url.startsWith("http://") || url.startsWith("https://");
+}
+
+function isDataUrl(url: string) {
+  return url.startsWith("data:image/");
+}
 
 /**
  * Validate if an image URL is accessible
@@ -32,6 +68,29 @@ async function isImageAccessible(url: string): Promise<boolean> {
   }
 }
 
+async function validateImageUrl(url: string): Promise<ImageCheck> {
+  if (!url) return { url, valid: false };
+  if (isPlaceholderUrl(url)) return { url, valid: false };
+  if (isDataUrl(url)) return { url, valid: true };
+  if (!isHttpUrl(url)) {
+    return { url, valid: url.startsWith("/") };
+  }
+  return { url, valid: await isImageAccessible(url) };
+}
+
+async function notifySeller(listing: { seller_id?: string | null; id: string | number; title?: string | null }, reason: string) {
+  if (!listing.seller_id) return;
+  const title = listing.title ? `"${listing.title}"` : "a listing";
+  const message = `We couldn't load one or more images for ${title}. ${reason} Update the images and republish to make it live again.`;
+  await createNotificationServer({
+    userId: listing.seller_id,
+    type: "listing_image_issue",
+    title: "Listing moved to drafts",
+    message,
+    link: `/listing/${listing.id}/edit`,
+  });
+}
+
 /**
  * Validate images for a listing and auto-draft if broken
  * POST /api/listings/validate-images
@@ -46,13 +105,17 @@ export async function POST(req: NextRequest) {
   try {
     const { listingId, validateAll } = await req.json();
 
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // If validateAll is true, validate all active listings
     if (validateAll === true) {
       const { data: listings, error: fetchError } = await supabase
         .from("listings")
-        .select("id, images, status")
+        .select("id, title, images, status, seller_id, images_validation_failed")
         .eq("status", "active");
 
       if (fetchError) {
@@ -70,46 +133,44 @@ export async function POST(req: NextRequest) {
       };
 
       for (const listing of listings || []) {
-        const images = listing.images || [];
-        if (images.length === 0) {
-          results.validated++;
-          continue;
+        const images = normalizeImageUrls(listing.images);
+        const hasImages = images.length > 0;
+        const checks = hasImages ? await Promise.all(images.map(validateImageUrl)) : [];
+        const broken = checks.filter((c) => !c.valid);
+        const allValid = hasImages && broken.length === 0;
+        const now = new Date().toISOString();
+
+        const updateData: Record<string, unknown> = {
+          images_validated_at: now,
+          images_validation_failed: !allValid,
+        };
+
+        if (!allValid && listing.status === "active") {
+          updateData.status = "draft";
+          updateData.draft_reason = hasImages
+            ? `${broken.length} image(s) failed validation. Please replace them.`
+            : "No images found. Add at least one image to publish this listing.";
         }
 
-        // Check all images
-        const validationResults = await Promise.all(
-          images.map((img: string) => isImageAccessible(img))
-        );
+        const { error: updateError } = await supabase
+          .from("listings")
+          .update(updateData)
+          .eq("id", listing.id);
 
-        const allValid = validationResults.every((v) => v);
-
-        if (!allValid) {
-          // Mark as draft
-          const { error: updateError } = await supabase
-            .from("listings")
-            .update({
-              status: "draft",
-              draft_reason: "Some images may be broken or inaccessible. Please review and update.",
-              images_validation_failed: true,
-              images_validated_at: new Date().toISOString(),
-            })
-            .eq("id", listing.id);
-
-          if (!updateError) {
+        if (!updateError) {
+          if (!allValid && listing.status === "active") {
             results.drafted.push(listing.id);
             results.failed++;
+            if (!listing.images_validation_failed) {
+              try {
+                await notifySeller(listing, hasImages ? "Replace the broken image(s)." : "Add at least one image.");
+              } catch (err) {
+                console.error("[validate-images] Notify seller failed:", err);
+              }
+            }
+          } else {
+            results.validated++;
           }
-        } else {
-          // Update validation timestamp
-          await supabase
-            .from("listings")
-            .update({
-              images_validated_at: new Date().toISOString(),
-              images_validation_failed: false,
-            })
-            .eq("id", listing.id);
-
-          results.validated++;
         }
       }
 
@@ -127,7 +188,7 @@ export async function POST(req: NextRequest) {
     // Fetch listing
     const { data: listing, error: fetchError } = await supabase
       .from("listings")
-      .select("id, images, status, seller_id")
+      .select("id, title, images, status, seller_id, images_validation_failed")
       .eq("id", listingId)
       .single();
 
@@ -138,67 +199,52 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const images = listing.images || [];
+    const images = normalizeImageUrls(listing.images);
+    const hasImages = images.length > 0;
+    const validationResults = hasImages ? await Promise.all(images.map(validateImageUrl)) : [];
+    const brokenImages = validationResults.filter((v) => !v.valid);
+    const allValid = hasImages && brokenImages.length === 0;
 
-    if (images.length === 0) {
-      return NextResponse.json({
-        valid: true,
-        message: "No images to validate",
-      });
-    }
+    const now = new Date().toISOString();
+    const updateData: Record<string, unknown> = {
+      images_validated_at: now,
+      images_validation_failed: !allValid,
+    };
 
-    // Check all images
-    const validationResults = await Promise.all(
-      images.map(async (img: string) => ({
-        url: img,
-        accessible: await isImageAccessible(img),
-      }))
-    );
-
-    const allValid = validationResults.every((v) => v.accessible);
-    const brokenImages = validationResults.filter((v) => !v.accessible);
-
-    // If any images are broken and listing is active, auto-draft it
     if (!allValid && listing.status === "active") {
-      const { error: updateError } = await supabase
-        .from("listings")
-        .update({
-          status: "draft",
-          draft_reason: `${brokenImages.length} image(s) failed validation. Please review and re-upload.`,
-          images_validation_failed: true,
-          images_validated_at: new Date().toISOString(),
-        })
-        .eq("id", listingId);
-
-      if (updateError) {
-        console.error("Error auto-drafting listing:", updateError);
-        return NextResponse.json(
-          { error: "Failed to update listing" },
-          { status: 500 }
-        );
-      }
-
-      return NextResponse.json({
-        valid: false,
-        autoDrafted: true,
-        brokenImages: brokenImages.map((v) => v.url),
-        message: "Listing auto-drafted due to broken images",
-      });
+      updateData.status = "draft";
+      updateData.draft_reason = hasImages
+        ? `${brokenImages.length} image(s) failed validation. Please replace them.`
+        : "No images found. Add at least one image to publish this listing.";
     }
 
-    // Update validation timestamp
-    await supabase
+    const { error: updateError } = await supabase
       .from("listings")
-      .update({
-        images_validated_at: new Date().toISOString(),
-        images_validation_failed: !allValid,
-      })
+      .update(updateData)
       .eq("id", listingId);
+
+    if (updateError) {
+      console.error("Error updating listing image validation:", updateError);
+      return NextResponse.json(
+        { error: "Failed to update listing" },
+        { status: 500 }
+      );
+    }
+
+    if (!allValid && listing.status === "active" && !listing.images_validation_failed) {
+      try {
+        await notifySeller(listing, hasImages ? "Replace the broken image(s)." : "Add at least one image.");
+      } catch (err) {
+        console.error("[validate-images] Notify seller failed:", err);
+      }
+    }
 
     return NextResponse.json({
       valid: allValid,
       validatedAt: new Date().toISOString(),
       images: validationResults,
+      autoDrafted: !allValid && listing.status === "active",
+      brokenImages: brokenImages.map((v) => v.url),
     });
   } catch (error) {
     console.error("Error in validate-images API:", error);

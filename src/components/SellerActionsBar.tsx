@@ -138,7 +138,7 @@ export default function SellerActionsBar({ listingId, currentStatus = "active" }
       const supabase = supabaseBrowser();
       const { error: updateError } = await supabase
         .from("listings")
-        .update({ status: "active", draft_reason: null })
+        .update({ status: "active", draft_reason: null, images_validation_failed: false })
         .eq("id", listingId);
 
       if (updateError) throw updateError;

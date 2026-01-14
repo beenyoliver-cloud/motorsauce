@@ -103,6 +103,7 @@ export default function OfferCard({
   const headerText = (() => {
     if (isRecipient) return "You've received an offer";
     if (status === "accepted") return "Offer accepted!";
+    if (status === "completed") return "Payment completed";
     if (status === "declined") return "Offer declined";
     if (status === "countered") return isCurrentUserSeller ? "You countered this offer" : "Counter offer sent";
     return isCurrentUserSeller ? "Your offer" : "Your pending offer";
@@ -241,6 +242,15 @@ export default function OfferCard({
           <div className="inline-flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 text-green-700 rounded-lg font-medium">
             <Check size={18} />
             {isCurrentUserSeller ? "Accepted - Waiting for payment" : "Accepted - Proceed to checkout"}
+          </div>
+        </div>
+      )}
+
+      {!canRespond && status === "completed" && (
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg font-medium">
+            <Check size={18} />
+            Payment completed
           </div>
         </div>
       )}

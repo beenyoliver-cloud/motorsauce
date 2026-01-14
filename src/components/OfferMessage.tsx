@@ -234,6 +234,11 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
         classes: "bg-gray-100 text-gray-700 border-gray-300",
         icon: <Ban size={14} className="inline" />
       };
+      case "completed": return {
+        label: "Paid",
+        classes: "bg-emerald-50 text-emerald-800 border-emerald-300",
+        icon: <Package size={14} className="inline" />
+      };
       default:          return { 
         label: "Pending",    
         classes: "bg-blue-50 text-blue-800 border-blue-300",

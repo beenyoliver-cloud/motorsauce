@@ -46,6 +46,51 @@ export function LayoutClient({ children }: { children: ReactNode }) {
     setPreviousPathname(pathname);
   }, [pathname]);
 
+  useEffect(() => {
+    const handled = new Set<string>();
+
+    const onMissingImage = (event: Event) => {
+      const detail = (event as CustomEvent).detail as { listingId?: string | number } | undefined;
+      const listingId = detail?.listingId;
+      if (!listingId) return;
+      const key = String(listingId);
+      if (handled.has(key)) return;
+      handled.add(key);
+
+      try {
+        const sessionKey = `ms:image-missing:${key}`;
+        if (typeof sessionStorage !== "undefined") {
+          if (sessionStorage.getItem(sessionKey)) return;
+          sessionStorage.setItem(sessionKey, "1");
+        }
+      } catch {
+        // ignore sessionStorage failures
+      }
+
+      const payload = JSON.stringify({ listingId: key });
+      try {
+        if (navigator.sendBeacon) {
+          const blob = new Blob([payload], { type: "application/json" });
+          navigator.sendBeacon("/api/listings/validate-images", blob);
+        } else {
+          fetch("/api/listings/validate-images", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: payload,
+            keepalive: true,
+          }).catch(() => {});
+        }
+      } catch {
+        // ignore network failures
+      }
+    };
+
+    window.addEventListener("ms:listing-image-missing", onMissingImage as EventListener);
+    return () => {
+      window.removeEventListener("ms:listing-image-missing", onMissingImage as EventListener);
+    };
+  }, []);
+
   return (
     <>
       {isLoading && <LoadingAnimation />}

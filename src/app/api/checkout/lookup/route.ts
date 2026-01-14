@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
-import { supabaseServer } from "@/lib/supabase";
-import { createOrderRecord } from "@/lib/ordersServer";
+import { finalizeCheckoutSession } from "@/lib/checkoutServer";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -31,104 +29,29 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
     }
 
-    const admin = supabaseServer({ useServiceRole: true });
-
-    const { data: stored, error: lookupError } = await admin
-      .from("checkout_sessions")
-      .select("*")
-      .eq("session_id", sessionId)
-      .maybeSingle();
-
-    if (lookupError) {
-      console.error("[checkout/lookup] Lookup error:", lookupError);
-      return NextResponse.json({ error: "Checkout session lookup failed" }, { status: 500 });
-    }
-
-    if (!stored) {
-      return NextResponse.json({ error: "Checkout session not found" }, { status: 404 });
-    }
-
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2024-11-20.acacia" as any });
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
-
-    if (session.payment_status !== "paid") {
-      return NextResponse.json({ error: "Payment not completed yet" }, { status: 409 });
-    }
-
-    // If already consumed, return the existing order summary.
-    if ((stored as any).order_id && (stored as any).consumed_at) {
-      return NextResponse.json({
-        orderId: (stored as any).order_id,
-        reused: true,
-        orderRef: `MS-${String((stored as any).order_id).split("-")[0].toUpperCase()}`,
-        items: (stored as any).payload?.items || [],
-        totals: (stored as any).payload?.totals || null,
-        shippingMethod: (stored as any).payload?.shipping_method || null,
-        // Intentionally omit shippingAddress here for now (avoid leaking personal data).
-      });
-    }
-
-    // Not consumed yet: create order now (same core logic as /api/checkout/complete, but without requiring user auth).
-    const payload = (stored as any).payload;
-    const userId = (stored as any).user_id;
-
-    if (!payload || !userId) {
-      return NextResponse.json({ error: "Invalid stored checkout payload" }, { status: 500 });
-    }
-
-    const { orderId, orderRef } = await createOrderRecord({
-      userId,
-      items: payload.items,
-      shippingMethod: payload.shipping_method,
-      shippingAddress: payload.shipping_address,
-      totals: payload.totals,
+    const result = await finalizeCheckoutSession({
+      sessionId,
+      includeAddress: false,
     });
 
-    // Keep listing inventory/status consistent even when finalizing without browser auth.
-    // Best-effort only: order record is the source of truth.
-    try {
-      for (const item of payload.items || []) {
-        const qty = Math.max(1, Math.min(99, Math.floor(Number(item.quantity || 1))));
-
-        const { data: listing, error: listingErr } = await admin
-          .from("listings")
-          .select("id, quantity, status")
-          .eq("id", item.listing_id)
-          .maybeSingle();
-
-        if (listingErr || !listing) continue;
-
-        const currentQty = typeof (listing as any).quantity === "number" ? (listing as any).quantity : 1;
-        const nextQty = Math.max(0, currentQty - qty);
-        const update: any = { quantity: nextQty };
-
-        if (nextQty <= 0) {
-          update.status = "sold";
-          update.marked_sold_at = new Date().toISOString();
-        } else {
-          // If we still have stock, keep it active.
-          update.status = (listing as any).status === "sold" ? "active" : (listing as any).status || "active";
-        }
-
-        await admin.from("listings").update(update).eq("id", item.listing_id);
-      }
-    } catch (e) {
-      console.warn("[checkout/lookup] Stock decrement failed", e);
+    switch (result.state) {
+      case "ok":
+        return NextResponse.json({ ...result.summary, reused: result.reused });
+      case "forbidden":
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      case "not_found":
+        return NextResponse.json({ error: "Checkout session not found" }, { status: 404 });
+      case "not_paid":
+        return NextResponse.json({ error: "Payment not completed yet" }, { status: 409 });
+      case "processing":
+        return NextResponse.json(
+          { error: "Checkout processing", retryAfterMs: result.retryAfterMs },
+          { status: 202 }
+        );
+      case "error":
+      default:
+        return NextResponse.json({ error: result.error || "Failed to finalize checkout" }, { status: 500 });
     }
-
-    // Mark checkout session consumed.
-    await admin
-      .from("checkout_sessions")
-      .update({ consumed_at: new Date().toISOString(), order_id: orderId })
-      .eq("session_id", sessionId);
-
-    return NextResponse.json({
-      orderId,
-      orderRef,
-      items: payload.items,
-      totals: payload.totals,
-      shippingMethod: payload.shipping_method,
-    });
   } catch (err: any) {
     console.error("[checkout/lookup] Error:", err);
     return NextResponse.json({ error: err?.message || "Unexpected" }, { status: 500 });

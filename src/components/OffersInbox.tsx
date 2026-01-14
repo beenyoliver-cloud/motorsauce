@@ -68,6 +68,8 @@ export default function OffersInbox() {
         return <XCircle size={16} className="text-red-600" />;
       case "countered":
         return <TrendingUp size={16} className="text-blue-600" />;
+      case "completed":
+        return <Check size={16} className="text-emerald-600" />;
       case "withdrawn":
         return <XCircle size={16} className="text-gray-500" />;
       default:
@@ -86,6 +88,8 @@ export default function OffersInbox() {
         return "text-red-700 bg-red-50 border-red-200";
       case "countered":
         return "text-blue-700 bg-blue-50 border-blue-200";
+      case "completed":
+        return "text-emerald-700 bg-emerald-50 border-emerald-200";
       case "withdrawn":
       case "expired":
         return "text-gray-700 bg-gray-50 border-gray-200";

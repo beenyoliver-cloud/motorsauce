@@ -187,7 +187,8 @@ function CheckoutContent() {
   }, []);
 
   const hasItems = offerCheckout || cart.items.length > 0;
-  const disabled = !hasItems || !isAddressValid(addr) || !agree;
+  const addressValid = isAddressValid(addr, cart.shipping);
+  const disabled = !hasItems || !addressValid || !agree;
   const [paying, setPaying] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
@@ -578,8 +579,10 @@ function ShipOption({
   );
 }
 
-function isAddressValid(a: Address) {
-  return a.fullName && a.email && a.line1 && a.city && a.postcode;
+function isAddressValid(a: Address, shipping: "standard" | "collection") {
+  if (!a.fullName || !a.email) return false;
+  if (shipping === "collection") return true;
+  return !!(a.line1 && a.city && a.postcode);
 }
 
 const ADDR_KEY = "ms:addr:v1";

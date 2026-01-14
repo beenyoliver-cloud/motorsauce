@@ -84,6 +84,8 @@ type RawListingRow = {
   vehicles?: any[] | string | null;
 };
 
+const PLACEHOLDER_SUFFIXES = ["/images/placeholder.jpg", "/images/placeholder.png"];
+
 // Format £ from cents or accept preformatted string
 function toGBP(row: RawListingRow): string {
   if (typeof row.price_cents === "number") {
@@ -98,14 +100,38 @@ function toGBP(row: RawListingRow): string {
   return "£0.00";
 }
 
+function stripQuery(url: string) {
+  return url.split("?")[0]?.split("#")[0] || url;
+}
+
+function isPlaceholderUrl(url: string): boolean {
+  const base = stripQuery(url).toLowerCase();
+  return PLACEHOLDER_SUFFIXES.some((suffix) => base.endsWith(suffix));
+}
+
+function normalizeImages(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((value) => {
+      if (typeof value === "string") return value.trim();
+      if (value && typeof value === "object" && "url" in value) {
+        const maybeUrl = (value as { url?: unknown }).url;
+        return typeof maybeUrl === "string" ? maybeUrl.trim() : "";
+      }
+      return "";
+    })
+    .filter((url) => url.length > 0 && !isPlaceholderUrl(url));
+}
+
 // Map raw DB row to public Listing shape
 function mapDbRow(row: RawListingRow): Listing {
+  const imagesFromArray = normalizeImages(row.images);
   const images: string[] =
-    Array.isArray(row.images) && row.images.length
-      ? row.images
-      : row.image_url
+    imagesFromArray.length > 0
+      ? imagesFromArray
+      : row.image_url && !isPlaceholderUrl(row.image_url)
       ? [row.image_url]
-      : row.image
+      : row.image && !isPlaceholderUrl(row.image)
       ? [row.image]
       : [];
   const vehicles: Array<{ make?: string; model?: string; year?: number; universal?: boolean }> =

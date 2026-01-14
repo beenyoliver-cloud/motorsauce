@@ -47,6 +47,8 @@ type RawListingRow = {
   image?: string | null;
   seller_id?: string | null;
   seller_name?: string | null;
+  status?: string | null;
+  quantity?: number | null;
 };
 
 type CheckoutItem = {
@@ -106,6 +108,55 @@ function calcTotals(items: CheckoutItem[], shipping: "standard" | "collection") 
   return { itemsSubtotal, serviceFee, shippingCost, total };
 }
 
+type NormalizedAddress = {
+  fullName: string;
+  email: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  postcode: string;
+};
+
+function normalizeText(value: unknown): string {
+  return String(value || "").trim();
+}
+
+function normalizeAddress(raw: any): NormalizedAddress | null {
+  if (!raw || typeof raw !== "object") return null;
+  const fullName = normalizeText(raw.fullName);
+  const email = normalizeText(raw.email);
+  const line1 = normalizeText(raw.line1);
+  const line2 = normalizeText(raw.line2);
+  const city = normalizeText(raw.city);
+  const postcode = normalizeText(raw.postcode);
+  return {
+    fullName,
+    email,
+    line1,
+    line2: line2 || undefined,
+    city,
+    postcode,
+  };
+}
+
+function addressValidationError(
+  shipping: "standard" | "collection",
+  address: NormalizedAddress | null
+): string | null {
+  if (!address) {
+    return shipping === "collection"
+      ? "Name and email are required for collection"
+      : "Shipping address is required";
+  }
+  if (!address.fullName || !address.email) {
+    return "Name and email are required";
+  }
+  if (shipping === "standard" && (!address.line1 || !address.city || !address.postcode)) {
+    return "Full address is required for standard delivery";
+  }
+  return null;
+}
+
 export async function POST(req: Request) {
   if (!process.env.STRIPE_SECRET_KEY) {
     return NextResponse.json({ error: "Payments not configured" }, { status: 503 });
@@ -134,9 +185,14 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({} as any));
     const shipping: "standard" | "collection" = body?.shipping === "collection" ? "collection" : "standard";
     const offerId = body?.offer_id ?? null;
-    const address = body?.address && typeof body.address === "object" ? body.address : null;
+    const address = normalizeAddress(body?.address);
+    const addressError = addressValidationError(shipping, address);
+    if (addressError) {
+      return NextResponse.json({ error: addressError }, { status: 400 });
+    }
     const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
     const normalizedItems: CheckoutItem[] = [];
+    const invalidItems: Array<{ id: string; reason: string; requestedQty?: number; availableQty?: number }> = [];
 
     if (offerId) {
       const { data: offer, error: offerError } = await admin
@@ -157,6 +213,7 @@ export async function POST(req: Request) {
               title,
               images,
               status,
+              quantity,
               seller_id,
               seller:profiles!seller_id (name)
             )
@@ -172,16 +229,26 @@ export async function POST(req: Request) {
       if (conversation?.buyer_user_id && conversation.buyer_user_id !== user.id) {
         return NextResponse.json({ error: "Unauthorized offer access" }, { status: 403 });
       }
-      if (offer.status !== "ACCEPTED") {
+      const offerStatus = typeof offer.status === "string" ? offer.status.toUpperCase() : "";
+      if (offerStatus !== "ACCEPTED") {
         return NextResponse.json({ error: "Offer is not accepted" }, { status: 400 });
       }
 
       const listing = offer.listing as any;
-      if (!listing || listing.status !== "active") {
+      const listingStatus = typeof listing?.status === "string" ? listing.status.toLowerCase() : "active";
+      const listingQty =
+        typeof listing?.quantity === "number" && Number.isFinite(listing.quantity) ? listing.quantity : 1;
+      if (!listing || listingStatus !== "active") {
         return NextResponse.json({ error: "Listing is no longer available" }, { status: 400 });
+      }
+      if (listingQty <= 0) {
+        return NextResponse.json({ error: "Listing is out of stock" }, { status: 409 });
       }
 
       const amountCents = typeof offer.amount === "number" ? offer.amount : Math.round(Number(offer.amount) || 0);
+      if (!Number.isFinite(amountCents) || amountCents <= 0) {
+        return NextResponse.json({ error: "Offer amount is invalid" }, { status: 400 });
+      }
       const image = Array.isArray(listing.images) && listing.images.length ? listing.images[0] : null;
 
       line_items.push({
@@ -221,7 +288,7 @@ export async function POST(req: Request) {
       }
 
       // Some environments may not have listings.price_cents yet.
-  // Attempt the modern select first, then fall back if Postgres reports undefined column (42703).
+      // Attempt the modern select first, then fall back if Postgres reports undefined column (42703).
       const fullSelect = `
             id,
             title,
@@ -231,11 +298,23 @@ export async function POST(req: Request) {
             image_url,
             image,
             seller_id,
+            status,
+            quantity,
             seller:profiles!seller_id (name)
           `;
-  // Minimal select intended to work across older schemas.
-  // (Avoids price_cents, image_url, image.)
-  const fallbackSelect = `
+      // Minimal select intended to work across older schemas.
+      // (Avoids price_cents, image_url, image.)
+      const fallbackSelect = `
+            id,
+            title,
+            price,
+            images,
+            seller_id,
+            status,
+            quantity,
+            seller:profiles!seller_id (name)
+          `;
+      const minimalSelect = `
             id,
             title,
             price,
@@ -257,6 +336,11 @@ export async function POST(req: Request) {
         const res2 = await admin.from("listings").select(fallbackSelect).in("id", ids).limit(200);
         data = res2.data as any;
         error = res2.error as any;
+        if (error && (error as any)?.code === "42703") {
+          const res3 = await admin.from("listings").select(minimalSelect).in("id", ids).limit(200);
+          data = res3.data as any;
+          error = res3.error as any;
+        }
       }
 
       if (error) {
@@ -269,9 +353,28 @@ export async function POST(req: Request) {
         const id = String(it.id || it.listingId);
         const qty = safeQty(it.qty);
         const row = byId.get(id);
-        if (!row) continue;
+        if (!row) {
+          invalidItems.push({ id, reason: "missing" });
+          continue;
+        }
+        const status = typeof (row as any).status === "string" ? (row as any).status.toLowerCase() : "active";
+        const availableQty =
+          typeof (row as any).quantity === "number" && Number.isFinite((row as any).quantity)
+            ? (row as any).quantity
+            : null;
+        if (status !== "active") {
+          invalidItems.push({ id, reason: "inactive" });
+          continue;
+        }
+        if (availableQty !== null && availableQty < qty) {
+          invalidItems.push({ id, reason: "insufficient_stock", requestedQty: qty, availableQty });
+          continue;
+        }
         const amount = parsePriceCents(row);
-        if (amount <= 0) continue;
+        if (amount <= 0) {
+          invalidItems.push({ id, reason: "invalid_price" });
+          continue;
+        }
         const perUnit = amount / 100;
         const name = row.title || `Listing ${id}`;
         const image =
@@ -305,9 +408,30 @@ export async function POST(req: Request) {
       }
     }
 
+    if (invalidItems.length > 0) {
+      return NextResponse.json(
+        { error: "Some items are no longer available", invalidItems },
+        { status: 409 }
+      );
+    }
+
     if (!line_items.length) {
       return NextResponse.json({ error: "Nothing to pay" }, { status: 400 });
     }
+
+    const totals = calcTotals(
+      normalizedItems.map((item) => ({ ...item })),
+      shipping
+    );
+
+    line_items.push({
+      quantity: 1,
+      price_data: {
+        currency: "gbp",
+        unit_amount: Math.round(totals.serviceFee * 100),
+        product_data: { name: "Service fee" },
+      },
+    });
 
     if (shipping === "standard") {
       line_items.push({
@@ -319,11 +443,6 @@ export async function POST(req: Request) {
         },
       });
     }
-
-    const totals = calcTotals(
-      normalizedItems.map((item) => ({ ...item })),
-      shipping
-    );
 
     const origin = derivePublicOrigin(req);
 

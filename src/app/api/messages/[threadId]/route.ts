@@ -10,6 +10,7 @@ const DB_TO_CLIENT_STATUS: Record<string, string> = {
   COUNTERED: "countered",
   CANCELLED: "withdrawn",
   EXPIRED: "expired",
+  COMPLETED: "completed",
 };
 
 export const dynamic = "force-dynamic";

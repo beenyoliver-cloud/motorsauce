@@ -53,7 +53,7 @@ export type Offer = {
   sellerId?: string | null;
   amountCents: number;
   currency: string;
-  status: "pending" | "accepted" | "declined" | "rejected" | "countered" | "withdrawn" | "expired";
+  status: "pending" | "accepted" | "declined" | "rejected" | "countered" | "withdrawn" | "expired" | "completed";
   createdAt: string;
   updatedAt: string;
   expires_at?: string | null;
@@ -67,6 +67,7 @@ const DB_TO_CLIENT_STATUS: Record<string, Offer["status"]> = {
   COUNTERED: "countered",
   CANCELLED: "withdrawn",
   EXPIRED: "expired",
+  COMPLETED: "completed",
 };
 
 const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
