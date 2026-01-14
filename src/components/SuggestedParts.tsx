@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import ListingCard from "@/components/ListingCard";
-import { CardSkeleton } from "@/components/skeletons/Skeletons";
 import { loadMyCars } from "@/lib/garage";
 
 type Listing = {
@@ -14,6 +13,7 @@ type Listing = {
 };
 
 type Props = { limit?: number };
+const MIN_LISTINGS = 5;
 
 type FilterId = "all" | "under100" | "performance" | "interior" | "exterior";
 
@@ -51,7 +51,6 @@ function matchesFilter(listing: Listing, filter: FilterId) {
 export default function SuggestedParts({ limit = 12 }: Props) {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<FilterId>("all");
 
   useEffect(() => {
     let mounted = true;
@@ -96,62 +95,58 @@ export default function SuggestedParts({ limit = 12 }: Props) {
     return map;
   }, [listings]);
 
-  if (loading) {
-    return (
-      <div className="flex gap-3 overflow-hidden">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="min-w-[220px] flex-1">
-            <CardSkeleton />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (!listings.length) {
-    return (
-      <div className="py-8 text-gray-600">
-        No suggested parts yet. Add vehicles to your garage to get personalised matches.
-      </div>
-    );
-  }
+  if (loading) return null;
+  if (listings.length < MIN_LISTINGS) return null;
 
   return (
-    <div className="space-y-8">
-      {filters.map((filter) => {
-        const list = (listingsByFilter.get(filter.id) || []).slice(0, 6);
-        if (list.length === 0) return null;
+    <section className="rounded-xl border border-gray-200 bg-white shadow-sm p-3 sm:p-5">
+      <div className="flex items-center justify-between mb-2 sm:mb-4">
+        <div>
+          <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] text-slate-500 font-semibold">Shop by need</p>
+          <h2 className="text-base sm:text-2xl font-bold text-slate-900 leading-tight">
+            Choose a path and we'll surface the right parts
+          </h2>
+        </div>
+        <Link href="/search" className="text-xs sm:text-sm font-semibold text-slate-700 hover:text-slate-900 flex-shrink-0">
+          Browse all →
+        </Link>
+      </div>
+      <div className="space-y-8">
+        {filters.map((filter) => {
+          const list = (listingsByFilter.get(filter.id) || []).slice(0, 6);
+          if (list.length === 0) return null;
 
-        return (
-          <section key={filter.id} className="space-y-2 sm:space-y-3">
-            <div className="flex items-baseline justify-between">
-              <h3 className="text-sm sm:text-lg font-bold text-gray-900">{filter.label}</h3>
-              <Link
-                href={`/search${filter.id === 'under100' ? '?priceMax=100' : filter.id === 'all' ? '' : `?q=${filter.id}`}`}
-                className="text-xs sm:text-sm text-gray-600 hover:text-gray-900 hover:underline"
-              >
-                See all →
-              </Link>
-            </div>
-
-            {/* Mobile: horizontal scroll, Desktop: fixed grid of 5 */}
-            <div className="overflow-x-auto scrollbar-hide md:overflow-visible">
-              <div className="flex gap-3 md:grid md:grid-cols-5 md:gap-8">
-                {list.slice(0, 5).map((p) => (
-                  <ListingCard
-                    key={`${filter.id}-${p.id}`}
-                    id={p.id}
-                    title={p.title}
-                    price={p.price}
-                    image={p.image}
-                    className="min-w-[130px] max-w-[145px] sm:min-w-[150px] sm:max-w-[165px] md:min-w-0 md:max-w-none flex-shrink-0"
-                  />
-                ))}
+          return (
+            <section key={filter.id} className="space-y-2 sm:space-y-3">
+              <div className="flex items-baseline justify-between">
+                <h3 className="text-sm sm:text-lg font-bold text-gray-900">{filter.label}</h3>
+                <Link
+                  href={`/search${filter.id === 'under100' ? '?priceMax=100' : filter.id === 'all' ? '' : `?q=${filter.id}`}`}
+                  className="text-xs sm:text-sm text-gray-600 hover:text-gray-900 hover:underline"
+                >
+                  See all →
+                </Link>
               </div>
-            </div>
-          </section>
-        );
-      })}
-    </div>
+
+              {/* Mobile: horizontal scroll, Desktop: fixed grid of 5 */}
+              <div className="overflow-x-auto scrollbar-hide md:overflow-visible">
+                <div className="flex gap-3 md:grid md:grid-cols-5 md:gap-8">
+                  {list.slice(0, 5).map((p) => (
+                    <ListingCard
+                      key={`${filter.id}-${p.id}`}
+                      id={p.id}
+                      title={p.title}
+                      price={p.price}
+                      image={p.image}
+                      className="min-w-[130px] max-w-[145px] sm:min-w-[150px] sm:max-w-[165px] md:min-w-0 md:max-w-none flex-shrink-0"
+                    />
+                  ))}
+                </div>
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </section>
   );
 }

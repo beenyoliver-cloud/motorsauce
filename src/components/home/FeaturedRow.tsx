@@ -23,6 +23,7 @@ type ActiveCarPreference = {
 
 const ACTIVE_CAR_COOKIE = "ms_active_car";
 const FALLBACK_SITE_URL = "http://localhost:3000";
+const MIN_FEATURED_ITEMS = 5;
 
 export default async function FeaturedRow({
   title,
@@ -36,6 +37,8 @@ export default async function FeaturedRow({
   const allListings = await getListingPool();
   const activeCar = await readActiveCarPreference();
   const items = pickVariant(allListings, variant, limit, activeCar);
+
+  if (items.length < MIN_FEATURED_ITEMS) return null;
 
   return (
     <section className="rounded-xl border border-gray-200 bg-white shadow-sm p-3 sm:p-5">

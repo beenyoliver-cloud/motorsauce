@@ -6,10 +6,9 @@ import HomeHero from "@/components/home/HomeHero";
 import CategoryTiles from "@/components/home/CategoryTiles";
 import FeaturedRow from "@/components/home/FeaturedRow";
 import RecentlyViewedRow from "@/components/home/RecentlyViewedRow";
+import TrendingActivitySection from "@/components/home/TrendingActivitySection";
 import TrustBand from "@/components/home/TrustBand";
 import SellCta from "@/components/home/SellCta";
-import LiveActivityFeed from "@/components/home/LiveActivityFeed";
-import JustSoldTicker from "@/components/home/JustSoldTicker";
 import SEOJsonLd from "@/components/SEOJsonLd";
 import ToastContainer from "@/components/Toast";
 
@@ -40,38 +39,19 @@ export default function Home() {
             Shop by category →
           </Link>
           <Link
-            href="/sell"
-            className="rounded-xl border border-yellow-500 bg-yellow-500 hover:bg-yellow-600 transition shadow-sm px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm font-semibold text-black text-center col-span-2 sm:col-span-1"
+            href="/saved-searches"
+            className="rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition shadow-sm px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm font-semibold text-gray-800 text-center col-span-2 sm:col-span-1"
           >
-            List an item →
+            Notify me when a part is available →
           </Link>
         </div>
 
-        {/* Activity + ticker in a single card */}
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-3 sm:p-5 space-y-2 sm:space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base sm:text-xl font-semibold">Trending right now</h2>
-            <Link href="/search" className="text-xs sm:text-sm font-semibold text-slate-700 hover:text-slate-900">
-              View all →
-            </Link>
-          </div>
-          <JustSoldTicker />
-          <LiveActivityFeed />
-        </div>
+        {/* Seller CTA */}
+        <SellCta />
 
-        {/* Shop by need */}
-        <section className="rounded-xl border border-gray-200 bg-white shadow-sm p-3 sm:p-5">
-          <div className="flex items-center justify-between mb-2 sm:mb-4">
-            <div>
-              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] text-slate-500 font-semibold">Shop by need</p>
-              <h2 className="text-base sm:text-2xl font-bold text-slate-900 leading-tight">Choose a path and we'll surface the right parts</h2>
-            </div>
-            <Link href="/search" className="text-xs sm:text-sm font-semibold text-slate-700 hover:text-slate-900 flex-shrink-0">
-              Browse all →
-            </Link>
-          </div>
-          <SuggestedParts limit={8} />
-        </section>
+        <TrustBand />
+
+        <TrendingActivitySection />
 
         {/* Categories */}
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-3 sm:p-5">
@@ -84,10 +64,7 @@ export default function Home() {
           <CategoryTiles />
         </div>
 
-        {/* Sell CTA */}
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-3 sm:p-5">
-          <SellCta />
-        </div>
+        <SuggestedParts limit={8} />
 
         {/* Featured rows, marketplace spacing */}
         <div className="space-y-3 sm:space-y-4">
@@ -109,8 +86,6 @@ export default function Home() {
         <Suspense fallback={null}>
           <RecentlyViewedRow />
         </Suspense>
-
-        <TrustBand />
       </div>
 
       <ToastContainer />
