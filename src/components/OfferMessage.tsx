@@ -18,7 +18,7 @@ type Props = {
       id: string;
       amountCents: number;
       currency: string;
-      status: "pending" | "accepted" | "declined" | "rejected" | "countered" | "withdrawn" | "expired";
+      status: "pending" | "accepted" | "declined" | "rejected" | "countered" | "withdrawn" | "expired" | "completed";
       starter?: string;
       recipient?: string;
       starterId?: string;
