@@ -143,9 +143,11 @@ export default function SavedSearchesList({ userId }: SavedSearchesListProps) {
     if (filters.make) parts.push(filters.make);
     if (filters.model) parts.push(filters.model);
     if (filters.condition) parts.push(filters.condition);
-    if (filters.price_min || filters.price_max) {
-      const min = filters.price_min || "0";
-      const max = filters.price_max || "∞";
+    const priceMin = filters.price_min || (filters as any).priceMin;
+    const priceMax = filters.price_max || (filters as any).priceMax;
+    if (priceMin || priceMax) {
+      const min = priceMin || "0";
+      const max = priceMax || "∞";
       parts.push(`£${min}-${max}`);
     }
     

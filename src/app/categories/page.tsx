@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getMainCategories, getSubcategoriesForMain, type MainCategory } from "@/data/partCategories";
+import NotifyMatchForm from "@/components/category/NotifyMatchForm";
 
 const FEATURED_CATEGORIES = [
   {
@@ -76,7 +77,7 @@ export default function CategoriesPage() {
             Browse all listings
           </Link>
           <Link
-            href="/saved-searches"
+            href="#notify-part"
             className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:border-yellow-400 hover:text-yellow-700 transition"
           >
             Get notified on new matches
@@ -150,19 +151,7 @@ export default function CategoriesPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 sm:p-8">
-        <h2 className="text-xl font-bold text-gray-900">Notify me when a part is available</h2>
-        <p className="mt-2 text-sm text-gray-600 max-w-2xl">
-          Save your filters and get alerts when matching parts land on Motorsource. You can
-          manage alerts any time from your saved searches.
-        </p>
-        <Link
-          href="/search"
-          className="mt-4 inline-flex items-center justify-center rounded-lg bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-600 transition"
-        >
-          Start a search and set alerts
-        </Link>
-      </div>
+      <NotifyMatchForm />
     </section>
   );
 }

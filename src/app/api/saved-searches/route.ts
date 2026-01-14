@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE;
 
 // Helper to get authenticated user from request
 async function getAuthUser(req: NextRequest) {
@@ -29,6 +29,9 @@ async function getAuthUser(req: NextRequest) {
 // GET /api/saved-searches - Fetch user's saved searches
 export async function GET(req: NextRequest) {
   try {
+    if (!supabaseServiceKey) {
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    }
     const user = await getAuthUser(req);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -63,6 +66,9 @@ export async function GET(req: NextRequest) {
 // POST /api/saved-searches - Create new saved search
 export async function POST(req: NextRequest) {
   try {
+    if (!supabaseServiceKey) {
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    }
     const user = await getAuthUser(req);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -136,6 +142,9 @@ export async function POST(req: NextRequest) {
 // PATCH /api/saved-searches - Update saved search
 export async function PATCH(req: NextRequest) {
   try {
+    if (!supabaseServiceKey) {
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    }
     const user = await getAuthUser(req);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -207,6 +216,9 @@ export async function PATCH(req: NextRequest) {
 // DELETE /api/saved-searches - Delete saved search
 export async function DELETE(req: NextRequest) {
   try {
+    if (!supabaseServiceKey) {
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    }
     const user = await getAuthUser(req);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

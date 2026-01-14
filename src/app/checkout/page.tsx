@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -162,6 +162,7 @@ function CheckoutContent() {
   
   const [cart, setCart] = useState<Cart>(getCart());
   const [addr, setAddr] = useState<Address>(() => readAddress());
+  const initialAddrRef = useRef<Address>(addr);
   const [agree, setAgree] = useState(false);
   
   // Calculate totals based on offer or cart
@@ -185,6 +186,58 @@ function CheckoutContent() {
       window.removeEventListener("storage", onChange);
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function hydrateAddress() {
+      try {
+        const supabase = supabaseBrowser();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user || cancelled) return;
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("name, email, postcode")
+          .eq("id", user.id)
+          .single();
+
+        if (cancelled) return;
+
+        const name = typeof profile?.name === "string" ? profile.name.trim() : "";
+        const email = typeof profile?.email === "string" ? profile.email.trim() : (user.email || "");
+        const postcode = typeof (profile as any)?.postcode === "string" ? (profile as any).postcode.trim() : "";
+
+        setAddr((prev) => {
+          const initial = initialAddrRef.current;
+          const next = { ...prev };
+
+          if ((prev.fullName === initial.fullName || !prev.fullName) && name) {
+            next.fullName = name;
+          }
+          if ((prev.email === initial.email || !prev.email) && email) {
+            next.email = email;
+          }
+          if ((prev.postcode === initial.postcode || !prev.postcode) && postcode) {
+            next.postcode = postcode;
+          }
+
+          return next;
+        });
+      } catch (err) {
+        console.warn("[checkout] Failed to preload address", err);
+      }
+    }
+
+    hydrateAddress();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    saveAddress(addr);
+  }, [addr]);
 
   const hasItems = offerCheckout || cart.items.length > 0;
   const addressValid = isAddressValid(addr, cart.shipping);
