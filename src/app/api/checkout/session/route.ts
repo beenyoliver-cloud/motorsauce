@@ -47,6 +47,9 @@ type RawListingRow = {
   seller_name?: string | null;
   status?: string | null;
   quantity?: number | null;
+  reserved_by?: string | null;
+  reserved_until?: string | null;
+  reserved_offer_id?: string | null;
 };
 
 type CheckoutItem = {
@@ -96,6 +99,12 @@ function parsePriceCents(row: RawListingRow): number {
 function safeQty(q: unknown): number {
   const n = Math.floor(Number(q || 1));
   return Math.max(1, Math.min(99, Number.isFinite(n) ? n : 1));
+}
+
+function isReservationActive(reservedUntil?: string | null) {
+  if (!reservedUntil) return false;
+  const ts = Date.parse(reservedUntil);
+  return Number.isFinite(ts) && ts > Date.now();
 }
 
 function calcTotals(items: CheckoutItem[], shipping: "standard" | "collection") {
@@ -200,6 +209,7 @@ export async function POST(req: Request) {
             id,
             amount,
             status,
+            expires_at,
             currency,
             listing_id,
             conversation_id,
@@ -212,6 +222,9 @@ export async function POST(req: Request) {
               images,
               status,
               quantity,
+              reserved_by,
+              reserved_until,
+              reserved_offer_id,
               seller_id,
               seller:profiles!seller_id (name)
             )
@@ -231,6 +244,10 @@ export async function POST(req: Request) {
       if (offerStatus !== "ACCEPTED") {
         return NextResponse.json({ error: "Offer is not accepted" }, { status: 400 });
       }
+      const offerExpiresAt = offer.expires_at ? Date.parse(offer.expires_at) : NaN;
+      if (Number.isFinite(offerExpiresAt) && offerExpiresAt < Date.now()) {
+        return NextResponse.json({ error: "Offer reservation has expired" }, { status: 409 });
+      }
 
       const listing = offer.listing as any;
       const listingStatus = typeof listing?.status === "string" ? listing.status.toLowerCase() : "active";
@@ -241,6 +258,14 @@ export async function POST(req: Request) {
       }
       if (listingQty <= 0) {
         return NextResponse.json({ error: "Listing is out of stock" }, { status: 409 });
+      }
+      if (isReservationActive(listing?.reserved_until)) {
+        if (!listing?.reserved_by || listing.reserved_by !== user.id) {
+          return NextResponse.json({ error: "Listing is reserved for another buyer" }, { status: 409 });
+        }
+        if (listing?.reserved_offer_id && String(listing.reserved_offer_id) !== String(offerId)) {
+          return NextResponse.json({ error: "Offer reservation does not match this checkout" }, { status: 409 });
+        }
       }
 
       const amountCents = typeof offer.amount === "number" ? offer.amount : Math.round(Number(offer.amount) || 0);
@@ -298,6 +323,9 @@ export async function POST(req: Request) {
             seller_id,
             status,
             quantity,
+            reserved_by,
+            reserved_until,
+            reserved_offer_id,
             seller:profiles!seller_id (name)
           `;
       // Minimal select intended to work across older schemas.
@@ -310,6 +338,9 @@ export async function POST(req: Request) {
             seller_id,
             status,
             quantity,
+            reserved_by,
+            reserved_until,
+            reserved_offer_id,
             seller:profiles!seller_id (name)
           `;
       const minimalSelect = `
@@ -318,6 +349,9 @@ export async function POST(req: Request) {
             price,
             images,
             seller_id,
+            reserved_by,
+            reserved_until,
+            reserved_offer_id,
             seller:profiles!seller_id (name)
           `;
 
@@ -362,6 +396,10 @@ export async function POST(req: Request) {
             : null;
         if (status !== "active") {
           invalidItems.push({ id, reason: "inactive" });
+          continue;
+        }
+        if (isReservationActive((row as any).reserved_until)) {
+          invalidItems.push({ id, reason: "reserved" });
           continue;
         }
         if (availableQty !== null && availableQty < qty) {

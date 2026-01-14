@@ -42,6 +42,9 @@ type Listing = {
   acceptsReturns?: boolean;
   returnDays?: number;
   quantity?: number;
+  reservedBy?: string;
+  reservedUntil?: string;
+  reservedOfferId?: string;
   postcode?: string;
   vin?: string;
   yearFrom?: number;
@@ -93,6 +96,10 @@ type RawListingRow = {
   marked_sold_at?: string | null;
   view_count?: number | null;
   vehicles?: any[] | string | null;
+  reserved_by?: string | null;
+  reserved_until?: string | null;
+  reserved_offer_id?: string | null;
+  reserved_at?: string | null;
 };
 
 const PLACEHOLDER_SUFFIXES = ["/images/placeholder.jpg", "/images/placeholder.png"];
@@ -200,6 +207,9 @@ function mapDbRow(row: RawListingRow): Listing {
     acceptsReturns: row.accepts_returns == null ? undefined : Boolean(row.accepts_returns),
     returnDays: typeof row.return_days === "number" ? row.return_days : row.return_days ? Number(row.return_days) : undefined,
     quantity: typeof row.quantity === "number" ? row.quantity : row.quantity ? Number(row.quantity) : undefined,
+    reservedBy: row.reserved_by ?? undefined,
+    reservedUntil: row.reserved_until ?? undefined,
+    reservedOfferId: row.reserved_offer_id ?? undefined,
     postcode: row.postcode ?? row.seller_postcode ?? undefined,
     oem: row.oem ?? undefined,
     description: row.description ?? "",
@@ -360,6 +370,15 @@ export async function GET(req: Request) {
   }
 
   let rows: Listing[] = Array.isArray(data) && data.length ? (data as RawListingRow[]).map(mapDbRow) : ([] as Listing[]);
+
+  if (!sellerId) {
+    const now = Date.now();
+    rows = rows.filter((row) => {
+      if (!row.reservedUntil) return true;
+      const ts = Date.parse(row.reservedUntil);
+      return !Number.isFinite(ts) || ts <= now;
+    });
+  }
 
   // Apply filters
   const priceNumber = (p: string) => Number(String(p).replace(/[^\d.]/g, ""));

@@ -385,7 +385,7 @@ export default function StandaloneOffersPage() {
 
                   {offer.status === "accepted" && (
                     <Link
-                      href={`/checkout?offer=${offer.id}`}
+                      href={`/checkout?offer_id=${offer.id}`}
                       className="mt-auto pt-4 border-t border-gray-200 block w-full text-center rounded-lg bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-600 transition-colors"
                     >
                       Proceed to Checkout

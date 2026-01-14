@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { fetchThreads, fetchMessages, sendMessage, markThreadRead, Thread, Message, updateOfferStatus } from "@/lib/messagesClient";
 import { getCurrentUserSync } from "@/lib/auth";
 import { analyzeMessageSafety } from "@/lib/messagingSafety";
+import SellerLink from "@/components/SellerLink";
 import { formatDistanceToNow } from "date-fns";
 import { AlertCircle, AlertTriangle } from "lucide-react";
 
@@ -83,6 +84,12 @@ function MessageBubble({ m, onOfferUpdate }: { m: Message; onOfferUpdate: (statu
     isOffer &&
     m.offer?.status === "pending" &&
     ((m.offer?.recipientId && m.offer.recipientId === meId) || (m.offer?.starterId && m.offer.starterId === meId));
+  const showPayNow =
+    isOffer &&
+    m.offer?.status === "accepted" &&
+    !!m.offer?.buyerId &&
+    m.offer.buyerId === meId &&
+    !!m.offer?.id;
 
   return (
     <div className={`flex flex-col ${align}`}>
@@ -119,6 +126,16 @@ function MessageBubble({ m, onOfferUpdate }: { m: Message; onOfferUpdate: (statu
                   Withdraw
                 </button>
               )}
+            </div>
+          )}
+          {showPayNow && (
+            <div className="mt-2">
+              <Link
+                href={`/checkout?offer_id=${m.offer.id}`}
+                className="inline-flex items-center justify-center rounded-md bg-yellow-500 px-3 py-1.5 text-xs font-semibold text-black hover:bg-yellow-600"
+              >
+                Pay now
+              </Link>
             </div>
           )}
         </div>
@@ -172,7 +189,17 @@ function MessagePane({
       <div className="border-b border-slate-200 px-4 py-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold text-slate-900">{convo.thread.peer?.name || "Conversation"}</p>
+            {convo.thread.peer?.name ? (
+              <SellerLink
+                sellerName={convo.thread.peer.name}
+                sellerId={convo.thread.peer.id}
+                className="text-sm font-semibold text-slate-900 hover:text-yellow-700"
+              >
+                {convo.thread.peer.name}
+              </SellerLink>
+            ) : (
+              <p className="text-sm font-semibold text-slate-900">Conversation</p>
+            )}
             {convo.thread.listing?.title && (
               <Link href={`/listing/${convo.thread.listingRef || convo.thread.listing?.id || ""}`} className="text-xs text-slate-600 hover:text-slate-900">
                 {convo.thread.listing.title}

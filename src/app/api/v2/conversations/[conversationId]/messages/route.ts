@@ -117,6 +117,9 @@ export async function GET(
     }
 
     // Enrich messages with sender info and offer data
+    const buyerId = conversation.buyer_user_id;
+    const sellerId = conversation.seller_user_id;
+
     const enriched = messages?.map(m => {
       const enrichedMsg: any = {
         ...m,
@@ -135,6 +138,8 @@ export async function GET(
             listing_id: offer.listing_id,
             created_by_user_id: offer.created_by_user_id,
             offered_to_user_id: offer.offered_to_user_id,
+            buyer_id: buyerId,
+            seller_id: sellerId,
             currency: offer.currency,
             amount: offer.amount,
             quantity: offer.quantity,

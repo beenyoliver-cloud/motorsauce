@@ -29,7 +29,7 @@ export async function GET() {
     
     const { data: recentListings, error: listingsError } = await supabase
       .from("listings")
-      .select("id, title, seller_id, created_at, images")
+      .select("id, title, seller_id, created_at, images, reserved_until")
       .eq("status", "active")
       .gte("created_at", sevenDaysAgo)
       .order("created_at", { ascending: false })
@@ -58,15 +58,24 @@ export async function GET() {
     });
 
     // Fallback: if no recent listings, get any active listings
-    let listingsToUse = recentListings || [];
+    const nowMs = Date.now();
+    let listingsToUse = (recentListings || []).filter((listing: any) => {
+      if (!listing.reserved_until) return true;
+      const ts = Date.parse(listing.reserved_until);
+      return !Number.isFinite(ts) || ts <= nowMs;
+    });
     if (listingsToUse.length === 0) {
       const { data: anyListings } = await supabase
         .from("listings")
-        .select("id, title, seller_id, created_at, images")
+        .select("id, title, seller_id, created_at, images, reserved_until")
         .eq("status", "active")
         .order("created_at", { ascending: false })
         .limit(10);
-      listingsToUse = anyListings || [];
+      listingsToUse = (anyListings || []).filter((listing: any) => {
+        if (!listing.reserved_until) return true;
+        const ts = Date.parse(listing.reserved_until);
+        return !Number.isFinite(ts) || ts <= nowMs;
+      });
       console.log("[Activity API] Fallback listings:", listingsToUse.length);
     }
 

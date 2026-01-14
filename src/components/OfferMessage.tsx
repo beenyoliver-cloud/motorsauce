@@ -423,7 +423,7 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
             {/* Checkout button for buyer when offer is accepted */}
             {o.status === "accepted" && isMeBuyer && (
               <Link
-                href={`/checkout?offer=${o.id}&listing=${o.listingId}`}
+                href={`/checkout?offer_id=${o.id}`}
                 className="w-full block text-center rounded-lg bg-yellow-500 px-3 py-2.5 text-sm font-semibold text-white hover:bg-yellow-600 transition-colors shadow-sm hover:shadow-md"
               >
                 <div className="flex items-center justify-center gap-2">

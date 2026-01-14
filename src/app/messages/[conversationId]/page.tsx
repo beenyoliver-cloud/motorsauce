@@ -9,6 +9,7 @@ import { fetchMessages, sendMessage, type Message, fetchThreads } from "@/lib/me
 import { displayName } from "@/lib/names";
 import { getCurrentUserSync } from "@/lib/auth";
 import OfferMessage from "@/components/OfferMessage";
+import SellerLink from "@/components/SellerLink";
 
 export default function ConversationPage({
   params,
@@ -189,9 +190,17 @@ export default function ConversationPage({
             )}
 
             <div className="flex-1 min-w-0">
-              <h2 className="font-semibold text-gray-900 truncate">
-                {conversationInfo?.peer?.name || "User"}
-              </h2>
+              {conversationInfo?.peer?.name ? (
+                <SellerLink
+                  sellerName={conversationInfo.peer.name}
+                  sellerId={conversationInfo.peer.id}
+                  className="font-semibold text-gray-900 truncate hover:text-yellow-700"
+                >
+                  {conversationInfo.peer.name}
+                </SellerLink>
+              ) : (
+                <h2 className="font-semibold text-gray-900 truncate">User</h2>
+              )}
               {conversationInfo?.listing && (
                 <Link
                   href={`/listing/${conversationInfo.listing.id}`}

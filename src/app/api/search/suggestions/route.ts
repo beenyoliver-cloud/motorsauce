@@ -30,10 +30,16 @@ export async function GET(req: Request) {
       auth: { persistSession: false },
     });
 
+    const isReservationActive = (reservedUntil?: string | null) => {
+      if (!reservedUntil) return false;
+      const ts = Date.parse(reservedUntil);
+      return Number.isFinite(ts) && ts > Date.now();
+    };
+
     // Search parts (listings) - match title, make, model, description
     const { data: listings } = await supabase
       .from("listings")
-      .select("id, title, make, model, price")
+      .select("id, title, make, model, price, reserved_until")
       .eq("status", "active")
       .or(`title.ilike.%${query}%,make.ilike.%${query}%,model.ilike.%${query}%,description.ilike.%${query}%`)
       .limit(5);
@@ -61,7 +67,7 @@ export async function GET(req: Request) {
 
     // Add part suggestions
     if (Array.isArray(listings)) {
-      listings.forEach((listing) => {
+      listings.filter((listing) => !isReservationActive(listing.reserved_until)).forEach((listing) => {
         const makeModel = [listing.make, listing.model].filter(Boolean).join(" ");
         suggestions.push({
           type: "part",

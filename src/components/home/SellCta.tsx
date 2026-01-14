@@ -16,7 +16,7 @@ export default function SellCta() {
               £
             </div>
             <div>
-              <h3 className="text-xl sm:text-3xl font-bold text-white">Sell your parts in minutes</h3>
+              <h3 className="text-xl sm:text-3xl font-bold text-white">List your parts for sale in minutes</h3>
               <p className="text-blue-100 text-xs sm:text-sm mt-0.5">Create a listing, get buyers, and cash out securely with Stripe.</p>
             </div>
           </div>

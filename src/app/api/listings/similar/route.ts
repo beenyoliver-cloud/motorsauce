@@ -38,7 +38,7 @@ export async function GET(req: Request) {
     // Exclude the current listing and sold items
     let query = supabase
       .from("listings")
-      .select("id, title, price_cents, images, image_url, image, category, make, model, condition, seller_id")
+      .select("id, title, price_cents, images, image_url, image, category, make, model, condition, seller_id, reserved_until")
       .neq("id", listingId)
       .neq("status", "sold")
       .limit(limit * 3); // Fetch more to filter down
@@ -62,7 +62,14 @@ export async function GET(req: Request) {
     }
 
     // Prioritize: same make+model, then same make, then same category, exclude own listings
-    const scored = (listings || []).map((l: any) => {
+    const now = Date.now();
+    const available = (listings || []).filter((l: any) => {
+      if (!l.reserved_until) return true;
+      const ts = Date.parse(l.reserved_until);
+      return !Number.isFinite(ts) || ts <= now;
+    });
+
+    const scored = available.map((l: any) => {
       let score = 0;
       if (l.make === currentListing.make) score += 10;
       if (l.model === currentListing.model) score += 5;

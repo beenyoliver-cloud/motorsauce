@@ -187,7 +187,7 @@ export default function SearchBar({ initialQuery = "", placeholder = "Search par
             </button>
           )}
           
-          {/* Search Button - prominent blue like eBay */}
+          {/* Search Button - prominent blue */}
           <button
             type="submit"
             className={`flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center transition-colors ${compact ? "w-8 h-8" : "w-10 h-10"}`}

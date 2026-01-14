@@ -32,6 +32,9 @@ const CLIENT_TO_DB_STATUS: Record<string, string> = {
   completed: "COMPLETED",
 };
 
+const RESERVATION_HOURS = 12;
+const RESERVATION_MS = RESERVATION_HOURS * 60 * 60 * 1000;
+
 function getSupabase(authHeader?: string | null) {
   const client = createClient(supabaseUrl, supabaseAnon, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -41,6 +44,12 @@ function getSupabase(authHeader?: string | null) {
   });
   
   return client;
+}
+
+function isReservationActive(reservedUntil?: string | null) {
+  if (!reservedUntil) return false;
+  const ts = Date.parse(reservedUntil);
+  return Number.isFinite(ts) && ts > Date.now();
 }
 
 async function createNotificationForOffer(offer: any) {
@@ -346,6 +355,8 @@ export async function PATCH(req: Request) {
     }
 
     const now = new Date().toISOString();
+    const reserveUntil = new Date(Date.now() + RESERVATION_MS).toISOString();
+    let reservedListingId: string | null = null;
 
     if (dbStatus === "COUNTERED") {
       if (!counterAmountCents || counterAmountCents <= 0) {
@@ -405,9 +416,53 @@ export async function PATCH(req: Request) {
       updated_at: now,
     };
 
-    if (dbStatus === "ACCEPTED") updateData.accepted_at = now;
+    if (dbStatus === "ACCEPTED") {
+      updateData.accepted_at = now;
+      updateData.expires_at = reserveUntil;
+    }
     if (dbStatus === "REJECTED") updateData.rejected_at = now;
     if (dbStatus === "CANCELLED") updateData.cancelled_at = now;
+
+    if (dbStatus === "ACCEPTED") {
+      const { data: listing, error: listingError } = await supabase
+        .from("listings")
+        .select("id, status, reserved_by, reserved_until, reserved_offer_id")
+        .eq("id", conversation.listing_id)
+        .maybeSingle();
+
+      if (listingError || !listing) {
+        return NextResponse.json({ error: "Listing not found" }, { status: 404 });
+      }
+
+      const listingStatus = typeof listing.status === "string" ? listing.status.toLowerCase() : "active";
+      if (listingStatus !== "active") {
+        return NextResponse.json({ error: "Listing is not available" }, { status: 409 });
+      }
+
+      const alreadyReserved = isReservationActive(listing.reserved_until);
+      if (alreadyReserved && listing.reserved_by && listing.reserved_by !== conversation.buyer_user_id) {
+        return NextResponse.json({ error: "Listing is already reserved" }, { status: 409 });
+      }
+
+      const { data: reserved, error: reserveError } = await supabase
+        .from("listings")
+        .update({
+          reserved_by: conversation.buyer_user_id,
+          reserved_offer_id: offerId,
+          reserved_until: reserveUntil,
+          reserved_at: now,
+        })
+        .eq("id", conversation.listing_id)
+        .eq("status", "active")
+        .select("id")
+        .maybeSingle();
+
+      if (reserveError || !reserved) {
+        return NextResponse.json({ error: "Failed to reserve listing" }, { status: 409 });
+      }
+
+      reservedListingId = reserved.id;
+    }
 
     const { data: updatedOffer, error: updateError } = await supabase
       .from("offers")
@@ -417,6 +472,18 @@ export async function PATCH(req: Request) {
       .single();
 
     if (updateError) {
+      if (reservedListingId) {
+        await supabase
+          .from("listings")
+          .update({
+            reserved_by: null,
+            reserved_offer_id: null,
+            reserved_until: null,
+            reserved_at: null,
+          })
+          .eq("id", reservedListingId)
+          .eq("reserved_offer_id", offerId);
+      }
       console.error("[offers API] Update error:", updateError);
       return NextResponse.json({
         error: updateError.message || "Failed to update offer",

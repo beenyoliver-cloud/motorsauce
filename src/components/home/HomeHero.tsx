@@ -123,7 +123,7 @@ export default function HomeHero() {
             <Zap className="h-3.5 w-3.5 text-yellow-500" />
             Vehicle compatibility
           </div>
-          <div className="text-xs font-semibold text-gray-600">eBay-inspired layout • Keep all features</div>
+          <div className="text-xs font-semibold text-gray-600">Layout preview • Keep all features</div>
         </div>
         <h1 className="text-lg sm:text-2xl font-semibold tracking-tight">Find parts that fit your car—fast.</h1>
         <p className="text-xs sm:text-sm text-gray-600 break-words sm:whitespace-nowrap sm:overflow-hidden sm:text-ellipsis">
