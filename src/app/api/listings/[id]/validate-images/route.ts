@@ -52,7 +52,7 @@ async function validateImageUrl(url: string): Promise<ImageCheck> {
     });
     return {
       url,
-      valid: response.ok && response.headers.get("content-type")?.startsWith("image/"),
+      valid: response.ok && (response.headers.get("content-type")?.startsWith("image/") ?? false),
     };
   } catch {
     return { url, valid: false };
