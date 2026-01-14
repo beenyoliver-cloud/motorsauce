@@ -12,7 +12,10 @@ export default function StickyBuyBar({
   messageHref: string;
 }) {
   return (
-    <div className="md:hidden fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+    <div
+      className="md:hidden fixed inset-x-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70"
+      style={{ bottom: "calc(var(--bottom-nav-height, 56px) + env(safe-area-inset-bottom))" }}
+    >
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-2 flex items-center gap-2">
         <div className="flex-1">
           <div className="text-[10px] text-gray-700 leading-none">Price</div>

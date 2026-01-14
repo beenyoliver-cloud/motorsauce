@@ -47,6 +47,8 @@ html, body {
   --header-offset-mobile: 150px;
   --header-offset-desktop: 140px;
   --bottom-nav-height: 56px;
+  --safe-area-top: env(safe-area-inset-top);
+  --safe-area-bottom: env(safe-area-inset-bottom);
 
   /*
     Homepage desktop layout sizing

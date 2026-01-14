@@ -179,9 +179,10 @@ export default function ReportUserButton({ sellerName, sellerId }: ReportUserBut
 
       {/* Toast */}
       <div
-        className={`fixed left-1/2 -translate-x-1/2 bottom-6 z-[70] transition-all duration-300 ${
+        className={`fixed left-1/2 -translate-x-1/2 z-[70] transition-all duration-300 ${
           toastOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
         }`}
+        style={{ bottom: "calc(var(--bottom-nav-height, 56px) + env(safe-area-inset-bottom) + 1.5rem)" }}
         role="status"
         aria-live="polite"
       >

@@ -43,7 +43,10 @@ export default function ToastContainer() {
   if (!mounted) return null;
 
   return createPortal(
-    <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none">
+    <div
+      className="fixed left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none"
+      style={{ bottom: "calc(var(--bottom-nav-height, 56px) + env(safe-area-inset-bottom) + 1rem)" }}
+    >
       {toasts.map((toast) => (
         <div
           key={toast.id}

@@ -162,7 +162,7 @@ export default function ConversationPage({
       className="fixed inset-x-0 bottom-0 bg-white flex flex-col"
       style={{
         top: "var(--layout-offset-total, 150px)",
-        paddingBottom: "env(safe-area-inset-bottom)",
+        paddingBottom: "calc(var(--bottom-nav-height, 56px) + env(safe-area-inset-bottom))",
       }}
     >
       {/* Header */}

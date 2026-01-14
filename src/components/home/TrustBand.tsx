@@ -11,6 +11,8 @@ const soldTicker = [
 ];
 
 export default function TrustBand() {
+  const tickerLoop = [...soldTicker, ...soldTicker];
+
   return (
     <section className="mb-6 sm:mb-8">
       <div className="relative overflow-hidden rounded-xl border border-slate-900/10 bg-slate-900 text-white px-4 py-6 sm:px-6">
@@ -50,18 +52,24 @@ export default function TrustBand() {
           </div>
 
           <div className="flex items-center gap-3 rounded-xl bg-white/10 border border-white/10 px-3 py-2">
-            <div className="inline-flex items-center gap-2 rounded-full bg-black/30 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
+            <div className="trustband-pill inline-flex items-center gap-2 rounded-full bg-black/30">
               Live
             </div>
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide">
-              {soldTicker.map((sale) => (
-                <div key={sale.item} className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm">
-                  <img src={sale.avatar} alt="" className="h-6 w-6 rounded-full border border-white/30 object-cover" />
-                  <span className="text-white/90">
-                    {sale.buyer} bought <strong className="text-white">{sale.item}</strong>
-                  </span>
-                </div>
-              ))}
+            <div className="relative flex-1 overflow-hidden">
+              <div className="trustband-marquee__track motion-reduce:animate-none">
+                {tickerLoop.map((sale, idx) => (
+                  <div
+                    key={`${sale.item}-${idx}`}
+                    className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm whitespace-nowrap"
+                    aria-hidden={idx >= soldTicker.length}
+                  >
+                    <img src={sale.avatar} alt="" className="h-6 w-6 rounded-full border border-white/30 object-cover" />
+                    <span className="text-white/90">
+                      {sale.buyer} bought <strong className="text-white">{sale.item}</strong>
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

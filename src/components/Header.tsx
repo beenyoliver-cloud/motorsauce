@@ -65,6 +65,7 @@ function readCartCount(): number {
 }
 
 export default function Header() {
+  const navRef = useRef<HTMLElement | null>(null);
   const [unread, setUnread] = useState(0);
   const [user, setUser] = useState<LocalUser | null>(null);
   const [avatar, setAvatar] = useState<string | null>(null);
@@ -100,6 +101,33 @@ export default function Header() {
     refreshUser();
     window.addEventListener("ms:auth", refreshUser as EventListener);
     return () => window.removeEventListener("ms:auth", refreshUser as EventListener);
+  }, []);
+
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const root = document.documentElement;
+    const parsePx = (value: string) => {
+      const n = Number.parseFloat(value);
+      return Number.isFinite(n) ? n : 0;
+    };
+
+    const updateOffsets = () => {
+      const safeTop = parsePx(getComputedStyle(root).getPropertyValue("--safe-area-top"));
+      const navHeight = nav.getBoundingClientRect().height;
+      const offset = Math.max(0, navHeight - safeTop);
+      root.style.setProperty("--header-offset-mobile", `${offset}px`);
+      root.style.setProperty("--header-offset-desktop", `${offset}px`);
+    };
+
+    updateOffsets();
+    const ro = new ResizeObserver(() => updateOffsets());
+    ro.observe(nav);
+    window.addEventListener("resize", updateOffsets);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", updateOffsets);
+    };
   }, []);
 
   // Avatar - sync from user object and localStorage
@@ -243,6 +271,7 @@ export default function Header() {
   return (
     <>
       <nav
+        ref={navRef}
         className="w-full bg-white border-b border-gray-200 shadow-sm fixed top-0 z-40"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >

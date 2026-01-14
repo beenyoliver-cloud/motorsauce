@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Search, PlusCircle, MessageSquare, User, ShoppingCart } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { nsKey } from "@/lib/auth";
 
 function readUnread(): number {
@@ -26,6 +26,7 @@ export default function MobileTabBar({ profileHref }: { profileHref?: string | n
   const pathname = usePathname();
   const [unread, setUnread] = useState(0);
   const [cartCount, setCartCount] = useState(0);
+  const navRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const update = () => setUnread(readUnread());
@@ -48,6 +49,31 @@ export default function MobileTabBar({ profileHref }: { profileHref?: string | n
     };
   }, []);
 
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const root = document.documentElement;
+    const parsePx = (value: string) => {
+      const n = Number.parseFloat(value);
+      return Number.isFinite(n) ? n : 0;
+    };
+    const updateHeight = () => {
+      const safeBottom = parsePx(getComputedStyle(root).getPropertyValue("--safe-area-bottom"));
+      const navHeight = nav.getBoundingClientRect().height;
+      const baseHeight = Math.max(0, navHeight - safeBottom);
+      root.style.setProperty("--bottom-nav-height", `${baseHeight}px`);
+    };
+
+    updateHeight();
+    const ro = new ResizeObserver(() => updateHeight());
+    ro.observe(nav);
+    window.addEventListener("resize", updateHeight);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", updateHeight);
+    };
+  }, []);
+
   const items: Array<{ href: string; label: string; icon: React.ReactNode; badge?: number; exact?: boolean }> = [
     { href: "/", label: "Home", icon: <Home size={20} /> , exact: true },
     { href: "/search", label: "Search", icon: <Search size={20} /> },
@@ -58,7 +84,8 @@ export default function MobileTabBar({ profileHref }: { profileHref?: string | n
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white border-t border-gray-200 shadow-sm"
+      ref={navRef}
+      className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-200 shadow-sm"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="grid grid-cols-5">
