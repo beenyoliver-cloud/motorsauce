@@ -14,6 +14,8 @@ type Listing = {
 
 type Props = { limit?: number };
 const MIN_LISTINGS = 5;
+const MIN_ITEMS_PER_FILTER = 5;
+const MAX_FILTER_SECTIONS = 3;
 
 type FilterId = "all" | "under100" | "performance" | "interior" | "exterior";
 
@@ -87,16 +89,20 @@ export default function SuggestedParts({ limit = 12 }: Props) {
     };
   }, [limit]);
 
-  const listingsByFilter = useMemo(() => {
-    const map = new Map<FilterId, Listing[]>();
-    for (const f of filters) {
-      map.set(f.id, listings.filter((listing) => matchesFilter(listing, f.id)));
-    }
-    return map;
+  const filterSections = useMemo(() => {
+    return filters
+      .map((filter) => ({
+        filter,
+        list: listings.filter((listing) => matchesFilter(listing, filter.id)),
+      }))
+      .filter((entry) => entry.list.length >= MIN_ITEMS_PER_FILTER);
   }, [listings]);
 
   if (loading) return null;
   if (listings.length < MIN_LISTINGS) return null;
+
+  const visibleSections = filterSections.slice(0, MAX_FILTER_SECTIONS);
+  if (visibleSections.length === 0) return null;
 
   return (
     <section className="rounded-xl border border-gray-200 bg-white shadow-sm p-3 sm:p-5">
@@ -112,9 +118,8 @@ export default function SuggestedParts({ limit = 12 }: Props) {
         </Link>
       </div>
       <div className="space-y-8">
-        {filters.map((filter) => {
-          const list = (listingsByFilter.get(filter.id) || []).slice(0, 6);
-          if (list.length === 0) return null;
+        {visibleSections.map(({ filter, list }) => {
+          const sectionListings = list.slice(0, 6);
 
           return (
             <section key={filter.id} className="space-y-2 sm:space-y-3">
@@ -131,7 +136,7 @@ export default function SuggestedParts({ limit = 12 }: Props) {
               {/* Mobile: horizontal scroll, Desktop: fixed grid of 5 */}
               <div className="overflow-x-auto scrollbar-hide md:overflow-visible">
                 <div className="flex gap-3 md:grid md:grid-cols-5 md:gap-8">
-                  {list.slice(0, 5).map((p) => (
+                  {sectionListings.slice(0, 5).map((p) => (
                     <ListingCard
                       key={`${filter.id}-${p.id}`}
                       id={p.id}

@@ -13,6 +13,10 @@ type ActivityItem = {
   image?: string;
 };
 
+type Props = {
+  compact?: boolean;
+};
+
 function timeAgo(timestamp: string): string {
   const seconds = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000);
   
@@ -22,7 +26,7 @@ function timeAgo(timestamp: string): string {
   return `${Math.floor(seconds / 86400)} days ago`;
 }
 
-export default function LiveActivityFeed() {
+export default function LiveActivityFeed({ compact = false }: Props) {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -59,11 +63,22 @@ export default function LiveActivityFeed() {
     return () => clearInterval(interval);
   }, [activities.length]);
 
+  const minHeightClass = compact ? "lg:min-h-[180px]" : "lg:min-h-[var(--home-tiles-block-height)]";
+  const paddingClass = compact ? "p-3" : "p-4";
+  const cardPaddingClass = compact ? "p-2.5 sm:p-3" : "p-3 sm:p-4";
+  const headerLabelClass = compact ? "text-[10px]" : "text-xs";
+  const headerGapClass = compact ? "gap-1.5" : "gap-2";
+  const headerMarginClass = compact ? "mb-1.5" : "mb-2";
+  const imageMarginClass = compact ? "mb-1.5" : "mb-2";
+  const desktopGapClass = compact ? "lg:gap-3" : "lg:gap-4";
+  const desktopThumbClass = compact ? "w-24 h-24" : "w-28 h-28";
+  const dotsMarginClass = compact ? "mt-2" : "mt-3";
+
   // Loading skeleton - matches category tile style
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse lg:min-h-[var(--home-tiles-block-height)]">
-        <div className="flex items-center gap-2 mb-3">
+      <div className={`bg-white border border-gray-200 rounded-xl ${paddingClass} animate-pulse ${minHeightClass}`}>
+        <div className={`flex items-center ${headerGapClass} mb-3`}>
           <div className="w-2 h-2 bg-gray-200 rounded-full" />
           <div className="w-12 h-3 bg-gray-200 rounded" />
         </div>
@@ -75,10 +90,10 @@ export default function LiveActivityFeed() {
   // Empty state
   if (activities.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4 lg:min-h-[var(--home-tiles-block-height)]">
-        <div className="flex items-center gap-2 mb-2">
+      <div className={`bg-white border border-gray-200 rounded-xl ${paddingClass} ${minHeightClass}`}>
+        <div className={`flex items-center ${headerGapClass} ${headerMarginClass}`}>
           <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          <span className="text-xs font-medium text-gray-500">Live Activity</span>
+          <span className={`${headerLabelClass} font-medium text-gray-500`}>Live Activity</span>
         </div>
         <p className="text-sm text-gray-400">
           No recent activity
@@ -93,20 +108,20 @@ export default function LiveActivityFeed() {
   return (
     <Link 
       href={`/listing/${listingId}`}
-      className="block bg-white border border-gray-200 rounded-xl p-3 sm:p-4 hover:border-gray-300 hover:shadow-md transition-all lg:min-h-[var(--home-tiles-block-height)]"
+      className={`block bg-white border border-gray-200 rounded-xl ${cardPaddingClass} hover:border-gray-300 hover:shadow-md transition-all ${minHeightClass}`}
     >
       {/* Mobile/Tablet: Vertical Layout */}
       <div className="lg:hidden">
         {/* Header */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
+        <div className={`flex items-center justify-between ${headerMarginClass}`}>
+          <div className={`flex items-center ${headerGapClass}`}>
             <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-xs font-semibold text-gray-500 tracking-wide uppercase">Live activity</span>
+            <span className={`${headerLabelClass} font-semibold text-gray-500 tracking-wide uppercase`}>Live activity</span>
           </div>
-          <span className="text-xs text-gray-400">{timeAgo(current.timestamp)}</span>
+          <span className={`${headerLabelClass} text-gray-400`}>{timeAgo(current.timestamp)}</span>
         </div>
 
-        <div className="bg-gray-50 rounded-xl overflow-hidden mb-2 aspect-[16/9] flex items-center justify-center">
+        <div className={`bg-gray-50 rounded-xl overflow-hidden ${imageMarginClass} aspect-[16/9] flex items-center justify-center`}>
           {current.image ? (
             <img
               src={current.image}
@@ -136,9 +151,9 @@ export default function LiveActivityFeed() {
       </div>
 
       {/* Desktop: Horizontal Layout */}
-      <div className="hidden lg:flex lg:items-center lg:gap-4">
+      <div className={`hidden lg:flex lg:items-center ${desktopGapClass}`}>
         {/* Thumbnail */}
-        <div className="flex-shrink-0 w-28 h-28 bg-gray-50 rounded-lg overflow-hidden">
+        <div className={`flex-shrink-0 ${desktopThumbClass} bg-gray-50 rounded-lg overflow-hidden`}>
           {current.image ? (
             <img
               src={current.image}
@@ -154,10 +169,10 @@ export default function LiveActivityFeed() {
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
+          <div className={`flex items-center ${headerGapClass} ${headerMarginClass}`}>
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-xs font-semibold text-gray-500 tracking-wide uppercase">Live activity</span>
-            <span className="text-xs text-gray-400 ml-auto">{timeAgo(current.timestamp)}</span>
+            <span className={`${headerLabelClass} font-semibold text-gray-500 tracking-wide uppercase`}>Live activity</span>
+            <span className={`${headerLabelClass} text-gray-400 ml-auto`}>{timeAgo(current.timestamp)}</span>
           </div>
           
           <p className="text-sm text-gray-800 leading-relaxed line-clamp-2">
@@ -181,7 +196,7 @@ export default function LiveActivityFeed() {
 
       {/* Dots indicator - only show if multiple activities */}
       {activities.length > 1 && (
-        <div className="flex justify-center gap-1.5 mt-3">
+        <div className={`flex justify-center gap-1.5 ${dotsMarginClass}`}>
           {activities.slice(0, Math.min(5, activities.length)).map((_, i) => (
             <span
               key={i}

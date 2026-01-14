@@ -10,7 +10,11 @@ type SoldItem = {
   timestamp: string;
 };
 
-export default function JustSoldTicker() {
+type Props = {
+  compact?: boolean;
+};
+
+export default function JustSoldTicker({ compact = false }: Props) {
   const [sales, setSales] = useState<SoldItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,14 +53,23 @@ export default function JustSoldTicker() {
   // Create duplicated array for infinite scroll effect
   const duplicatedSales = [...sales, ...sales, ...sales];
 
+  const containerClass = compact ? "py-1" : "py-2";
+  const labelClass = compact
+    ? "text-[10px] font-semibold text-green-700 uppercase tracking-wide whitespace-nowrap"
+    : "text-xs font-semibold text-green-700 uppercase tracking-wide whitespace-nowrap";
+  const iconClass = compact ? "h-3.5 w-3.5 text-green-600" : "h-4 w-4 text-green-600";
+  const rowClass = compact ? "px-3 gap-1.5" : "px-4 gap-2";
+  const itemClass = compact
+    ? "inline-flex items-center gap-2 text-xs text-gray-700 hover:text-green-700 transition-colors"
+    : "inline-flex items-center gap-2 text-sm text-gray-700 hover:text-green-700 transition-colors";
+  const titleMax = compact ? 32 : 40;
+
   return (
-    <div className="bg-green-50 border-y border-green-100 py-2 overflow-hidden">
+    <div className={`bg-green-50 border-y border-green-100 ${containerClass} overflow-hidden`}>
       <div className="flex items-center">
-        <div className="flex-shrink-0 px-4 flex items-center gap-2 border-r border-green-200">
-          <CheckCircle2 className="h-4 w-4 text-green-600" />
-          <span className="text-xs font-semibold text-green-700 uppercase tracking-wide whitespace-nowrap">
-            Just Sold
-          </span>
+        <div className={`flex-shrink-0 flex items-center border-r border-green-200 ${rowClass}`}>
+          <CheckCircle2 className={iconClass} />
+          <span className={labelClass}>Just Sold</span>
         </div>
         
         <div className="flex-1 overflow-hidden">
@@ -65,11 +78,11 @@ export default function JustSoldTicker() {
               <Link
                 key={`${sale.id}-${index}`}
                 href={`/listing/${sale.id}`}
-                className="inline-flex items-center gap-2 text-sm text-gray-700 hover:text-green-700 transition-colors"
+                className={itemClass}
               >
                 <span className="text-green-500">✓</span>
                 <span className="font-medium">
-                  {sale.title.length > 40 ? sale.title.slice(0, 40) + "..." : sale.title}
+                  {sale.title.length > titleMax ? sale.title.slice(0, titleMax) + "..." : sale.title}
                 </span>
               </Link>
             ))}
