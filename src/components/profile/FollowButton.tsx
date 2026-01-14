@@ -21,6 +21,23 @@ export default function FollowButton({ profileId, profileName, initialIsFollowin
   }, [initialIsFollowing]);
 
   useEffect(() => {
+    if (!profileId) return;
+    let active = true;
+    fetch(`/api/profile/follow?profileId=${encodeURIComponent(profileId)}`, { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!active) return;
+        if (typeof data.isFollowing === "boolean") {
+          setIsFollowing(data.isFollowing);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [profileId]);
+
+  useEffect(() => {
     (async () => {
       const supabase = supabaseBrowser();
       const { data: { user } } = await supabase.auth.getUser();
@@ -45,6 +62,13 @@ export default function FollowButton({ profileId, profileName, initialIsFollowin
         throw new Error(data.error || "Failed to update follow state");
       }
       setIsFollowing(nextState);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("ms:follow", {
+            detail: { profileId, delta: nextState ? 1 : -1, isFollowing: nextState },
+          })
+        );
+      }
       onChange?.(nextState);
     } catch (err) {
       console.error("[FollowButton] toggle failed", err);

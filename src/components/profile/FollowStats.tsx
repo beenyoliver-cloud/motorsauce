@@ -21,6 +21,17 @@ export default function FollowStats({ profileId }: FollowStatsProps) {
       .catch((err) => console.error("[FollowStats] failed to load", err));
   }, [profileId]);
 
+  useEffect(() => {
+    if (!profileId) return;
+    const onFollow = (event: Event) => {
+      const detail = (event as CustomEvent).detail as { profileId?: string; delta?: number } | undefined;
+      if (!detail || detail.profileId !== profileId || typeof detail.delta !== "number") return;
+      setFollowers((prev) => Math.max(0, prev + detail.delta!));
+    };
+    window.addEventListener("ms:follow", onFollow as EventListener);
+    return () => window.removeEventListener("ms:follow", onFollow as EventListener);
+  }, [profileId]);
+
   return (
     <div className="flex items-center gap-4">
       <button className="hover:underline cursor-pointer">

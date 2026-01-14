@@ -11,7 +11,7 @@ type Props = {
 };
 
 const EXT_CHAIN = ["jpg", "jpeg", "png", "webp"];
-const BRAND_FALLBACK = "/images/mslogonnew.png";
+const BRAND_FALLBACK = "/images/newlogonewm.jpg";
 const PLACEHOLDER_SUFFIXES = ["/images/placeholder.jpg", "/images/placeholder.png"];
 
 function buildCandidates(input: string): string[] {

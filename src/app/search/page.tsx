@@ -40,6 +40,9 @@ type Listing = {
   sellerLat?: number;
   sellerLng?: number;
   distanceKm?: number;
+  shippingOption?: "collection" | "delivery" | "both";
+  acceptsReturns?: boolean;
+  postcode?: string;
   vin?: string;
   yearFrom?: number;
   yearTo?: number;
@@ -347,6 +350,10 @@ function SearchPageInner() {
   const subcategory = sp.get("subcategory") || "";
   const garageOnly = sp.get("garageOnly") === "1";
   const universalOnly = sp.get("universalOnly") === "1";
+  const deliveryOnly = sp.get("delivery") === "true";
+  const collectionOnly = sp.get("collection") === "true";
+  const returnsOnly = sp.get("acceptsReturns") === "true";
+  const postcode = sp.get("postcode") || "";
 
   const yearMin = toNum(sp.get("yearMin"));
   const yearMax = toNum(sp.get("yearMax"));
@@ -397,6 +404,21 @@ function SearchPageInner() {
         const p = priceNumber(l.price);
         if (typeof priceMin === "number" && p < priceMin) return false;
         if (typeof priceMax === "number" && p > priceMax) return false;
+
+        if (deliveryOnly) {
+          const shipping = l.shippingOption;
+          if (!(shipping === "delivery" || shipping === "both")) return false;
+        }
+        if (collectionOnly) {
+          const shipping = l.shippingOption;
+          if (!(shipping === "collection" || shipping === "both")) return false;
+        }
+        if (returnsOnly && !l.acceptsReturns) return false;
+        if (postcode) {
+          const needle = postcode.replace(/\s+/g, "").toUpperCase();
+          const listingPostcode = (l.postcode || "").replace(/\s+/g, "").toUpperCase();
+          if (!listingPostcode.startsWith(needle)) return false;
+        }
 
         if (seller && seller.trim()) {
           const sellerNeedle = seller.toLowerCase().trim();
@@ -472,7 +494,7 @@ function SearchPageInner() {
   const engineOptions = uniq(all.map((l) => l.engine));
 
   return (
-    <div className="mx-auto max-w-6xl md:grid md:grid-cols-[300px_1fr]">
+    <div className="mx-auto max-w-6xl md:grid md:grid-cols-[300px_1fr] md:h-[calc(100vh-var(--layout-offset-total))] md:overflow-hidden">
       {/* Desktop sidebar column */}
       <SearchFiltersSidebar
         q={q}
@@ -494,7 +516,7 @@ function SearchPageInner() {
       />
 
       {/* Results column */}
-      <section className="pt-6 sm:pt-4">
+      <section className="pt-6 sm:pt-4 md:h-full md:overflow-y-auto md:overscroll-contain">
         {/* Mobile header (no filters button) */}
         <div className="md:hidden mb-2 px-3">
           <h1 className="text-lg font-bold text-black">Search</h1>
@@ -540,7 +562,10 @@ function SearchPageInner() {
 
           {/* Horizontal scrollable filter bubbles - Mobile only */}
           <div className="md:hidden -mx-3 sm:-mx-4">
-            <div className="flex gap-2 overflow-x-auto px-3 sm:px-4 py-1 scrollbar-hide snap-x snap-mandatory">
+            <div
+              className="flex gap-2 overflow-x-auto px-4 sm:px-4 py-1 scrollbar-hide snap-x snap-mandatory"
+              style={{ scrollPaddingLeft: "1rem", scrollPaddingRight: "1rem" }}
+            >
               {/* Filters button - first in list */}
               <button
                 onClick={() => setMobileFiltersOpen(true)}
@@ -631,7 +656,7 @@ function SearchPageInner() {
                 <h2 className="text-xl font-bold text-gray-900 mt-1">
                   {activeTab === "sellers"
                     ? `${sellers.length.toLocaleString()} sellers`
-                    : `${sortedResults.length.toLocaleString()} parts`}
+                    : "Parts search"}
                 </h2>
                 <div className="mt-2 flex flex-wrap gap-2 text-xs text-gray-600">
                   {q && (

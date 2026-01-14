@@ -282,7 +282,7 @@ export default function Header() {
               {/* Logo */}
               <Link href="/" aria-label="Motorsource home" className="inline-flex items-center flex-shrink-0">
                 <img
-                  src="/images/mslogonnew.png"
+                  src="/images/newlogonewm.jpg"
                   alt="Motorsource"
                   className="h-[2.79rem] md:h-[4.725rem] w-auto object-contain"
                 />
@@ -429,7 +429,7 @@ export default function Header() {
               {/* Center: Logo */}
               <Link href="/" aria-label="Motorsource home" className="justify-self-center">
                 <img
-                  src="/images/mslogonnew.png"
+                  src="/images/newlogonewm.jpg"
                   alt="Motorsource"
                   className="h-[1.98rem] w-auto object-contain"
                 />
@@ -496,26 +496,27 @@ export default function Header() {
                       )}
                     </Link>
                   )}
-                  {profileLinks.map(([name, href]) => (
-                    <Link
-                      key={href}
-                      href={href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block px-3 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600 rounded"
-                    >
-                      {name}
-                    </Link>
-                  ))}
-                  {isUserLoaded && user && (
-                    <Link
-                      href="/auth/logout"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block px-3 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600 rounded"
-                    >
-                      Log out
-                    </Link>
-                  )}
-                  {!user && (
+                  {isUserLoaded && user ? (
+                    <>
+                      {profileLinks.map(([name, href]) => (
+                        <Link
+                          key={href}
+                          href={href}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="block px-3 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600 rounded"
+                        >
+                          {name}
+                        </Link>
+                      ))}
+                      <Link
+                        href="/auth/logout"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block px-3 py-2 text-sm text-black hover:bg-yellow-50 hover:text-yellow-600 rounded"
+                      >
+                        Log out
+                      </Link>
+                    </>
+                  ) : isUserLoaded ? (
                     <>
                       <Link
                         href="/auth/login"
@@ -532,7 +533,7 @@ export default function Header() {
                         Register
                       </Link>
                     </>
-                  )}
+                  ) : null}
                 </div>
               </div>
             )}

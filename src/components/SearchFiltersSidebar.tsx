@@ -57,9 +57,66 @@ export default function SearchFiltersSidebar(props: Props) {
   const pathname = usePathname();
   const sp = useSearchParams();
   const [favouriteGarage, setFavouriteGarage] = useState<ReturnType<typeof readFavouriteGarage>>(null);
-  
-  const selectedMake = sp.get("make") || "";
-  const selectedModel = sp.get("model") || "";
+
+  type DraftFilters = {
+    q: string;
+    category: string;
+    mainCategory: string;
+    subcategory: string;
+    make: string;
+    model: string;
+    gen: string;
+    engine: string;
+    yearMin: string;
+    yearMax: string;
+    priceMin: string;
+    priceMax: string;
+    seller: string;
+    postcode: string;
+    delivery: boolean;
+    collection: boolean;
+    acceptsReturns: boolean;
+    garageOnly: boolean;
+  };
+
+  const buildDraft = (): DraftFilters => ({
+    q: sp.get("q") || sp.get("query") || "",
+    category: sp.get("category") || "",
+    mainCategory: sp.get("mainCategory") || "",
+    subcategory: sp.get("subcategory") || "",
+    make: sp.get("make") || "",
+    model: sp.get("model") || "",
+    gen: sp.get("gen") || sp.get("genCode") || "",
+    engine: sp.get("engine") || "",
+    yearMin: sp.get("yearMin") || "",
+    yearMax: sp.get("yearMax") || "",
+    priceMin: sp.get("priceMin") || "",
+    priceMax: sp.get("priceMax") || "",
+    seller: sp.get("seller") || "",
+    postcode: sp.get("postcode") || "",
+    delivery: sp.get("delivery") === "true",
+    collection: sp.get("collection") === "true",
+    acceptsReturns: sp.get("acceptsReturns") === "true",
+    garageOnly: sp.get("garageOnly") === "1",
+  });
+
+  const [draft, setDraft] = useState<DraftFilters>(() => buildDraft());
+
+  useEffect(() => {
+    if (!mobileOpen) {
+      setDraft(buildDraft());
+    }
+  }, [sp, mobileOpen]);
+
+  useEffect(() => {
+    if (mobileOpen) {
+      setDraft(buildDraft());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mobileOpen]);
+
+  const selectedMake = draft.make;
+  const selectedModel = draft.model;
   
   useEffect(() => {
     setFavouriteGarage(readFavouriteGarage());
@@ -95,59 +152,110 @@ export default function SearchFiltersSidebar(props: Props) {
     return chips.slice(0, 4);
   }, [sp]);
 
-  function setParam(key: string, value?: string) {
-    const params = new URLSearchParams(sp.toString());
-    if (value && value.trim() !== "") params.set(key, value.trim());
-    else params.delete(key);
-    router.push(`${pathname}?${params.toString()}`);
-  }
+  const pushParams = (params: URLSearchParams) => {
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
 
-  function setMakeAndResetModel(make?: string) {
+  const applyDraft = (next: DraftFilters) => {
     const params = new URLSearchParams(sp.toString());
-    if (make && make.trim() !== "") params.set("make", make.trim());
-    else params.delete("make");
-    // Reset model when make changes
-    params.delete("model");
-    router.push(`${pathname}?${params.toString()}`);
-  }
+    const setOrDelete = (key: string, value: string) => {
+      if (value && value.trim() !== "") params.set(key, value.trim());
+      else params.delete(key);
+    };
 
-  function setGenBoth(val?: string) {
-    const params = new URLSearchParams(sp.toString());
-    if (val && val.trim() !== "") {
-      params.set("gen", val.trim());
-      params.set("genCode", val.trim());
+    setOrDelete("q", next.q);
+    params.delete("query");
+    setOrDelete("category", next.category);
+    setOrDelete("mainCategory", next.mainCategory);
+    setOrDelete("subcategory", next.subcategory);
+    setOrDelete("make", next.make);
+    setOrDelete("model", next.model);
+    if (next.gen && next.gen.trim() !== "") {
+      params.set("gen", next.gen.trim());
+      params.set("genCode", next.gen.trim());
     } else {
       params.delete("gen");
       params.delete("genCode");
     }
-    router.push(`${pathname}?${params.toString()}`);
-  }
+    setOrDelete("engine", next.engine);
+    setOrDelete("yearMin", next.yearMin);
+    setOrDelete("yearMax", next.yearMax);
+    setOrDelete("priceMin", next.priceMin);
+    setOrDelete("priceMax", next.priceMax);
+    setOrDelete("seller", next.seller);
+    setOrDelete("postcode", next.postcode);
+    if (next.delivery) params.set("delivery", "true");
+    else params.delete("delivery");
+    if (next.collection) params.set("collection", "true");
+    else params.delete("collection");
+    if (next.acceptsReturns) params.set("acceptsReturns", "true");
+    else params.delete("acceptsReturns");
+    if (next.garageOnly) params.set("garageOnly", "1");
+    else params.delete("garageOnly");
+
+    params.delete("page");
+    pushParams(params);
+  };
+
+  const updateDraft = (updates: Partial<DraftFilters>, applyNow = false) => {
+    setDraft((prev) => {
+      const next = { ...prev, ...updates };
+      if (applyNow) applyDraft(next);
+      return next;
+    });
+  };
 
   function resetToFavourite() {
     const fav = readFavouriteGarage();
-    const params = new URLSearchParams();
-    if (fav?.make) params.set("make", fav.make);
-    if (fav?.model) params.set("model", fav.model);
-    if (fav?.generation) {
-      params.set("gen", fav.generation);
-      params.set("genCode", fav.generation);
-    }
-    if (fav?.engine) params.set("engine", fav.engine);
-    if (fav?.yearFrom) params.set("yearMin", String(fav.yearFrom));
-    if (fav?.yearTo) params.set("yearMax", String(fav.yearTo));
-    router.push(`${pathname}?${params.toString()}`);
-    onMobileClose?.();
+    const next: DraftFilters = {
+      q: "",
+      category: "",
+      mainCategory: "",
+      subcategory: "",
+      make: fav?.make || "",
+      model: fav?.model || "",
+      gen: fav?.generation || "",
+      engine: fav?.engine || "",
+      yearMin: fav?.yearFrom ? String(fav.yearFrom) : "",
+      yearMax: fav?.yearTo ? String(fav.yearTo) : "",
+      priceMin: "",
+      priceMax: "",
+      seller: "",
+      postcode: "",
+      delivery: false,
+      collection: false,
+      acceptsReturns: false,
+      garageOnly: false,
+    };
+    setDraft(next);
+    applyDraft(next);
   }
 
   function clearAll() {
-    router.push(pathname);
-    onMobileClose?.();
+    const next: DraftFilters = {
+      q: "",
+      category: "",
+      mainCategory: "",
+      subcategory: "",
+      make: "",
+      model: "",
+      gen: "",
+      engine: "",
+      yearMin: "",
+      yearMax: "",
+      priceMin: "",
+      priceMax: "",
+      seller: "",
+      postcode: "",
+      delivery: false,
+      collection: false,
+      acceptsReturns: false,
+      garageOnly: false,
+    };
+    setDraft(next);
+    router.push(pathname, { scroll: false });
   }
-  // Close mobile drawer when search params change (route change)
-  useEffect(() => {
-    onMobileClose?.();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sp]);
 
   const inputBase =
     "w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900";
@@ -157,14 +265,19 @@ export default function SearchFiltersSidebar(props: Props) {
 
   // The actual sidebar content (used for both desktop and mobile)
   const Panel = (
-    <aside className="md:sticky md:top-6 md:self-start md:w-[300px] md:border-r md:border-gray-200 md:bg-white">
-      <div className="p-4 space-y-6 md:max-h-[calc(100vh-3rem)] md:overflow-y-auto">
+    <aside className="md:h-full md:w-[300px] md:border-r md:border-gray-200 md:bg-white">
+      <div className="p-4 space-y-6 md:h-full md:overflow-y-auto md:overscroll-contain">
         {/* Search query */}
         <div>
           <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700">Search</div>
           <input
-            defaultValue={sp.get("q") || ""}
-            onBlur={(e) => setParam("q", e.target.value)}
+            value={draft.q}
+            onChange={(e) => updateDraft({ q: e.target.value })}
+            onBlur={(e) => {
+              if (!mobileOpen) {
+                applyDraft({ ...draft, q: e.target.value });
+              }
+            }}
             placeholder="Part name, OEM #, keyword…"
             className={inputBase}
           />
@@ -175,22 +288,22 @@ export default function SearchFiltersSidebar(props: Props) {
           <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700">Category</div>
           <div className="grid gap-2">
             <label className="flex items-center gap-2 text-sm text-gray-900">
-              <input
-                type="radio"
-                name="category"
-                checked={!sp.get("category")}
-                onChange={() => setParam("category", "")}
-                className="h-4 w-4"
-              />
-              All categories
-            </label>
+                <input
+                  type="radio"
+                  name="category"
+                  checked={!draft.category}
+                  onChange={() => updateDraft({ category: "" }, !mobileOpen)}
+                  className="h-4 w-4"
+                />
+                All categories
+              </label>
             {CATEGORIES.map((val) => (
               <label key={val} className="flex items-center gap-2 text-sm text-gray-900">
                 <input
                   type="radio"
                   name="category"
-                  checked={sp.get("category") === val}
-                  onChange={() => setParam("category", val)}
+                  checked={draft.category === val}
+                  onChange={() => updateDraft({ category: val }, !mobileOpen)}
                   className="h-4 w-4"
                 />
                 {val}
@@ -204,13 +317,16 @@ export default function SearchFiltersSidebar(props: Props) {
           <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700">Part Type</div>
           <div className="space-y-2">
             <select
-              value={sp.get("mainCategory") || ""}
+              value={draft.mainCategory}
               onChange={(e) => {
-                setParam("mainCategory", e.target.value);
-                // Clear subcategory when main category changes
-                if (e.target.value !== sp.get("mainCategory")) {
-                  setParam("subcategory", "");
-                }
+                const nextValue = e.target.value;
+                const nextDraft = {
+                  ...draft,
+                  mainCategory: nextValue,
+                  subcategory: nextValue !== draft.mainCategory ? "" : draft.subcategory,
+                };
+                setDraft(nextDraft);
+                if (!mobileOpen) applyDraft(nextDraft);
               }}
               className={inputBase}
             >
@@ -221,13 +337,13 @@ export default function SearchFiltersSidebar(props: Props) {
             </select>
 
             <select
-              value={sp.get("subcategory") || ""}
-              onChange={(e) => setParam("subcategory", e.target.value)}
+              value={draft.subcategory}
+              onChange={(e) => updateDraft({ subcategory: e.target.value }, !mobileOpen)}
               className={inputBase}
-              disabled={!sp.get("mainCategory")}
+              disabled={!draft.mainCategory}
             >
-              <option value="">{sp.get("mainCategory") ? "All subcategories" : "Select category first"}</option>
-              {sp.get("mainCategory") && getSubcategoriesForMain(sp.get("mainCategory") as MainCategory).map((sub) => (
+              <option value="">{draft.mainCategory ? "All subcategories" : "Select category first"}</option>
+              {draft.mainCategory && getSubcategoriesForMain(draft.mainCategory as MainCategory).map((sub) => (
                 <option key={sub} value={sub}>{sub}</option>
               ))}
             </select>
@@ -239,8 +355,12 @@ export default function SearchFiltersSidebar(props: Props) {
           <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700">Vehicle</div>
           <div className="space-y-2">
             <select
-              value={sp.get("make") || ""}
-              onChange={(e) => setMakeAndResetModel(e.target.value)}
+              value={draft.make}
+              onChange={(e) => {
+                const nextDraft = { ...draft, make: e.target.value, model: "" };
+                setDraft(nextDraft);
+                if (!mobileOpen) applyDraft(nextDraft);
+              }}
               className={inputBase}
             >
               <option value="">All makes</option>
@@ -250,21 +370,26 @@ export default function SearchFiltersSidebar(props: Props) {
             </select>
 
             <select
-              value={sp.get("model") || ""}
-              onChange={(e) => setParam("model", e.target.value)}
+              value={draft.model}
+              onChange={(e) => updateDraft({ model: e.target.value }, !mobileOpen)}
               className={inputBase}
-              disabled={!sp.get("make")}
+              disabled={!draft.make}
             >
-              <option value="">{sp.get("make") ? "All models" : "Select a make first"}</option>
-              {sp.get("make") && getModelsForMake(sp.get("make") || "").map((m) => (
+              <option value="">{draft.make ? "All models" : "Select a make first"}</option>
+              {draft.make && getModelsForMake(draft.make || "").map((m) => (
                 <option key={m} value={m}>{m}</option>
               ))}
             </select>
 
             <input
               list="gen-list"
-              defaultValue={sp.get("gen") || sp.get("genCode") || ""}
-              onBlur={(e) => setGenBoth(e.target.value)}
+              value={draft.gen}
+              onChange={(e) => updateDraft({ gen: e.target.value })}
+              onBlur={(e) => {
+                if (!mobileOpen) {
+                  applyDraft({ ...draft, gen: e.target.value });
+                }
+              }}
               placeholder="Generation (e.g. E90)"
               className={inputBase}
             />
@@ -276,8 +401,13 @@ export default function SearchFiltersSidebar(props: Props) {
 
             <input
               list="engine-list"
-              defaultValue={sp.get("engine") || ""}
-              onBlur={(e) => setParam("engine", e.target.value)}
+              value={draft.engine}
+              onChange={(e) => updateDraft({ engine: e.target.value })}
+              onBlur={(e) => {
+                if (!mobileOpen) {
+                  applyDraft({ ...draft, engine: e.target.value });
+                }
+              }}
               placeholder="Engine (e.g. N52)"
               className={inputBase}
             />
@@ -290,8 +420,8 @@ export default function SearchFiltersSidebar(props: Props) {
             <label className="flex items-start gap-2 text-sm text-gray-900">
               <input
                 type="checkbox"
-                checked={sp.get("garageOnly") === "1"}
-                onChange={(e) => setParam("garageOnly", e.target.checked ? "1" : "")}
+                checked={draft.garageOnly}
+                onChange={(e) => updateDraft({ garageOnly: e.target.checked }, !mobileOpen)}
                 className="h-4 w-4 rounded mt-0.5"
                 disabled={!favouriteGarage}
               />
@@ -312,8 +442,8 @@ export default function SearchFiltersSidebar(props: Props) {
           <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700">Year</div>
           <div className="flex items-center gap-2">
             <select
-              value={sp.get("yearMin") || ""}
-              onChange={(e) => setParam("yearMin", e.target.value)}
+              value={draft.yearMin}
+              onChange={(e) => updateDraft({ yearMin: e.target.value }, !mobileOpen)}
               className={`${inputBase} flex-1`}
             >
               <option value="">From</option>
@@ -323,8 +453,8 @@ export default function SearchFiltersSidebar(props: Props) {
             </select>
             <span className="text-gray-500">–</span>
             <select
-              value={sp.get("yearMax") || ""}
-              onChange={(e) => setParam("yearMax", e.target.value)}
+              value={draft.yearMax}
+              onChange={(e) => updateDraft({ yearMax: e.target.value }, !mobileOpen)}
               className={`${inputBase} flex-1`}
             >
               <option value="">To</option>
@@ -343,8 +473,13 @@ export default function SearchFiltersSidebar(props: Props) {
               inputMode="numeric"
               pattern="[0-9]*"
               placeholder="Min"
-              defaultValue={sp.get("priceMin") || ""}
-              onBlur={(e) => setParam("priceMin", e.target.value)}
+              value={draft.priceMin}
+              onChange={(e) => updateDraft({ priceMin: e.target.value })}
+              onBlur={(e) => {
+                if (!mobileOpen) {
+                  applyDraft({ ...draft, priceMin: e.target.value });
+                }
+              }}
               className={`${numberBase} w-28`}
             />
             <span className="text-gray-500">–</span>
@@ -352,8 +487,13 @@ export default function SearchFiltersSidebar(props: Props) {
               inputMode="numeric"
               pattern="[0-9]*"
               placeholder="Max"
-              defaultValue={sp.get("priceMax") || ""}
-              onBlur={(e) => setParam("priceMax", e.target.value)}
+              value={draft.priceMax}
+              onChange={(e) => updateDraft({ priceMax: e.target.value })}
+              onBlur={(e) => {
+                if (!mobileOpen) {
+                  applyDraft({ ...draft, priceMax: e.target.value });
+                }
+              }}
               className={`${numberBase} w-28`}
             />
           </div>
@@ -363,8 +503,13 @@ export default function SearchFiltersSidebar(props: Props) {
         <div>
           <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700">Seller</div>
           <input
-            defaultValue={sp.get("seller") || ""}
-            onBlur={(e) => setParam("seller", e.target.value)}
+            value={draft.seller}
+            onChange={(e) => updateDraft({ seller: e.target.value })}
+            onBlur={(e) => {
+              if (!mobileOpen) {
+                applyDraft({ ...draft, seller: e.target.value });
+              }
+            }}
             placeholder="Search by seller name…"
             className={inputBase}
           />
@@ -374,8 +519,13 @@ export default function SearchFiltersSidebar(props: Props) {
         <div>
           <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700">Location</div>
           <input
-            defaultValue={sp.get("postcode") || ""}
-            onBlur={(e) => setParam("postcode", e.target.value)}
+            value={draft.postcode}
+            onChange={(e) => updateDraft({ postcode: e.target.value.toUpperCase() })}
+            onBlur={(e) => {
+              if (!mobileOpen) {
+                applyDraft({ ...draft, postcode: e.target.value.toUpperCase() });
+              }
+            }}
             placeholder="Postcode (e.g., SW1A 1AA)"
             className={inputBase}
           />
@@ -388,8 +538,8 @@ export default function SearchFiltersSidebar(props: Props) {
             <label className="flex items-center gap-2 text-sm text-gray-900">
               <input
                 type="checkbox"
-                checked={sp.get("delivery") === "true"}
-                onChange={(e) => setParam("delivery", e.target.checked ? "true" : "")}
+                checked={draft.delivery}
+                onChange={(e) => updateDraft({ delivery: e.target.checked }, !mobileOpen)}
                 className="h-4 w-4 rounded"
               />
               Delivery available
@@ -397,8 +547,8 @@ export default function SearchFiltersSidebar(props: Props) {
             <label className="flex items-center gap-2 text-sm text-gray-900">
               <input
                 type="checkbox"
-                checked={sp.get("collection") === "true"}
-                onChange={(e) => setParam("collection", e.target.checked ? "true" : "")}
+                checked={draft.collection}
+                onChange={(e) => updateDraft({ collection: e.target.checked }, !mobileOpen)}
                 className="h-4 w-4 rounded"
               />
               Collection available
@@ -412,8 +562,8 @@ export default function SearchFiltersSidebar(props: Props) {
           <label className="flex items-center gap-2 text-sm text-gray-900">
             <input
               type="checkbox"
-              checked={sp.get("acceptsReturns") === "true"}
-              onChange={(e) => setParam("acceptsReturns", e.target.checked ? "true" : "")}
+              checked={draft.acceptsReturns}
+              onChange={(e) => updateDraft({ acceptsReturns: e.target.checked }, !mobileOpen)}
               className="h-4 w-4 rounded"
             />
             Accepts returns
@@ -444,7 +594,7 @@ export default function SearchFiltersSidebar(props: Props) {
   return (
     <>
       {/* Desktop: render sidebar as a normal grid column, sticky inside (no overlap with footer) */}
-      <div className="hidden md:block">{Panel}</div>
+      <div className="hidden md:block md:h-full">{Panel}</div>
 
       {/* Mobile drawer - full height with scroll */}
       {mobileOpen && (
@@ -478,6 +628,18 @@ export default function SearchFiltersSidebar(props: Props) {
             {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto overscroll-contain">
               {Panel}
+            </div>
+            <div className="border-t border-gray-200 px-4 py-3">
+              <button
+                type="button"
+                onClick={() => {
+                  applyDraft(draft);
+                  onMobileClose?.();
+                }}
+                className="w-full rounded-lg bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-600 transition"
+              >
+                Apply filters
+              </button>
             </div>
           </div>
         </div>

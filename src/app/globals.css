@@ -46,7 +46,7 @@ html, body {
   --foreground: #171717;
   --header-offset-mobile: 150px;
   --header-offset-desktop: 140px;
-  --bottom-nav-height: 56px;
+  --bottom-nav-height: 0px;
   --safe-area-top: env(safe-area-inset-top);
   --safe-area-bottom: env(safe-area-inset-bottom);
 
