@@ -90,6 +90,7 @@ function MessageBubble({ m, onOfferUpdate }: { m: Message; onOfferUpdate: (statu
     !!m.offer?.buyerId &&
     m.offer.buyerId === meId &&
     !!m.offer?.id;
+  const offerId = m.offer?.id;
 
   return (
     <div className={`flex flex-col ${align}`}>
@@ -128,10 +129,10 @@ function MessageBubble({ m, onOfferUpdate }: { m: Message; onOfferUpdate: (statu
               )}
             </div>
           )}
-          {showPayNow && (
+          {showPayNow && offerId && (
             <div className="mt-2">
               <Link
-                href={`/checkout?offer_id=${m.offer.id}`}
+                href={`/checkout?offer_id=${offerId}`}
                 className="inline-flex items-center justify-center rounded-md bg-yellow-500 px-3 py-1.5 text-xs font-semibold text-black hover:bg-yellow-600"
               >
                 Pay now
