@@ -6,6 +6,7 @@ import HomeHero from "@/components/home/HomeHero";
 import CategoryTiles from "@/components/home/CategoryTiles";
 import FeaturedRow from "@/components/home/FeaturedRow";
 import RecentlyViewedRow from "@/components/home/RecentlyViewedRow";
+import PopularListingsRow from "@/components/home/PopularListingsRow";
 import TrendingActivitySection from "@/components/home/TrendingActivitySection";
 import TrustBand from "@/components/home/TrustBand";
 import SellCta from "@/components/home/SellCta";
@@ -49,9 +50,7 @@ export default function Home() {
         {/* Seller CTA */}
         <SellCta />
 
-        <TrustBand />
-
-        <TrendingActivitySection />
+        <PopularListingsRow />
 
         {/* Categories */}
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-3 sm:p-5">
@@ -72,6 +71,8 @@ export default function Home() {
           <FeaturedRow title="Deals under £250" variant="under250" />
         </div>
 
+        <TrendingActivitySection />
+
         {/* Popular sellers */}
         <section className="rounded-xl border border-gray-200 bg-white shadow-sm p-3 sm:p-6">
           <div className="flex items-center justify-between mb-3 sm:mb-4">
@@ -82,6 +83,8 @@ export default function Home() {
           </div>
           <PopularSellers />
         </section>
+
+        <TrustBand />
 
         <Suspense fallback={null}>
           <RecentlyViewedRow />
