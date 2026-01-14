@@ -14,6 +14,7 @@ import TrackRecentlyViewed from "@/components/TrackRecentlyViewed";
 import TrustBadge from "@/components/TrustBadge";
 import Breadcrumb from "@/components/Breadcrumb";
 import SimilarProducts from "@/components/SimilarProducts";
+import MoreFromSeller from "@/components/MoreFromSeller";
 import VehicleCompatibilityChecker from "@/components/VehicleCompatibilityChecker";
 import ListingImageGallery from "@/components/ListingImageGallery";
 import SellerActionsBar from "@/components/SellerActionsBar";
@@ -22,7 +23,7 @@ import SellerResponseTimeBadge from "@/components/SellerResponseTimeBadge";
 // Temporarily disabled: import PriceReducedBadge from "@/components/PriceReducedBadge";
 // Temporarily disabled: import PriceHistoryChart from "@/components/PriceHistoryChart";
 import { createClient } from "@supabase/supabase-js";
-import { AlertTriangle, Clock3, ListChecks, MapPin, PlusCircle, ShieldCheck, ShoppingCart, TrendingUp } from "lucide-react";
+import { AlertTriangle, Clock3, ListChecks, MapPin, PlusCircle, ShieldCheck, ShoppingCart, TrendingUp, Truck } from "lucide-react";
 
 // Ensure this page always renders dynamically at runtime on Vercel
 export const dynamic = "force-dynamic";
@@ -62,6 +63,10 @@ type Listing = {
   yearTo?: number;
   vehicles?: Vehicle[];
   viewCount?: number;
+  shippingOption?: "collection" | "delivery" | "both";
+  acceptsReturns?: boolean;
+  returnDays?: number;
+  quantity?: number;
 };
 
 type FitmentKnowledgeEntry = {
@@ -237,6 +242,10 @@ async function fetchListingFromSupabase(id: string): Promise<Listing | null> {
       yearFrom: typeof listing.year_from === "number" ? listing.year_from : listing.year_from ? Number(listing.year_from) : undefined,
       yearTo: typeof listing.year_to === "number" ? listing.year_to : listing.year_to ? Number(listing.year_to) : undefined,
       viewCount: typeof listing.view_count === "number" ? listing.view_count : undefined,
+      shippingOption: listing.shipping_option ?? undefined,
+      acceptsReturns: listing.accepts_returns == null ? undefined : Boolean(listing.accepts_returns),
+      returnDays: typeof listing.return_days === "number" ? listing.return_days : listing.return_days ? Number(listing.return_days) : undefined,
+      quantity: typeof listing.quantity === "number" ? listing.quantity : listing.quantity ? Number(listing.quantity) : undefined,
       vehicles: Array.isArray(listing.vehicles)
         ? listing.vehicles
         : typeof listing.vehicles === "string"
@@ -286,6 +295,52 @@ function formatSales(totalSales?: number | null) {
   if (!totalSales || totalSales <= 0) return "—";
   if (totalSales >= 1000) return `${(totalSales / 1000).toFixed(1)}k`;
   return totalSales.toLocaleString("en-GB");
+}
+
+function formatShippingOption(option?: Listing["shippingOption"]) {
+  switch (option) {
+    case "collection":
+      return "Collection only";
+    case "delivery":
+      return "Delivery available";
+    case "both":
+      return "Delivery or collection";
+    default:
+      return "Delivery or collection";
+  }
+}
+
+function formatFulfilmentHelper(option?: Listing["shippingOption"]) {
+  switch (option) {
+    case "collection":
+      return "Arrange collection in Messages";
+    case "delivery":
+      return "Confirm delivery details at checkout";
+    case "both":
+      return "Choose collection or delivery at checkout";
+    default:
+      return "Choose collection or delivery at checkout";
+  }
+}
+
+function formatReturns(acceptsReturns?: boolean, returnDays?: number | null) {
+  if (acceptsReturns === false) {
+    return {
+      title: "Returns not accepted",
+      helper: "Message the seller if you need an exception",
+    };
+  }
+  if (acceptsReturns) {
+    const days = typeof returnDays === "number" && returnDays > 0 ? returnDays : 14;
+    return {
+      title: `Returns accepted within ${days} days`,
+      helper: "Start a return in Messages so we can review it",
+    };
+  }
+  return {
+    title: "Returns policy not listed",
+    helper: "Message the seller before buying",
+  };
 }
 
 function summariseFitment(listing: Listing) {
@@ -669,6 +724,39 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
 
   const priceGapPercent = typeof priceAnomaly.priceGapPct === "number" ? Math.round(priceAnomaly.priceGapPct * 100) : null;
   const medianPriceLabel = formatGBP(priceAnomaly.medianPrice) || undefined;
+  const responseTimeMinutes = sellerInsights?.avgResponseTimeMinutes;
+  const hasResponseTime = typeof responseTimeMinutes === "number" && responseTimeMinutes > 0;
+  const responseTimeLabel = hasResponseTime ? formatResponseTime(responseTimeMinutes) : null;
+  const responseTimeBadge = hasResponseTime ? `Seller responds in under ${responseTimeLabel}` : "New seller";
+  const responseTimeInline = hasResponseTime ? `Seller replies in ${responseTimeLabel}` : "Response time pending";
+  const responseTimeDispatch = hasResponseTime ? `Replies in ~${responseTimeLabel}` : "Response time pending";
+  const returnsSummary = formatReturns(listing.acceptsReturns, listing.returnDays);
+  const fulfilmentLabel = formatShippingOption(listing.shippingOption);
+  const fulfilmentHelper = formatFulfilmentHelper(listing.shippingOption);
+  const quantityAvailable = typeof listing.quantity === "number" ? listing.quantity : null;
+  const availabilityLabel = quantityAvailable !== null ? (quantityAvailable > 0 ? "In stock" : "Out of stock") : "Available now";
+  const availabilityTone =
+    quantityAvailable !== null && quantityAvailable <= 0
+      ? "bg-red-50 text-red-700 border-red-200"
+      : "bg-green-50 text-green-800 border-green-200";
+  const fulfilmentTone = "bg-slate-50 text-slate-700 border-slate-200";
+  const yearLabel =
+    listing.yearFrom && listing.yearTo
+      ? `${listing.yearFrom}-${listing.yearTo}`
+      : listing.year
+      ? String(listing.year)
+      : undefined;
+  const itemSpecifics = [
+    { label: "Category", value: listing.category },
+    { label: "Condition", value: listing.condition },
+    { label: "Make", value: listing.make },
+    { label: "Model", value: listing.model },
+    { label: "Generation", value: listing.genCode },
+    { label: "Engine", value: listing.engine },
+    { label: "Year", value: yearLabel },
+    { label: "OEM", value: listing.oem },
+    { label: "VIN", value: listing.vin },
+  ].filter((item) => item.value);
 
   const shippingHighlights = [
     {
@@ -679,23 +767,21 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
     },
     {
       title: "Dispatch updates",
-      body: sellerInsights?.avgResponseTimeMinutes
-        ? `Replies in ~${formatResponseTime(sellerInsights.avgResponseTimeMinutes)}`
-        : "Seller confirms dispatch over chat",
+      body: responseTimeDispatch,
       helper: "Stay in Motorsource Messages for delivery updates",
       icon: Clock3,
     },
     {
       title: "Returns",
-      body: "Seller-led returns within 14 days",
-      helper: "Message the seller to start a return so we can review it",
+      body: returnsSummary.title,
+      helper: returnsSummary.helper,
       icon: ListChecks,
     },
     {
-      title: "Buyer protection",
-      body: "Funds held until you confirm delivery",
-      helper: "Secure checkout + dispute assistance",
-      icon: ShieldCheck,
+      title: "Delivery method",
+      body: fulfilmentLabel,
+      helper: fulfilmentHelper,
+      icon: Truck,
     },
   ];
   const sellerDisplayName = listing.seller?.name || "Seller";
@@ -797,11 +883,11 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
         </div>
         <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 text-blue-800 border border-blue-100 px-3 py-1 text-xs font-semibold">
           <Clock3 className="h-3.5 w-3.5" />
-          Seller responds in under {formatResponseTime(sellerInsights?.avgResponseTimeMinutes) || "a day"}
+          {responseTimeBadge}
         </div>
         <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 text-amber-800 border border-amber-100 px-3 py-1 text-xs font-semibold">
-          <ShoppingCart className="h-3.5 w-3.5" />
-          Complete checkout to reserve this part
+          <MapPin className="h-3.5 w-3.5" />
+          Ships from {sellerLocation || "United Kingdom"}
         </div>
       </div>
 
@@ -815,6 +901,20 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             <div className="hidden lg:block rounded-sm border border-gray-200 bg-white p-5">
               <h2 className="mb-3 text-sm font-semibold text-black">Description</h2>
               <p className="whitespace-pre-line text-sm text-gray-700 leading-relaxed">{listing.description}</p>
+            </div>
+          )}
+
+          {itemSpecifics.length > 0 && (
+            <div className="hidden lg:block rounded-sm border border-gray-200 bg-white p-5">
+              <h2 className="mb-3 text-sm font-semibold text-black">Item specifics</h2>
+              <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {itemSpecifics.map((item) => (
+                  <div key={item.label} className="rounded-lg border border-gray-100 bg-gray-50/70 px-3 py-2">
+                    <dt className="text-[11px] uppercase tracking-wide text-gray-500">{item.label}</dt>
+                    <dd className="text-sm font-semibold text-gray-900">{item.value}</dd>
+                  </div>
+                ))}
+              </dl>
             </div>
           )}
 
@@ -962,10 +1062,13 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
           </div>
 
           {/* Price + urgency */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <div className="text-3xl sm:text-4xl font-extrabold text-gray-900">{listing.price}</div>
-            <span className="rounded-full bg-green-50 text-green-800 border border-green-200 px-3 py-1 text-xs font-semibold">
-              In stock • ships fast
+            <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${availabilityTone}`}>
+              {availabilityLabel}
+            </span>
+            <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${fulfilmentTone}`}>
+              {fulfilmentLabel}
             </span>
           </div>
 
@@ -974,6 +1077,20 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             <div className="lg:hidden rounded-sm border border-gray-200 bg-white p-4">
               <h2 className="mb-2 text-sm font-semibold text-black">Description</h2>
               <p className="whitespace-pre-line text-sm text-gray-700 leading-relaxed">{listing.description}</p>
+            </div>
+          )}
+
+          {itemSpecifics.length > 0 && (
+            <div className="lg:hidden rounded-sm border border-gray-200 bg-white p-4">
+              <h2 className="mb-2 text-sm font-semibold text-black">Item specifics</h2>
+              <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {itemSpecifics.map((item) => (
+                  <div key={item.label} className="rounded-lg border border-gray-100 bg-gray-50/70 px-3 py-2">
+                    <dt className="text-[11px] uppercase tracking-wide text-gray-500">{item.label}</dt>
+                    <dd className="text-sm font-semibold text-gray-900">{item.value}</dd>
+                  </div>
+                ))}
+              </dl>
             </div>
           )}
 
@@ -1025,7 +1142,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               </div>
               <div className="flex items-center gap-2">
                 <Clock3 className="h-3.5 w-3.5 text-gray-600" />
-                Seller replies in {formatResponseTime(sellerInsights?.avgResponseTimeMinutes) || "under a day"}
+                {responseTimeInline}
               </div>
               <div className="flex items-center gap-2">
                 <ListChecks className="h-3.5 w-3.5 text-gray-600" />
@@ -1304,6 +1421,12 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
           )}
         </div>
       </div>
+
+      <MoreFromSeller
+        sellerId={listing.sellerId}
+        sellerName={sellerDisplayName}
+        listingId={listing.id}
+      />
 
       {/* Related Parts - full width at bottom */}
       <SimilarProducts listingId={listing.id} limit={6} />

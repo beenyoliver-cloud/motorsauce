@@ -40,6 +40,8 @@ type Listing = {
   distanceKm?: number;
   shippingOption?: "collection" | "delivery" | "both";
   acceptsReturns?: boolean;
+  returnDays?: number;
+  quantity?: number;
   postcode?: string;
   vin?: string;
   yearFrom?: number;
@@ -78,6 +80,8 @@ type RawListingRow = {
   seller_lng?: number | null;
   shipping_option?: string | null;
   accepts_returns?: boolean | null;
+  return_days?: number | null;
+  quantity?: number | null;
   postcode?: string | null;
   seller_postcode?: string | null;
   vin?: string | null;
@@ -194,6 +198,8 @@ function mapDbRow(row: RawListingRow): Listing {
     year: row.year ? Number(row.year) : undefined,
     shippingOption: (row.shipping_option as Listing["shippingOption"]) ?? undefined,
     acceptsReturns: row.accepts_returns == null ? undefined : Boolean(row.accepts_returns),
+    returnDays: typeof row.return_days === "number" ? row.return_days : row.return_days ? Number(row.return_days) : undefined,
+    quantity: typeof row.quantity === "number" ? row.quantity : row.quantity ? Number(row.quantity) : undefined,
     postcode: row.postcode ?? row.seller_postcode ?? undefined,
     oem: row.oem ?? undefined,
     description: row.description ?? "",
