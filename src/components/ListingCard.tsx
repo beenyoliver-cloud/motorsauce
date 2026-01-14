@@ -212,8 +212,8 @@ export default function ListingCard(props: ListingCardProps) {
           )}
 
           {/* Badges + Price */}
-          <div className="mt-1 flex items-end justify-between gap-2">
-            <div className="flex flex-nowrap items-center gap-1.5">
+          <div className="mt-1 flex flex-wrap items-end justify-between gap-2">
+            <div className="flex flex-1 min-w-0 flex-wrap items-center gap-1.5">
               {visibleBadges.map((badge) => (
                 <span
                   key={badge.label}
@@ -233,7 +233,7 @@ export default function ListingCard(props: ListingCardProps) {
                 </span>
               )}
             </div>
-            <div className="text-right">
+            <div className="ml-auto flex-shrink-0 text-right">
               <span className="block text-base sm:text-lg font-bold text-gray-900 leading-none">
                 {formatPrice(price)}
               </span>
