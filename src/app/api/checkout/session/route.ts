@@ -15,23 +15,21 @@ function isAbsoluteHttpUrl(input: string): boolean {
 }
 
 function derivePublicOrigin(req: Request): string {
-  // Prefer explicit configured URL only if it includes a scheme.
-  // This lets you keep NEXT_PUBLIC_SITE_URL set to a placeholder domain (or unset)
-  // and still have Stripe return to the current Vercel deployment.
+  // Prefer the request origin/host so Stripe returns to the same domain as the active session.
+  const origin = req.headers.get("origin");
+  if (origin && /^https?:\/\//i.test(origin)) return origin.replace(/\/$/, "");
+
+  // Otherwise derive from host headers (common on Vercel).
+  const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+  const proto = req.headers.get("x-forwarded-proto") || "https";
+  if (host) return `${proto}://${host}`.replace(/\/$/, "");
+
+  // Fall back to configured URL if request headers are unavailable.
   const envSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
   if (envSiteUrl && isAbsoluteHttpUrl(envSiteUrl)) return normalizeAbsoluteUrl(envSiteUrl);
 
   // Vercel provides VERCEL_URL without scheme.
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-
-  // Some runtimes set Origin; use it if present.
-  const origin = req.headers.get("origin");
-  if (origin && /^https?:\/\//i.test(origin)) return origin.replace(/\/$/, "");
-
-  // Otherwise derive from host headers.
-  const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
-  const proto = req.headers.get("x-forwarded-proto") || "https";
-  if (host) return `${proto}://${host}`.replace(/\/$/, "");
 
   // Final fallback: Stripe requires absolute URLs with scheme.
   throw new Error("Public site URL is not configured (missing NEXT_PUBLIC_SITE_URL / VERCEL_URL / host headers)");
