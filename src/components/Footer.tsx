@@ -36,7 +36,7 @@ export default function Footer() {
             <img
               src="/images/newlogonewm.jpg"
               alt="Motorsource"
-              className="h-[2.79rem] md:h-[4.725rem] w-auto object-contain"
+              className="h-[1.395rem] md:h-[2.3625rem] w-auto object-contain"
               loading="lazy"
             />
           </Link>
