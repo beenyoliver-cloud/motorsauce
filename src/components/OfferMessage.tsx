@@ -5,33 +5,26 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { CheckCircle, XCircle, Clock, Ban, TrendingUp, Package } from "lucide-react";
 import { formatGBP } from "@/lib/offersStore";
-import { updateOfferStatus as updateOfferStatusAPI, sendMessage, createOffer as createOfferAPI } from "@/lib/messagesClient";
+import {
+  updateOfferStatus as updateOfferStatusAPI,
+  sendMessage,
+  createOffer as createOfferAPI,
+  type Offer as MessageOffer,
+} from "@/lib/messagesClient";
 import { displayName } from "@/lib/names";
 import { getCurrentUserSync } from "@/lib/auth";
+
+type OfferMessageOffer = MessageOffer & {
+  starter?: string;
+  recipient?: string;
+};
 
 type Props = {
   msg: {
     id: string;
     threadId: string;
     type?: "offer" | "system";
-    offer?: {
-      id: string;
-      amountCents: number;
-      currency: string;
-      status: "pending" | "accepted" | "declined" | "rejected" | "countered" | "withdrawn" | "expired" | "completed";
-      starter?: string;
-      recipient?: string;
-      starterId?: string;
-      recipientId?: string;
-      buyerId?: string | null;
-      sellerId?: string | null;
-      listingId: string | number;
-      listingTitle?: string | null;
-      listingImage?: string | null;
-      peerName?: string;
-      expires_at?: string | null;
-      quantity?: number;
-    };
+    offer?: OfferMessageOffer;
   };
   currentUser: string;
 };
