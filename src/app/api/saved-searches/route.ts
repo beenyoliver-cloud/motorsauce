@@ -12,6 +12,7 @@ async function getAuthUser(req: NextRequest) {
   }
 
   const token = authHeader.substring(7);
+  if (!supabaseServiceKey) return null;
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   const {
