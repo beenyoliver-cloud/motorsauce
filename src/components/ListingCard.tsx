@@ -114,6 +114,14 @@ export default function ListingCard(props: ListingCardProps) {
     !seller?.rating ? "New seller" : null,
     priceNum > 0 && priceNum < 5 ? "Unusually low price" : null,
   ].filter(Boolean) as string[];
+  const badgeItems = [
+    ...utilityBadges.map((label) => ({ label, tone: "utility" as const })),
+    ...riskBadges.map((label) => ({ label, tone: "risk" as const })),
+  ];
+  const maxBadges = tight ? 1 : 2;
+  const visibleBadges = badgeItems.slice(0, maxBadges);
+  const extraBadgeCount = badgeItems.length - visibleBadges.length;
+  const badgeMaxWidth = tight ? "max-w-[90px]" : "max-w-[120px]";
 
   return (
     <div className={`group relative ${className}`}>
@@ -206,17 +214,25 @@ export default function ListingCard(props: ListingCardProps) {
 
           {/* Badges + Price */}
           <div className="mt-1 flex items-end justify-between gap-2">
-            <div className="flex flex-wrap gap-1.5">
-              {utilityBadges.map((badge) => (
-                <span key={badge} className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold text-gray-800">
-                  {badge}
+            <div className="flex flex-nowrap items-center gap-1.5 overflow-hidden">
+              {visibleBadges.map((badge) => (
+                <span
+                  key={badge.label}
+                  title={badge.label}
+                  className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold truncate ${badgeMaxWidth} ${
+                    badge.tone === "risk"
+                      ? "border border-amber-200 bg-amber-50 text-amber-800"
+                      : "border border-gray-200 bg-gray-50 text-gray-800"
+                  }`}
+                >
+                  {badge.label}
                 </span>
               ))}
-              {riskBadges.map((badge) => (
-                <span key={badge} className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold text-amber-800">
-                  {badge}
+              {extraBadgeCount > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold text-gray-700 shrink-0">
+                  +{extraBadgeCount}
                 </span>
-              ))}
+              )}
             </div>
             <div className="text-right">
               <span className="block text-base sm:text-lg font-bold text-gray-900 leading-none">

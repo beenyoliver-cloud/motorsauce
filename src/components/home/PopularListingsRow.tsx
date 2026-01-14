@@ -15,7 +15,7 @@ type Listing = {
 };
 
 const FALLBACK_SITE_URL = "http://localhost:3000";
-const MIN_POPULAR_ITEMS = 3;
+const MIN_POPULAR_ITEMS = 1;
 const MAX_POPULAR_ITEMS = 8;
 
 function listingsApiUrl(path: string) {
@@ -53,9 +53,11 @@ function sortByPopularity(listings: Listing[]) {
 }
 
 function gridColsClass(count: number) {
-  if (count >= 5) return "lg:grid-cols-5";
-  if (count === 4) return "lg:grid-cols-4";
-  return "lg:grid-cols-3";
+  if (count >= 5) return "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5";
+  if (count === 4) return "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4";
+  if (count === 3) return "grid-cols-2 sm:grid-cols-3 lg:grid-cols-3";
+  if (count === 2) return "grid-cols-2 sm:grid-cols-2 lg:grid-cols-2";
+  return "grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 max-w-sm";
 }
 
 export default async function PopularListingsRow() {
@@ -73,10 +75,10 @@ export default async function PopularListingsRow() {
           <h2 className="text-base sm:text-2xl font-bold text-slate-900">Popular listings</h2>
         </div>
         <Link href="/search" className="text-xs sm:text-sm font-semibold text-slate-700 hover:text-slate-900">
-          Browse all →
+          Browse all ->
         </Link>
       </div>
-      <div className={`grid grid-cols-2 sm:grid-cols-3 ${gridColsClass(items.length)} gap-3 sm:gap-4`}>
+      <div className={`grid ${gridColsClass(items.length)} gap-3 sm:gap-4 ${items.length === 1 ? "mx-auto" : ""}`}>
         {items.map((listing) => (
           <ListingCard
             key={listing.id}

@@ -92,14 +92,14 @@ export default function CategoryTiles() {
                   </h3>
                 </div>
               </div>
-              <span className="text-xs font-medium text-white/80 group-hover:text-white transition shrink-0">
-                Go →
-              </span>
             </div>
-            <div className="relative mt-4">
+            <div className="relative mt-4 flex items-end justify-between gap-3">
               <div className="h-1 w-2/3 rounded-full bg-white/30 overflow-hidden">
                 <div className="h-full rounded-full bg-white group-hover:w-full transition-all duration-500" />
               </div>
+              <span className="text-xs font-medium text-white/80 group-hover:text-white transition shrink-0">
+                Go →
+              </span>
             </div>
           </Link>
         );
