@@ -75,7 +75,7 @@ export default async function PopularListingsRow() {
           <h2 className="text-base sm:text-2xl font-bold text-slate-900">Popular listings</h2>
         </div>
         <Link href="/search" className="text-xs sm:text-sm font-semibold text-slate-700 hover:text-slate-900">
-          Browse all ->
+          Browse all -&gt;
         </Link>
       </div>
       <div className={`grid ${gridColsClass(items.length)} gap-3 sm:gap-4 ${items.length === 1 ? "mx-auto" : ""}`}>

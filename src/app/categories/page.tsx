@@ -97,7 +97,7 @@ export default function CategoriesPage() {
                 <p className="mt-1 text-sm text-gray-600">{item.description}</p>
               </div>
               <span className="text-xs font-semibold text-gray-500 group-hover:text-yellow-700 transition">
-                {item.cta} ->
+                {item.cta} -&gt;
               </span>
             </div>
           </Link>
@@ -131,7 +131,7 @@ export default function CategoriesPage() {
                     <p className="mt-1 text-xs text-gray-500">{subcategories.length} subcategories</p>
                   </div>
                   <span className="text-xs font-semibold text-gray-500 group-hover:text-yellow-700 transition">
-                    Browse ->
+                    Browse -&gt;
                   </span>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">

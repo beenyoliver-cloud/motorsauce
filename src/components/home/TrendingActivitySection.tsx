@@ -47,7 +47,7 @@ export default async function TrendingActivitySection() {
           Trending right now
         </div>
         <Link href="/search" className="text-xs font-semibold text-gray-600 hover:text-gray-900">
-          View all ->
+          View all -&gt;
         </Link>
       </div>
       <div className="p-3 sm:p-5 space-y-2 sm:space-y-3">
