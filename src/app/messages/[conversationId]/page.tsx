@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ArrowLeft, Send, Package, User as UserIcon } from "lucide-react";
 import { fetchMessages, sendMessage, type Message, fetchThreads } from "@/lib/messagesClient";
 import { displayName } from "@/lib/names";
-import { getCurrentUserSync } from "@/lib/auth";
+import { getCurrentUser, getCurrentUserSync } from "@/lib/auth";
 import OfferMessage from "@/components/OfferMessage";
 import SellerLink from "@/components/SellerLink";
 
@@ -18,7 +18,7 @@ export default function ConversationPage({
 }) {
   const { conversationId } = use(params);
   const router = useRouter();
-  const currentUser = getCurrentUserSync();
+  const [currentUser, setCurrentUser] = useState(getCurrentUserSync());
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageText, setMessageText] = useState("");
   const [loading, setLoading] = useState(true);
@@ -42,6 +42,20 @@ export default function ConversationPage({
     window.addEventListener("ms:threads", handleRefresh);
     return () => window.removeEventListener("ms:threads", handleRefresh);
   }, [conversationId]);
+
+  useEffect(() => {
+    let isMounted = true;
+    getCurrentUser()
+      .then((user) => {
+        if (isMounted) setCurrentUser(user);
+      })
+      .catch(() => {
+        if (isMounted) setCurrentUser(null);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();

@@ -37,8 +37,18 @@ function meId() {
   };
 }
 
-function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props["msg"]["offer"]> }) {
-  const { id: selfId, name: selfName } = meId();
+function OfferMessageInner({
+  msg,
+  o,
+  currentUserId,
+}: {
+  msg: Props["msg"];
+  o: NonNullable<Props["msg"]["offer"]>;
+  currentUserId?: string;
+}) {
+  const fallback = meId();
+  const selfId = currentUserId || fallback.id;
+  const selfName = fallback.name;
 
   // Try to determine fixed buyer/seller for the thread using the fields we set in MakeOfferButton
   const buyerId = o.buyerId || o.starterId;    // for the very first offer, starterId === buyer
@@ -447,7 +457,7 @@ function OfferMessageInner({ msg, o }: { msg: Props["msg"]; o: NonNullable<Props
   );
 }
 
-export default function OfferMessage({ msg }: Props) {
+export default function OfferMessage({ msg, currentUser }: Props) {
   if (msg.type !== "offer" || !msg.offer) return null;
-  return <OfferMessageInner msg={msg} o={msg.offer} />;
+  return <OfferMessageInner msg={msg} o={msg.offer} currentUserId={currentUser} />;
 }

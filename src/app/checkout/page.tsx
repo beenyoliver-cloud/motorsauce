@@ -352,10 +352,10 @@ function CheckoutContent() {
         <div className="rounded-xl border border-red-200 bg-red-50 p-8">
           <p className="text-red-800 mb-4">{offerError}</p>
           <Link
-            href="/offers"
+            href="/messages"
             className="inline-flex px-4 py-2 rounded-md bg-yellow-500 text-black font-semibold hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400"
           >
-            View My Offers
+            View Messages
           </Link>
         </div>
       </section>

@@ -4,11 +4,11 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { fetchThreads, fetchMessages, sendMessage, markThreadRead, Thread, Message, updateOfferStatus } from "@/lib/messagesClient";
-import { getCurrentUserSync } from "@/lib/auth";
+import { getCurrentUser, getCurrentUserSync } from "@/lib/auth";
 import { analyzeMessageSafety } from "@/lib/messagingSafety";
 import SellerLink from "@/components/SellerLink";
 import { formatDistanceToNow } from "date-fns";
-import { AlertCircle, AlertTriangle } from "lucide-react";
+import { AlertCircle, AlertTriangle, ArrowLeft } from "lucide-react";
 
 type ThreadWithMessages = {
   thread: Thread;
@@ -68,9 +68,17 @@ function ThreadList({
   );
 }
 
-function MessageBubble({ m, onOfferUpdate }: { m: Message; onOfferUpdate: (status: string, counter?: number) => Promise<void> }) {
+function MessageBubble({
+  m,
+  onOfferUpdate,
+  currentUserId,
+}: {
+  m: Message;
+  onOfferUpdate: (status: string, counter?: number) => Promise<void>;
+  currentUserId: string;
+}) {
   const me = getCurrentUserSync();
-  const meId = me?.id || "";
+  const meId = currentUserId || me?.id || "";
   const isSystem = m.type === "system";
   const isOffer = m.type === "offer" && m.offer;
   const isOwn = !isSystem && !!meId && m.from.id === meId;
@@ -91,6 +99,9 @@ function MessageBubble({ m, onOfferUpdate }: { m: Message; onOfferUpdate: (statu
     m.offer.buyerId === meId &&
     !!m.offer?.id;
   const offerId = m.offer?.id;
+  const listingId = m.offer?.listingId;
+  const listingTitle = m.offer?.listingTitle;
+  const listingImage = m.offer?.listingImage;
 
   return (
     <div className={`flex flex-col ${align}`}>
@@ -101,6 +112,35 @@ function MessageBubble({ m, onOfferUpdate }: { m: Message; onOfferUpdate: (statu
             <span className="text-xs uppercase tracking-wide">{m.offer?.status}</span>
           </div>
           <div className="text-base font-bold">£{((m.offer?.amountCents || 0) / 100).toFixed(2)}</div>
+          {(listingTitle || listingImage) && (
+            listingId ? (
+              <Link
+                href={`/listing/${listingId}`}
+                className="mt-2 flex items-center gap-2 rounded-md border border-amber-200 bg-white/70 p-2 hover:bg-white transition"
+              >
+                {listingImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={listingImage}
+                    alt={listingTitle || "Listing"}
+                    className="h-10 w-10 rounded object-cover border border-amber-100"
+                  />
+                ) : (
+                  <div className="h-10 w-10 rounded bg-amber-100 border border-amber-200 flex items-center justify-center text-xs font-semibold text-amber-700">
+                    Item
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-[11px] uppercase tracking-wide text-amber-700">Listing</p>
+                  <p className="text-xs font-semibold text-amber-900 line-clamp-1">{listingTitle || "View listing"}</p>
+                </div>
+              </Link>
+            ) : (
+              <div className="mt-2 text-xs text-amber-800">
+                {listingTitle}
+              </div>
+            )
+          )}
           {canRespond && (
             <div className="mt-2 flex flex-wrap gap-2 text-xs">
               {m.offer?.recipientId === meId && (
@@ -154,10 +194,14 @@ function MessagePane({
   convo,
   onSend,
   onOfferUpdate,
+  currentUserId,
+  onBack,
 }: {
   convo: ThreadWithMessages | null;
   onSend: (text: string) => Promise<void>;
   onOfferUpdate: (offerId: string, status: string) => Promise<void>;
+  currentUserId: string;
+  onBack?: () => void;
 }) {
   const [text, setText] = useState("");
   const [safetyAnalysis, setSafetyAnalysis] = useState({ blockReason: null as string | null, warnings: [] as string[] });
@@ -188,8 +232,19 @@ function MessagePane({
   return (
     <div className="flex-1 flex flex-col border border-slate-200 rounded-2xl bg-white shadow-sm">
       <div className="border-b border-slate-200 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                className="lg:hidden inline-flex items-center justify-center rounded-md border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-50"
+                aria-label="Back to conversations"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            )}
+            <div className="min-w-0">
             {convo.thread.peer?.name ? (
               <SellerLink
                 sellerName={convo.thread.peer.name}
@@ -206,6 +261,7 @@ function MessagePane({
                 {convo.thread.listing.title}
               </Link>
             )}
+            </div>
           </div>
           <span className="text-[11px] uppercase tracking-wide text-slate-500">{convo.thread.type}</span>
         </div>
@@ -219,6 +275,7 @@ function MessagePane({
             <MessageBubble
               key={m.id}
               m={m}
+              currentUserId={currentUserId}
               onOfferUpdate={async (status) => {
                 if (m.offer?.id) {
                   await onOfferUpdate(m.offer.id, status);
@@ -297,8 +354,33 @@ function MessagesPageInner() {
   const [messagesById, setMessagesById] = useState<Record<string, Message[]>>({});
   const [loadingThreads, setLoadingThreads] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [isDesktop, setIsDesktop] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  useEffect(() => {
+    let isMounted = true;
+    getCurrentUser()
+      .then((user) => {
+        if (isMounted) setCurrentUserId(user?.id || "");
+      })
+      .catch(() => {
+        if (isMounted) setCurrentUserId("");
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(min-width: 1024px)");
+    const update = () => setIsDesktop(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
 
   useEffect(() => {
     const preselect = searchParams?.get("selected");
@@ -306,14 +388,19 @@ function MessagesPageInner() {
     fetchThreads()
       .then((t) => {
         setThreads(t);
-        const initial = preselect && t.find((th) => th.id === preselect) ? preselect : t[0]?.id;
+        const initial =
+          preselect && t.find((th) => th.id === preselect)
+            ? preselect
+            : isDesktop
+            ? t[0]?.id
+            : null;
         if (initial && !selectedId) {
           setSelectedId(initial);
           markThreadRead(initial).then(() => window.dispatchEvent(new Event("ms:unread"))).catch(() => {});
         }
       })
       .finally(() => setLoadingThreads(false));
-  }, [searchParams]);
+  }, [searchParams, isDesktop]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -346,50 +433,75 @@ function MessagesPageInner() {
   };
 
   const handleOfferUpdate = async (offerId: string, status: string) => {
-    const updated = await updateOfferStatus(offerId, status);
-    if (!selectedId) return;
-    setMessagesById((prev) => {
-      const arr = prev[selectedId] || [];
-      return {
-        ...prev,
-        [selectedId]: arr.map((m) =>
-          m.offer?.id === offerId
-            ? {
-                ...m,
-                offer: { ...m.offer, status: updated.status, amountCents: updated.amountCents, currency: updated.currency },
-              }
-            : m
-        ),
-      };
-    });
-    // Refresh threads to update badges
-    const refreshed = await fetchThreads();
-    setThreads(refreshed);
-    markThreadRead(selectedId).catch(() => {});
-    window.dispatchEvent(new Event("ms:unread"));
-    router.replace(`/messages?selected=${selectedId}`);
+    try {
+      const updated = await updateOfferStatus(offerId, status);
+      if (!selectedId) return;
+      setMessagesById((prev) => {
+        const arr = prev[selectedId] || [];
+        return {
+          ...prev,
+          [selectedId]: arr.map((m) =>
+            m.offer?.id === offerId
+              ? {
+                  ...m,
+                  offer: { ...m.offer, status: updated.status, amountCents: updated.amountCents, currency: updated.currency },
+                }
+              : m
+          ),
+        };
+      });
+      // Refresh threads to update badges
+      const refreshed = await fetchThreads();
+      setThreads(refreshed);
+      markThreadRead(selectedId).catch(() => {});
+      window.dispatchEvent(new Event("ms:unread"));
+      router.replace(`/messages?selected=${selectedId}`);
+    } catch (err) {
+      console.error("[messages] Failed to update offer:", err);
+      alert(err instanceof Error ? err.message : "Failed to update offer");
+    }
   };
 
   return (
     <main className="min-h-screen bg-white text-slate-900">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_2fr] gap-4 sm:gap-5">
-          <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_2fr] gap-4 sm:gap-5">
+          <div
+            className={`rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden ${
+              selectedId ? "hidden lg:block" : "block"
+            }`}
+          >
             <div className="px-3 py-3 border-b border-gray-200">
               <h1 className="text-lg font-bold">Messages</h1>
             </div>
             {loadingThreads ? (
               <div className="p-4 text-sm text-slate-600">Loading conversations…</div>
             ) : (
-              <ThreadList threads={threads} selectedId={selectedId} onSelect={(id) => { setSelectedId(id); }} />
+              <ThreadList
+                threads={threads}
+                selectedId={selectedId}
+                onSelect={(id) => {
+                  setSelectedId(id);
+                  router.replace(`/messages?selected=${id}`);
+                }}
+              />
             )}
           </div>
 
-          <div className="min-h-[400px]">
+          <div className={`min-h-[400px] ${selectedId ? "block" : "hidden"} lg:block`}>
             {loadingMessages && !selectedConvo ? (
               <div className="flex h-full items-center justify-center text-sm text-slate-600">Loading messages…</div>
             ) : (
-              <MessagePane convo={selectedConvo} onSend={handleSend} onOfferUpdate={handleOfferUpdate} />
+              <MessagePane
+                convo={selectedConvo}
+                onSend={handleSend}
+                onOfferUpdate={handleOfferUpdate}
+                currentUserId={currentUserId}
+                onBack={() => {
+                  setSelectedId(null);
+                  router.replace("/messages");
+                }}
+              />
             )}
           </div>
         </div>

@@ -137,7 +137,7 @@ export default function ListingActions({
           role="dialog"
           aria-labelledby="offer-title"
         >
-          <div className="absolute inset-0 bg-black/40" onClick={closeOffer} />
+          <div className="absolute inset-0 bg-slate-200/70" onClick={closeOffer} />
           <div
             className="w-full md:max-w-md bg-white rounded-t-3xl md:rounded-2xl shadow-xl animate-[offerSheet_320ms_cubic-bezier(.25,.8,.25,1)]"
             onClick={(e) => e.stopPropagation()}
